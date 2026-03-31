@@ -222,7 +222,7 @@ export default function SettingsPage() {
   if (loading) return <LoadingSpinner />
 
   const TABS = [
-    { key: 'company', label: 'Company profile' },
+    { key: 'company', label: 'Company' },
     { key: 'billing', label: 'Billing' },
     { key: 'team', label: 'Team' },
   ]
@@ -466,45 +466,75 @@ export default function SettingsPage() {
                 Your plan
               </h2>
 
+              {/* Plan card */}
               <div style={{
-                background: BG,
-                border: `1px solid ${BD}`,
-                borderRadius: 10,
-                padding: '18px 20px',
+                background: NAVY,
+                borderRadius: 12,
+                padding: '22px 24px',
                 marginBottom: 20,
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+                      Founding Member
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: TEAL, lineHeight: 1 }}>
+                      £79<span style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.55)' }}>/month</span>
+                    </div>
+                    <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>
+                      Unlimited — no seat limits, no usage caps
+                    </div>
+                  </div>
                   <span style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    padding: '3px 12px',
+                    padding: '4px 12px',
                     borderRadius: 50,
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 700,
-                    background: TEALLT,
-                    color: TEALD,
+                    background: `${TEAL}25`,
+                    color: TEAL,
                     border: `1px solid ${TEAL}55`,
+                    flexShrink: 0,
                   }}>
-                    Starter plan
+                    Active
                   </span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {STARTER_FEATURES.map(f => (
-                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Ic name="check" size={14} color={GRN} />
-                      <span style={{ fontSize: 13.5, color: TX2, fontFamily: F }}>{f}</span>
+                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                      <Ic name="check" size={14} color={TEAL} />
+                      <span style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.75)', fontFamily: F }}>{f}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
+              {/* Billing details */}
+              <div style={{
+                background: BG,
+                border: `1px solid ${BD}`,
+                borderRadius: 10,
+                padding: '16px 18px',
+                marginBottom: 20,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, color: TX2, fontFamily: F }}>Next billing date</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: TX, fontFamily: F }}>1 May 2025</span>
+                </div>
+                <div style={{ height: 1, background: BD }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, color: TX2, fontFamily: F }}>Payment method</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: TX3, fontFamily: F }}>•••• •••• •••• 4242</span>
+                </div>
+              </div>
+
               <button
                 disabled
-                style={{
-                  ...bs('primary', 'md'),
-                  opacity: 0.5,
-                  cursor: 'default',
-                }}
+                style={{ ...bs('primary', 'md'), opacity: 0.5, cursor: 'default' }}
               >
                 Manage billing
               </button>
