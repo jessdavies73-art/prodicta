@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { NAVY, TEAL, TEALD, TX2, TX3, F } from '../lib/constants'
 import { Ic } from './Icons'
 import { createClient } from '../lib/supabase'
+import ProdictaLogo from './ProdictaLogo'
 
 const NAV = [
   { key: 'dashboard',       label: 'Dashboard',       icon: 'grid',     href: '/dashboard' },
@@ -43,22 +44,7 @@ export default function Sidebar({ active, companyName }) {
         padding: '28px 24px 24px',
         borderBottom: '1px solid rgba(255,255,255,0.07)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img
-            src="/logo.png"
-            alt="Prodicta"
-            style={{ height: '36px', width: 'auto', display: 'block' }}
-          />
-          <span style={{
-            fontSize: 17,
-            fontWeight: 800,
-            color: '#fff',
-            letterSpacing: '-0.3px',
-            fontFamily: F,
-          }}>
-            Prodicta
-          </span>
-        </div>
+        <ProdictaLogo textColor="#ffffff" size={32} />
       </div>
 
       {/* Nav */}

@@ -11,8 +11,7 @@ export const metadata = {
   title: 'Prodicta — Predict probation outcomes before you hire',
   description: 'Prodicta helps UK businesses predict whether candidates will pass their probation period using AI-powered work simulations.',
   icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
+    icon: '/favicon.ico',
   },
 }
 
