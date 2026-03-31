@@ -14,29 +14,22 @@ export default function ProdictaLogo({ textColor = '#ffffff', size = 36 }) {
         xmlns="http://www.w3.org/2000/svg"
         style={{ flexShrink: 0 }}
       >
-        {/* Background circle */}
         <circle cx="18" cy="18" r="18" fill={TEAL} />
-        {/* Eye outer shape */}
-        <path
-          d="M7 18 C10 12, 26 12, 29 18 C26 24, 10 24, 7 18 Z"
-          fill="white"
-        />
-        {/* Iris */}
+        <path d="M7 18 C10 12, 26 12, 29 18 C26 24, 10 24, 7 18 Z" fill="white" />
         <circle cx="18" cy="18" r="5" fill={TEAL} />
-        {/* Pupil */}
         <circle cx="18" cy="18" r="2.5" fill="white" />
       </svg>
 
-      {/* Wordmark */}
+      {/* Wordmark: PRO in textColor, DICTA in teal */}
       <span style={{
         fontSize,
         fontWeight: 800,
-        color: textColor,
-        letterSpacing: '-0.4px',
+        letterSpacing: '0.5px',
         lineHeight: 1,
         fontFamily: "'Outfit', system-ui, sans-serif",
       }}>
-        Prodicta
+        <span style={{ color: textColor }}>PRO</span>
+        <span style={{ color: TEAL }}>DICTA</span>
       </span>
     </div>
   )
