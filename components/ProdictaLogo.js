@@ -27,6 +27,7 @@ export default function ProdictaLogo({ textColor = '#ffffff', size = 36 }) {
         letterSpacing: '0.5px',
         lineHeight: 1,
         fontFamily: "'Outfit', system-ui, sans-serif",
+        color: textColor,
       }}>
         <span style={{ color: textColor }}>PRO</span>
         <span style={{ color: TEAL }}>DICTA</span>

@@ -45,7 +45,7 @@ export default function Sidebar({ active, companyName }) {
         padding: '28px 24px 24px',
         borderBottom: '1px solid rgba(255,255,255,0.07)',
       }}>
-        <ProdictaLogo textColor="#0f2137" size={32} />
+        <ProdictaLogo textColor="#ffffff" size={32} />
       </div>
 
       {/* Nav */}
