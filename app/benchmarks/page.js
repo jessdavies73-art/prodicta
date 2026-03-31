@@ -36,7 +36,10 @@ function LoadingSpinner() {
   )
 }
 
-function SkillRow({ skill, threshold, onChange, candidateScores }) {
+// candidateData: [{ name, id, assessmentId, score }]
+function SkillRow({ skill, threshold, onChange, candidateData, router }) {
+  const [expanded, setExpanded] = useState(null) // null | 'passing' | 'flagged'
+
   const isSet = threshold !== null && threshold !== undefined
   const val = isSet ? threshold : 70
 
@@ -44,188 +47,301 @@ function SkillRow({ skill, threshold, onChange, candidateScores }) {
   const bg = thresholdBg(val)
   const bd = thresholdBd(val)
 
-  // How many current candidates pass / fail this threshold
-  const passing = isSet ? candidateScores.filter(s => s >= val).length : null
-  const failing = isSet ? candidateScores.filter(s => s < val).length : null
-  const total = candidateScores.length
+  const passing = isSet ? candidateData.filter(c => c.score >= val) : []
+  const flagged  = isSet ? candidateData.filter(c => c.score < val)  : []
+  const total    = candidateData.length
+
+  function togglePanel(panel) {
+    setExpanded(prev => prev === panel ? null : panel)
+  }
 
   return (
     <div style={{
       background: CARD,
       border: `1px solid ${isSet ? col + '55' : BD}`,
       borderRadius: 12,
-      padding: '20px 24px',
+      overflow: 'hidden',
       transition: 'border-color 0.2s',
     }}>
-      {/* Top row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: TX, fontFamily: F }}>{skill}</span>
-          {isSet && (
-            <span style={{
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '2px 9px',
-              borderRadius: 20,
-              background: bg,
-              color: col,
-              border: `1px solid ${bd}`,
-            }}>
-              {thresholdLabel(val)}
-            </span>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {isSet && (
-            <div style={{
-              fontFamily: FM,
-              fontSize: 22,
-              fontWeight: 800,
-              color: col,
-              lineHeight: 1,
-              minWidth: 36,
-              textAlign: 'right',
-            }}>
-              {val}
-            </div>
-          )}
-          <button
-            onClick={() => onChange(isSet ? null : 70)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '6px 12px',
-              borderRadius: 7,
-              border: `1.5px solid ${isSet ? col : BD}`,
-              background: isSet ? bg : 'transparent',
-              color: isSet ? col : TX3,
-              fontFamily: F,
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.15s',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {isSet ? (
-              <>
-                <Ic name="x" size={12} color={col} />
-                Remove threshold
-              </>
-            ) : (
-              <>
-                <Ic name="sliders" size={12} color={TX3} />
-                Set threshold
-              </>
+      <div style={{ padding: '20px 24px' }}>
+        {/* Top row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: TX, fontFamily: F }}>{skill}</span>
+            {isSet && (
+              <span style={{
+                fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 20,
+                background: bg, color: col, border: `1px solid ${bd}`,
+              }}>
+                {thresholdLabel(val)}
+              </span>
             )}
-          </button>
-        </div>
-      </div>
-
-      {isSet ? (
-        <>
-          {/* Slider */}
-          <div style={{ marginBottom: 10 }}>
-            <style>{`
-              .bm-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 6px; outline: none; cursor: pointer; }
-              .bm-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: ${col}; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2); cursor: pointer; transition: background 0.2s; }
-              .bm-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: ${col}; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2); cursor: pointer; }
-            `}</style>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={val}
-              onChange={e => onChange(Number(e.target.value))}
-              className="bm-slider"
-              style={{
-                background: `linear-gradient(to right, ${col} 0%, ${col} ${val}%, ${BD} ${val}%, ${BD} 100%)`,
-              }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 11, color: TX3, fontFamily: FM }}>
-              <span>0</span>
-              <span>25</span>
-              <span>50</span>
-              <span>75</span>
-              <span>100</span>
-            </div>
           </div>
 
-          {/* Number input + description */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 13, color: TX2, fontFamily: F }}>Minimum score:</span>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={val}
-                onChange={e => onChange(Math.max(0, Math.min(100, Number(e.target.value))))}
-                style={{
-                  fontFamily: FM,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  width: 64,
-                  padding: '5px 8px',
-                  borderRadius: 7,
-                  border: `1.5px solid ${col}`,
-                  background: bg,
-                  color: col,
-                  outline: 'none',
-                  textAlign: 'center',
-                }}
-              />
-              <span style={{ fontSize: 13, color: TX2, fontFamily: F }}>out of 100</span>
-            </div>
-
-            {/* Live candidate stats */}
-            {total > 0 && (
-              <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-                <span style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  padding: '4px 10px',
-                  borderRadius: 20,
-                  background: GRNBG,
-                  color: GRN,
-                  border: `1px solid ${GRNBD}`,
-                }}>
-                  {passing} pass
-                </span>
-                {failing > 0 && (
-                  <span style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    padding: '4px 10px',
-                    borderRadius: 20,
-                    background: REDBG,
-                    color: RED,
-                    border: `1px solid ${REDBD}`,
-                  }}>
-                    {failing} flagged
-                  </span>
-                )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {isSet && (
+              <div style={{
+                fontFamily: FM, fontSize: 22, fontWeight: 800, color: col,
+                lineHeight: 1, minWidth: 36, textAlign: 'right',
+              }}>
+                {val}
               </div>
             )}
+            <button
+              onClick={() => onChange(isSet ? null : 70)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 7,
+                border: `1.5px solid ${isSet ? col : BD}`,
+                background: isSet ? bg : 'transparent',
+                color: isSet ? col : TX3,
+                fontFamily: F, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                transition: 'all 0.15s', whiteSpace: 'nowrap',
+              }}
+            >
+              {isSet ? (
+                <><Ic name="x" size={12} color={col} />Remove threshold</>
+              ) : (
+                <><Ic name="sliders" size={12} color={TX3} />Set threshold</>
+              )}
+            </button>
           </div>
-        </>
-      ) : (
-        /* Unset state */
+        </div>
+
+        {isSet ? (
+          <>
+            {/* Slider */}
+            <div style={{ marginBottom: 10 }}>
+              <style>{`
+                .bm-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 6px; outline: none; cursor: pointer; }
+                .bm-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: ${col}; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2); cursor: pointer; transition: background 0.2s; }
+                .bm-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: ${col}; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2); cursor: pointer; }
+              `}</style>
+              <input
+                type="range" min={0} max={100} value={val}
+                onChange={e => onChange(Number(e.target.value))}
+                className="bm-slider"
+                style={{ background: `linear-gradient(to right, ${col} 0%, ${col} ${val}%, ${BD} ${val}%, ${BD} 100%)` }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 11, color: TX3, fontFamily: FM }}>
+                <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
+              </div>
+            </div>
+
+            {/* Number input + candidate pills */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 13, color: TX2, fontFamily: F }}>Minimum score:</span>
+                <input
+                  type="number" min={0} max={100} value={val}
+                  onChange={e => onChange(Math.max(0, Math.min(100, Number(e.target.value))))}
+                  style={{
+                    fontFamily: FM, fontSize: 14, fontWeight: 700,
+                    width: 64, padding: '5px 8px', borderRadius: 7,
+                    border: `1.5px solid ${col}`, background: bg,
+                    color: col, outline: 'none', textAlign: 'center',
+                  }}
+                />
+                <span style={{ fontSize: 13, color: TX2, fontFamily: F }}>out of 100</span>
+              </div>
+
+              {/* Live candidate pills — clickable */}
+              {total > 0 && (
+                <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+                  <button
+                    onClick={() => togglePanel('passing')}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      fontSize: 12, fontWeight: 700,
+                      padding: '4px 10px', borderRadius: 20, cursor: 'pointer',
+                      background: expanded === 'passing' ? GRN : GRNBG,
+                      color: expanded === 'passing' ? '#fff' : GRN,
+                      border: `1px solid ${GRNBD}`,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <Ic name="check" size={11} color={expanded === 'passing' ? '#fff' : GRN} />
+                    {passing.length} pass
+                    <Ic name={expanded === 'passing' ? 'chevron-up' : 'chevron-down'} size={10} color={expanded === 'passing' ? '#fff' : GRN} />
+                  </button>
+                  {flagged.length > 0 && (
+                    <button
+                      onClick={() => togglePanel('flagged')}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        fontSize: 12, fontWeight: 700,
+                        padding: '4px 10px', borderRadius: 20, cursor: 'pointer',
+                        background: expanded === 'flagged' ? RED : REDBG,
+                        color: expanded === 'flagged' ? '#fff' : RED,
+                        border: `1px solid ${REDBD}`,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <Ic name="alert" size={11} color={expanded === 'flagged' ? '#fff' : RED} />
+                      {flagged.length} flagged
+                      <Ic name={expanded === 'flagged' ? 'chevron-up' : 'chevron-down'} size={10} color={expanded === 'flagged' ? '#fff' : RED} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '12px 14px', borderRadius: 8,
+            background: BG, border: `1px dashed ${BD}`,
+          }}>
+            <Ic name="info" size={14} color={TX3} />
+            <span style={{ fontSize: 13, color: TX3, fontFamily: F }}>
+              No threshold set — candidates will not be flagged for this skill.
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Expandable candidate panel ── */}
+      {isSet && expanded && (
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '12px 14px',
-          borderRadius: 8,
-          background: BG,
-          border: `1px dashed ${BD}`,
+          borderTop: `1px solid ${expanded === 'flagged' ? REDBD : GRNBD}`,
+          background: expanded === 'flagged' ? '#fff8f8' : '#f6fffe',
+          padding: '16px 24px',
         }}>
-          <Ic name="info" size={14} color={TX3} />
-          <span style={{ fontSize: 13, color: TX3, fontFamily: F }}>
-            No threshold set — candidates will not be flagged for this skill.
-          </span>
+          {expanded === 'flagged' ? (
+            <>
+              <div style={{ fontSize: 12, fontWeight: 700, color: RED, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Flagged — scored below {val}
+              </div>
+              {flagged.length === 0 ? (
+                <div style={{ fontSize: 13, color: TX3 }}>No candidates flagged.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {flagged
+                    .slice()
+                    .sort((a, b) => a.score - b.score)
+                    .map(c => {
+                      const delta = val - c.score
+                      return (
+                        <div key={c.id} style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '10px 14px', borderRadius: 8,
+                          background: CARD, border: `1px solid ${REDBD}`,
+                          gap: 12,
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                            <div style={{
+                              width: 28, height: 28, borderRadius: '50%',
+                              background: REDBG, border: `1px solid ${REDBD}`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0,
+                              fontSize: 11, fontWeight: 800, color: RED, fontFamily: FM,
+                            }}>
+                              {c.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{
+                                fontSize: 13.5, fontWeight: 600, color: TX,
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                              }}>
+                                {c.name}
+                              </div>
+                              <div style={{ fontSize: 12, color: RED, marginTop: 1 }}>
+                                {delta} point{delta !== 1 ? 's' : ''} below threshold
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                            <div style={{
+                              fontFamily: FM, fontSize: 20, fontWeight: 800, color: RED, lineHeight: 1,
+                            }}>
+                              {c.score}
+                            </div>
+                            {c.assessmentId && (
+                              <button
+                                onClick={() => router.push(`/assessment/${c.assessmentId}/candidate/${c.id}`)}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                                  padding: '5px 10px', borderRadius: 6,
+                                  border: `1px solid ${BD}`, background: CARD,
+                                  color: TX2, fontSize: 12, fontWeight: 600,
+                                  cursor: 'pointer', fontFamily: F,
+                                }}
+                              >
+                                View report
+                                <Ic name="right" size={11} color={TX3} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 12, fontWeight: 700, color: GRN, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Passing — scored {val} or above
+              </div>
+              {passing.length === 0 ? (
+                <div style={{ fontSize: 13, color: TX3 }}>No candidates passing yet.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {passing
+                    .slice()
+                    .sort((a, b) => b.score - a.score)
+                    .map(c => (
+                      <div key={c.id} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '10px 14px', borderRadius: 8,
+                        background: CARD, border: `1px solid ${GRNBD}`,
+                        gap: 12,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                          <div style={{
+                            width: 28, height: 28, borderRadius: '50%',
+                            background: GRNBG, border: `1px solid ${GRNBD}`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0,
+                            fontSize: 11, fontWeight: 800, color: GRN, fontFamily: FM,
+                          }}>
+                            {c.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                          </div>
+                          <div style={{
+                            fontSize: 13.5, fontWeight: 600, color: TX,
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          }}>
+                            {c.name}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                          <div style={{
+                            fontFamily: FM, fontSize: 20, fontWeight: 800, color: GRN, lineHeight: 1,
+                          }}>
+                            {c.score}
+                          </div>
+                          {c.assessmentId && (
+                            <button
+                              onClick={() => router.push(`/assessment/${c.assessmentId}/candidate/${c.id}`)}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 5,
+                                padding: '5px 10px', borderRadius: 6,
+                                border: `1px solid ${BD}`, background: CARD,
+                                color: TX2, fontSize: 12, fontWeight: 600,
+                                cursor: 'pointer', fontFamily: F,
+                              }}
+                            >
+                              View report
+                              <Ic name="right" size={11} color={TX3} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
@@ -238,7 +354,7 @@ export default function BenchmarksPage() {
   const [saving, setSaving] = useState(false)
   const [profile, setProfile] = useState(null)
   const [thresholds, setThresholds] = useState({})
-  const [candidateScoreMap, setCandidateScoreMap] = useState({})
+  const [candidateDataMap, setCandidateDataMap] = useState({})
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
 
@@ -267,24 +383,35 @@ export default function BenchmarksPage() {
         }
         setThresholds(initial)
 
-        // Load completed candidate skill scores for live pass/fail preview
+        // Load completed candidate skill scores with candidate info for expandable lists
         const { data: results } = await supabase
           .from('results')
-          .select('scores, candidates!inner(user_id)')
+          .select('scores, candidates!inner(id, name, user_id, assessments(id))')
           .eq('candidates.user_id', user.id)
 
-        const scoreMap = {}
-        for (const skill of DEFAULT_SKILLS) scoreMap[skill] = []
+        const dataMap = {}
+        for (const skill of DEFAULT_SKILLS) dataMap[skill] = []
+
         if (results) {
           for (const r of results) {
             const scores = r.scores || {}
-            for (const [skill, score] of Object.entries(scores)) {
-              if (!scoreMap[skill]) scoreMap[skill] = []
-              scoreMap[skill].push(typeof score === 'number' ? score : score?.score ?? 0)
+            const cand = r.candidates
+            if (!cand) continue
+            const assessmentId = cand.assessments?.id ?? null
+
+            for (const [skill, scoreVal] of Object.entries(scores)) {
+              if (!dataMap[skill]) dataMap[skill] = []
+              const numScore = typeof scoreVal === 'number' ? scoreVal : scoreVal?.score ?? 0
+              dataMap[skill].push({
+                name: cand.name,
+                id: cand.id,
+                assessmentId,
+                score: numScore,
+              })
             }
           }
         }
-        setCandidateScoreMap(scoreMap)
+        setCandidateDataMap(dataMap)
       } catch (err) {
         setError(err.message)
       } finally {
@@ -328,7 +455,7 @@ export default function BenchmarksPage() {
   if (loading) return <LoadingSpinner />
 
   const setCount = DEFAULT_SKILLS.filter(s => thresholds[s] !== null && thresholds[s] !== undefined).length
-  const totalCandidates = Math.max(...DEFAULT_SKILLS.map(s => (candidateScoreMap[s] || []).length), 0)
+  const totalCandidates = Math.max(...DEFAULT_SKILLS.map(s => (candidateDataMap[s] || []).length), 0)
 
   return (
     <div style={{ display: 'flex', fontFamily: F }}>
@@ -411,8 +538,8 @@ export default function BenchmarksPage() {
         }}>
           {[
             { icon: 'sliders', title: 'Set a threshold', desc: 'Drag the slider or type a score from 0–100 for any skill.' },
-            { icon: 'alert', title: 'Candidates are flagged', desc: 'Any candidate scoring below the threshold is highlighted in red on their report.' },
-            { icon: 'check', title: 'Thresholds are global', desc: 'Benchmarks apply across all your assessments, not per role.' },
+            { icon: 'alert',   title: 'Candidates are flagged', desc: 'Any candidate scoring below the threshold is highlighted in red on their report.' },
+            { icon: 'check',   title: 'Thresholds are global', desc: 'Benchmarks apply across all your assessments, not per role.' },
           ].map(({ icon, title, desc }) => (
             <div key={title} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flex: '1 1 200px' }}>
               <div style={{
@@ -437,7 +564,8 @@ export default function BenchmarksPage() {
               skill={skill}
               threshold={thresholds[skill] ?? null}
               onChange={val => handleChange(skill, val)}
-              candidateScores={candidateScoreMap[skill] || []}
+              candidateData={candidateDataMap[skill] || []}
+              router={router}
             />
           ))}
         </div>
