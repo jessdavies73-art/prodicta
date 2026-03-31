@@ -34,7 +34,7 @@ const SectionHeading = ({ children }) => (
     fontSize: 16,
     fontWeight: 800,
     color: TX,
-    margin: '0 0 14px',
+    margin: '0 0 16px',
     letterSpacing: '-0.2px',
   }}>
     {children}
@@ -55,6 +55,46 @@ const Badge = ({ label, bg, color, border }) => (
   }}>
     {label}
   </span>
+)
+
+const EvidenceBox = ({ children, icon = 'quote', color = TX2, bg = '#f8fafc', border = BD }) => (
+  <div style={{
+    background: bg,
+    border: `1px solid ${border}`,
+    borderLeft: `3px solid ${color === TX2 ? TEAL : color}`,
+    borderRadius: '0 8px 8px 0',
+    padding: '10px 14px',
+    marginTop: 8,
+  }}>
+    <p style={{
+      fontFamily: F,
+      fontSize: 12.5,
+      color: TX2,
+      margin: 0,
+      lineHeight: 1.65,
+      fontStyle: 'italic',
+    }}>
+      {children}
+    </p>
+  </div>
+)
+
+const ActionBox = ({ children }) => (
+  <div style={{
+    background: TEALLT,
+    border: `1px solid ${TEAL}55`,
+    borderRadius: 8,
+    padding: '10px 14px',
+    marginTop: 10,
+    display: 'flex',
+    gap: 8,
+    alignItems: 'flex-start',
+  }}>
+    <Ic name="zap" size={13} color={TEALD} />
+    <p style={{ fontFamily: F, fontSize: 12.5, color: TEALD, margin: 0, lineHeight: 1.55 }}>
+      <strong>Recommended action:</strong> {children}
+    </p>
+  </div>
 )
 
 /* ── loading skeleton ──────────────────────────────────── */
@@ -105,6 +145,13 @@ function PendingState({ candidate }) {
       </p>
     </Card>
   )
+}
+
+/* ── severity helpers ──────────────────────────────────── */
+function sevStyle(severity) {
+  if (severity === 'High') return { bg: REDBG, color: RED, border: REDBD }
+  if (severity === 'Medium') return { bg: AMBBG, color: AMB, border: AMBBD }
+  return { bg: '#f1f5f9', color: TX3, border: BD }
 }
 
 /* ── main page ─────────────────────────────────────────── */
@@ -214,7 +261,7 @@ export default function CandidateReportPage({ params }) {
                       {candidate.name || 'Unknown Candidate'}
                     </h2>
                     {candidate.email && (
-                      <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 4px' }}>
+                      <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 6px' }}>
                         {candidate.email}
                       </p>
                     )}
@@ -236,31 +283,32 @@ export default function CandidateReportPage({ params }) {
                   </div>
                 </div>
 
-                {/* Percentile + score + export */}
+                {/* Score + percentile + export */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexShrink: 0, flexWrap: 'wrap' }}>
-                  {results?.percentile != null && (
-                    <div style={{
-                      background: TEALLT,
-                      border: `1px solid ${TEAL}55`,
-                      borderRadius: 10,
-                      padding: '8px 14px',
-                      textAlign: 'center',
-                    }}>
-                      <div style={{ fontFamily: FM, fontSize: 20, fontWeight: 700, color: TEALD }}>
-                        {results.percentile}<span style={{ fontSize: 13 }}>th</span>
-                      </div>
-                      <div style={{ fontFamily: F, fontSize: 11, color: TEALD, fontWeight: 600 }}>percentile</div>
-                    </div>
-                  )}
-
                   {results && (
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontFamily: FM, fontSize: 48, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>
+                      <div style={{ fontFamily: FM, fontSize: 52, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>
                         {score}
                       </div>
-                      <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: scolor(score), marginTop: 4 }}>
+                      <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: scolor(score), marginTop: 3 }}>
                         {slabel(score)}
                       </div>
+                      {results.percentile && (
+                        <div style={{
+                          marginTop: 6,
+                          fontFamily: F,
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          color: TEALD,
+                          background: TEALLT,
+                          border: `1px solid ${TEAL}55`,
+                          borderRadius: 20,
+                          padding: '3px 10px',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {results.percentile} of candidates
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -301,11 +349,11 @@ export default function CandidateReportPage({ params }) {
                 }}>
                   {/* Pass prediction */}
                   <Card style={{ textAlign: 'center' }}>
-                    <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 700, color: scolor(score), lineHeight: 1, marginBottom: 6 }}>
-                      {passPct(score)}%
-                    </div>
-                    <div style={{ fontFamily: F, fontSize: 12, color: TX2, fontWeight: 600, marginBottom: 10 }}>
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
                       Predicted probation success
+                    </div>
+                    <div style={{ fontFamily: FM, fontSize: 40, fontWeight: 700, color: scolor(score), lineHeight: 1, marginBottom: 8 }}>
+                      {passPct(score)}%
                     </div>
                     <div style={{
                       height: 6,
@@ -321,78 +369,80 @@ export default function CandidateReportPage({ params }) {
                         transition: 'width 0.6s ease',
                       }} />
                     </div>
+                    <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, marginTop: 8 }}>
+                      chance of passing probation
+                    </div>
                   </Card>
 
                   {/* Hiring decision */}
                   <Card style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{
-                      fontFamily: F,
-                      fontSize: 20,
-                      fontWeight: 800,
-                      color: dC(score),
-                      marginBottom: 6,
-                    }}>
-                      {dL(score)}
-                    </div>
-                    <div style={{ fontFamily: F, fontSize: 12, color: TX3, fontWeight: 500 }}>
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
                       Hiring decision
                     </div>
                     <div style={{
-                      marginTop: 10,
-                      width: 40,
-                      height: 40,
+                      width: 44,
+                      height: 44,
                       borderRadius: '50%',
                       background: sbg(score),
                       border: `1px solid ${sbd(score)}`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      marginBottom: 10,
                     }}>
-                      <Ic name="award" size={20} color={scolor(score)} />
+                      <Ic name="award" size={22} color={scolor(score)} />
+                    </div>
+                    <div style={{
+                      fontFamily: F,
+                      fontSize: 16,
+                      fontWeight: 800,
+                      color: dC(score),
+                      lineHeight: 1.2,
+                      textAlign: 'center',
+                    }}>
+                      {dL(score)}
                     </div>
                   </Card>
 
                   {/* Risk level */}
                   <Card>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+                      Risk level
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                       <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        padding: '3px 11px',
+                        padding: '4px 14px',
                         borderRadius: 50,
-                        fontSize: 11,
-                        fontWeight: 700,
+                        fontSize: 13,
+                        fontWeight: 800,
                         background: riskBg(results.risk_level),
                         color: riskCol(results.risk_level),
                         border: `1px solid ${riskBd(results.risk_level)}`,
                       }}>
                         {results.risk_level || 'Unknown'}
                       </span>
-                      <span style={{ fontFamily: F, fontSize: 12, color: TX3 }}>risk</span>
                     </div>
                     {results.risk_reason && (
-                      <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>
+                      <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.6 }}>
                         {results.risk_reason}
                       </p>
                     )}
                   </Card>
                 </div>
 
-                {/* ── 4. AI Assessment Summary ── */}
+                {/* ── 4. AI Hiring Summary ── */}
                 {results.ai_summary && (
-                  <Card style={{
-                    marginBottom: 20,
-                    borderLeft: `4px solid ${TEAL}`,
-                    paddingLeft: 22,
-                  }}>
-                    <SectionHeading>AI Assessment Summary</SectionHeading>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <Card style={{ marginBottom: 20, borderLeft: `4px solid ${TEAL}` }}>
+                    <SectionHeading>AI Hiring Summary</SectionHeading>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       {results.ai_summary.split('\n\n').filter(Boolean).map((para, i) => (
                         <p key={i} style={{
                           fontFamily: F,
                           fontSize: 14,
                           color: TX2,
-                          lineHeight: 1.7,
+                          lineHeight: 1.75,
                           margin: 0,
                         }}>
                           {para}
@@ -402,7 +452,7 @@ export default function CandidateReportPage({ params }) {
                   </Card>
                 )}
 
-                {/* ── 5. Skills breakdown ── */}
+                {/* ── 5. Skills Breakdown ── */}
                 {results.scores && Object.keys(results.scores).length > 0 && (
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading>Skills Breakdown</SectionHeading>
@@ -411,9 +461,8 @@ export default function CandidateReportPage({ params }) {
                       gridTemplateColumns: 'repeat(2, 1fr)',
                       gap: 16,
                     }}>
-                      {Object.entries(results.scores).map(([skill, data]) => {
-                        const skillScore = typeof data === 'object' ? (data.score ?? data) : data
-                        const narrative = typeof data === 'object' ? data.score_narrative : null
+                      {Object.entries(results.scores).map(([skill, skillScore]) => {
+                        const narrative = results.score_narratives?.[skill]
                         const bmKey = skill.toLowerCase()
                         const bmThreshold = bmMap[bmKey]
                         const belowBenchmark = bmThreshold != null && skillScore < bmThreshold
@@ -431,7 +480,7 @@ export default function CandidateReportPage({ params }) {
                                 {skill}
                               </span>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 700, color: scolor(skillScore) }}>
+                                <span style={{ fontFamily: FM, fontSize: 20, fontWeight: 700, color: scolor(skillScore) }}>
                                   {skillScore}
                                 </span>
                                 <Badge
@@ -449,7 +498,7 @@ export default function CandidateReportPage({ params }) {
                               borderRadius: 99,
                               background: BD,
                               overflow: 'hidden',
-                              marginBottom: narrative || belowBenchmark ? 10 : 0,
+                              marginBottom: 10,
                             }}>
                               <div style={{
                                 height: '100%',
@@ -470,7 +519,7 @@ export default function CandidateReportPage({ params }) {
                                 border: `1px solid ${REDBD}`,
                                 borderRadius: 6,
                                 padding: '3px 9px',
-                                marginBottom: narrative ? 8 : 0,
+                                marginBottom: 8,
                               }}>
                                 <Ic name="alert" size={12} color={RED} />
                                 <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: RED }}>
@@ -481,7 +530,7 @@ export default function CandidateReportPage({ params }) {
 
                             {/* Narrative */}
                             {narrative && (
-                              <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.6 }}>
+                              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.65 }}>
                                 {narrative}
                               </p>
                             )}
@@ -505,20 +554,18 @@ export default function CandidateReportPage({ params }) {
                             background: GRNBG,
                             border: `1px solid ${GRNBD}`,
                             borderRadius: 10,
-                            padding: '13px 16px',
+                            padding: '14px 16px',
                           }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                              <div style={{ marginTop: 1, flexShrink: 0 }}>
+                              <div style={{ marginTop: 2, flexShrink: 0 }}>
                                 <Ic name="check" size={16} color={GRN} />
                               </div>
-                              <div>
-                                <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '0 0 4px' }}>
+                              <div style={{ flex: 1 }}>
+                                <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: 0 }}>
                                   {title}
                                 </p>
                                 {evidence && (
-                                  <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, fontStyle: 'italic', lineHeight: 1.6 }}>
-                                    {evidence}
-                                  </p>
+                                  <EvidenceBox>{evidence}</EvidenceBox>
                                 )}
                               </div>
                             </div>
@@ -539,10 +586,7 @@ export default function CandidateReportPage({ params }) {
                         const severity = typeof w === 'object' ? w.severity : null
                         const evidence = typeof w === 'object' ? w.evidence : null
                         const action = typeof w === 'object' ? w.action : null
-
-                        const sevBg = severity === 'High' ? REDBG : severity === 'Medium' ? AMBBG : '#f1f5f9'
-                        const sevCol = severity === 'High' ? RED : severity === 'Medium' ? AMB : TX3
-                        const sevBd = severity === 'High' ? REDBD : severity === 'Medium' ? AMBBD : BD
+                        const sev = sevStyle(severity)
 
                         return (
                           <div key={i} style={{
@@ -553,32 +597,17 @@ export default function CandidateReportPage({ params }) {
                           }}>
                             {severity && (
                               <div style={{ marginBottom: 8 }}>
-                                <Badge label={severity} bg={sevBg} color={sevCol} border={sevBd} />
+                                <Badge label={`${severity} severity`} bg={sev.bg} color={sev.color} border={sev.border} />
                               </div>
                             )}
-                            <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '0 0 4px' }}>
+                            <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: 0 }}>
                               {title}
                             </p>
                             {evidence && (
-                              <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '0 0 10px', lineHeight: 1.6 }}>
-                                {evidence}
-                              </p>
+                              <EvidenceBox>{evidence}</EvidenceBox>
                             )}
                             {action && (
-                              <div style={{
-                                background: TEALLT,
-                                border: `1px solid ${TEAL}55`,
-                                borderRadius: 7,
-                                padding: '9px 12px',
-                                display: 'flex',
-                                gap: 8,
-                                alignItems: 'flex-start',
-                              }}>
-                                <Ic name="zap" size={13} color={TEALD} />
-                                <p style={{ fontFamily: F, fontSize: 12.5, color: TEALD, margin: 0, lineHeight: 1.55 }}>
-                                  <strong>Recommended action:</strong> {action}
-                                </p>
-                              </div>
+                              <ActionBox>{action}</ActionBox>
                             )}
                           </div>
                         )
@@ -590,17 +619,57 @@ export default function CandidateReportPage({ params }) {
                 {/* ── 8. Onboarding Plan ── */}
                 {results.onboarding_plan?.length > 0 && (
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading>Onboarding Plan</SectionHeading>
-                    <ol style={{ margin: 0, padding: '0 0 0 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <SectionHeading>Personalised Onboarding Plan</SectionHeading>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                       {results.onboarding_plan.map((item, i) => {
                         const text = typeof item === 'object' ? (item.text || item.title || JSON.stringify(item)) : item
+                        // Extract week label from start of string
+                        const match = text.match(/^(Week\s[\d–]+|Ongoing|Weeks\s[\d–]+):/i)
+                        const weekLabel = match ? match[1] : null
+                        const body = weekLabel ? text.slice(match[0].length).trim() : text
+                        const isLast = i === results.onboarding_plan.length - 1
+
                         return (
-                          <li key={i} style={{ fontFamily: F, fontSize: 13.5, color: TX2, lineHeight: 1.6 }}>
-                            {text}
-                          </li>
+                          <div key={i} style={{ display: 'flex', gap: 0 }}>
+                            {/* Timeline column */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 32, flexShrink: 0 }}>
+                              <div style={{
+                                width: 12,
+                                height: 12,
+                                borderRadius: '50%',
+                                background: TEAL,
+                                border: `2px solid ${TEALLT}`,
+                                flexShrink: 0,
+                                marginTop: 4,
+                              }} />
+                              {!isLast && (
+                                <div style={{ width: 2, flex: 1, background: `${TEAL}30`, minHeight: 24 }} />
+                              )}
+                            </div>
+                            {/* Content */}
+                            <div style={{ paddingBottom: isLast ? 0 : 20, paddingLeft: 12, flex: 1 }}>
+                              {weekLabel && (
+                                <span style={{
+                                  fontFamily: F,
+                                  fontSize: 11,
+                                  fontWeight: 800,
+                                  color: TEALD,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.06em',
+                                  display: 'block',
+                                  marginBottom: 3,
+                                }}>
+                                  {weekLabel}
+                                </span>
+                              )}
+                              <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.65 }}>
+                                {body}
+                              </p>
+                            </div>
+                          </div>
                         )
                       })}
-                    </ol>
+                    </div>
                   </Card>
                 )}
 
@@ -608,24 +677,66 @@ export default function CandidateReportPage({ params }) {
                 {results.interview_questions?.length > 0 && (
                   <Card style={{ marginBottom: 40 }}>
                     <SectionHeading>Suggested Interview Questions</SectionHeading>
-                    <ol style={{ margin: 0, padding: '0 0 0 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 18px', lineHeight: 1.5 }}>
+                      These questions are designed to probe the specific gaps identified in this assessment. Each includes a follow-up probe to test whether the candidate's answer is genuine.
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {results.interview_questions.map((q, i) => {
                         const text = typeof q === 'object' ? (q.question || q.text || JSON.stringify(q)) : q
+                        // Split main question from follow-up
+                        const followUpMatch = text.match(/\[Follow-up:\s*(.*?)\]$/i)
+                        const followUp = followUpMatch ? followUpMatch[1] : null
+                        const mainQ = followUpMatch ? text.slice(0, followUpMatch.index).trim() : text
+
                         return (
-                          <li key={i} style={{
-                            fontFamily: F,
-                            fontSize: 13.5,
-                            color: TX,
-                            lineHeight: 1.65,
-                            paddingBottom: i < results.interview_questions.length - 1 ? 10 : 0,
-                            borderBottom: i < results.interview_questions.length - 1 ? `1px solid ${BD}` : 'none',
-                            listStyle: 'decimal',
+                          <div key={i} style={{
+                            background: BG,
+                            border: `1px solid ${BD}`,
+                            borderRadius: 10,
+                            padding: '16px 18px',
                           }}>
-                            {text}
-                          </li>
+                            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                              <div style={{
+                                width: 26,
+                                height: 26,
+                                borderRadius: '50%',
+                                background: TEALLT,
+                                border: `1px solid ${TEAL}55`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontFamily: FM,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: TEALD,
+                                flexShrink: 0,
+                                marginTop: 1,
+                              }}>
+                                {i + 1}
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX, margin: 0, lineHeight: 1.6 }}>
+                                  {mainQ}
+                                </p>
+                                {followUp && (
+                                  <div style={{
+                                    marginTop: 10,
+                                    background: AMBBG,
+                                    border: `1px solid ${AMBBD}`,
+                                    borderRadius: 7,
+                                    padding: '8px 12px',
+                                  }}>
+                                    <p style={{ fontFamily: F, fontSize: 12.5, color: AMB, margin: 0, lineHeight: 1.55 }}>
+                                      <strong>Follow-up:</strong> {followUp}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         )
                       })}
-                    </ol>
+                    </div>
                   </Card>
                 )}
               </>

@@ -14,9 +14,9 @@ export async function POST(request) {
     // Call Claude API
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-    const prompt = `You are a specialist assessment designer for UK businesses. Your job is to create work simulation scenarios that feel indistinguishable from real situations the candidate would face in their first 90 days.
+    const prompt = `You are a specialist assessment designer for UK businesses. Your job is to create four work simulation scenarios that are indistinguishable from real situations this specific candidate would face in their first 90 days.
 
-These are NOT personality tests or hypothetical exercises. They are realistic work simulations. Every detail — the names, the numbers, the politics, the stakes — must feel like it came from inside the actual company hiring for this role.
+These are NOT hypothetical exercises or personality tests. They are realistic work simulations grounded entirely in the job description provided. Every scenario must feel like it was pulled from a real working day at a real UK company hiring for this exact role.
 
 ---
 
@@ -27,53 +27,45 @@ ${job_description}
 
 ---
 
-STEP 1 — EXTRACT ROLE INTELLIGENCE
+STEP 1 — EXTRACT ROLE INTELLIGENCE (do this before writing scenarios)
 
-Before writing scenarios, extract from the job description:
-- What does success look like in the first 90 days?
-- Who are the key stakeholders this person will work with?
-- What are the most common high-pressure situations in this type of role?
-- What tools, systems, or processes are likely in use?
-- What commercial pressures or KPIs will this person be measured on?
-- What is the likely team size and seniority level?
+Read the job description carefully and extract:
+- The specific responsibilities this person will own in weeks 1–12
+- The key stakeholders they will work with (internal and external)
+- The tools, systems, or processes likely used in this role
+- The commercial pressures, targets, or KPIs they will be measured against
+- The likely team size, seniority level, and reporting structure
+- The most common high-pressure situations someone in this role would encounter
+- Any specific industry, sector, or regulatory context that shapes the role
 
-Use these extracted facts to make scenarios feel specific and grounded.
+Use these facts to make every scenario feel specific and grounded. Do not write generic scenarios that could apply to any role.
 
 ---
 
 STEP 2 — WRITE 4 SCENARIOS
 
-Write exactly 4 scenarios using the structure below. Each must feel like it was pulled from a real Monday morning in the first 90 days of this specific job.
+Each scenario must:
+- Use realistic UK company names, UK colleague names (mix of genders and cultural backgrounds), and monetary figures appropriate for the industry and role seniority
+- Include specific numbers: budgets, percentages, deadlines, team sizes, deal values, headcounts — all plausible for this exact role
+- Be written in present tense as if it is already happening — never use "imagine", "suppose", or "pretend"
+- Include an ongoing situation the candidate has walked into — with history, politics, and competing pressures already in play
+- Have genuine ambiguity — no single obvious "right answer"
+- Have a context section of at least 150 words with named characters and specific details
+- Have a task that demands a real work product (an actual email, a specific ranked plan, a concrete decision with rationale) — not a reflection or opinion
 
-SCENARIO RULES (apply to all 4):
-- Use realistic UK business names, colleague names, and monetary figures appropriate to the industry
-- Build in genuine ambiguity — there must be no single obvious "right answer"
-- Include competing pressures, incomplete information, or difficult relationships
-- The context must describe an ongoing situation the candidate has walked into, not a clean hypothetical
-- Never use phrases like "imagine you are" or "suppose that" — write as if it is already happening
-- Every number (budget, deadline, team size, deal value) must be specific and plausible for this role
-- The task must demand an actual work product (a real email, a reasoned plan, a specific decision) — not a reflection or opinion
-- Do NOT explain what the "right" approach is or hint at the desired answer
+---
 
-SCENARIO 1 — Written Communication Under Pressure
-The candidate must write an actual email, message, or written response to a real stakeholder situation. The situation should involve competing interests, some emotional charge, and a time constraint. The context must include the message or thread they are responding to.
-Type: "Email Response"
-Time: 10–14 minutes
+SCENARIO 1 — Written Communication Under Pressure (Type: "Email Response", Time: 12 minutes)
+The candidate must write an actual email to a real stakeholder situation specific to this role. Include the full email or message thread they are responding to, with realistic names and specifics. The situation must involve competing interests, some emotional or political charge, and a consequence if handled badly. The email thread must be at least 80 words of realistic dialogue.
 
-SCENARIO 2 — Triage and Prioritisation
-The candidate arrives to find 5–7 competing demands on their time, each with legitimate urgency from different stakeholders. At least one item should be a potential legal, compliance, or reputational risk. At least one item should feel urgent but actually be deferrable. The candidate must rank, delegate, and explain their reasoning — not just list the order.
-Type: "Prioritisation"
-Time: 8–12 minutes
+SCENARIO 2 — Triage and Prioritisation (Type: "Prioritisation", Time: 10 minutes)
+The candidate arrives on a Monday morning to find 6 competing urgent demands, each from a named stakeholder with a legitimate reason for urgency. At least one item must carry a legal, compliance, or reputational risk specific to this industry. At least one item must feel urgent but be genuinely deferrable. The candidate must rank all 6, delegate where appropriate, and explain their reasoning — not just list the order.
 
-SCENARIO 3 — Judgment Call in a Difficult Situation
-The candidate faces a situation with no clean resolution — a difficult person, a broken process, an ethical grey area, or a decision that requires them to act without full information or authority. The situation should involve some interpersonal or political complexity. They must decide what to do and how to handle it.
-Type: "Judgment Call"
-Time: 10–14 minutes
+SCENARIO 3 — Judgment Call in a Difficult Situation (Type: "Judgment Call", Time: 12 minutes)
+The candidate faces a situation with no clean resolution specific to this role and industry. It must involve a named colleague, client, or stakeholder behaving in a way that creates a real dilemma. Include interpersonal or political complexity — a broken process, an ethical grey area, or a decision that requires acting without full information or authority. They must state what they would do, how they would handle the person involved, and what they would not do.
 
-SCENARIO 4 — Commercial or Strategic Diagnosis
-The candidate is given real data showing something is going wrong (churn rising, performance dropping, a deal at risk, a project off-track). They must diagnose the root cause from the available evidence, propose specific interventions with reasoning, and outline how they would measure whether it is working. The data must be specific enough to require analysis, not just intuition.
-Type: "Strategic Thinking"
-Time: 12–16 minutes
+SCENARIO 4 — Commercial or Strategic Diagnosis (Type: "Strategic Thinking", Time: 14 minutes)
+The candidate is shown specific data that reveals something is going wrong — declining performance, a deal at risk, a process failing, a team issue. The data must be precise enough to require genuine analysis (percentages, timelines, named accounts or team members). They must identify the most likely root cause from the evidence, propose 2–3 specific interventions with reasoning, and explain how they would measure success within 30 days.
 
 ---
 
@@ -85,25 +77,24 @@ Return ONLY a JSON array with exactly 4 objects. No preamble, no explanation, no
   {
     "type": "Email Response",
     "title": "Concise title describing the situation (not the task)",
-    "context": "The full situation. Written in present tense as if it is happening now. Include all relevant background: who the stakeholders are, what has already happened, what the pressure is, and any relevant history or politics. Include the actual message or thread the candidate needs to respond to. Minimum 200 words. Must feel like a real situation at a real company.",
-    "task": "Exactly what the candidate must produce. One specific deliverable. No ambiguity about the format — tell them precisely what to write, decide, or plan. Do not hint at the right approach.",
+    "context": "The full situation in present tense. Must be at least 150 words. Include named characters, specific numbers, and the full email thread or message the candidate must respond to. Must feel like a real Monday morning at a real UK company.",
+    "task": "Exactly what the candidate must produce. One specific deliverable. Tell them the format, the recipient, and any constraints. Do not hint at the right approach.",
     "timeMinutes": 12,
     "skills": ["Communication", "Negotiation"]
   }
 ]
 
-Skills must be chosen from: Communication, Problem solving, Prioritisation, Leadership, Negotiation, Client management, Judgment, Strategy, Analysis, Crisis management, People management, Technical communication, Stakeholder management, Conflict resolution
+Skills must be chosen only from: Communication, Problem solving, Prioritisation, Leadership, Negotiation, Client management, Judgment, Strategy, Analysis, Crisis management, People management, Technical communication, Stakeholder management, Conflict resolution
 
-Use UK English throughout. No Americanisms.`
+Write in UK English throughout. No Americanisms. No generic scenarios.`
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5-20251001',
       max_tokens: 4096,
       messages: [{ role: 'user', content: prompt }]
     })
 
     const content = message.content[0].text.trim()
-    // Strip markdown code blocks if present
     const jsonStr = content.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()
     const scenarios = JSON.parse(jsonStr)
 
