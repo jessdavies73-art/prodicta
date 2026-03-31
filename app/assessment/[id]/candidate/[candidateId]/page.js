@@ -161,6 +161,7 @@ export default function CandidateReportPage({ params }) {
   const [candidate, setCandidate] = useState(null)
   const [results, setResults] = useState(null)
   const [benchmarks, setBenchmarks] = useState([])
+  const [responses, setResponses] = useState([])
   const [user, setUser] = useState(null)
   const [error, setError] = useState(null)
 
@@ -172,7 +173,7 @@ export default function CandidateReportPage({ params }) {
         if (!u) { router.push('/login'); return }
         setUser(u)
 
-        const [{ data: cand, error: cErr }, { data: res, error: rErr }, { data: bm }] = await Promise.all([
+        const [{ data: cand, error: cErr }, { data: res }, { data: bm }, { data: resps }] = await Promise.all([
           supabase
             .from('candidates')
             .select('*, assessments(role_title, job_description, skill_weights)')
@@ -182,17 +183,23 @@ export default function CandidateReportPage({ params }) {
             .from('results')
             .select('*')
             .eq('candidate_id', params.candidateId)
-            .single(),
+            .maybeSingle(),
           supabase
             .from('benchmarks')
             .select('*')
             .eq('user_id', u.id),
+          supabase
+            .from('responses')
+            .select('scenario_index, time_taken_seconds')
+            .eq('candidate_id', params.candidateId)
+            .order('scenario_index'),
         ])
 
         if (cErr) throw cErr
         setCandidate(cand)
         setResults(res || null)
         setBenchmarks(bm || [])
+        setResponses(resps || [])
       } catch (e) {
         setError(e.message)
       } finally {
@@ -439,7 +446,183 @@ export default function CandidateReportPage({ params }) {
                   </Card>
                 </div>
 
-                {/* ── 4. AI Hiring Summary ── */}
+                {/* ── 4. Response Integrity ── */}
+                {(() => {
+                  const integrity = results.integrity || {}
+                  const rq = integrity.response_quality
+                  const hasIntegrity = !!rq
+
+                  // Colour scheme per quality rating
+                  const qColor = !rq ? TX3
+                    : rq === 'Genuine'              ? GRN
+                    : rq === 'Likely Genuine'        ? TEALD
+                    : rq === 'Possibly AI-Assisted'  ? AMB
+                    : RED
+                  const qBg = !rq ? BG
+                    : rq === 'Genuine'              ? GRNBG
+                    : rq === 'Likely Genuine'        ? TEALLT
+                    : rq === 'Possibly AI-Assisted'  ? AMBBG
+                    : REDBG
+                  const qBd = !rq ? BD
+                    : rq === 'Genuine'              ? GRNBD
+                    : rq === 'Likely Genuine'        ? `${TEAL}55`
+                    : rq === 'Possibly AI-Assisted'  ? '#fde68a'
+                    : '#fecaca'
+                  const qIcon = !rq ? 'eye'
+                    : rq === 'Genuine'              ? 'check'
+                    : rq === 'Likely Genuine'        ? 'check'
+                    : rq === 'Possibly AI-Assisted'  ? 'alert'
+                    : 'alert'
+
+                  // Format per-scenario timing from raw response data
+                  function fmtTime(s) {
+                    if (!s) return '—'
+                    const m = Math.floor(s / 60)
+                    const sec = s % 60
+                    return m > 0 ? `${m}m ${sec}s` : `${sec}s`
+                  }
+                  function timingLabel(s) {
+                    if (!s) return { label: 'No data', color: TX3, bg: BG, bd: BD }
+                    if (s < 90)   return { label: 'Rushed', color: RED, bg: REDBG, bd: '#fecaca' }
+                    if (s < 180)  return { label: 'Fast',   color: AMB, bg: AMBBG, bd: '#fde68a' }
+                    if (s > 1200) return { label: 'Extended', color: TEALD, bg: TEALLT, bd: `${TEAL}55` }
+                    return { label: 'Normal', color: GRN, bg: GRNBG, bd: GRNBD }
+                  }
+
+                  const redFlags = integrity.red_flags || []
+                  const consistencyRating = integrity.consistency_rating
+                  const cColor = !consistencyRating ? TX3
+                    : consistencyRating === 'High'   ? GRN
+                    : consistencyRating === 'Medium' ? AMB
+                    : RED
+
+                  return (
+                    <Card style={{ marginBottom: 20, border: `1px solid ${hasIntegrity ? qBd : BD}` }}>
+                      {/* Header row */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 18, flexWrap: 'wrap' }}>
+                        <div>
+                          <SectionHeading>Response Integrity</SectionHeading>
+                          <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '-8px 0 0' }}>
+                            AI analysis of response authenticity, timing, and consistency across all 4 scenarios.
+                          </p>
+                        </div>
+                        {hasIntegrity ? (
+                          <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 8,
+                            padding: '8px 16px', borderRadius: 10,
+                            background: qBg, border: `1.5px solid ${qBd}`,
+                            flexShrink: 0,
+                          }}>
+                            <Ic name={qIcon} size={16} color={qColor} />
+                            <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: qColor }}>
+                              {rq}
+                            </span>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 12.5, color: TX3, fontStyle: 'italic' }}>
+                            Integrity data available for new assessments
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Per-scenario timing tiles */}
+                      <div style={{ marginBottom: integrity.quality_notes || redFlags.length > 0 || consistencyRating ? 16 : 0 }}>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                          Time per scenario
+                        </div>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                          {[0, 1, 2, 3].map(i => {
+                            const resp = responses.find(r => r.scenario_index === i)
+                            const secs = resp?.time_taken_seconds ?? null
+                            const tl = timingLabel(secs)
+                            return (
+                              <div key={i} style={{
+                                flex: '1 1 100px',
+                                background: tl.bg,
+                                border: `1px solid ${tl.bd}`,
+                                borderRadius: 8, padding: '10px 12px',
+                              }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: TX3, marginBottom: 4 }}>
+                                  Scenario {i + 1}
+                                </div>
+                                <div style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: tl.color, lineHeight: 1, marginBottom: 3 }}>
+                                  {fmtTime(secs)}
+                                </div>
+                                <div style={{
+                                  display: 'inline-block', fontSize: 10.5, fontWeight: 700,
+                                  color: tl.color, background: 'rgba(255,255,255,0.6)',
+                                  borderRadius: 4, padding: '1px 6px',
+                                }}>
+                                  {tl.label}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Quality notes */}
+                      {integrity.quality_notes && (
+                        <div style={{ marginBottom: 12 }}>
+                          <EvidenceBox color={qColor} bg={qBg} border={qBd}>
+                            {integrity.quality_notes}
+                          </EvidenceBox>
+                        </div>
+                      )}
+
+                      {/* Consistency */}
+                      {consistencyRating && (
+                        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 12.5, fontWeight: 700, color: TX2 }}>Response consistency:</span>
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                            fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                            background: cColor === GRN ? GRNBG : cColor === AMB ? AMBBG : REDBG,
+                            color: cColor,
+                            border: `1px solid ${cColor === GRN ? GRNBD : cColor === AMB ? '#fde68a' : '#fecaca'}`,
+                          }}>
+                            {consistencyRating}
+                          </span>
+                          {integrity.consistency_notes && (
+                            <span style={{ fontSize: 12.5, color: TX3 }}>{integrity.consistency_notes}</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Red flags */}
+                      {redFlags.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 11.5, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                            Red flags detected
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {redFlags.map((flag, i) => (
+                              <div key={i} style={{
+                                display: 'flex', gap: 8, alignItems: 'flex-start',
+                                background: REDBG, border: `1px solid #fecaca`,
+                                borderRadius: 8, padding: '9px 12px',
+                              }}>
+                                <Ic name="alert" size={13} color={RED} />
+                                <span style={{ fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.55 }}>
+                                  {typeof flag === 'string' ? flag : JSON.stringify(flag)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* No integrity data yet */}
+                      {!hasIntegrity && responses.length === 0 && (
+                        <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: 0 }}>
+                          Timing data was not recorded for this assessment. Response integrity analysis will appear for new assessments going forward.
+                        </p>
+                      )}
+                    </Card>
+                  )
+                })()}
+
+                {/* ── 5. AI Hiring Summary ── */}
                 {results.ai_summary && (
                   <Card style={{ marginBottom: 20, borderLeft: `4px solid ${TEAL}` }}>
                     <SectionHeading>AI Hiring Summary</SectionHeading>
@@ -459,7 +642,7 @@ export default function CandidateReportPage({ params }) {
                   </Card>
                 )}
 
-                {/* ── 5. Skills Breakdown ── */}
+                {/* ── 6. Skills Breakdown ── */}
                 {results.scores && Object.keys(results.scores).length > 0 && (
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading>Skills Breakdown</SectionHeading>
