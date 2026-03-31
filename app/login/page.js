@@ -395,7 +395,6 @@ export default function LoginPage() {
           {tab === 'signin' && (
             <form onSubmit={handleSignIn} noValidate>
               <h1 style={styles.heading}>Welcome back</h1>
-              <p style={styles.subheading}>Sign in to your Prodicta account.</p>
 
               <div style={styles.fieldGroup}>
                 <Field
@@ -432,7 +431,6 @@ export default function LoginPage() {
           {tab === 'signup' && (
             <form onSubmit={handleSignUp} noValidate>
               <h1 style={styles.heading}>Create your account</h1>
-              <p style={styles.subheading}>Start predicting probation outcomes today.</p>
 
               <div style={styles.fieldGroup}>
                 <Field
