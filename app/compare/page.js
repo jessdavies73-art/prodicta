@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
@@ -8,10 +8,8 @@ import { Ic } from '@/components/Icons'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
-  F, FM, cs, bs, scolor, sbg, sbd, slabel, riskCol, riskBg, riskBd,
+  F, FM, cs, bs, scolor, sbg, sbd, slabel, dL, dC, riskCol, riskBg, riskBd,
 } from '@/lib/constants'
-
-// ── helpers ────────────────────────────────────────────────────────────────
 
 const AMB_GOLD = '#b45309'
 const AMB_GOLD_BG = '#fef3c7'
@@ -60,14 +58,10 @@ function RiskBadge({ risk }) {
   )
 }
 
-// ── Selector dropdown ──────────────────────────────────────────────────────
-
 function CandidateSelector({ candidates, selected, onChange, placeholder, usedIds }) {
   const [open, setOpen] = useState(false)
-
   const selectedCand = candidates.find(c => c.id === selected)
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return
     function handle(e) {
@@ -78,10 +72,7 @@ function CandidateSelector({ candidates, selected, onChange, placeholder, usedId
   }, [open, placeholder])
 
   return (
-    <div
-      data-selector-id={placeholder}
-      style={{ position: 'relative', width: '100%' }}
-    >
+    <div data-selector-id={placeholder} style={{ position: 'relative', width: '100%' }}>
       <button
         onClick={() => setOpen(o => !o)}
         style={{
@@ -132,14 +123,12 @@ function CandidateSelector({ candidates, selected, onChange, placeholder, usedId
           maxHeight: 260,
           overflowY: 'auto',
         }}>
-          {/* Clear option */}
           {selected && (
             <button
               onClick={() => { onChange(null); setOpen(false) }}
               style={{
                 width: '100%',
                 padding: '10px 14px',
-                borderBottom: `1px solid ${BD}`,
                 background: 'transparent',
                 border: 'none',
                 borderBottom: `1px solid ${BD}`,
@@ -183,13 +172,7 @@ function CandidateSelector({ candidates, selected, onChange, placeholder, usedId
               >
                 <Avatar name={c.name} size={26} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {c.name}
                   </div>
                   <div style={{ fontSize: 11.5, color: TX3 }}>
@@ -197,13 +180,7 @@ function CandidateSelector({ candidates, selected, onChange, placeholder, usedId
                   </div>
                 </div>
                 {c.results?.[0]?.overall_score != null && (
-                  <span style={{
-                    fontFamily: FM,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: scoreColour(c.results[0].overall_score),
-                    flexShrink: 0,
-                  }}>
+                  <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: scoreColour(c.results[0].overall_score), flexShrink: 0 }}>
                     {c.results[0].overall_score}
                   </span>
                 )}
@@ -221,8 +198,6 @@ function CandidateSelector({ candidates, selected, onChange, placeholder, usedId
   )
 }
 
-// ── Placeholder column ─────────────────────────────────────────────────────
-
 function PlaceholderColumn({ label }) {
   return (
     <div style={{
@@ -237,6 +212,7 @@ function PlaceholderColumn({ label }) {
       justifyContent: 'center',
       padding: '48px 24px',
       gap: 12,
+      minHeight: 300,
     }}>
       <div style={{
         width: 48,
@@ -255,9 +231,8 @@ function PlaceholderColumn({ label }) {
   )
 }
 
-// ── Candidate column ───────────────────────────────────────────────────────
-
-function CandidateColumn({ candidate, allScores, skillOrder }) {
+function CandidateColumn({ candidate, allScores, skillOrder, assessmentId }) {
+  const router = useRouter()
   const result = candidate.results?.[0]
   const score = result?.overall_score ?? null
   const risk = result?.risk_level ?? null
@@ -265,6 +240,10 @@ function CandidateColumn({ candidate, allScores, skillOrder }) {
   const scores = result?.scores ?? {}
   const strengths = result?.strengths ?? []
   const watchouts = result?.watchouts ?? []
+  const hiringDecision = score !== null ? dL(score) : null
+  const hiringColor = score !== null ? dC(score) : TX3
+
+  const candidateAssessmentId = assessmentId || candidate.assessment_id
 
   return (
     <div style={{
@@ -289,12 +268,7 @@ function CandidateColumn({ candidate, allScores, skillOrder }) {
       }}>
         <Avatar name={candidate.name} size={48} />
         <div style={{ textAlign: 'center' }}>
-          <div style={{
-            fontSize: 15,
-            fontWeight: 800,
-            color: '#fff',
-            marginBottom: 3,
-          }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 3 }}>
             {candidate.name}
           </div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
@@ -304,7 +278,7 @@ function CandidateColumn({ candidate, allScores, skillOrder }) {
       </div>
 
       {/* Body */}
-      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
+      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 18, flex: 1 }}>
 
         {/* Overall score */}
         <div style={{ textAlign: 'center' }}>
@@ -323,106 +297,85 @@ function CandidateColumn({ candidate, allScores, skillOrder }) {
           </div>
         </div>
 
+        {/* Hiring decision */}
+        {hiringDecision && (
+          <div style={{
+            textAlign: 'center',
+            padding: '10px 12px',
+            background: sbg(score),
+            border: `1px solid ${sbd(score)}`,
+            borderRadius: 9,
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: hiringColor, lineHeight: 1.2 }}>
+              {hiringDecision}
+            </div>
+            <div style={{ fontSize: 11, color: TX3, marginTop: 3 }}>Hiring decision</div>
+          </div>
+        )}
+
         {/* Risk + percentile */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, alignItems: 'center' }}>
           <RiskBadge risk={risk} />
           {percentile && (
             <span style={{
-              fontFamily: FM,
-              fontSize: 12.5,
+              fontFamily: F,
+              fontSize: 11.5,
               fontWeight: 600,
-              color: TX2,
-              background: BG,
-              border: `1px solid ${BD}`,
-              borderRadius: 6,
+              color: TEALD,
+              background: TEALLT,
+              border: `1px solid ${TEAL}55`,
+              borderRadius: 20,
               padding: '3px 10px',
+              whiteSpace: 'nowrap',
             }}>
-              {percentile}
+              {percentile} of candidates
             </span>
           )}
         </div>
 
-        {/* Divider */}
         <div style={{ height: 1, background: BD }} />
 
         {/* Skills breakdown */}
         <div>
           <div style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: TX3,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            marginBottom: 12,
+            fontSize: 11, fontWeight: 700, color: TX3,
+            letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12,
           }}>
             Skill scores
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {skillOrder.map(skill => {
               const s = scores[skill] ?? null
-              // Find highest score for this skill across all candidates
               const vals = allScores[skill] ?? []
               const maxVal = vals.length > 0 ? Math.max(...vals.filter(v => v !== null)) : null
               const isTop = s !== null && s === maxVal && vals.filter(v => v === maxVal).length === 1
 
               return (
                 <div key={skill}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: 5,
-                    gap: 6,
-                  }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5, gap: 6 }}>
                     <span style={{
-                      fontSize: 12,
-                      fontWeight: isTop ? 700 : 500,
-                      color: isTop ? TX : TX2,
-                      flex: 1,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
+                      fontSize: 12, fontWeight: isTop ? 700 : 500,
+                      color: isTop ? TX : TX2, flex: 1,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {skill}
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
                       {isTop && (
-                        <svg
-                          width={13}
-                          height={13}
-                          viewBox="0 0 24 24"
-                          fill={AMB_GOLD}
-                          stroke={AMB_GOLD}
-                          strokeWidth={1.5}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          style={{ display: 'block' }}
-                        >
+                        <svg width={13} height={13} viewBox="0 0 24 24" fill={AMB_GOLD} stroke={AMB_GOLD} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
                           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                         </svg>
                       )}
-                      <span style={{
-                        fontFamily: FM,
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: s !== null ? scoreColour(s) : TX3,
-                      }}>
+                      <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: s !== null ? scoreColour(s) : TX3 }}>
                         {s ?? '—'}
                       </span>
                     </div>
                   </div>
-                  <div style={{
-                    height: 6,
-                    borderRadius: 4,
-                    background: BD,
-                    overflow: 'hidden',
-                  }}>
+                  <div style={{ height: 6, borderRadius: 4, background: BD, overflow: 'hidden' }}>
                     <div style={{
                       height: '100%',
                       width: s !== null ? `${s}%` : '0%',
-                      background: s !== null
-                        ? `linear-gradient(90deg, ${scoreColour(s)}88, ${scoreColour(s)})`
-                        : 'transparent',
+                      background: s !== null ? `linear-gradient(90deg, ${scoreColour(s)}88, ${scoreColour(s)})` : 'transparent',
                       borderRadius: 4,
                       transition: 'width 0.4s ease',
                     }} />
@@ -433,26 +386,15 @@ function CandidateColumn({ candidate, allScores, skillOrder }) {
           </div>
         </div>
 
-        {/* Divider */}
         <div style={{ height: 1, background: BD }} />
 
         {/* Strengths + watchouts counts */}
         <div style={{ display: 'flex', gap: 10 }}>
           <div style={{
-            flex: 1,
-            background: GRNBG,
-            border: `1px solid ${GRNBD}`,
-            borderRadius: 9,
-            padding: '10px 12px',
-            textAlign: 'center',
+            flex: 1, background: GRNBG, border: `1px solid ${GRNBD}`,
+            borderRadius: 9, padding: '10px 12px', textAlign: 'center',
           }}>
-            <div style={{
-              fontFamily: FM,
-              fontSize: 22,
-              fontWeight: 800,
-              color: GRN,
-              lineHeight: 1,
-            }}>
+            <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: GRN, lineHeight: 1 }}>
               {strengths.length}
             </div>
             <div style={{ fontSize: 11, color: GRN, marginTop: 4, fontWeight: 600 }}>
@@ -463,17 +405,9 @@ function CandidateColumn({ candidate, allScores, skillOrder }) {
             flex: 1,
             background: watchouts.length > 0 ? REDBG : BG,
             border: `1px solid ${watchouts.length > 0 ? REDBD : BD}`,
-            borderRadius: 9,
-            padding: '10px 12px',
-            textAlign: 'center',
+            borderRadius: 9, padding: '10px 12px', textAlign: 'center',
           }}>
-            <div style={{
-              fontFamily: FM,
-              fontSize: 22,
-              fontWeight: 800,
-              color: watchouts.length > 0 ? RED : TX3,
-              lineHeight: 1,
-            }}>
+            <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: watchouts.length > 0 ? RED : TX3, lineHeight: 1 }}>
               {watchouts.length}
             </div>
             <div style={{ fontSize: 11, color: watchouts.length > 0 ? RED : TX3, marginTop: 4, fontWeight: 600 }}>
@@ -482,6 +416,31 @@ function CandidateColumn({ candidate, allScores, skillOrder }) {
           </div>
         </div>
 
+        {/* View full report */}
+        {candidateAssessmentId && (
+          <button
+            onClick={() => router.push(`/assessment/${candidateAssessmentId}/candidate/${candidate.id}`)}
+            style={{
+              width: '100%',
+              padding: '10px 0',
+              background: TEALLT,
+              border: `1.5px solid ${TEAL}55`,
+              borderRadius: 9,
+              cursor: 'pointer',
+              fontFamily: F,
+              fontSize: 13,
+              fontWeight: 700,
+              color: TEALD,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 7,
+            }}
+          >
+            <Ic name="eye" size={14} color={TEALD} />
+            View full report
+          </button>
+        )}
       </div>
     </div>
   )
@@ -491,9 +450,14 @@ function CandidateColumn({ candidate, allScores, skillOrder }) {
 
 export default function ComparePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const presetAssessmentId = searchParams.get('assessmentId')
+
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState(null)
-  const [candidates, setCandidates] = useState([])
+  const [allCandidates, setAllCandidates] = useState([])
+  const [assessments, setAssessments] = useState([])
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState(presetAssessmentId || '')
   const [selected, setSelected] = useState([null, null, null])
   const [error, setError] = useState(null)
 
@@ -507,14 +471,22 @@ export default function ComparePage() {
         const { data: prof } = await supabase.from('users').select('*').eq('id', user.id).single()
         setProfile({ ...prof, id: user.id })
 
-        const { data: cands, error: candsErr } = await supabase
-          .from('candidates')
-          .select('*, assessments(role_title), results(overall_score, scores, risk_level, percentile, strengths, watchouts)')
-          .eq('user_id', user.id)
-          .eq('status', 'completed')
+        const [{ data: cands, error: candsErr }, { data: asmts }] = await Promise.all([
+          supabase
+            .from('candidates')
+            .select('*, assessments(id, role_title), results(overall_score, scores, risk_level, percentile, strengths, watchouts)')
+            .eq('user_id', user.id)
+            .eq('status', 'completed'),
+          supabase
+            .from('assessments')
+            .select('id, role_title')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false }),
+        ])
 
         if (candsErr) throw candsErr
-        setCandidates(cands || [])
+        setAllCandidates(cands || [])
+        setAssessments(asmts || [])
       } catch (err) {
         setError(err.message)
       } finally {
@@ -524,38 +496,40 @@ export default function ComparePage() {
     load()
   }, [router])
 
+  // Reset candidate selections when assessment filter changes
+  function handleAssessmentChange(id) {
+    setSelectedAssessmentId(id)
+    setSelected([null, null, null])
+  }
+
   function handleSelect(idx, id) {
-    setSelected(prev => {
-      const next = [...prev]
-      next[idx] = id
-      return next
-    })
+    setSelected(prev => { const next = [...prev]; next[idx] = id; return next })
   }
 
   if (loading) return <LoadingSpinner />
 
-  // Derive the union of all skill names across selected candidates
+  // Filter candidates by selected assessment
+  const candidates = selectedAssessmentId
+    ? allCandidates.filter(c => c.assessments?.id === selectedAssessmentId || c.assessment_id === selectedAssessmentId)
+    : allCandidates
+
   const selectedCandidates = selected.map(id => id ? candidates.find(c => c.id === id) : null)
+
   const skillOrder = (() => {
     const seen = new Set()
     const order = []
     for (const cand of selectedCandidates) {
       if (!cand) continue
-      const scores = cand.results?.[0]?.scores ?? {}
-      for (const k of Object.keys(scores)) {
+      for (const k of Object.keys(cand.results?.[0]?.scores ?? {})) {
         if (!seen.has(k)) { seen.add(k); order.push(k) }
       }
     }
     return order
   })()
 
-  // Build per-skill score arrays for highlight detection
   const allScores = {}
   for (const skill of skillOrder) {
-    allScores[skill] = selectedCandidates.map(c => {
-      if (!c) return null
-      return c.results?.[0]?.scores?.[skill] ?? null
-    })
+    allScores[skill] = selectedCandidates.map(c => c?.results?.[0]?.scores?.[skill] ?? null)
   }
 
   const usedIds = selected.filter(Boolean)
@@ -563,15 +537,8 @@ export default function ComparePage() {
 
   return (
     <div style={{ display: 'flex', fontFamily: F }}>
-      <Sidebar active="dashboard" companyName={profile?.company_name} />
-      <main style={{
-        marginLeft: 220,
-        padding: '36px 40px',
-        minHeight: '100vh',
-        background: BG,
-        flex: 1,
-        minWidth: 0,
-      }}>
+      <Sidebar active="compare" companyName={profile?.company_name} />
+      <main style={{ marginLeft: 220, padding: '36px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
 
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
@@ -585,69 +552,81 @@ export default function ComparePage() {
 
         {error && (
           <div style={{
-            ...cs,
-            background: REDBG,
-            border: `1px solid ${REDBD}`,
-            color: RED,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            marginBottom: 20,
-            padding: '14px 18px',
+            background: REDBG, border: `1px solid ${REDBD}`, color: RED,
+            borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10,
+            marginBottom: 20, padding: '14px 18px',
           }}>
             <Ic name="alert" size={16} color={RED} />
             <span style={{ fontSize: 13.5, fontWeight: 600 }}>{error}</span>
           </div>
         )}
 
-        {/* Selector row */}
+        {/* Filter + selector bar */}
         <div style={{
-          display: 'flex',
-          gap: 14,
-          marginBottom: 28,
-          background: CARD,
-          border: `1px solid ${BD}`,
-          borderRadius: 12,
-          padding: '16px 18px',
-          alignItems: 'center',
+          background: CARD, border: `1px solid ${BD}`, borderRadius: 12,
+          padding: '16px 18px', marginBottom: 24,
+          display: 'flex', flexDirection: 'column', gap: 14,
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            flexShrink: 0,
-            marginRight: 6,
-          }}>
-            <Ic name="sliders" size={15} color={TEALD} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: TX2 }}>Select candidates</span>
-          </div>
-          {[0, 1, 2].map(idx => (
-            <div key={idx} style={{ flex: 1, minWidth: 0 }}>
-              <CandidateSelector
-                candidates={candidates}
-                selected={selected[idx]}
-                onChange={id => handleSelect(idx, id)}
-                placeholder={`Candidate ${idx + 1}`}
-                usedIds={usedIds}
-              />
+          {/* Assessment filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              <Ic name="layers" size={15} color={TEALD} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: TX2, whiteSpace: 'nowrap' }}>Filter by assessment</span>
             </div>
-          ))}
+            <select
+              value={selectedAssessmentId}
+              onChange={e => handleAssessmentChange(e.target.value)}
+              style={{
+                flex: 1,
+                maxWidth: 340,
+                padding: '8px 12px',
+                borderRadius: 8,
+                border: `1.5px solid ${BD}`,
+                fontFamily: F,
+                fontSize: 13.5,
+                color: TX,
+                background: BG,
+                cursor: 'pointer',
+              }}
+            >
+              <option value="">All assessments</option>
+              {assessments.map(a => (
+                <option key={a.id} value={a.id}>{a.role_title}</option>
+              ))}
+            </select>
+            {selectedAssessmentId && (
+              <span style={{ fontSize: 12.5, color: TX3 }}>
+                {candidates.length} completed candidate{candidates.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+
+          {/* Candidate selectors */}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              <Ic name="sliders" size={15} color={TEALD} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: TX2, whiteSpace: 'nowrap' }}>Select candidates</span>
+            </div>
+            {[0, 1, 2].map(idx => (
+              <div key={idx} style={{ flex: 1, minWidth: 0 }}>
+                <CandidateSelector
+                  candidates={candidates}
+                  selected={selected[idx]}
+                  onChange={id => handleSelect(idx, id)}
+                  placeholder={`Candidate ${idx + 1}`}
+                  usedIds={usedIds}
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Notice if fewer than 2 selected */}
         {activeCount < 2 && (
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            padding: '12px 16px',
-            borderRadius: 9,
-            background: TEALLT,
-            border: `1px solid ${TEAL}55`,
-            marginBottom: 22,
-            fontSize: 13.5,
-            color: TEALD,
-            fontWeight: 600,
+            display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
+            borderRadius: 9, background: TEALLT, border: `1px solid ${TEAL}55`,
+            marginBottom: 22, fontSize: 13.5, color: TEALD, fontWeight: 600,
           }}>
             <Ic name="info" size={16} color={TEALD} />
             Select at least 2 candidates to start comparing.
@@ -665,6 +644,7 @@ export default function ComparePage() {
                   candidate={cand}
                   allScores={allScores}
                   skillOrder={skillOrder}
+                  assessmentId={selectedAssessmentId || cand.assessments?.id}
                 />
               )
             }

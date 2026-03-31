@@ -306,20 +306,33 @@ export default function AssessmentPage({ params }) {
             </div>
           </div>
 
-          {isActive && (
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button
-              onClick={handleCloseAssessment}
-              disabled={closing}
+              onClick={() => router.push(`/compare?assessmentId=${id}`)}
               style={{
-                padding: '8px 18px', borderRadius: 8, border: '1px solid #e4e9f0',
-                background: '#fff', color: '#5e6b7f', fontSize: 13, fontWeight: 600,
-                cursor: closing ? 'not-allowed' : 'pointer', fontFamily: F,
-                opacity: closing ? 0.6 : 1
+                padding: '8px 18px', borderRadius: 8, border: '1px solid #5bbfbd',
+                background: '#e8f6f5', color: '#2d9e96', fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', fontFamily: F, display: 'flex', alignItems: 'center', gap: 7,
               }}
             >
-              {closing ? 'Closing…' : 'Close assessment'}
+              <Ic name="sliders" size={14} color="#2d9e96" />
+              Compare candidates
             </button>
-          )}
+            {isActive && (
+              <button
+                onClick={handleCloseAssessment}
+                disabled={closing}
+                style={{
+                  padding: '8px 18px', borderRadius: 8, border: '1px solid #e4e9f0',
+                  background: '#fff', color: '#5e6b7f', fontSize: 13, fontWeight: 600,
+                  cursor: closing ? 'not-allowed' : 'pointer', fontFamily: F,
+                  opacity: closing ? 0.6 : 1
+                }}
+              >
+                {closing ? 'Closing…' : 'Close assessment'}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Scenario cards */}

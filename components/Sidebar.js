@@ -9,6 +9,7 @@ import ProdictaLogo from './ProdictaLogo'
 const NAV = [
   { key: 'dashboard',       label: 'Dashboard',       icon: 'grid',     href: '/dashboard' },
   { key: 'assessment',      label: 'New assessment',  icon: 'plus',     href: '/assessment/new' },
+  { key: 'compare',         label: 'Compare',         icon: 'sliders',  href: '/compare' },
   { key: 'benchmarks',      label: 'Benchmarks',      icon: 'layers',   href: '/benchmarks' },
   { key: 'archive',         label: 'Archive',         icon: 'archive',  href: '/archive' },
   { key: 'settings',        label: 'Settings',        icon: 'settings', href: '/settings' },
