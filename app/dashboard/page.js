@@ -16,7 +16,7 @@ import {
 function fmt(dateStr) {
   if (!dateStr) return '—'
   return new Date(dateStr).toLocaleDateString('en-GB', {
-    day: 'numeric', month: 'short', year: 'numeric'
+    day: 'numeric', month: 'short'
   })
 }
 
@@ -478,13 +478,22 @@ export default function DashboardPage() {
               {filtered.length === 0 ? (
                 <EmptyState />
               ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                    <colgroup>
+                      <col style={{ width: '28%' }} />
+                      <col style={{ width: '22%' }} />
+                      <col style={{ width: '11%' }} />
+                      <col style={{ width: '9%' }} />
+                      <col style={{ width: '12%' }} />
+                      <col style={{ width: '9%' }} />
+                      <col style={{ width: '9%' }} />
+                    </colgroup>
                     <thead>
                       <tr style={{ borderBottom: `1px solid ${BD}` }}>
-                        {['Candidate', 'Role', 'Status', 'Score', 'Risk', 'Percentile', 'Date', ''].map(h => (
+                        {['Candidate', 'Role', 'Status', 'Score', 'Risk', 'Date', ''].map(h => (
                           <th key={h} style={{
-                            padding: '10px 16px',
+                            padding: '10px 12px',
                             textAlign: 'left',
                             fontSize: 11.5,
                             fontWeight: 700,
@@ -501,10 +510,9 @@ export default function DashboardPage() {
                     </thead>
                     <tbody>
                       {filtered.map((c, i) => {
-                        const result     = c.results?.[0]
-                        const score      = result?.overall_score ?? null
-                        const risk       = result?.risk_level ?? null
-                        const percentile = result?.percentile ?? null
+                        const result      = c.results?.[0]
+                        const score       = result?.overall_score ?? null
+                        const risk        = result?.risk_level ?? null
                         const isCompleted = c.status === 'completed'
                         const isHovered   = hoveredRow === c.id
                         const isClickable = isCompleted
@@ -529,21 +537,19 @@ export default function DashboardPage() {
                             }}
                           >
                             {/* Candidate name + email */}
-                            <td style={{ padding: '13px 16px', whiteSpace: 'nowrap' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                                <Avatar name={c.name} size={34} />
-                                <div>
+                            <td style={{ padding: '12px 12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                                <Avatar name={c.name} size={30} />
+                                <div style={{ minWidth: 0 }}>
                                   <div style={{
-                                    fontSize: 13.5, fontWeight: 600, color: TX,
-                                    maxWidth: 180, overflow: 'hidden',
-                                    textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                    fontSize: 13, fontWeight: 600, color: TX,
+                                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                   }}>
                                     {c.name}
                                   </div>
                                   <div style={{
-                                    fontSize: 12, color: TX3,
-                                    maxWidth: 180, overflow: 'hidden',
-                                    textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                    fontSize: 11.5, color: TX3,
+                                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                   }}>
                                     {c.email}
                                   </div>
@@ -552,36 +558,32 @@ export default function DashboardPage() {
                             </td>
 
                             {/* Role */}
-                            <td style={{ padding: '13px 16px' }}>
+                            <td style={{ padding: '12px 12px' }}>
                               <span style={{
-                                fontSize: 13, color: TX2, fontWeight: 500,
-                                maxWidth: 160, overflow: 'hidden',
-                                textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                display: 'block',
+                                fontSize: 12.5, color: TX2, fontWeight: 500,
+                                overflow: 'hidden', textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap', display: 'block',
                               }}>
                                 {c.assessments?.role_title || '—'}
                               </span>
                             </td>
 
                             {/* Status */}
-                            <td style={{ padding: '13px 16px', whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '12px 12px' }}>
                               <StatusBadge status={c.status} />
                             </td>
 
                             {/* Score */}
-                            <td style={{ padding: '13px 16px', whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '12px 12px' }}>
                               {isCompleted && score !== null ? (
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
                                   <span style={{
-                                    fontFamily: FM,
-                                    fontSize: 18,
-                                    fontWeight: 700,
-                                    color: scolor(score),
-                                    lineHeight: 1,
+                                    fontFamily: FM, fontSize: 16, fontWeight: 700,
+                                    color: scolor(score), lineHeight: 1,
                                   }}>
                                     {score}
                                   </span>
-                                  <span style={{ fontSize: 11, color: TX3 }}>/100</span>
+                                  <span style={{ fontSize: 10.5, color: TX3 }}>/100</span>
                                 </div>
                               ) : (
                                 <span style={{ color: TX3, fontSize: 13 }}>—</span>
@@ -589,57 +591,41 @@ export default function DashboardPage() {
                             </td>
 
                             {/* Risk */}
-                            <td style={{ padding: '13px 16px', whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '12px 12px' }}>
                               {isCompleted ? <RiskBadge risk={risk} /> : <span style={{ color: TX3, fontSize: 13 }}>—</span>}
                             </td>
 
-                            {/* Percentile */}
-                            <td style={{ padding: '13px 16px', whiteSpace: 'nowrap' }}>
-                              {isCompleted && percentile ? (
-                                <span style={{
-                                  fontFamily: FM, fontSize: 13,
-                                  fontWeight: 600, color: TX2,
-                                }}>
-                                  {percentile}
-                                </span>
-                              ) : (
-                                <span style={{ color: TX3, fontSize: 13 }}>—</span>
-                              )}
-                            </td>
-
                             {/* Date */}
-                            <td style={{ padding: '13px 16px', whiteSpace: 'nowrap' }}>
-                              <span style={{ fontSize: 12.5, color: TX3 }}>
+                            <td style={{ padding: '12px 12px' }}>
+                              <span style={{ fontSize: 12, color: TX3, whiteSpace: 'nowrap' }}>
                                 {isCompleted ? fmt(c.completed_at) : fmt(c.invited_at)}
                               </span>
                             </td>
 
                             {/* Archive */}
-                            <td style={{ padding: '13px 12px', whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '12px 8px' }}>
                               <button
                                 onClick={e => { e.stopPropagation(); setConfirmArchive(c) }}
                                 onMouseEnter={() => setHoveredArchive(c.id)}
                                 onMouseLeave={() => setHoveredArchive(null)}
                                 disabled={isArchiving}
+                                title="Archive candidate"
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: 6,
-                                  padding: '6px 10px',
+                                  justifyContent: 'center',
+                                  width: 32,
+                                  height: 32,
                                   borderRadius: 7,
                                   border: `1px solid ${isArchiveHovered ? '#fecaca' : BD}`,
                                   background: isArchiveHovered ? REDBG : 'transparent',
                                   cursor: isArchiving ? 'wait' : 'pointer',
                                   transition: 'all 0.15s',
                                   opacity: isArchiving ? 0.5 : 1,
-                                  fontFamily: F,
-                                  fontSize: 12.5,
-                                  fontWeight: 600,
-                                  color: isArchiveHovered ? RED : TX3,
+                                  padding: 0,
                                 }}
                               >
                                 <Ic name="archive" size={14} color={isArchiveHovered ? RED : TX3} />
-                                Archive
                               </button>
                             </td>
                           </tr>
