@@ -173,8 +173,19 @@ export default function DashboardPage() {
   const [hoveredRow, setHoveredRow] = useState(null)
   const [searchFocused, setSearchFocused] = useState(false)
   const [archivingIds, setArchivingIds] = useState(new Set())
-  const [hoveredArchive, setHoveredArchive] = useState(null)
-  const [confirmArchive, setConfirmArchive] = useState(null) // candidate object to confirm
+
+  const [deletingIds, setDeletingIds] = useState(new Set())
+  const [openMenu, setOpenMenu] = useState(null)
+  const [confirmArchive, setConfirmArchive] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
+
+  // Close ⋯ menu when clicking anywhere outside
+  useEffect(() => {
+    if (!openMenu) return
+    function close() { setOpenMenu(null) }
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [openMenu])
 
   useEffect(() => {
     async function load() {
@@ -231,6 +242,20 @@ export default function DashboardPage() {
       setCandidates(prev => prev.filter(c => c.id !== id))
     } finally {
       setArchivingIds(prev => { const next = new Set(prev); next.delete(id); return next })
+    }
+  }
+
+  async function handleDelete(id) {
+    setConfirmDelete(null)
+    setDeletingIds(prev => new Set([...prev, id]))
+    try {
+      const supabase = createClient()
+      // Delete results first, then candidate (handles DBs without cascade)
+      await supabase.from('results').delete().eq('candidate_id', id)
+      await supabase.from('candidates').delete().eq('id', id)
+      setCandidates(prev => prev.filter(c => c.id !== id))
+    } finally {
+      setDeletingIds(prev => { const next = new Set(prev); next.delete(id); return next })
     }
   }
 
@@ -329,6 +354,67 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setConfirmArchive(null)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 8,
+                  border: `1.5px solid ${BD}`, background: 'transparent',
+                  color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete confirmation modal ── */}
+      {confirmDelete && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(15,33,55,0.55)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 24,
+        }}
+          onClick={() => setConfirmDelete(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: CARD, borderRadius: 14, padding: '28px 32px',
+              maxWidth: 420, width: '100%',
+              boxShadow: '0 16px 48px rgba(15,33,55,0.2)',
+            }}
+          >
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: REDBG, border: `1px solid #fecaca`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 16,
+            }}>
+              <Ic name="trash" size={20} color={RED} />
+            </div>
+            <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800, color: TX }}>
+              Permanently delete this candidate?
+            </h3>
+            <p style={{ margin: '0 0 6px', fontSize: 14, color: TX2, lineHeight: 1.6 }}>
+              <strong>{confirmDelete.name}</strong> and all their assessment data will be permanently removed. This cannot be undone.
+            </p>
+            <p style={{ margin: '0 0 24px', fontSize: 12.5, color: TX3, lineHeight: 1.5 }}>
+              If you just want to hide them from your pipeline, use Archive instead.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => handleDelete(confirmDelete.id)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 8, border: 'none',
+                  background: RED, color: '#fff', fontFamily: F,
+                  fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Delete permanently
+              </button>
+              <button
+                onClick={() => setConfirmDelete(null)}
                 style={{
                   flex: 1, padding: '10px 0', borderRadius: 8,
                   border: `1.5px solid ${BD}`, background: 'transparent',
@@ -517,7 +603,8 @@ export default function DashboardPage() {
                         const isHovered   = hoveredRow === c.id
                         const isClickable = isCompleted
                         const isArchiving = archivingIds.has(c.id)
-                        const isArchiveHovered = hoveredArchive === c.id
+                        const isDeleting  = deletingIds.has(c.id)
+                        const menuOpen    = openMenu === c.id
 
                         return (
                           <tr
@@ -602,31 +689,72 @@ export default function DashboardPage() {
                               </span>
                             </td>
 
-                            {/* Archive */}
+                            {/* Actions ⋯ menu */}
                             <td style={{ padding: '12px 8px' }}>
-                              <button
-                                onClick={e => { e.stopPropagation(); setConfirmArchive(c) }}
-                                onMouseEnter={() => setHoveredArchive(c.id)}
-                                onMouseLeave={() => setHoveredArchive(null)}
-                                disabled={isArchiving}
-                                title="Archive candidate"
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: 7,
-                                  border: `1px solid ${isArchiveHovered ? '#fecaca' : BD}`,
-                                  background: isArchiveHovered ? REDBG : 'transparent',
-                                  cursor: isArchiving ? 'wait' : 'pointer',
-                                  transition: 'all 0.15s',
-                                  opacity: isArchiving ? 0.5 : 1,
-                                  padding: 0,
-                                }}
-                              >
-                                <Ic name="archive" size={14} color={isArchiveHovered ? RED : TX3} />
-                              </button>
+                              <div style={{ position: 'relative' }}>
+                                <button
+                                  onClick={e => {
+                                    e.stopPropagation()
+                                    setOpenMenu(menuOpen ? null : c.id)
+                                  }}
+                                  disabled={isArchiving || isDeleting}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    width: 32, height: 32, borderRadius: 7, padding: 0,
+                                    border: `1px solid ${menuOpen ? TEAL : BD}`,
+                                    background: menuOpen ? TEALLT : 'transparent',
+                                    cursor: (isArchiving || isDeleting) ? 'wait' : 'pointer',
+                                    transition: 'all 0.15s',
+                                    opacity: (isArchiving || isDeleting) ? 0.5 : 1,
+                                  }}
+                                >
+                                  <Ic name="more-vertical" size={14} color={menuOpen ? TEALD : TX3} />
+                                </button>
+
+                                {menuOpen && (
+                                  <div
+                                    onClick={e => e.stopPropagation()}
+                                    style={{
+                                      position: 'absolute', right: 0, top: 36, zIndex: 50,
+                                      background: CARD, border: `1px solid ${BD}`,
+                                      borderRadius: 10, boxShadow: '0 8px 24px rgba(15,33,55,0.12)',
+                                      minWidth: 170, overflow: 'hidden',
+                                    }}
+                                  >
+                                    <button
+                                      onClick={() => { setOpenMenu(null); setConfirmArchive(c) }}
+                                      style={{
+                                        display: 'flex', alignItems: 'center', gap: 10,
+                                        width: '100%', padding: '10px 14px',
+                                        border: 'none', background: 'transparent',
+                                        color: TX2, fontFamily: F, fontSize: 13, fontWeight: 600,
+                                        cursor: 'pointer', textAlign: 'left',
+                                      }}
+                                      onMouseEnter={e => e.currentTarget.style.background = BG}
+                                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                    >
+                                      <Ic name="archive" size={14} color={TX3} />
+                                      Archive
+                                    </button>
+                                    <div style={{ height: 1, background: BD, margin: '0 10px' }} />
+                                    <button
+                                      onClick={() => { setOpenMenu(null); setConfirmDelete(c) }}
+                                      style={{
+                                        display: 'flex', alignItems: 'center', gap: 10,
+                                        width: '100%', padding: '10px 14px',
+                                        border: 'none', background: 'transparent',
+                                        color: RED, fontFamily: F, fontSize: 13, fontWeight: 600,
+                                        cursor: 'pointer', textAlign: 'left',
+                                      }}
+                                      onMouseEnter={e => e.currentTarget.style.background = REDBG}
+                                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                    >
+                                      <Ic name="trash" size={14} color={RED} />
+                                      Delete permanently
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         )
