@@ -222,7 +222,6 @@ function Logo() {
       <div style={styles.logoMark}>
         <ProdictaLogo textColor="#ffffff" size={42} />
       </div>
-      <p style={styles.tagline}>Understand likely probation outcomes before you hire.</p>
     </div>
   )
 }
