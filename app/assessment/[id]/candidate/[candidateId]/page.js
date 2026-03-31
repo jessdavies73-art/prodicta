@@ -212,15 +212,19 @@ export default function CandidateReportPage({ params }) {
   const bmMap = {}
   benchmarks.forEach(b => { if (b.skill_name) bmMap[b.skill_name.toLowerCase()] = b.threshold })
 
+  function handlePrint() { window.print() }
+
   /* ── render ── */
   return (
     <div style={{ background: BG, minHeight: '100vh', fontFamily: F }}>
+      <style>{`@media print { aside { display: none !important; } main { margin-left: 0 !important; padding: 16px !important; } .no-print { display: none !important; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }`}</style>
       <Sidebar active="assessment" />
 
       <main style={{ marginLeft: 220, padding: '32px 40px', maxWidth: 980, boxSizing: 'border-box' }}>
 
         {/* ── 1. Navigation ── */}
         <button
+          className="no-print"
           onClick={() => router.push(`/assessment/${params.id}`)}
           style={{
             display: 'inline-flex',
@@ -312,25 +316,28 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   )}
 
-                  <button
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      background: 'transparent',
-                      border: `1.5px solid ${BD}`,
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      fontFamily: F,
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: TX2,
-                      padding: '9px 16px',
-                    }}
-                  >
-                    <Ic name="download" size={15} color={TX2} />
-                    Export PDF
-                  </button>
+                  <div className="no-print">
+                    <button
+                      onClick={handlePrint}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        background: 'transparent',
+                        border: `1.5px solid ${BD}`,
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontFamily: F,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: TX2,
+                        padding: '9px 16px',
+                      }}
+                    >
+                      <Ic name="download" size={15} color={TX2} />
+                      Export PDF
+                    </button>
+                  </div>
                 </div>
               </div>
             </Card>

@@ -95,6 +95,34 @@ function TextInput({ value, onChange, placeholder, type = 'text', readOnly = fal
   )
 }
 
+function SelectInput({ value, onChange, children, focused, onFocus, onBlur }) {
+  return (
+    <select
+      value={value}
+      onChange={onChange}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      style={{
+        fontFamily: F,
+        fontSize: 14,
+        width: '100%',
+        padding: '10px 14px',
+        borderRadius: 8,
+        border: `1.5px solid ${focused ? TEAL : BD}`,
+        background: CARD,
+        color: value ? TX : TX3,
+        outline: 'none',
+        transition: 'border-color 0.15s',
+        boxSizing: 'border-box',
+        cursor: 'pointer',
+        appearance: 'none',
+      }}
+    >
+      {children}
+    </select>
+  )
+}
+
 export default function SettingsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -104,11 +132,15 @@ export default function SettingsPage() {
 
   // Company tab state
   const [companyName, setCompanyName] = useState('')
+  const [industry, setIndustry] = useState('')
+  const [companySize, setCompanySize] = useState('')
   const [savingCompany, setSavingCompany] = useState(false)
   const [companyToast, setCompanyToast] = useState(null)
   const [companyFocused, setCompanyFocused] = useState(false)
+  const [industryFocused, setIndustryFocused] = useState(false)
+  const [companySizeFocused, setCompanySizeFocused] = useState(false)
 
-  // Account tab state
+  // Password state
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [savingPassword, setSavingPassword] = useState(false)
@@ -130,6 +162,8 @@ export default function SettingsPage() {
         const { data: prof } = await supabase.from('users').select('*').eq('id', user.id).single()
         setProfile({ ...prof, id: user.id })
         setCompanyName(prof?.company_name || '')
+        setIndustry(prof?.industry || '')
+        setCompanySize(prof?.company_size || '')
       } catch (err) {
         setError(err.message)
       } finally {
@@ -146,11 +180,11 @@ export default function SettingsPage() {
       const supabase = createClient()
       const { error: updateErr } = await supabase
         .from('users')
-        .update({ company_name: companyName })
+        .update({ company_name: companyName, industry: industry || null, company_size: companySize || null })
         .eq('id', profile.id)
       if (updateErr) throw updateErr
-      setProfile(prev => ({ ...prev, company_name: companyName }))
-      setCompanyToast({ type: 'success', message: 'Company name saved.' })
+      setProfile(prev => ({ ...prev, company_name: companyName, industry, company_size: companySize }))
+      setCompanyToast({ type: 'success', message: 'Changes saved.' })
       setTimeout(() => setCompanyToast(null), 3500)
     } catch (err) {
       setCompanyToast({ type: 'error', message: err.message })
@@ -188,9 +222,31 @@ export default function SettingsPage() {
   if (loading) return <LoadingSpinner />
 
   const TABS = [
-    { key: 'company', label: 'Company' },
-    { key: 'account', label: 'Account' },
+    { key: 'company', label: 'Company profile' },
+    { key: 'billing', label: 'Billing' },
+    { key: 'team', label: 'Team' },
   ]
+
+  const INDUSTRIES = [
+    'Technology', 'Finance', 'Healthcare', 'Retail', 'Manufacturing',
+    'Professional Services', 'Education', 'Legal', 'Other',
+  ]
+
+  const COMPANY_SIZES = [
+    '1–10 employees', '11–50 employees', '51–200 employees',
+    '201–1000 employees', '1000+ employees',
+  ]
+
+  const STARTER_FEATURES = [
+    'Unlimited assessments',
+    'AI scenario generation',
+    'AI candidate scoring',
+    'Email invitations',
+    'Candidate comparison',
+    'Benchmarking',
+  ]
+
+  const emailInitial = userEmail ? userEmail[0].toUpperCase() : '?'
 
   return (
     <div style={{ display: 'flex', fontFamily: F }}>
@@ -204,7 +260,6 @@ export default function SettingsPage() {
         minWidth: 0,
       }}>
 
-        {/* Header */}
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px' }}>
             Settings
@@ -265,15 +320,15 @@ export default function SettingsPage() {
           })}
         </div>
 
-        {/* Company tab */}
+        {/* Company profile tab */}
         {activeTab === 'company' && (
-          <div style={{ maxWidth: 520 }}>
+          <div style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div style={{ ...cs }}>
               <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: TX }}>
                 Company details
               </h2>
 
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 16 }}>
                 <FieldLabel>Company name</FieldLabel>
                 <TextInput
                   value={companyName}
@@ -283,6 +338,38 @@ export default function SettingsPage() {
                   onFocus={() => setCompanyFocused(true)}
                   onBlur={() => setCompanyFocused(false)}
                 />
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <FieldLabel>Industry</FieldLabel>
+                <SelectInput
+                  value={industry}
+                  onChange={e => setIndustry(e.target.value)}
+                  focused={industryFocused}
+                  onFocus={() => setIndustryFocused(true)}
+                  onBlur={() => setIndustryFocused(false)}
+                >
+                  <option value="">Select industry…</option>
+                  {INDUSTRIES.map(i => (
+                    <option key={i} value={i}>{i}</option>
+                  ))}
+                </SelectInput>
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <FieldLabel>Company size</FieldLabel>
+                <SelectInput
+                  value={companySize}
+                  onChange={e => setCompanySize(e.target.value)}
+                  focused={companySizeFocused}
+                  onFocus={() => setCompanySizeFocused(true)}
+                  onBlur={() => setCompanySizeFocused(false)}
+                >
+                  <option value="">Select company size…</option>
+                  {COMPANY_SIZES.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </SelectInput>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -296,40 +383,16 @@ export default function SettingsPage() {
                   }}
                 >
                   <Ic name="check" size={15} color={NAVY} />
-                  {savingCompany ? 'Saving…' : 'Save'}
+                  {savingCompany ? 'Saving…' : 'Save changes'}
                 </button>
                 {companyToast && <Toast message={companyToast.message} type={companyToast.type} />}
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Account tab */}
-        {activeTab === 'account' && (
-          <div style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-            {/* Email section */}
+            {/* Account security */}
             <div style={{ ...cs }}>
               <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: TX }}>
-                Email address
-              </h2>
-              <div>
-                <FieldLabel>Email</FieldLabel>
-                <TextInput
-                  value={userEmail}
-                  readOnly
-                  type="email"
-                />
-                <p style={{ margin: '8px 0 0', fontSize: 12, color: TX3, fontFamily: F }}>
-                  Your email address cannot be changed here. Contact support if needed.
-                </p>
-              </div>
-            </div>
-
-            {/* Password section */}
-            <div style={{ ...cs }}>
-              <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: TX }}>
-                Change password
+                Account security
               </h2>
 
               <div style={{ marginBottom: 14 }}>
@@ -356,7 +419,6 @@ export default function SettingsPage() {
                   onFocus={() => setCpwFocused(true)}
                   onBlur={() => setCpwFocused(false)}
                 />
-                {/* Match indicator */}
                 {confirmPassword.length > 0 && (
                   <div style={{
                     marginTop: 6,
@@ -392,6 +454,146 @@ export default function SettingsPage() {
                 </button>
                 {passwordToast && <Toast message={passwordToast.message} type={passwordToast.type} />}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Billing tab */}
+        {activeTab === 'billing' && (
+          <div style={{ maxWidth: 520 }}>
+            <div style={{ ...cs }}>
+              <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: TX }}>
+                Your plan
+              </h2>
+
+              <div style={{
+                background: BG,
+                border: `1px solid ${BD}`,
+                borderRadius: 10,
+                padding: '18px 20px',
+                marginBottom: 20,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '3px 12px',
+                    borderRadius: 50,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    background: TEALLT,
+                    color: TEALD,
+                    border: `1px solid ${TEAL}55`,
+                  }}>
+                    Starter plan
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {STARTER_FEATURES.map(f => (
+                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Ic name="check" size={14} color={GRN} />
+                      <span style={{ fontSize: 13.5, color: TX2, fontFamily: F }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                disabled
+                style={{
+                  ...bs('primary', 'md'),
+                  opacity: 0.5,
+                  cursor: 'default',
+                }}
+              >
+                Manage billing
+              </button>
+              <p style={{ margin: '10px 0 0', fontSize: 12, color: TX3, fontFamily: F }}>
+                Billing management coming soon
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Team tab */}
+        {activeTab === 'team' && (
+          <div style={{ maxWidth: 520 }}>
+            <div style={{ ...cs }}>
+              <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: TX }}>
+                Team members
+              </h2>
+
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 16px',
+                background: BG,
+                border: `1px solid ${BD}`,
+                borderRadius: 10,
+                marginBottom: 20,
+              }}>
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: TEALLT,
+                  border: `1.5px solid ${TEAL}55`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: FM,
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: TEALD,
+                  flexShrink: 0,
+                }}>
+                  {emailInitial}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    color: TX,
+                    fontFamily: F,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    display: 'block',
+                  }}>
+                    {userEmail}
+                  </span>
+                </div>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '3px 10px',
+                  borderRadius: 50,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  background: TEALLT,
+                  color: TEALD,
+                  border: `1px solid ${TEAL}55`,
+                  flexShrink: 0,
+                }}>
+                  Owner
+                </span>
+              </div>
+
+              <button
+                disabled
+                style={{
+                  ...bs('primary', 'md'),
+                  opacity: 0.5,
+                  cursor: 'default',
+                }}
+              >
+                <Ic name="plus" size={15} color={NAVY} />
+                Invite team member
+              </button>
+              <p style={{ margin: '10px 0 0', fontSize: 12, color: TX3, fontFamily: F }}>
+                Team management coming soon
+              </p>
             </div>
           </div>
         )}

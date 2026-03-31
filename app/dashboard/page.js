@@ -172,20 +172,20 @@ export default function DashboardPage() {
   const [search, setSearch] = useState('')
   const [hoveredRow, setHoveredRow] = useState(null)
   const [searchFocused, setSearchFocused] = useState(false)
+  const [archivingIds, setArchivingIds] = useState(new Set())
+  const [hoveredArchive, setHoveredArchive] = useState(null)
 
   useEffect(() => {
     async function load() {
       try {
         const supabase = createClient()
 
-        // 1. Auth check
         const { data: { user }, error: authErr } = await supabase.auth.getUser()
         if (authErr || !user) {
           router.push('/login')
           return
         }
 
-        // 2. User profile
         const { data: prof } = await supabase
           .from('users')
           .select('*')
@@ -193,7 +193,6 @@ export default function DashboardPage() {
           .single()
         setProfile(prof)
 
-        // 3. Candidates with joined data
         const { data: cands, error: candsErr } = await supabase
           .from('candidates')
           .select('*, assessments!inner(role_title, id), results(overall_score, risk_level, percentile)')
@@ -204,7 +203,6 @@ export default function DashboardPage() {
         if (candsErr) throw candsErr
         setCandidates(cands || [])
 
-        // 4. Active assessments
         const { data: assess, error: assessErr } = await supabase
           .from('assessments')
           .select('*')
@@ -222,6 +220,21 @@ export default function DashboardPage() {
     }
     load()
   }, [router])
+
+  async function handleArchive(id) {
+    setArchivingIds(prev => new Set([...prev, id]))
+    try {
+      const supabase = createClient()
+      await supabase.from('candidates').update({ status: 'archived' }).eq('id', id)
+      setCandidates(prev => prev.filter(c => c.id !== id))
+    } finally {
+      setArchivingIds(prev => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    }
+  }
 
   if (loading) return <LoadingSpinner />
 
@@ -244,8 +257,8 @@ export default function DashboardPage() {
 
   // ── computed stats ──────────────────────────────────────────────────────────
 
-  const completed  = candidates.filter(c => c.status === 'completed')
-  const totalCount = completed.length
+  const completed = candidates.filter(c => c.status === 'completed')
+  const pendingCandidates = candidates.filter(c => c.status === 'sent' || c.status === 'pending')
 
   const avgScore = completed.length
     ? Math.round(
@@ -256,13 +269,7 @@ export default function DashboardPage() {
       )
     : null
 
-  const activeCount = assessments.length
-
-  const passPct = completed.length
-    ? Math.round(
-        (completed.filter(c => (c.results?.[0]?.overall_score ?? 0) >= 70).length / completed.length) * 100
-      )
-    : null
+  const recommendedCount = completed.filter(c => (c.results?.[0]?.overall_score ?? 0) >= 70).length
 
   // ── filtered candidates ─────────────────────────────────────────────────────
 
@@ -303,7 +310,6 @@ export default function DashboardPage() {
           </h1>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* Search */}
             <div style={{ position: 'relative' }}>
               <div style={{
                 position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
@@ -333,7 +339,6 @@ export default function DashboardPage() {
               />
             </div>
 
-            {/* New assessment button */}
             <button
               onClick={() => router.push('/assessment/new')}
               style={bs('primary', 'md')}
@@ -349,28 +354,28 @@ export default function DashboardPage() {
           display: 'flex', gap: 16, marginBottom: 28,
         }}>
           <StatCard
-            icon="users"
-            label="Candidates assessed"
-            value={totalCount}
+            icon="check"
+            label="Completed"
+            value={completed.length}
             sub="Completed assessments"
           />
           <StatCard
+            icon="clock"
+            label="Pending"
+            value={pendingCandidates.length}
+            sub="Awaiting completion"
+          />
+          <StatCard
             icon="bar"
-            label="Average score"
+            label="Avg score"
             value={avgScore !== null ? `${avgScore}` : '—'}
             sub={avgScore !== null ? slabel(avgScore) : 'No data yet'}
           />
           <StatCard
-            icon="zap"
-            label="Active assessments"
-            value={activeCount}
-            sub="Open to candidates"
-          />
-          <StatCard
             icon="award"
-            label="Pass prediction"
-            value={passPct !== null ? `${passPct}%` : '—'}
-            sub="Candidates scoring ≥ 70"
+            label="Recommended"
+            value={recommendedCount}
+            sub="Scoring 70 or above"
           />
         </div>
 
@@ -384,7 +389,6 @@ export default function DashboardPage() {
               padding: 0,
               overflow: 'hidden',
             }}>
-              {/* Table header */}
               <div style={{
                 padding: '18px 24px',
                 borderBottom: `1px solid ${BD}`,
@@ -422,7 +426,7 @@ export default function DashboardPage() {
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ borderBottom: `1px solid ${BD}` }}>
-                        {['Candidate', 'Role', 'Status', 'Score', 'Risk', 'Percentile', 'Date'].map(h => (
+                        {['Candidate', 'Role', 'Status', 'Score', 'Risk', 'Percentile', 'Date', ''].map(h => (
                           <th key={h} style={{
                             padding: '10px 16px',
                             textAlign: 'left',
@@ -448,6 +452,8 @@ export default function DashboardPage() {
                         const isCompleted = c.status === 'completed'
                         const isHovered   = hoveredRow === c.id
                         const isClickable = isCompleted
+                        const isArchiving = archivingIds.has(c.id)
+                        const isArchiveHovered = hoveredArchive === c.id
 
                         return (
                           <tr
@@ -550,6 +556,32 @@ export default function DashboardPage() {
                               <span style={{ fontSize: 12.5, color: TX3 }}>
                                 {isCompleted ? fmt(c.completed_at) : fmt(c.invited_at)}
                               </span>
+                            </td>
+
+                            {/* Archive */}
+                            <td style={{ padding: '13px 12px', whiteSpace: 'nowrap' }}>
+                              <button
+                                onClick={e => { e.stopPropagation(); handleArchive(c.id) }}
+                                onMouseEnter={() => setHoveredArchive(c.id)}
+                                onMouseLeave={() => setHoveredArchive(null)}
+                                disabled={isArchiving}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: 30,
+                                  height: 30,
+                                  borderRadius: 7,
+                                  border: `1px solid ${isArchiveHovered ? '#fecaca' : BD}`,
+                                  background: isArchiveHovered ? REDBG : 'transparent',
+                                  cursor: isArchiving ? 'wait' : 'pointer',
+                                  transition: 'all 0.15s',
+                                  opacity: isArchiving ? 0.5 : 1,
+                                  padding: 0,
+                                }}
+                              >
+                                <Ic name="archive" size={14} color={isArchiveHovered ? RED : TX3} />
+                              </button>
                             </td>
                           </tr>
                         )
