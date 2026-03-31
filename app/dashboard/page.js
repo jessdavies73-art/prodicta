@@ -174,6 +174,7 @@ export default function DashboardPage() {
   const [searchFocused, setSearchFocused] = useState(false)
   const [archivingIds, setArchivingIds] = useState(new Set())
   const [hoveredArchive, setHoveredArchive] = useState(null)
+  const [confirmArchive, setConfirmArchive] = useState(null) // candidate object to confirm
 
   useEffect(() => {
     async function load() {
@@ -222,17 +223,14 @@ export default function DashboardPage() {
   }, [router])
 
   async function handleArchive(id) {
+    setConfirmArchive(null)
     setArchivingIds(prev => new Set([...prev, id]))
     try {
       const supabase = createClient()
       await supabase.from('candidates').update({ status: 'archived' }).eq('id', id)
       setCandidates(prev => prev.filter(c => c.id !== id))
     } finally {
-      setArchivingIds(prev => {
-        const next = new Set(prev)
-        next.delete(id)
-        return next
-      })
+      setArchivingIds(prev => { const next = new Set(prev); next.delete(id); return next })
     }
   }
 
@@ -285,6 +283,64 @@ export default function DashboardPage() {
   return (
     <div style={{ display: 'flex', fontFamily: F }}>
       <Sidebar active="dashboard" companyName={profile?.company_name} />
+
+      {/* ── Confirmation modal ── */}
+      {confirmArchive && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(15,33,55,0.55)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 24,
+        }}
+          onClick={() => setConfirmArchive(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: CARD, borderRadius: 14, padding: '28px 32px',
+              maxWidth: 420, width: '100%',
+              boxShadow: '0 16px 48px rgba(15,33,55,0.2)',
+            }}
+          >
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: REDBG, border: `1px solid #fecaca`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 16,
+            }}>
+              <Ic name="archive" size={22} color={RED} />
+            </div>
+            <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800, color: TX }}>
+              Archive this candidate?
+            </h3>
+            <p style={{ margin: '0 0 24px', fontSize: 14, color: TX2, lineHeight: 1.6 }}>
+              <strong>{confirmArchive.name}</strong> will be removed from your active pipeline. You can restore them at any time from the Archive page.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => handleArchive(confirmArchive.id)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 8, border: 'none',
+                  background: RED, color: '#fff', fontFamily: F,
+                  fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Archive candidate
+              </button>
+              <button
+                onClick={() => setConfirmArchive(null)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 8,
+                  border: `1.5px solid ${BD}`, background: 'transparent',
+                  color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main style={{
         marginLeft: 220,
@@ -561,26 +617,29 @@ export default function DashboardPage() {
                             {/* Archive */}
                             <td style={{ padding: '13px 12px', whiteSpace: 'nowrap' }}>
                               <button
-                                onClick={e => { e.stopPropagation(); handleArchive(c.id) }}
+                                onClick={e => { e.stopPropagation(); setConfirmArchive(c) }}
                                 onMouseEnter={() => setHoveredArchive(c.id)}
                                 onMouseLeave={() => setHoveredArchive(null)}
                                 disabled={isArchiving}
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: 30,
-                                  height: 30,
+                                  gap: 6,
+                                  padding: '6px 10px',
                                   borderRadius: 7,
                                   border: `1px solid ${isArchiveHovered ? '#fecaca' : BD}`,
                                   background: isArchiveHovered ? REDBG : 'transparent',
                                   cursor: isArchiving ? 'wait' : 'pointer',
                                   transition: 'all 0.15s',
                                   opacity: isArchiving ? 0.5 : 1,
-                                  padding: 0,
+                                  fontFamily: F,
+                                  fontSize: 12.5,
+                                  fontWeight: 600,
+                                  color: isArchiveHovered ? RED : TX3,
                                 }}
                               >
                                 <Ic name="archive" size={14} color={isArchiveHovered ? RED : TX3} />
+                                Archive
                               </button>
                             </td>
                           </tr>
