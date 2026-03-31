@@ -224,6 +224,16 @@ function Logo() {
           alt="Prodicta"
           style={{ height: '48px', width: 'auto', display: 'block' }}
         />
+        <span style={{
+          fontSize: '28px',
+          fontWeight: '800',
+          color: '#ffffff',
+          letterSpacing: '-0.5px',
+          lineHeight: 1,
+          fontFamily: "'Outfit', system-ui, sans-serif",
+        }}>
+          Prodicta
+        </span>
       </div>
       <p style={styles.tagline}>Understand likely probation outcomes before you hire.</p>
     </div>
