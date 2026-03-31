@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
@@ -448,7 +448,7 @@ function CandidateColumn({ candidate, allScores, skillOrder, assessmentId }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────
 
-export default function ComparePage() {
+function ComparePageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const presetAssessmentId = searchParams.get('assessmentId')
@@ -661,5 +661,13 @@ export default function ComparePage() {
 
       </main>
     </div>
+  )
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <ComparePageInner />
+    </Suspense>
   )
 }
