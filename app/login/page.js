@@ -13,7 +13,7 @@ const LIGHT_T = '#e8f6f5'
 const styles = {
   page: {
     minHeight: '100vh',
-    background: NAVY,
+    background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
