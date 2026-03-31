@@ -227,7 +227,7 @@ function Logo() {
         <span style={{
           fontSize: '28px',
           fontWeight: '800',
-          color: '#0f2137',
+          color: '#5bbfbd',
           letterSpacing: '-0.5px',
           lineHeight: 1,
           fontFamily: "'Outfit', system-ui, sans-serif",
