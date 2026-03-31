@@ -521,6 +521,9 @@ export default function DashboardPage() {
           />
         </div>
 
+        {/* ── ERA 2025 Risk Calculator ── */}
+        <RiskCalculator />
+
         {/* ── Bottom grid: table + assessments panel ── */}
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
 
@@ -847,6 +850,216 @@ export default function DashboardPage() {
 
         </div>
       </main>
+    </div>
+  )
+}
+
+function RiskCalculator() {
+  const [salary, setSalary] = useState('30000')
+  const [hires, setHires] = useState('5')
+  const [salFocused, setSalFocused] = useState(false)
+  const [hiresFocused, setHiresFocused] = useState(false)
+
+  const sal = Math.max(0, parseInt(salary.replace(/[^0-9]/g, '')) || 0)
+  const h   = Math.max(1, parseInt(hires.replace(/[^0-9]/g, '')) || 1)
+
+  const recruitment  = Math.round(sal * 0.15)
+  const training     = 3000
+  const productivity = Math.round(sal * 0.25)   // ~3 months lost
+  const tribunal     = Math.round(sal * 0.75)   // conservative 9-month award, uncapped from Jan 2027
+  const totalPerHire = recruitment + training + productivity + tribunal
+
+  const failCount    = Math.max(1, Math.round(h * 0.2))
+  const totalExposure = totalPerHire * failCount
+
+  function gbp(n) {
+    return '£' + n.toLocaleString('en-GB')
+  }
+
+  const inputStyle = focused => ({
+    fontFamily: F,
+    fontSize: 15,
+    fontWeight: 700,
+    width: '100%',
+    padding: '10px 14px',
+    borderRadius: 8,
+    border: `1.5px solid ${focused ? TEAL : BD}`,
+    background: CARD,
+    color: NAVY,
+    outline: 'none',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.15s',
+  })
+
+  const BREAK = [
+    { label: 'Recruitment cost',       value: recruitment,  note: '15% of salary',             color: AMB,  bg: AMBBG },
+    { label: 'Training & onboarding',  value: training,     note: 'Average cost per hire',      color: AMB,  bg: AMBBG },
+    { label: 'Lost productivity',      value: productivity, note: '~3 months in role',          color: AMB,  bg: AMBBG },
+    { label: 'ERA 2025 tribunal risk', value: tribunal,     note: 'Uncapped from Jan 2027',     color: RED,  bg: REDBG },
+  ]
+
+  return (
+    <div style={{
+      background: CARD,
+      border: `1px solid ${BD}`,
+      borderRadius: 14,
+      overflow: 'hidden',
+      marginBottom: 24,
+    }}>
+      {/* Header */}
+      <div style={{
+        background: NAVY,
+        padding: '20px 28px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 16,
+        flexWrap: 'wrap',
+      }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '3px 10px', borderRadius: 20,
+              background: `${TEAL}22`, border: `1px solid ${TEAL}55`,
+              fontSize: 11, fontWeight: 700, color: TEAL, letterSpacing: '0.04em',
+            }}>
+              ERA 2025
+            </div>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '3px 10px', borderRadius: 20,
+              background: `${RED}22`, border: `1px solid ${RED}55`,
+              fontSize: 11, fontWeight: 700, color: '#f87171', letterSpacing: '0.04em',
+            }}>
+              RISK CALCULATOR
+            </div>
+          </div>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>
+            What does a bad hire actually cost you?
+          </h2>
+        </div>
+        <Ic name="shield" size={28} color={`${TEAL}88`} />
+      </div>
+
+      <div style={{ padding: '24px 28px' }}>
+        {/* Inputs */}
+        <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>
+              Average salary for your hires
+            </label>
+            <div style={{ position: 'relative' }}>
+              <span style={{
+                position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
+                fontSize: 14, fontWeight: 700, color: TX3, pointerEvents: 'none',
+              }}>£</span>
+              <input
+                type="text"
+                value={salary}
+                onChange={e => setSalary(e.target.value.replace(/[^0-9]/g, ''))}
+                onFocus={() => setSalFocused(true)}
+                onBlur={() => setSalFocused(false)}
+                style={{ ...inputStyle(salFocused), paddingLeft: 26 }}
+                placeholder="30000"
+              />
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>
+              Hires planned this year
+            </label>
+            <input
+              type="text"
+              value={hires}
+              onChange={e => setHires(e.target.value.replace(/[^0-9]/g, ''))}
+              onFocus={() => setHiresFocused(true)}
+              onBlur={() => setHiresFocused(false)}
+              style={inputStyle(hiresFocused)}
+              placeholder="5"
+            />
+          </div>
+        </div>
+
+        {/* Cost breakdown */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+            Cost breakdown per failed hire
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {BREAK.map(({ label, value, note, color, bg }) => (
+              <div key={label} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 14px', borderRadius: 8,
+                background: bg, border: `1px solid ${color}33`,
+                gap: 12,
+              }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: TX }}>{label}</div>
+                  <div style={{ fontSize: 11.5, color: TX3, marginTop: 1 }}>{note}</div>
+                </div>
+                <div style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color, flexShrink: 0 }}>
+                  {gbp(value)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Total exposure panels */}
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+          {/* Per hire */}
+          <div style={{
+            flex: 1, minWidth: 220,
+            background: `linear-gradient(135deg, ${AMBBG}, #fff8ed)`,
+            border: `1.5px solid ${AMB}66`,
+            borderRadius: 12, padding: '18px 20px',
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+              Total exposure — 1 bad hire
+            </div>
+            <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: AMB, lineHeight: 1, marginBottom: 4 }}>
+              {gbp(totalPerHire)}
+            </div>
+            <div style={{ fontSize: 12.5, color: TX2 }}>
+              Recruitment + training + lost productivity + tribunal
+            </div>
+          </div>
+
+          {/* 20% failure */}
+          <div style={{
+            flex: 1, minWidth: 220,
+            background: `linear-gradient(135deg, ${REDBG}, #fff5f5)`,
+            border: `1.5px solid ${RED}66`,
+            borderRadius: 12, padding: '18px 20px',
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+              Total exposure — 20% failure rate
+            </div>
+            <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: RED, lineHeight: 1, marginBottom: 4 }}>
+              {gbp(totalExposure)}
+            </div>
+            <div style={{ fontSize: 12.5, color: TX2 }}>
+              {failCount} of {h} hire{h !== 1 ? 's' : ''} failing · industry average risk
+            </div>
+          </div>
+        </div>
+
+        {/* ERA 2025 warning note */}
+        <div style={{
+          marginTop: 16,
+          padding: '12px 16px',
+          borderRadius: 8,
+          background: NAVY,
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+        }}>
+          <Ic name="alert" size={15} color={TEAL} />
+          <p style={{ margin: 0, fontSize: 12.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, fontFamily: F }}>
+            <strong style={{ color: '#fff' }}>From January 2027,</strong> unfair dismissal claims can be made after just 6 months of employment, with no compensation cap.{' '}
+            <strong style={{ color: TEAL }}>PRODICTA</strong> helps you identify high-risk hires before they start — reducing your ERA 2025 exposure.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
