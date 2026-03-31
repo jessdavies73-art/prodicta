@@ -235,6 +235,8 @@ function CandidateColumn({ candidate, allScores, skillOrder, assessmentId }) {
   const router = useRouter()
   const result = candidate.results?.[0]
   const score = result?.overall_score ?? null
+  const pf = result?.pressure_fit_score ?? null
+  const pfDims = result?.pressure_fit ?? null
   const risk = result?.risk_level ?? null
   const percentile = result?.percentile ?? null
   const scores = result?.scores ?? {}
@@ -332,6 +334,62 @@ function CandidateColumn({ candidate, allScores, skillOrder, assessmentId }) {
             </span>
           )}
         </div>
+
+        {/* Pressure-Fit Assessment */}
+        {pf !== null && (() => {
+          const pfColor = pf >= 80 ? GRN : pf >= 55 ? TEALD : RED
+          const pfLabel = pf >= 80 ? 'Strong' : pf >= 55 ? 'Moderate' : 'Concern'
+
+          const DIMS = [
+            { key: 'decision_speed_quality',   short: 'Decision Speed' },
+            { key: 'composure_under_conflict',  short: 'Composure' },
+            { key: 'prioritisation_under_load', short: 'Prioritisation' },
+            { key: 'ownership_accountability',  short: 'Ownership' },
+          ]
+
+          function dimColor(s) {
+            if (s == null) return TX3
+            return s >= 80 ? GRN : s >= 55 ? TEALD : RED
+          }
+
+          return (
+            <div style={{
+              background: `linear-gradient(135deg, #0f2137 0%, #0d3349 100%)`,
+              border: '1px solid rgba(91,191,189,0.2)',
+              borderRadius: 10, padding: '12px 14px',
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
+                Pressure-Fit
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 10 }}>
+                <span style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: pfColor, lineHeight: 1 }}>{pf}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>/100</span>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: pfColor, marginLeft: 4 }}>{pfLabel}</span>
+              </div>
+              {pfDims && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  {DIMS.map(({ key, short }) => {
+                    const s = pfDims[key]?.score ?? null
+                    const dc = dimColor(s)
+                    return (
+                      <div key={key}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{short}</span>
+                          <span style={{ fontFamily: FM, fontSize: 11.5, fontWeight: 700, color: dc }}>{s ?? '—'}</span>
+                        </div>
+                        <div style={{ height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                          {s != null && (
+                            <div style={{ height: '100%', width: `${s}%`, background: dc, borderRadius: 99, opacity: 0.8 }} />
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         <div style={{ height: 1, background: BD }} />
 
@@ -474,7 +532,7 @@ function ComparePageInner() {
         const [{ data: cands, error: candsErr }, { data: asmts }] = await Promise.all([
           supabase
             .from('candidates')
-            .select('*, assessments(id, role_title), results(overall_score, scores, risk_level, percentile, strengths, watchouts)')
+            .select('*, assessments(id, role_title), results(overall_score, scores, risk_level, percentile, strengths, watchouts, pressure_fit_score, pressure_fit)')
             .eq('user_id', user.id)
             .eq('status', 'completed'),
           supabase

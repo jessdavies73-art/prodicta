@@ -207,7 +207,7 @@ export default function DashboardPage() {
 
         const { data: cands, error: candsErr } = await supabase
           .from('candidates')
-          .select('*, assessments!inner(role_title, id), results(overall_score, risk_level, percentile)')
+          .select('*, assessments!inner(role_title, id), results(overall_score, risk_level, percentile, pressure_fit_score)')
           .eq('user_id', user.id)
           .neq('status', 'archived')
           .order('invited_at', { ascending: false })
@@ -573,17 +573,18 @@ export default function DashboardPage() {
                 <div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                     <colgroup>
-                      <col style={{ width: '28%' }} />
-                      <col style={{ width: '22%' }} />
-                      <col style={{ width: '11%' }} />
+                      <col style={{ width: '24%' }} />
+                      <col style={{ width: '18%' }} />
+                      <col style={{ width: '10%' }} />
+                      <col style={{ width: '8%' }} />
                       <col style={{ width: '9%' }} />
                       <col style={{ width: '12%' }} />
                       <col style={{ width: '9%' }} />
-                      <col style={{ width: '9%' }} />
+                      <col style={{ width: '10%' }} />
                     </colgroup>
                     <thead>
                       <tr style={{ borderBottom: `1px solid ${BD}` }}>
-                        {['Candidate', 'Role', 'Status', 'Score', 'Risk', 'Date', ''].map(h => (
+                        {['Candidate', 'Role', 'Status', 'Score', 'Pressure', 'Risk', 'Date', ''].map(h => (
                           <th key={h} style={{
                             padding: '10px 12px',
                             textAlign: 'left',
@@ -604,6 +605,7 @@ export default function DashboardPage() {
                       {filtered.map((c, i) => {
                         const result      = c.results?.[0]
                         const score       = result?.overall_score ?? null
+                        const pf          = result?.pressure_fit_score ?? null
                         const risk        = result?.risk_level ?? null
                         const isCompleted = c.status === 'completed'
                         const isHovered   = hoveredRow === c.id
@@ -675,6 +677,23 @@ export default function DashboardPage() {
                                     color: scolor(score), lineHeight: 1,
                                   }}>
                                     {score}
+                                  </span>
+                                  <span style={{ fontSize: 10.5, color: TX3 }}>/100</span>
+                                </div>
+                              ) : (
+                                <span style={{ color: TX3, fontSize: 13 }}>—</span>
+                              )}
+                            </td>
+
+                            {/* Pressure-Fit */}
+                            <td style={{ padding: '12px 12px' }}>
+                              {isCompleted && pf !== null ? (
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                                  <span style={{
+                                    fontFamily: FM, fontSize: 15, fontWeight: 700, lineHeight: 1,
+                                    color: pf >= 75 ? GRN : pf >= 55 ? TEALD : pf >= 40 ? AMB : RED,
+                                  }}>
+                                    {pf}
                                   </span>
                                   <span style={{ fontSize: 10.5, color: TX3 }}>/100</span>
                                 </div>

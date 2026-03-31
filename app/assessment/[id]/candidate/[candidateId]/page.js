@@ -622,7 +622,166 @@ export default function CandidateReportPage({ params }) {
                   )
                 })()}
 
-                {/* ── 5. AI Hiring Summary ── */}
+                {/* ── 5. Pressure-Fit Assessment ── */}
+                {(results.pressure_fit_score != null || results.pressure_fit) && (() => {
+                  const pf = results.pressure_fit_score ?? null
+                  const dims = results.pressure_fit ?? {}
+
+                  function pfScoreColor(s) {
+                    if (s == null) return TX3
+                    return s >= 80 ? GRN : s >= 55 ? TEALD : RED
+                  }
+                  function pfScoreBg(s) {
+                    if (s == null) return BG
+                    return s >= 80 ? GRNBG : s >= 55 ? TEALLT : REDBG
+                  }
+                  function pfScoreBd(s) {
+                    if (s == null) return BD
+                    return s >= 80 ? GRNBD : s >= 55 ? `${TEAL}55` : '#fecaca'
+                  }
+                  function verdictStyle(v) {
+                    if (v === 'Strength') return { color: GRN, bg: GRNBG, bd: GRNBD }
+                    if (v === 'Concern')  return { color: RED, bg: REDBG, bd: '#fecaca' }
+                    return { color: TEALD, bg: TEALLT, bd: `${TEAL}55` }
+                  }
+
+                  const DIMENSIONS = [
+                    { key: 'decision_speed_quality',   label: 'Decision Speed & Quality',   icon: 'zap',      desc: 'Decisiveness and commitment when no perfect answer exists' },
+                    { key: 'composure_under_conflict',  label: 'Composure Under Conflict',   icon: 'alert',    desc: 'Emotional regulation when facing difficult conversations' },
+                    { key: 'prioritisation_under_load', label: 'Prioritisation Under Load',  icon: 'sliders',  desc: 'Framework and trade-off awareness when demands compete' },
+                    { key: 'ownership_accountability',  label: 'Ownership & Accountability', icon: 'award',    desc: 'Personal responsibility, active language, and specific commitments' },
+                  ]
+
+                  const overallColor = pfScoreColor(pf)
+                  const overallBg    = pfScoreBg(pf)
+                  const overallBd    = pfScoreBd(pf)
+                  const overallLabel = pf == null ? '—' : pf >= 80 ? 'Strong' : pf >= 55 ? 'Moderate' : 'Concern'
+
+                  return (
+                    <div style={{
+                      marginBottom: 20,
+                      background: `linear-gradient(135deg, #0f2137 0%, #0d3349 100%)`,
+                      border: `1px solid rgba(91,191,189,0.25)`,
+                      borderRadius: 14,
+                      overflow: 'hidden',
+                    }}>
+                      {/* Header */}
+                      <div style={{
+                        padding: '22px 26px 18px',
+                        borderBottom: '1px solid rgba(255,255,255,0.08)',
+                        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+                      }}>
+                        <div>
+                          <h2 style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: '#fff', margin: '0 0 4px', letterSpacing: '-0.2px' }}>
+                            Pressure-Fit Assessment
+                          </h2>
+                          <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.5)', margin: 0 }}>
+                            How this candidate performs when it matters most.
+                          </p>
+                        </div>
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
+                          padding: '10px 18px', borderRadius: 10,
+                          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                        }}>
+                          <div style={{ fontFamily: FM, fontSize: 44, fontWeight: 800, color: overallColor, lineHeight: 1, letterSpacing: '-2px' }}>
+                            {pf ?? '—'}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: overallColor }}>{overallLabel}</div>
+                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>overall / 100</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 4 Dimensions */}
+                      <div style={{ padding: '20px 26px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+                        {DIMENSIONS.map(({ key, label, icon, desc }) => {
+                          const dim = dims[key] ?? {}
+                          const s   = dim.score ?? null
+                          const v   = dim.verdict ?? null
+                          const n   = dim.narrative ?? null
+                          const vs  = verdictStyle(v)
+
+                          return (
+                            <div key={key} style={{
+                              background: 'rgba(255,255,255,0.04)',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              borderRadius: 10,
+                              padding: '16px 18px',
+                            }}>
+                              {/* Row: label + verdict + score */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+                                <div style={{
+                                  width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                                  background: 'rgba(91,191,189,0.15)',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}>
+                                  <Ic name={icon} size={14} color={TEAL} />
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{label}</div>
+                                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{desc}</div>
+                                </div>
+                                {v && (
+                                  <span style={{
+                                    display: 'inline-flex', alignItems: 'center',
+                                    padding: '3px 11px', borderRadius: 20,
+                                    fontSize: 11.5, fontWeight: 700,
+                                    background: vs.bg, color: vs.color, border: `1px solid ${vs.bd}`,
+                                    flexShrink: 0,
+                                  }}>
+                                    {v}
+                                  </span>
+                                )}
+                                {s != null && (
+                                  <span style={{ fontFamily: FM, fontSize: 20, fontWeight: 800, color: pfScoreColor(s), flexShrink: 0, minWidth: 36, textAlign: 'right' }}>
+                                    {s}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Progress bar */}
+                              {s != null && (
+                                <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.1)', overflow: 'hidden', marginBottom: n ? 12 : 0 }}>
+                                  <div style={{
+                                    height: '100%',
+                                    width: `${s}%`,
+                                    background: pfScoreColor(s),
+                                    borderRadius: 99,
+                                    transition: 'width 0.6s ease',
+                                    opacity: 0.85,
+                                  }} />
+                                </div>
+                              )}
+
+                              {/* Narrative */}
+                              {n && (
+                                <p style={{
+                                  fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.65)',
+                                  margin: 0, lineHeight: 1.7,
+                                  borderLeft: `3px solid ${pfScoreColor(s) || TEAL}55`,
+                                  paddingLeft: 12,
+                                }}>
+                                  {n}
+                                </p>
+                              )}
+
+                              {/* No data fallback */}
+                              {s == null && !n && (
+                                <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.3)', margin: 0, fontStyle: 'italic' }}>
+                                  Data available for newly scored assessments.
+                                </p>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* ── 6. AI Hiring Summary ── */}
                 {results.ai_summary && (
                   <Card style={{ marginBottom: 20, borderLeft: `4px solid ${TEAL}` }}>
                     <SectionHeading>AI Hiring Summary</SectionHeading>
