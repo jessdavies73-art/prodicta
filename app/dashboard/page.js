@@ -72,9 +72,9 @@ function StatusBadge({ status }) {
   return (
     <span style={{
       display: 'inline-block',
-      padding: '3px 10px',
+      padding: '2px 7px',
       borderRadius: 50,
-      fontSize: 11.5,
+      fontSize: 11,
       fontWeight: 700,
       fontFamily: F,
       background: s.bg,
@@ -92,9 +92,9 @@ function RiskBadge({ risk }) {
   return (
     <span style={{
       display: 'inline-block',
-      padding: '3px 10px',
+      padding: '2px 7px',
       borderRadius: 50,
-      fontSize: 11.5,
+      fontSize: 11,
       fontWeight: 700,
       fontFamily: F,
       background: riskBg(risk),
@@ -573,27 +573,28 @@ export default function DashboardPage() {
                 <div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                     <colgroup>
-                      <col style={{ width: '24%' }} />
+                      <col style={{ width: '25%' }} />
                       <col style={{ width: '18%' }} />
                       <col style={{ width: '10%' }} />
                       <col style={{ width: '8%' }} />
-                      <col style={{ width: '9%' }} />
-                      <col style={{ width: '12%' }} />
-                      <col style={{ width: '9%' }} />
+                      <col style={{ width: '8%' }} />
+                      <col style={{ width: '8%' }} />
                       <col style={{ width: '10%' }} />
+                      <col style={{ width: '5%' }} />
                     </colgroup>
                     <thead>
                       <tr style={{ borderBottom: `1px solid ${BD}` }}>
                         {['Candidate', 'Role', 'Status', 'Score', 'Pressure', 'Risk', 'Date', ''].map(h => (
                           <th key={h} style={{
-                            padding: '10px 12px',
+                            padding: '10px 8px',
                             textAlign: 'left',
-                            fontSize: 11.5,
+                            fontSize: 11,
                             fontWeight: 700,
                             color: TX3,
                             letterSpacing: '0.04em',
                             textTransform: 'uppercase',
                             whiteSpace: 'nowrap',
+                            overflow: 'hidden',
                             background: BG,
                           }}>
                             {h}
@@ -632,18 +633,18 @@ export default function DashboardPage() {
                             }}
                           >
                             {/* Candidate name + email */}
-                            <td style={{ padding: '12px 12px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                                <Avatar name={c.name} size={30} />
-                                <div style={{ minWidth: 0 }}>
+                            <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <Avatar name={c.name} size={28} />
+                                <div style={{ minWidth: 0, flex: 1 }}>
                                   <div style={{
-                                    fontSize: 13, fontWeight: 600, color: TX,
+                                    fontSize: 12.5, fontWeight: 600, color: TX,
                                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                   }}>
                                     {c.name}
                                   </div>
                                   <div style={{
-                                    fontSize: 11.5, color: TX3,
+                                    fontSize: 11, color: TX3,
                                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                   }}>
                                     {c.email}
@@ -653,9 +654,9 @@ export default function DashboardPage() {
                             </td>
 
                             {/* Role */}
-                            <td style={{ padding: '12px 12px' }}>
+                            <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
                               <span style={{
-                                fontSize: 12.5, color: TX2, fontWeight: 500,
+                                fontSize: 12, color: TX2, fontWeight: 500,
                                 overflow: 'hidden', textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap', display: 'block',
                               }}>
@@ -664,58 +665,58 @@ export default function DashboardPage() {
                             </td>
 
                             {/* Status */}
-                            <td style={{ padding: '12px 12px' }}>
+                            <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
                               <StatusBadge status={c.status} />
                             </td>
 
                             {/* Score */}
-                            <td style={{ padding: '12px 12px' }}>
+                            <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
                               {isCompleted && score !== null ? (
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
                                   <span style={{
-                                    fontFamily: FM, fontSize: 16, fontWeight: 700,
+                                    fontFamily: FM, fontSize: 15, fontWeight: 700,
                                     color: scolor(score), lineHeight: 1,
                                   }}>
                                     {score}
                                   </span>
-                                  <span style={{ fontSize: 10.5, color: TX3 }}>/100</span>
+                                  <span style={{ fontSize: 10, color: TX3 }}>/100</span>
                                 </div>
                               ) : (
-                                <span style={{ color: TX3, fontSize: 13 }}>-</span>
+                                <span style={{ color: TX3, fontSize: 12 }}>-</span>
                               )}
                             </td>
 
                             {/* Pressure-Fit */}
-                            <td style={{ padding: '12px 12px' }}>
+                            <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
                               {isCompleted && pf !== null ? (
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
                                   <span style={{
                                     fontFamily: FM, fontSize: 15, fontWeight: 700, lineHeight: 1,
                                     color: pf >= 75 ? GRN : pf >= 55 ? TEALD : pf >= 40 ? AMB : RED,
                                   }}>
                                     {pf}
                                   </span>
-                                  <span style={{ fontSize: 10.5, color: TX3 }}>/100</span>
+                                  <span style={{ fontSize: 10, color: TX3 }}>/100</span>
                                 </div>
                               ) : (
-                                <span style={{ color: TX3, fontSize: 13 }}>-</span>
+                                <span style={{ color: TX3, fontSize: 12 }}>-</span>
                               )}
                             </td>
 
                             {/* Risk */}
-                            <td style={{ padding: '12px 12px' }}>
-                              {isCompleted ? <RiskBadge risk={risk} /> : <span style={{ color: TX3, fontSize: 13 }}>-</span>}
+                            <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
+                              {isCompleted ? <RiskBadge risk={risk} /> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}
                             </td>
 
                             {/* Date */}
-                            <td style={{ padding: '12px 12px' }}>
-                              <span style={{ fontSize: 12, color: TX3, whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
+                              <span style={{ fontSize: 11.5, color: TX3, whiteSpace: 'nowrap' }}>
                                 {isCompleted ? fmt(c.completed_at) : fmt(c.invited_at)}
                               </span>
                             </td>
 
                             {/* Actions ⋯ menu */}
-                            <td style={{ padding: '12px 8px' }}>
+                            <td style={{ padding: '10px 4px', overflow: 'hidden' }}>
                               <div style={{ position: 'relative' }}>
                                 <button
                                   onClick={e => {
