@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
@@ -10,6 +10,54 @@ const F = "'Outfit',system-ui,sans-serif"
 const FM = "'IBM Plex Mono',monospace"
 
 const SKILLS = ['Communication', 'Problem solving', 'Prioritisation', 'Leadership']
+
+const GEN_STEPS = [
+  'Analysing role requirements…',
+  'Generating work scenarios…',
+  'Tailoring to your role…',
+  'Finalising simulations…',
+]
+
+function GeneratingLoader() {
+  const [step, setStep]       = useState(0)
+  const [progress, setProgress] = useState(8)
+  const stepRef = useRef(0)
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      stepRef.current = Math.min(stepRef.current + 1, GEN_STEPS.length - 1)
+      setStep(stepRef.current)
+      setProgress(Math.min(8 + stepRef.current * 24, 88))
+    }, 2400)
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <div style={{ padding: '12px 0', textAlign: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 18 }}>
+        <div style={{
+          width: 20, height: 20,
+          border: '2.5px solid #e0f2f0',
+          borderTopColor: '#00BFA5',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+          flexShrink: 0,
+        }} />
+        <span style={{ fontSize: 14.5, color: '#009688', fontWeight: 700, fontFamily: F, minWidth: 240, textAlign: 'left' }}>
+          {GEN_STEPS[step]}
+        </span>
+      </div>
+      <div style={{ height: 5, borderRadius: 99, background: '#e4e9f0', overflow: 'hidden', maxWidth: 320, margin: '0 auto' }}>
+        <div style={{
+          height: '100%', borderRadius: 99,
+          background: 'linear-gradient(90deg, #00BFA5, #009688)',
+          width: `${progress}%`,
+          transition: 'width 0.9s cubic-bezier(0.4,0,0.2,1)',
+        }} />
+      </div>
+    </div>
+  )
+}
 
 function detectRoleType(jd) {
   const t = jd.toLowerCase()
@@ -385,17 +433,7 @@ export default function NewAssessmentPage() {
 
         <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0', padding: '24px 32px' }}>
           {loading ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '8px 0' }}>
-              <div style={{
-                width: 22, height: 22, border: '3px solid #e0f2f0',
-                borderTopColor: '#00BFA5', borderRadius: '50%',
-                animation: 'spin 0.8s linear infinite'
-              }} />
-              <span style={{ fontSize: 15, color: '#009688', fontWeight: 600, fontFamily: F }}>
-                Generating your work simulations with AI…
-              </span>
-              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            </div>
+            <GeneratingLoader />
           ) : (
             <button
               onClick={handleGenerate}

@@ -62,17 +62,43 @@
 
 /* ── Button hover lift (not disabled) ─────────────────────────────────────── */
 button:not([disabled]):not([data-no-lift]) {
-  transition-property: transform, box-shadow, background, color, border-color, opacity;
+  transition-property: transform, box-shadow, background, color, border-color, opacity, filter;
   transition-duration: 0.15s;
   transition-timing-function: ease;
 }
 button:not([disabled]):not([data-no-lift]):hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(15,33,55,0.1);
+  box-shadow: 0 6px 18px rgba(15,33,55,0.14);
+  filter: brightness(0.96);
 }
 button:not([disabled]):not([data-no-lift]):active {
   transform: translateY(0);
   box-shadow: none;
+  filter: brightness(0.92);
+}
+
+/* ── Card hover lift ───────────────────────────────────────────────────────── */
+.card-hover {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(15,33,55,0.13), 0 2px 8px rgba(15,33,55,0.07) !important;
+}
+
+/* ── Checkmark draw animation ──────────────────────────────────────────────── */
+@keyframes drawCheck {
+  from { stroke-dashoffset: 30 }
+  to   { stroke-dashoffset: 0  }
+}
+@keyframes popIn {
+  0%   { transform: scale(0.4); opacity: 0 }
+  70%  { transform: scale(1.12) }
+  100% { transform: scale(1);   opacity: 1 }
+}
+@keyframes floatDot {
+  0%   { transform: translateY(110vh) }
+  100% { transform: translateY(-60px) }
 }
 
 /* ── Smooth focus outlines ─────────────────────────────────────────────────── */

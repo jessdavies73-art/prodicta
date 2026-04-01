@@ -38,13 +38,14 @@ const dBd = s => s >= 80 ? GRNBD : s >= 70 ? `${TEAL}55` : s >= 55 ? AMBBD : RED
 const SHADOW = '0 2px 12px rgba(15,33,55,0.08), 0 1px 3px rgba(15,33,55,0.05)'
 const SHADOW_LG = '0 4px 24px rgba(15,33,55,0.10), 0 1px 4px rgba(15,33,55,0.06)'
 
-const Card = ({ children, style = {}, className = '' }) => (
-  <div className={className} style={{
+const Card = ({ children, style = {}, className = '', topColor }) => (
+  <div className={`card-hover ${className}`} style={{
     background: CARD,
     border: `1px solid ${BD}`,
     borderRadius: 12,
     padding: '24px 28px',
     boxShadow: SHADOW,
+    ...(topColor ? { borderTop: `3px solid ${topColor}` } : {}),
     ...style,
   }}>
     {children}
@@ -203,9 +204,9 @@ function ScoreRing({ score, size = 140, strokeWidth = 10, animate = true }) {
   }, [score, animate])
 
   return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0, filter: `drop-shadow(0 0 ${Math.round(size * 0.06)}px ${color}55)` }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`${color}20`} strokeWidth={strokeWidth} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`${color}18`} strokeWidth={strokeWidth} />
         <circle
           cx={size / 2} cy={size / 2} r={r}
           fill="none"
@@ -222,7 +223,7 @@ function ScoreRing({ score, size = 140, strokeWidth = 10, animate = true }) {
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
       }}>
-        <span style={{ fontFamily: FM, fontSize: size * 0.24, fontWeight: 800, color, lineHeight: 1, letterSpacing: '-1px' }}>
+        <span style={{ fontFamily: FM, fontSize: size * 0.26, fontWeight: 800, color, lineHeight: 1, letterSpacing: '-1px' }}>
           {display}
         </span>
         <span style={{ fontFamily: F, fontSize: size * 0.08, fontWeight: 700, color: TX3, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -241,9 +242,9 @@ function SmallRing({ score, size = 60, strokeWidth = 5 }) {
   const color = sc(score)
   useEffect(() => { const t = setTimeout(() => setDrawn(true), 80); return () => clearTimeout(t) }, [])
   return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0, filter: `drop-shadow(0 0 ${Math.round(size * 0.07)}px ${color}50)` }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={`${color}20`} strokeWidth={strokeWidth} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={`${color}18`} strokeWidth={strokeWidth} />
         <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={strokeWidth}
           strokeLinecap="round" strokeDasharray={circ}
           strokeDashoffset={drawn ? circ * (1 - score / 100) : circ}
@@ -251,7 +252,7 @@ function SmallRing({ score, size = 60, strokeWidth = 5 }) {
         />
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontFamily: FM, fontSize: size * 0.24, fontWeight: 800, color, lineHeight: 1 }}>{score}</span>
+        <span style={{ fontFamily: FM, fontSize: size * 0.26, fontWeight: 800, color, lineHeight: 1 }}>{score}</span>
       </div>
     </div>
   )
@@ -710,59 +711,62 @@ export default function CandidateReportPage({ params }) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
 
                   {/* Pass Probability */}
-                  <Card style={{ textAlign: 'center', padding: '24px 20px' }}>
+                  <Card topColor={sc(passProbability ?? score)} style={{ textAlign: 'center', padding: '24px 20px', background: `linear-gradient(180deg, ${sbg(passProbability ?? score)} 0%, #fff 60%)` }}>
                     <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14 }}>
                       Pass Probability
                     </div>
                     <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 12px' }}>
                       <SmallRing score={passProbability ?? score} size={80} strokeWidth={7} />
                     </div>
-                    <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: sc(passProbability ?? score), lineHeight: 1, marginBottom: 6 }}>
+                    <div style={{ fontFamily: FM, fontSize: 32, fontWeight: 800, color: sc(passProbability ?? score), lineHeight: 1, marginBottom: 6 }}>
                       {passProbability ?? score}%
                     </div>
                     <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>predicted probation success</div>
                   </Card>
 
                   {/* Hiring Decision */}
-                  <Card style={{ textAlign: 'center', padding: '24px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <Card topColor={dC(score)} style={{ textAlign: 'center', padding: '24px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(180deg, ${dBg(score)} 0%, #fff 60%)` }}>
                     <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14 }}>
                       Hiring Decision
                     </div>
                     <div style={{
                       width: 52, height: 52, borderRadius: '50%',
-                      background: dBg(score), border: `2px solid ${dBd(score)}`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+                      background: dC(score),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14,
+                      boxShadow: `0 4px 14px ${dC(score)}44`,
                     }}>
-                      <Ic name="award" size={24} color={dC(score)} />
+                      <Ic name="award" size={24} color="#fff" />
                     </div>
                     <div style={{
                       display: 'inline-flex', alignItems: 'center',
-                      padding: '6px 16px', borderRadius: 50,
-                      background: dBg(score), border: `1.5px solid ${dBd(score)}`,
+                      padding: '8px 20px', borderRadius: 50,
+                      background: dC(score),
+                      boxShadow: `0 3px 12px ${dC(score)}44`,
                     }}>
-                      <span style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: dC(score) }}>
+                      <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: '-0.2px' }}>
                         {dL(score)}
                       </span>
                     </div>
                   </Card>
 
                   {/* Risk Level */}
-                  <Card style={{ padding: '24px 22px' }}>
+                  <Card topColor={riskCol(results.risk_level)} style={{ padding: '24px 22px', background: `linear-gradient(180deg, ${riskBg(results.risk_level)} 0%, #fff 60%)` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
                       <span style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Risk Level</span>
                       <InfoTooltip text="Likelihood of this candidate struggling during probation based on their responses" />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                       <div style={{
-                        width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-                        background: riskBg(results.risk_level), border: `1px solid ${riskBd(results.risk_level)}`,
+                        width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                        background: riskCol(results.risk_level),
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: `0 3px 10px ${riskCol(results.risk_level)}44`,
                       }}>
-                        <Ic name="alert" size={18} color={riskCol(results.risk_level)} />
+                        <Ic name="alert" size={18} color="#fff" />
                       </div>
                       <span style={{
-                        fontFamily: F, fontSize: 17, fontWeight: 800, color: riskCol(results.risk_level),
-                        letterSpacing: '-0.2px',
+                        fontFamily: FM, fontSize: 20, fontWeight: 800, color: riskCol(results.risk_level),
+                        letterSpacing: '-0.3px',
                       }}>
                         {results.risk_level || 'Unknown'}
                       </span>
@@ -984,9 +988,12 @@ export default function CandidateReportPage({ params }) {
                             <div style={{ width: 28, height: 28, borderRadius: 8, background: `${TEAL}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Ic name="sliders" size={14} color={TEAL} />
                             </div>
-                            <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: '#fff', margin: 0 }}>
-                              Pressure-Fit Assessment
-                            </h2>
+                            <div>
+                              <h2 style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.2 }}>
+                                Pressure-Fit Assessment
+                              </h2>
+                              <div style={{ height: 3, width: 40, borderRadius: 99, background: TEAL, marginTop: 5 }} />
+                            </div>
                             <InfoTooltip text="How this candidate handles pressure, conflict, and competing priorities" light />
                           </div>
                           <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.45)', margin: 0, paddingLeft: 36 }}>
@@ -1200,9 +1207,12 @@ export default function CandidateReportPage({ params }) {
                               }}>
                                 <Ic name="check" size={13} color={GRN} />
                               </div>
-                              <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: 0, lineHeight: 1.4 }}>
-                                {title}
-                              </p>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <svg width={14} height={14} viewBox="0 0 24 24" fill={GRN} style={{ flexShrink: 0 }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: 0, lineHeight: 1.4 }}>
+                                  {title}
+                                </p>
+                              </div>
                             </div>
                             {explanation && (
                               <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 6px', lineHeight: 1.7, paddingLeft: 34 }}>

@@ -182,22 +182,27 @@ function LoadingSkeleton() {
 function EmptyState() {
   const router = useRouter()
   return (
-    <div style={{
-      textAlign: 'center', padding: '60px 24px',
-    }}>
+    <div style={{ textAlign: 'center', padding: '64px 24px' }}>
       <div style={{
-        width: 60, height: 60, borderRadius: 16,
-        background: TEALLT,
+        width: 72, height: 72, borderRadius: '50%',
+        background: `linear-gradient(135deg, ${TEALLT}, #c7f0ea)`,
+        border: `2px solid ${TEAL}33`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        margin: '0 auto 20px',
+        margin: '0 auto 22px',
+        boxShadow: `0 4px 20px ${TEAL}22`,
       }}>
-        <Ic name="users" size={26} color={TEALD} />
+        <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
       </div>
-      <div style={{ fontSize: 16, fontWeight: 700, color: TX, fontFamily: F, marginBottom: 8 }}>
+      <div style={{ fontSize: 17, fontWeight: 800, color: TX, fontFamily: F, marginBottom: 8 }}>
         No candidates yet
       </div>
-      <div style={{ fontSize: 13.5, color: TX2, fontFamily: F, marginBottom: 24, maxWidth: 340, margin: '0 auto 24px' }}>
-        Create an assessment and invite your first candidate to get started.
+      <div style={{ fontSize: 13.5, color: TX2, fontFamily: F, lineHeight: 1.6, maxWidth: 300, margin: '0 auto 24px' }}>
+        Ready to find your best hire? Create an assessment and send your first invite.
       </div>
       <button
         onClick={() => router.push('/assessment/new')}

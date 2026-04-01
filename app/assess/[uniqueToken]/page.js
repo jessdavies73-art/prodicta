@@ -752,37 +752,52 @@ function Confetti() {
 
 // ─── State: Complete ──────────────────────────────────────────────────────────
 function CompletePage({ candidateName }) {
+  const [textVisible, setTextVisible] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setTextVisible(true), 700); return () => clearTimeout(t) }, [])
+
   return (
     <>
+      <style>{`
+        @keyframes drawCheck { from { stroke-dashoffset: 30 } to { stroke-dashoffset: 0 } }
+        @keyframes popIn { 0%{transform:scale(0.35);opacity:0} 70%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
+        @keyframes textFadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+      `}</style>
       <NavBar candidateName={candidateName} />
       <CentredCard>
         <Card style={{ textAlign: 'center', padding: '64px 36px', position: 'relative', overflow: 'hidden' }}>
           <Confetti />
           <div style={{
-            width: 72,
-            height: 72,
+            width: 80,
+            height: 80,
             borderRadius: '50%',
-            background: `linear-gradient(135deg, ${TEAL}, #009688)`,
+            background: `linear-gradient(135deg, #22C55E, #16a34a)`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 24px',
-            boxShadow: `0 8px 24px rgba(0,191,165,0.35)`,
-            animation: 'fadeInUp 0.4s ease-out',
+            margin: '0 auto 28px',
+            boxShadow: `0 0 0 8px #f0fdf4, 0 8px 28px rgba(34,197,94,0.35)`,
+            animation: 'popIn 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards',
           }}>
-            <svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
+            <svg width={36} height={36} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <polyline
+                points="20 6 9 17 4 12"
+                strokeDasharray="30"
+                strokeDashoffset="30"
+                style={{ animation: 'drawCheck 0.4s ease-out 0.4s forwards' }}
+              />
             </svg>
           </div>
-          <h2 style={{ fontFamily: F, color: TX, fontSize: 26, fontWeight: 800, margin: '0 0 12px', animation: 'fadeInUp 0.45s ease-out' }}>
-            All done — thank you!
-          </h2>
-          <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 8px', lineHeight: 1.6 }}>
-            Your responses have been submitted successfully.
-          </p>
-          <p style={{ fontFamily: F, color: TX2, fontSize: 15, margin: '0 0 36px', lineHeight: 1.6 }}>
-            The hiring team will review your assessment and be in touch.
-          </p>
+          <div style={{ opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(10px)', transition: 'opacity 0.45s ease, transform 0.45s ease' }}>
+            <h2 style={{ fontFamily: F, color: TX, fontSize: 26, fontWeight: 800, margin: '0 0 12px' }}>
+              All done — thank you!
+            </h2>
+            <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 8px', lineHeight: 1.6 }}>
+              Your responses have been submitted successfully.
+            </p>
+            <p style={{ fontFamily: F, color: TX2, fontSize: 15, margin: '0 0 36px', lineHeight: 1.6 }}>
+              The hiring team will review your assessment and be in touch.
+            </p>
+          </div>
           <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
             <ProdictaLogo textColor={NAVY} size={28} />
             <p style={{ fontFamily: F, color: TX3, fontSize: 13, margin: 0 }}>

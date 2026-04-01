@@ -226,9 +226,38 @@ function Field({ label, id, type = 'text', value, onChange, placeholder, autoCom
 
 // ── Logo mark (pure CSS/SVG-free) ────────────────────────────────────────
 
+function FloatingDots() {
+  const dots = [
+    { size: 5,  left: '8%',  delay: '0s',   dur: '14s', opacity: 0.14, color: TEAL  },
+    { size: 3,  left: '22%', delay: '3s',   dur: '18s', opacity: 0.09, color: '#fff' },
+    { size: 7,  left: '37%', delay: '6s',   dur: '12s', opacity: 0.12, color: TEAL  },
+    { size: 4,  left: '52%', delay: '1.5s', dur: '20s', opacity: 0.08, color: '#fff' },
+    { size: 6,  left: '67%', delay: '4s',   dur: '15s', opacity: 0.13, color: TEAL  },
+    { size: 3,  left: '80%', delay: '7s',   dur: '16s', opacity: 0.08, color: '#fff' },
+    { size: 5,  left: '92%', delay: '2s',   dur: '19s', opacity: 0.11, color: TEAL  },
+  ]
+  return (
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }}>
+      {dots.map((d, i) => (
+        <div key={i} style={{
+          position: 'absolute',
+          bottom: -20,
+          left: d.left,
+          width: d.size,
+          height: d.size,
+          borderRadius: '50%',
+          background: d.color,
+          opacity: d.opacity,
+          animation: `floatDot ${d.dur} linear ${d.delay} infinite`,
+        }} />
+      ))}
+    </div>
+  )
+}
+
 function Logo() {
   return (
-    <div style={styles.logoWrap}>
+    <div style={{ ...styles.logoWrap, position: 'relative', zIndex: 1 }}>
       <div style={styles.logoMark}>
         <div style={{ filter: 'drop-shadow(0 0 10px rgba(0,191,165,0.55)) drop-shadow(0 0 22px rgba(0,191,165,0.28))' }}>
           <ProdictaLogo textColor="#ffffff" size={52} />
@@ -380,6 +409,7 @@ export default function LoginPage() {
 
   return (
     <div style={styles.page}>
+      <FloatingDots />
       <Logo />
 
       <div style={styles.card}>
