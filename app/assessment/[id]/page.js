@@ -146,6 +146,10 @@ export default function AssessmentPage({ params }) {
   // Close assessment state
   const [closing, setClosing] = useState(false)
 
+  // Delete candidate state
+  const [confirmDeleteCandidate, setConfirmDeleteCandidate] = useState(null)
+  const [deletingCandidateId, setDeletingCandidateId] = useState(null)
+
   useEffect(() => {
     const init = async () => {
       const supabase = createClient()
@@ -173,6 +177,22 @@ export default function AssessmentPage({ params }) {
     }
     init()
   }, [id, router])
+
+  const handleDeleteCandidate = async () => {
+    if (!confirmDeleteCandidate) return
+    const candidateId = confirmDeleteCandidate.id
+    setConfirmDeleteCandidate(null)
+    setDeletingCandidateId(candidateId)
+    try {
+      const supabase = createClient()
+      await supabase.from('responses').delete().eq('candidate_id', candidateId)
+      await supabase.from('results').delete().eq('candidate_id', candidateId)
+      await supabase.from('candidates').delete().eq('id', candidateId)
+      setCandidates(prev => prev.filter(c => c.id !== candidateId))
+    } finally {
+      setDeletingCandidateId(null)
+    }
+  }
 
   const handleCloseAssessment = async () => {
     if (closing) return
@@ -280,6 +300,67 @@ export default function AssessmentPage({ params }) {
     <div style={{ fontFamily: F, background: '#f7f9fb', minHeight: '100vh' }}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <Sidebar companyName={companyName} />
+
+      {/* Delete candidate confirmation modal */}
+      {confirmDeleteCandidate && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(15,33,55,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 24,
+          }}
+          onClick={() => setConfirmDeleteCandidate(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: 14, padding: '28px 32px',
+              maxWidth: 420, width: '100%',
+              boxShadow: '0 16px 48px rgba(15,33,55,0.2)',
+            }}
+          >
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: '#fef2f2', border: '1px solid #fecaca',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 16,
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+              </svg>
+            </div>
+            <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800, color: '#0f172a', fontFamily: F }}>
+              Are you sure you want to permanently delete this candidate?
+            </h3>
+            <p style={{ margin: '0 0 24px', fontSize: 14, color: '#5e6b7f', lineHeight: 1.6 }}>
+              <strong>{confirmDeleteCandidate.name}</strong> and all their responses and results will be permanently removed. This cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={handleDeleteCandidate}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 8, border: 'none',
+                  background: '#dc2626', color: '#fff', fontFamily: F,
+                  fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Delete permanently
+              </button>
+              <button
+                onClick={() => setConfirmDeleteCandidate(null)}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 8,
+                  border: '1.5px solid #e4e9f0', background: 'transparent',
+                  color: '#5e6b7f', fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <main style={{ marginLeft: 220, padding: '32px 40px', minHeight: '100vh', background: '#f7f9fb' }}>
 
         {/* Header row */}
@@ -527,12 +608,12 @@ export default function AssessmentPage({ params }) {
             {/* Table header */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+              gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 44px',
               padding: '10px 28px',
               background: '#f7f9fb',
               borderBottom: '1px solid #e4e9f0'
             }}>
-              {['Name / Email', 'Status', 'Score', 'Risk', 'Date'].map(col => (
+              {['Name / Email', 'Status', 'Score', 'Risk', 'Date', ''].map(col => (
                 <div key={col} style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   {col}
                 </div>
@@ -546,6 +627,7 @@ export default function AssessmentPage({ params }) {
               const risk = result?.risk_level
               const statusStyle = statusBadge(candidate.status)
               const isCompleted = candidate.status === 'Completed'
+              const isDeleting = deletingCandidateId === candidate.id
 
               return (
                 <div
@@ -553,7 +635,7 @@ export default function AssessmentPage({ params }) {
                   onClick={() => isCompleted && router.push(`/assessment/${id}/candidate/${candidate.id}`)}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+                    gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 44px',
                     padding: '14px 28px',
                     borderBottom: i < candidates.length - 1 ? '1px solid #e4e9f0' : 'none',
                     alignItems: 'center',
@@ -630,6 +712,29 @@ export default function AssessmentPage({ params }) {
                   {/* Date */}
                   <div style={{ fontSize: 12, color: '#94a1b3' }}>
                     {formatDate(candidate.invited_at)}
+                  </div>
+
+                  {/* Delete */}
+                  <div onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => setConfirmDeleteCandidate(candidate)}
+                      disabled={isDeleting}
+                      title="Delete permanently"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: 30, height: 30, borderRadius: 7, padding: 0,
+                        border: '1px solid #e4e9f0', background: 'transparent',
+                        cursor: isDeleting ? 'wait' : 'pointer',
+                        transition: 'all 0.15s',
+                        opacity: isDeleting ? 0.4 : 1,
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#dc2626' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#e4e9f0' }}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                      </svg>
+                    </button>
                   </div>
                 </div>
               )

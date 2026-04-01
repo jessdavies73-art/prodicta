@@ -250,7 +250,7 @@ export default function DashboardPage() {
     setDeletingIds(prev => new Set([...prev, id]))
     try {
       const supabase = createClient()
-      // Delete results first, then candidate (handles DBs without cascade)
+      await supabase.from('responses').delete().eq('candidate_id', id)
       await supabase.from('results').delete().eq('candidate_id', id)
       await supabase.from('candidates').delete().eq('id', id)
       setCandidates(prev => prev.filter(c => c.id !== id))
@@ -394,10 +394,10 @@ export default function DashboardPage() {
               <Ic name="trash" size={20} color={RED} />
             </div>
             <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800, color: TX }}>
-              Permanently delete this candidate?
+              Are you sure you want to permanently delete this candidate?
             </h3>
             <p style={{ margin: '0 0 6px', fontSize: 14, color: TX2, lineHeight: 1.6 }}>
-              <strong>{confirmDelete.name}</strong> and all their assessment data will be permanently removed. This cannot be undone.
+              <strong>{confirmDelete.name}</strong> and all their responses and results will be permanently removed. This cannot be undone.
             </p>
             <p style={{ margin: '0 0 24px', fontSize: 12.5, color: TX3, lineHeight: 1.5 }}>
               If you just want to hide them from your pipeline, use Archive instead.
@@ -573,14 +573,14 @@ export default function DashboardPage() {
                 <div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                     <colgroup>
-                      <col style={{ width: '25%' }} />
-                      <col style={{ width: '18%' }} />
+                      <col style={{ width: '24%' }} />
+                      <col style={{ width: '17%' }} />
                       <col style={{ width: '10%' }} />
                       <col style={{ width: '8%' }} />
                       <col style={{ width: '8%' }} />
                       <col style={{ width: '8%' }} />
-                      <col style={{ width: '10%' }} />
-                      <col style={{ width: '5%' }} />
+                      <col style={{ width: '9%' }} />
+                      <col style={{ width: '8%' }} />
                     </colgroup>
                     <thead>
                       <tr style={{ borderBottom: `1px solid ${BD}` }}>
@@ -715,71 +715,43 @@ export default function DashboardPage() {
                               </span>
                             </td>
 
-                            {/* Actions ⋯ menu */}
+                            {/* Actions */}
                             <td style={{ padding: '10px 4px', overflow: 'hidden' }}>
-                              <div style={{ position: 'relative' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                 <button
-                                  onClick={e => {
-                                    e.stopPropagation()
-                                    setOpenMenu(menuOpen ? null : c.id)
-                                  }}
+                                  onClick={e => { e.stopPropagation(); setConfirmArchive(c) }}
                                   disabled={isArchiving || isDeleting}
+                                  title="Archive"
                                   style={{
                                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                    width: 32, height: 32, borderRadius: 7, padding: 0,
-                                    border: `1px solid ${menuOpen ? TEAL : BD}`,
-                                    background: menuOpen ? TEALLT : 'transparent',
+                                    width: 30, height: 30, borderRadius: 7, padding: 0,
+                                    border: `1px solid ${BD}`, background: 'transparent',
                                     cursor: (isArchiving || isDeleting) ? 'wait' : 'pointer',
                                     transition: 'all 0.15s',
                                     opacity: (isArchiving || isDeleting) ? 0.5 : 1,
                                   }}
+                                  onMouseEnter={e => { e.currentTarget.style.background = BG; e.currentTarget.style.borderColor = TX3 }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = BD }}
                                 >
-                                  <Ic name="more-vertical" size={14} color={menuOpen ? TEALD : TX3} />
+                                  <Ic name="archive" size={13} color={TX3} />
                                 </button>
-
-                                {menuOpen && (
-                                  <div
-                                    onClick={e => e.stopPropagation()}
-                                    style={{
-                                      position: 'absolute', right: 0, top: 36, zIndex: 50,
-                                      background: CARD, border: `1px solid ${BD}`,
-                                      borderRadius: 10, boxShadow: '0 8px 24px rgba(15,33,55,0.12)',
-                                      minWidth: 170, overflow: 'hidden',
-                                    }}
-                                  >
-                                    <button
-                                      onClick={() => { setOpenMenu(null); setConfirmArchive(c) }}
-                                      style={{
-                                        display: 'flex', alignItems: 'center', gap: 10,
-                                        width: '100%', padding: '10px 14px',
-                                        border: 'none', background: 'transparent',
-                                        color: TX2, fontFamily: F, fontSize: 13, fontWeight: 600,
-                                        cursor: 'pointer', textAlign: 'left',
-                                      }}
-                                      onMouseEnter={e => e.currentTarget.style.background = BG}
-                                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                    >
-                                      <Ic name="archive" size={14} color={TX3} />
-                                      Archive
-                                    </button>
-                                    <div style={{ height: 1, background: BD, margin: '0 10px' }} />
-                                    <button
-                                      onClick={() => { setOpenMenu(null); setConfirmDelete(c) }}
-                                      style={{
-                                        display: 'flex', alignItems: 'center', gap: 10,
-                                        width: '100%', padding: '10px 14px',
-                                        border: 'none', background: 'transparent',
-                                        color: RED, fontFamily: F, fontSize: 13, fontWeight: 600,
-                                        cursor: 'pointer', textAlign: 'left',
-                                      }}
-                                      onMouseEnter={e => e.currentTarget.style.background = REDBG}
-                                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                    >
-                                      <Ic name="trash" size={14} color={RED} />
-                                      Delete permanently
-                                    </button>
-                                  </div>
-                                )}
+                                <button
+                                  onClick={e => { e.stopPropagation(); setConfirmDelete(c) }}
+                                  disabled={isArchiving || isDeleting}
+                                  title="Delete permanently"
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    width: 30, height: 30, borderRadius: 7, padding: 0,
+                                    border: `1px solid ${BD}`, background: 'transparent',
+                                    cursor: (isArchiving || isDeleting) ? 'wait' : 'pointer',
+                                    transition: 'all 0.15s',
+                                    opacity: (isArchiving || isDeleting) ? 0.5 : 1,
+                                  }}
+                                  onMouseEnter={e => { e.currentTarget.style.background = REDBG; e.currentTarget.style.borderColor = RED }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = BD }}
+                                >
+                                  <Ic name="trash" size={13} color={RED} />
+                                </button>
                               </div>
                             </td>
                           </tr>
