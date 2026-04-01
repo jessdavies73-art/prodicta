@@ -1090,6 +1090,7 @@ export default function CandidateReportPage({ params }) {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       {results.strengths.map((s, i) => {
                         const title = typeof s === 'object' ? (s.strength || s.title || s.text) : s
+                        const explanation = typeof s === 'object' ? s.explanation : null
                         const evidence = typeof s === 'object' ? s.evidence : null
                         return (
                           <div key={i} style={{
@@ -1103,9 +1104,12 @@ export default function CandidateReportPage({ params }) {
                                 <Ic name="check" size={16} color={GRN} />
                               </div>
                               <div style={{ flex: 1 }}>
-                                <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: 0 }}>
+                                <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '0 0 6px' }}>
                                   {title}
                                 </p>
+                                {explanation && (
+                                  <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px', lineHeight: 1.6 }}>{explanation}</p>
+                                )}
                                 {evidence && (
                                   <EvidenceBox>{evidence}</EvidenceBox>
                                 )}
@@ -1126,6 +1130,7 @@ export default function CandidateReportPage({ params }) {
                       {results.watchouts.map((w, i) => {
                         const title = typeof w === 'object' ? (w.watchout || w.title || w.text) : w
                         const severity = typeof w === 'object' ? w.severity : null
+                        const explanation = typeof w === 'object' ? w.explanation : null
                         const evidence = typeof w === 'object' ? w.evidence : null
                         const action = typeof w === 'object' ? w.action : null
                         const sev = sevStyle(severity)
@@ -1142,9 +1147,12 @@ export default function CandidateReportPage({ params }) {
                                 <Badge label={`${severity} severity`} bg={sev.bg} color={sev.color} border={sev.border} />
                               </div>
                             )}
-                            <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: 0 }}>
+                            <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '0 0 6px' }}>
                               {title}
                             </p>
+                            {explanation && (
+                              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px', lineHeight: 1.6 }}>{explanation}</p>
+                            )}
                             {evidence && (
                               <EvidenceBox>{evidence}</EvidenceBox>
                             )}
@@ -1372,7 +1380,7 @@ export default function CandidateReportPage({ params }) {
                     disabled={rescoring}
                     style={{ background: 'none', border: 'none', cursor: rescoring ? 'wait' : 'pointer', fontFamily: F, fontSize: 12.5, color: TX3, textDecoration: 'underline', padding: 0 }}
                   >
-                    {rescoring ? 'Re-scoring — this may take 15–20 seconds…' : 'Re-score this candidate'}
+                    {rescoring ? 'Re-scoring…' : 'Re-score this candidate'}
                   </button>
                   {rescoreError && (
                     <p style={{ fontFamily: F, fontSize: 12, color: RED, margin: '4px 0 0' }}>{rescoreError}</p>
