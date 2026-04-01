@@ -1050,11 +1050,9 @@ export default function CandidateReportPage({ params }) {
                             )}
 
                             {/* Narrative */}
-                            {narrative && (
-                              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.65 }}>
-                                {narrative}
-                              </p>
-                            )}
+                            <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.65 }}>
+                              {narrative || 'Assessment based on scenario responses.'}
+                            </p>
                           </div>
                         )
                       })}
