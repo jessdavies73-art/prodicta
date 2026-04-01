@@ -555,6 +555,36 @@ export default function LoginPage() {
           )}
         </div>
 
+        {/* ── Try Demo ── */}
+        <div style={{ textAlign: 'center', marginTop: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.1)' }} />
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontFamily: "'Outfit', system-ui, sans-serif", whiteSpace: 'nowrap' }}>or explore first</span>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.1)' }} />
+          </div>
+          <button
+            onClick={() => router.push('/demo')}
+            style={{
+              width: '100%', maxWidth: 420, padding: '11px 20px',
+              background: 'rgba(0,191,165,0.08)',
+              border: '1.5px solid rgba(0,191,165,0.35)',
+              borderRadius: 10, cursor: 'pointer',
+              fontFamily: "'Outfit', system-ui, sans-serif",
+              fontSize: 13.5, fontWeight: 700,
+              color: '#00BFA5',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              transition: 'background 0.15s, border-color 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,191,165,0.15)'; e.currentTarget.style.borderColor = 'rgba(0,191,165,0.6)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,191,165,0.08)'; e.currentTarget.style.borderColor = 'rgba(0,191,165,0.35)' }}
+          >
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="#00BFA5" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx={12} cy={12} r={10}/><polygon points="10 8 16 12 10 16 10 8" fill="#00BFA5" stroke="none"/>
+            </svg>
+            Try Demo — no account needed
+          </button>
+        </div>
+
         <p style={styles.footerNote}>
           By continuing you agree to Prodicta's{' '}
           <a href="/terms" style={{ color: DARK_T, textDecoration: 'none' }}>Terms of Service</a>
