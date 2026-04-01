@@ -556,6 +556,7 @@ export default function CandidateReportPage({ params }) {
                       <Ic name="refresh" size={15} color={rescoring ? TX3 : AMB} />
                       {rescoring ? 'Scoring…' : 'Re-score'}
                     </button>
+                    <InfoTooltip text="Re-run the AI scoring for this candidate. Use this if scoring failed or got stuck. Results will update within 20 seconds." />
                     {rescoreError && (
                       <p style={{ fontFamily: F, fontSize: 12, color: RED, margin: 0 }}>{rescoreError}</p>
                     )}
