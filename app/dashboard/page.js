@@ -524,8 +524,8 @@ export default function DashboardPage() {
         {/* ── Hiring Risk Overview ── */}
         <HiringRiskOverview completed={completed} />
 
-        {/* ── ERA 2025 Risk Calculator ── */}
-        <RiskCalculator />
+        {/* ── ERA 2025 Risk Calculator / Placement Risk ── */}
+        <RiskCalculator profile={profile} completed={completed} />
 
         {/* ── Bottom grid: table + assessments panel ── */}
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
@@ -1071,7 +1071,224 @@ function HiringRiskOverview({ completed }) {
   )
 }
 
-function RiskCalculator() {
+function PlacementRiskCard({ completed = [] }) {
+  const [fee, setFee] = useState('5000')
+  const [feeFocused, setFeeFocused] = useState(false)
+
+  const feeVal = Math.max(0, parseInt(fee.replace(/[^0-9]/g, '')) || 0)
+  const replacementSearch = 3000
+  const totalLoss = feeVal + replacementSearch
+
+  function gbp(n) {
+    return '£' + n.toLocaleString('en-GB')
+  }
+
+  const now = new Date()
+  const thisMonth = completed.filter(c => {
+    if (!c.completed_at) return false
+    const d = new Date(c.completed_at)
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+  })
+  const assessedThisMonth = thisMonth.length
+  const highRiskThisMonth = thisMonth.filter(c => {
+    const rl = c.results?.[0]?.risk_level ?? ''
+    return rl.toLowerCase().includes('high')
+  }).length
+
+  const inputStyle = focused => ({
+    fontFamily: F,
+    fontSize: 15,
+    fontWeight: 700,
+    width: '100%',
+    padding: '10px 14px',
+    borderRadius: 8,
+    border: `1.5px solid ${focused ? TEAL : BD}`,
+    background: CARD,
+    color: NAVY,
+    outline: 'none',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.15s',
+  })
+
+  return (
+    <div style={{
+      background: CARD,
+      border: `1px solid ${BD}`,
+      borderRadius: 14,
+      overflow: 'hidden',
+      marginBottom: 24,
+    }}>
+      {/* Header */}
+      <div style={{
+        background: NAVY,
+        padding: '20px 28px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 16,
+        flexWrap: 'wrap',
+      }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '3px 10px', borderRadius: 20,
+              background: `${PURPLE}22`, border: `1px solid ${PURPLE}55`,
+              fontSize: 11, fontWeight: 700, color: '#a5b4fc', letterSpacing: '0.04em',
+            }}>
+              AGENCY
+            </div>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '3px 10px', borderRadius: 20,
+              background: `${RED}22`, border: `1px solid ${RED}55`,
+              fontSize: 11, fontWeight: 700, color: '#f87171', letterSpacing: '0.04em',
+            }}>
+              PLACEMENT RISK
+            </div>
+          </div>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>
+            What does a failed placement cost you?
+          </h2>
+        </div>
+        <Ic name="shield" size={28} color={`${TEAL}88`} />
+      </div>
+
+      <div style={{ padding: '24px 28px' }}>
+
+        {/* This-month candidate stats — only shown when there is data */}
+        {assessedThisMonth > 0 && (
+          <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
+            <div style={{
+              flex: 1, minWidth: 160,
+              background: TEALLT,
+              border: `1px solid ${TEAL}55`,
+              borderRadius: 10, padding: '14px 16px',
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
+                Assessed this month
+              </div>
+              <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, color: TEALD, lineHeight: 1, marginBottom: 4 }}>
+                {assessedThisMonth}
+              </div>
+              <div style={{ fontSize: 11.5, color: TX3 }}>Candidates assessed before sending to clients</div>
+            </div>
+            <div style={{
+              flex: 1, minWidth: 160,
+              background: highRiskThisMonth > 0 ? REDBG : GRNBG,
+              border: `1px solid ${highRiskThisMonth > 0 ? '#fecaca' : GRNBD}`,
+              borderRadius: 10, padding: '14px 16px',
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6,
+                color: highRiskThisMonth > 0 ? RED : GRN,
+              }}>
+                Flagged high risk
+              </div>
+              <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 4,
+                color: highRiskThisMonth > 0 ? RED : GRN,
+              }}>
+                {highRiskThisMonth}
+              </div>
+              <div style={{ fontSize: 11.5, color: TX3 }}>
+                {highRiskThisMonth === 0
+                  ? 'No high-risk candidates this month'
+                  : `Flagged before being sent to clients`}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Average fee input */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>
+            Average placement fee
+          </label>
+          <div style={{ position: 'relative', maxWidth: 280 }}>
+            <span style={{
+              position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
+              fontSize: 14, fontWeight: 700, color: TX3, pointerEvents: 'none',
+            }}>£</span>
+            <input
+              type="text"
+              value={fee}
+              onChange={e => setFee(e.target.value.replace(/[^0-9]/g, ''))}
+              onFocus={() => setFeeFocused(true)}
+              onBlur={() => setFeeFocused(false)}
+              style={{ ...inputStyle(feeFocused), paddingLeft: 26 }}
+              placeholder="5000"
+            />
+          </div>
+        </div>
+
+        {/* Cost breakdown */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+            Cost of a failed placement
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { label: 'Lost placement fee',         value: gbp(feeVal),          note: 'Not recovered on failed placement',           color: RED,    bg: REDBG },
+              { label: 'Replacement search cost',    value: gbp(replacementSearch), note: 'Average cost to source a replacement',       color: AMB,    bg: AMBBG },
+              { label: 'Client relationship damage', value: 'Reputational',        note: 'Loss of future instructions — hard to quantify', color: PURPLE, bg: '#f5f3ff' },
+            ].map(({ label, value, note, color, bg }) => (
+              <div key={label} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 14px', borderRadius: 8,
+                background: bg, border: `1px solid ${color}33`,
+                gap: 12,
+              }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: TX }}>{label}</div>
+                  <div style={{ fontSize: 11.5, color: TX3, marginTop: 1 }}>{note}</div>
+                </div>
+                <div style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color, flexShrink: 0 }}>
+                  {value}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Total exposure */}
+        <div style={{
+          background: `linear-gradient(135deg, ${REDBG}, #fff5f5)`,
+          border: `1.5px solid ${RED}66`,
+          borderRadius: 12, padding: '18px 20px',
+          marginBottom: 16,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+            Total financial exposure — 1 failed placement
+          </div>
+          <div style={{ fontFamily: FM, fontSize: 40, fontWeight: 800, color: RED, lineHeight: 1, marginBottom: 4 }}>
+            {gbp(totalLoss)}
+          </div>
+          <div style={{ fontSize: 12.5, color: TX2 }}>
+            Lost fee + replacement search · excludes reputational damage
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div style={{
+          padding: '12px 16px',
+          borderRadius: 8,
+          background: NAVY,
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+        }}>
+          <Ic name="shield" size={15} color={TEAL} />
+          <p style={{ margin: 0, fontSize: 12.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, fontFamily: F }}>
+            <strong style={{ color: TEAL }}>PRODICTA</strong> helps you send candidates your clients can trust —{' '}
+            identifying high-risk placements before you submit CVs.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function RiskCalculator({ profile, completed = [] }) {
+  if (profile?.account_type === 'agency') {
+    return <PlacementRiskCard completed={completed} />
+  }
   const [salary, setSalary] = useState('30000')
   const [hires, setHires] = useState('5')
   const [salFocused, setSalFocused] = useState(false)

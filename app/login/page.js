@@ -240,6 +240,7 @@ export default function LoginPage() {
   const [suCompany, setSuCompany]   = useState('')
   const [suEmail, setSuEmail]       = useState('')
   const [suPassword, setSuPassword] = useState('')
+  const [suAccountType, setSuAccountType] = useState('employer')
 
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState('')
@@ -337,6 +338,7 @@ export default function LoginPage() {
             id: data.user.id,
             email: data.user.email,
             company_name: suCompany.trim(),
+            account_type: suAccountType,
           },
           { onConflict: 'id', ignoreDuplicates: false }
         )
@@ -442,6 +444,43 @@ export default function LoginPage() {
                   placeholder="Acme Ltd"
                   autoComplete="organization"
                 />
+                {/* Account type */}
+                <div>
+                  <label style={styles.label}>
+                    Are you a direct employer or a recruitment agency?
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {[
+                      { value: 'employer', label: 'Direct Employer' },
+                      { value: 'agency',   label: 'Recruitment Agency' },
+                    ].map(opt => {
+                      const active = suAccountType === opt.value
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setSuAccountType(opt.value)}
+                          style={{
+                            flex: 1,
+                            padding: '10px 12px',
+                            borderRadius: 8,
+                            border: `1.5px solid ${active ? TEAL : '#d1d5db'}`,
+                            background: active ? LIGHT_T : '#f9fafb',
+                            color: active ? DARK_T : '#6b7280',
+                            fontFamily: "'Outfit', system-ui, sans-serif",
+                            fontSize: 13.5,
+                            fontWeight: active ? 700 : 500,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
                 <Field
                   label="Work email address"
                   id="su-email"

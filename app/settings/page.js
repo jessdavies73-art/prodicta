@@ -139,6 +139,8 @@ export default function SettingsPage() {
   const [companyFocused, setCompanyFocused] = useState(false)
   const [industryFocused, setIndustryFocused] = useState(false)
   const [companySizeFocused, setCompanySizeFocused] = useState(false)
+  const [accountType, setAccountType] = useState('employer')
+  const [accountTypeFocused, setAccountTypeFocused] = useState(null)
 
   // Password state
   const [newPassword, setNewPassword] = useState('')
@@ -164,6 +166,7 @@ export default function SettingsPage() {
         setCompanyName(prof?.company_name || '')
         setIndustry(prof?.industry || '')
         setCompanySize(prof?.company_size || '')
+        setAccountType(prof?.account_type || 'employer')
       } catch (err) {
         setError(err.message)
       } finally {
@@ -180,10 +183,10 @@ export default function SettingsPage() {
       const supabase = createClient()
       const { error: updateErr } = await supabase
         .from('users')
-        .update({ company_name: companyName, industry: industry || null, company_size: companySize || null })
+        .update({ company_name: companyName, industry: industry || null, company_size: companySize || null, account_type: accountType })
         .eq('id', profile.id)
       if (updateErr) throw updateErr
-      setProfile(prev => ({ ...prev, company_name: companyName, industry, company_size: companySize }))
+      setProfile(prev => ({ ...prev, company_name: companyName, industry, company_size: companySize, account_type: accountType }))
       setCompanyToast({ type: 'success', message: 'Changes saved.' })
       setTimeout(() => setCompanyToast(null), 3500)
     } catch (err) {
@@ -370,6 +373,43 @@ export default function SettingsPage() {
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </SelectInput>
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <FieldLabel>Account type</FieldLabel>
+                <p style={{ margin: '0 0 10px', fontSize: 12.5, color: TX3, fontFamily: F }}>
+                  Are you a direct employer or a recruitment agency?
+                </p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[
+                    { value: 'employer', label: 'Direct Employer' },
+                    { value: 'agency',   label: 'Recruitment Agency' },
+                  ].map(opt => {
+                    const active = accountType === opt.value
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setAccountType(opt.value)}
+                        style={{
+                          flex: 1,
+                          padding: '10px 14px',
+                          borderRadius: 8,
+                          border: `1.5px solid ${active ? TEAL : BD}`,
+                          background: active ? TEALLT : BG,
+                          color: active ? TEALD : TX2,
+                          fontFamily: F,
+                          fontSize: 13.5,
+                          fontWeight: active ? 700 : 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

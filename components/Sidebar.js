@@ -12,6 +12,7 @@ const NAV = [
   { key: 'compare',         label: 'Compare',         icon: 'sliders',  href: '/compare' },
   { key: 'benchmarks',      label: 'Benchmarks',      icon: 'layers',   href: '/benchmarks' },
   { key: 'archive',         label: 'Archive',         icon: 'archive',  href: '/archive' },
+  { key: 'how-it-works',   label: 'How It Works',    icon: 'info',     href: '/how-it-works' },
   { key: 'settings',        label: 'Settings',        icon: 'settings', href: '/settings' },
 ]
 
