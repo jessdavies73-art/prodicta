@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
@@ -7,25 +7,44 @@ import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
-  GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, PURPLE,
+  GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
   F, FM,
-  scolor, sbg, sbd, slabel, dL, dC, riskBg, riskCol, riskBd,
+  riskBg, riskCol, riskBd,
 } from '@/lib/constants'
 
-/* ── score helpers ─────────────────────────────────────── */
-const passPct = s => s >= 85 ? 96 : s >= 75 ? 89 : s >= 60 ? 72 : s >= 45 ? 51 : 28
-const pfColor = s => s == null ? TX3 : s >= 80 ? GRN : s >= 55 ? TEALD : RED
-const pfBg    = s => s == null ? BG  : s >= 80 ? GRNBG : s >= 55 ? TEALLT : REDBG
-const pfBd    = s => s == null ? BD  : s >= 80 ? GRNBD : s >= 55 ? `${TEAL}55` : '#fecaca'
-const pfLabel = s => s == null ? '-' : s >= 80 ? 'Strong' : s >= 55 ? 'Moderate' : 'Concern'
+/* ─────────────────────────────────────────────────────────────
+   Score colour helpers — updated thresholds
+   <50 red · 50–69 amber · 70–84 jade · 85+ green
+───────────────────────────────────────────────────────────── */
+const sc   = s => s >= 85 ? GRN  : s >= 70 ? TEAL : s >= 50 ? AMB  : RED
+const sbg  = s => s >= 85 ? GRNBG : s >= 70 ? TEALLT : s >= 50 ? AMBBG : REDBG
+const sbd  = s => s >= 85 ? GRNBD : s >= 70 ? `${TEAL}55` : s >= 50 ? AMBBD : REDBD
+const slbl = s => s >= 85 ? 'Excellent' : s >= 75 ? 'Strong' : s >= 65 ? 'Good' : s >= 50 ? 'Developing' : 'Concern'
 
-/* ── tiny reusable primitives ──────────────────────────── */
-const Card = ({ children, style = {} }) => (
-  <div style={{
+const pfColor = s => s == null ? TX3  : s >= 80 ? GRN  : s >= 55 ? TEALD : RED
+const pfBg    = s => s == null ? BG   : s >= 80 ? GRNBG : s >= 55 ? TEALLT : REDBG
+const pfBd    = s => s == null ? BD   : s >= 80 ? GRNBD : s >= 55 ? `${TEAL}55` : REDBD
+const pfLbl   = s => s == null ? '—'  : s >= 80 ? 'Strong' : s >= 55 ? 'Moderate' : 'Concern'
+
+/* hiring decision from score */
+const dL = s => s >= 80 ? 'Strong hire' : s >= 70 ? 'Hire with plan' : s >= 55 ? 'Proceed with caution' : 'Not recommended'
+const dC = s => s >= 80 ? GRN : s >= 70 ? TEAL : s >= 55 ? AMB : RED
+const dBg = s => s >= 80 ? GRNBG : s >= 70 ? TEALLT : s >= 55 ? AMBBG : REDBG
+const dBd = s => s >= 80 ? GRNBD : s >= 70 ? `${TEAL}55` : s >= 55 ? AMBBD : REDBD
+
+/* ─────────────────────────────────────────────────────────────
+   Reusable primitives
+───────────────────────────────────────────────────────────── */
+const SHADOW = '0 2px 12px rgba(15,33,55,0.08), 0 1px 3px rgba(15,33,55,0.05)'
+const SHADOW_LG = '0 4px 24px rgba(15,33,55,0.10), 0 1px 4px rgba(15,33,55,0.06)'
+
+const Card = ({ children, style = {}, className = '' }) => (
+  <div className={className} style={{
     background: CARD,
     border: `1px solid ${BD}`,
-    borderRadius: 14,
-    padding: '22px 26px',
+    borderRadius: 12,
+    padding: '24px 28px',
+    boxShadow: SHADOW,
     ...style,
   }}>
     {children}
@@ -35,13 +54,16 @@ const Card = ({ children, style = {} }) => (
 const SectionHeading = ({ children, tooltip }) => (
   <h2 style={{
     fontFamily: F,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 800,
     color: TX,
-    margin: '0 0 16px',
+    margin: '0 0 18px',
+    paddingBottom: 10,
+    borderBottom: `2px solid ${TEAL}`,
     letterSpacing: '-0.2px',
     display: 'flex',
     alignItems: 'center',
+    gap: 6,
   }}>
     {children}
     {tooltip && <InfoTooltip text={tooltip} />}
@@ -52,36 +74,37 @@ const Badge = ({ label, bg, color, border }) => (
   <span style={{
     display: 'inline-flex',
     alignItems: 'center',
-    padding: '3px 11px',
+    padding: '4px 12px',
     borderRadius: 50,
     fontSize: 11,
     fontWeight: 700,
     background: bg,
     color,
     border: `1px solid ${border || 'transparent'}`,
+    letterSpacing: '0.01em',
   }}>
     {label}
   </span>
 )
 
-const EvidenceBox = ({ children, icon = 'quote', color = TX2, bg = '#f8fafc', border = BD }) => (
+const EvidenceBox = ({ children }) => (
   <div style={{
-    background: bg,
-    border: `1px solid ${border}`,
-    borderLeft: `3px solid ${color === TX2 ? TEAL : color}`,
+    background: '#f8fafc',
+    border: `1px solid ${BD}`,
+    borderLeft: `3px solid ${TEAL}`,
     borderRadius: '0 8px 8px 0',
     padding: '10px 14px',
-    marginTop: 8,
+    marginTop: 10,
   }}>
     <p style={{
       fontFamily: F,
-      fontSize: 12.5,
+      fontSize: 13,
       color: TX2,
       margin: 0,
-      lineHeight: 1.65,
+      lineHeight: 1.7,
       fontStyle: 'italic',
     }}>
-      {children}
+      &ldquo;{children}&rdquo;
     </p>
   </div>
 )
@@ -89,7 +112,7 @@ const EvidenceBox = ({ children, icon = 'quote', color = TX2, bg = '#f8fafc', bo
 const ActionBox = ({ children }) => (
   <div style={{
     background: TEALLT,
-    border: `1px solid ${TEAL}55`,
+    border: `1px solid ${TEAL}44`,
     borderRadius: 8,
     padding: '10px 14px',
     marginTop: 10,
@@ -98,7 +121,7 @@ const ActionBox = ({ children }) => (
     alignItems: 'flex-start',
   }}>
     <Ic name="zap" size={13} color={TEALD} />
-    <p style={{ fontFamily: F, fontSize: 12.5, color: TEALD, margin: 0, lineHeight: 1.55 }}>
+    <p style={{ fontFamily: F, fontSize: 13, color: TEALD, margin: 0, lineHeight: 1.55 }}>
       <strong>Recommended action:</strong> {children}
     </p>
   </div>
@@ -106,14 +129,13 @@ const ActionBox = ({ children }) => (
 
 function InfoTooltip({ text, light = false }) {
   const [visible, setVisible] = useState(false)
-  const bg = light ? 'rgba(255,255,255,0.12)' : NAVY
   const tooltipBg = light ? '#1e3a52' : NAVY
   return (
     <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
       <span
         onMouseEnter={() => setVisible(true)}
         onMouseLeave={() => setVisible(false)}
-        style={{ cursor: 'help', display: 'inline-flex', alignItems: 'center', marginLeft: 6 }}
+        style={{ cursor: 'help', display: 'inline-flex', alignItems: 'center' }}
       >
         <Ic name="info" size={14} color={light ? 'rgba(255,255,255,0.45)' : TX3} />
       </span>
@@ -141,14 +163,9 @@ function InfoTooltip({ text, light = false }) {
         }}>
           {text}
           <span style={{
-            position: 'absolute',
-            top: '100%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 0,
-            height: 0,
-            borderLeft: '6px solid transparent',
-            borderRight: '6px solid transparent',
+            position: 'absolute', top: '100%', left: '50%',
+            transform: 'translateX(-50%)', width: 0, height: 0,
+            borderLeft: '6px solid transparent', borderRight: '6px solid transparent',
             borderTop: `6px solid ${tooltipBg}`,
           }} />
         </span>
@@ -157,64 +174,149 @@ function InfoTooltip({ text, light = false }) {
   )
 }
 
-/* ── loading skeleton ──────────────────────────────────── */
-function LoadingState() {
+/* Animated SVG score ring with count-up */
+function ScoreRing({ score, size = 140, strokeWidth = 10, animate = true }) {
+  const [display, setDisplay] = useState(0)
+  const [drawn, setDrawn] = useState(false)
+  const r = (size - strokeWidth * 2) / 2
+  const circ = 2 * Math.PI * r
+  const offset = circ * (1 - display / 100)
+  const color = sc(score)
+
+  useEffect(() => {
+    if (!animate) { setDisplay(score); setDrawn(true); return }
+    const target = score || 0
+    const duration = 1400
+    const fps = 60
+    const steps = duration / (1000 / fps)
+    let step = 0
+    setDrawn(true)
+    const t = setInterval(() => {
+      step++
+      const progress = Math.min(step / steps, 1)
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setDisplay(Math.round(target * eased))
+      if (progress >= 1) clearInterval(t)
+    }, 1000 / fps)
+    return () => clearInterval(t)
+  }, [score, animate])
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {[260, 100, 380, 220, 160].map((h, i) => (
-        <div key={i} style={{
-          height: h,
-          background: BD,
-          borderRadius: 14,
-          opacity: 0.5,
-          animation: 'pulse 1.5s ease-in-out infinite',
-        }} />
-      ))}
-      <style>{`@keyframes pulse{0%,100%{opacity:.35}50%{opacity:.6}}`}</style>
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`${color}20`} strokeWidth={strokeWidth} />
+        <circle
+          cx={size / 2} cy={size / 2} r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circ}
+          strokeDashoffset={drawn ? offset : circ}
+          style={{ transition: animate ? 'stroke-dashoffset 0.016s linear' : 'none' }}
+        />
+      </svg>
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span style={{ fontFamily: FM, fontSize: size * 0.24, fontWeight: 800, color, lineHeight: 1, letterSpacing: '-1px' }}>
+          {display}
+        </span>
+        <span style={{ fontFamily: F, fontSize: size * 0.08, fontWeight: 700, color: TX3, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          /100
+        </span>
+      </div>
     </div>
   )
 }
 
-/* ── pending / no-results state ────────────────────────── */
+/* Small ring for skill cards */
+function SmallRing({ score, size = 60, strokeWidth = 5 }) {
+  const [drawn, setDrawn] = useState(false)
+  const r = (size - strokeWidth * 2) / 2
+  const circ = 2 * Math.PI * r
+  const color = sc(score)
+  useEffect(() => { const t = setTimeout(() => setDrawn(true), 80); return () => clearTimeout(t) }, [])
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={`${color}20`} strokeWidth={strokeWidth} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={strokeWidth}
+          strokeLinecap="round" strokeDasharray={circ}
+          strokeDashoffset={drawn ? circ * (1 - score / 100) : circ}
+          style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)' }}
+        />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontFamily: FM, fontSize: size * 0.24, fontWeight: 800, color, lineHeight: 1 }}>{score}</span>
+      </div>
+    </div>
+  )
+}
+
+/* Animated bar (fills when mounted) */
+function AnimBar({ pct, color, height = 6, delay = 0 }) {
+  const [w, setW] = useState(0)
+  useEffect(() => { const t = setTimeout(() => setW(pct), 120 + delay); return () => clearTimeout(t) }, [pct, delay])
+  return (
+    <div style={{ height, borderRadius: 99, background: `${color}20`, overflow: 'hidden' }}>
+      <div style={{ height: '100%', width: `${w}%`, background: color, borderRadius: 99, transition: 'width 0.9s cubic-bezier(0.4,0,0.2,1)', opacity: 0.9 }} />
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Loading skeleton
+───────────────────────────────────────────────────────────── */
+function LoadingState() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {[200, 96, 320, 200, 160].map((h, i) => (
+        <div key={i} style={{ height: h, background: BD, borderRadius: 12, animation: 'pulse 1.5s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />
+      ))}
+      <style>{`@keyframes pulse{0%,100%{opacity:.3}50%{opacity:.55}}`}</style>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Pending state
+───────────────────────────────────────────────────────────── */
 function PendingState({ candidate }) {
   return (
     <Card style={{ textAlign: 'center', padding: '56px 32px' }}>
       <div style={{
-        width: 64,
-        height: 64,
-        borderRadius: '50%',
-        background: AMBBG,
-        border: `1px solid ${AMBBD}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        margin: '0 auto 18px',
+        width: 64, height: 64, borderRadius: '50%', background: AMBBG, border: `1px solid ${AMBBD}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px',
       }}>
         <Ic name="clock" size={28} color={AMB} />
       </div>
-      <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 8px' }}>
-        Results pending
-      </h3>
+      <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 8px' }}>Results pending</h3>
       <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: '0 0 6px' }}>
-        {candidate?.name
-          ? `${candidate.name} hasn't completed the assessment yet, or scoring is still in progress.`
-          : 'This candidate has not completed the assessment yet, or scoring is still in progress.'}
+        {candidate?.name ? `${candidate.name} hasn't completed the assessment yet, or scoring is still in progress.` : 'This candidate has not completed the assessment yet.'}
       </p>
       <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: 0 }}>
-        Check back shortly. AI analysis typically takes under two minutes once the candidate finishes.
+        AI analysis typically takes under two minutes once the candidate finishes.
       </p>
     </Card>
   )
 }
 
-/* ── severity helpers ──────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   Severity helpers
+───────────────────────────────────────────────────────────── */
 function sevStyle(severity) {
-  if (severity === 'High') return { bg: REDBG, color: RED, border: REDBD }
-  if (severity === 'Medium') return { bg: AMBBG, color: AMB, border: AMBBD }
-  return { bg: '#f1f5f9', color: TX3, border: BD }
+  if (severity === 'High')   return { bg: REDBG,  color: RED,   border: REDBD,  tint: `${RED}08` }
+  if (severity === 'Medium') return { bg: AMBBG,  color: AMB,   border: AMBBD,  tint: `${AMB}08` }
+  return                            { bg: '#f1f5f9', color: TX3, border: BD,     tint: '#f8fafc'   }
 }
 
-/* ── main page ─────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   Main page
+───────────────────────────────────────────────────────────── */
 export default function CandidateReportPage({ params }) {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -238,30 +340,11 @@ export default function CandidateReportPage({ params }) {
         setUser(u)
 
         const [{ data: cand, error: cErr }, { data: res }, { data: bm }, { data: resps }, { data: prof }] = await Promise.all([
-          supabase
-            .from('candidates')
-            .select('*, assessments(role_title, job_description, skill_weights)')
-            .eq('id', params.candidateId)
-            .single(),
-          supabase
-            .from('results')
-            .select('*')
-            .eq('candidate_id', params.candidateId)
-            .maybeSingle(),
-          supabase
-            .from('benchmarks')
-            .select('*')
-            .eq('user_id', u.id),
-          supabase
-            .from('responses')
-            .select('scenario_index, time_taken_seconds')
-            .eq('candidate_id', params.candidateId)
-            .order('scenario_index'),
-          supabase
-            .from('users')
-            .select('company_name, account_type')
-            .eq('id', u.id)
-            .maybeSingle(),
+          supabase.from('candidates').select('*, assessments(role_title, job_description, skill_weights)').eq('id', params.candidateId).single(),
+          supabase.from('results').select('*').eq('candidate_id', params.candidateId).maybeSingle(),
+          supabase.from('benchmarks').select('*').eq('user_id', u.id),
+          supabase.from('responses').select('scenario_index, time_taken_seconds').eq('candidate_id', params.candidateId).order('scenario_index'),
+          supabase.from('users').select('company_name, account_type').eq('id', u.id).maybeSingle(),
         ])
 
         if (cErr) throw cErr
@@ -271,11 +354,7 @@ export default function CandidateReportPage({ params }) {
         setResponses(resps || [])
         setProfile(prof || null)
 
-        const { data: nts } = await supabase
-          .from('candidate_notes')
-          .select('*')
-          .eq('candidate_id', params.candidateId)
-          .order('created_at', { ascending: false })
+        const { data: nts } = await supabase.from('candidate_notes').select('*').eq('candidate_id', params.candidateId).order('created_at', { ascending: false })
         setNotes(nts || [])
       } catch (e) {
         setError(e.message)
@@ -286,18 +365,16 @@ export default function CandidateReportPage({ params }) {
     load()
   }, [params.candidateId])
 
-  /* helpers */
   const score = results?.overall_score ?? 0
+  const passProbability = results?.pass_probability ?? null
   const completedDate = candidate?.completed_at
     ? new Date(candidate.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
     : null
 
-  /* build benchmark map: skill_name → threshold */
   const bmMap = {}
   benchmarks.forEach(b => { if (b.skill_name) bmMap[b.skill_name.toLowerCase()] = b.threshold })
 
   function handlePrint() { window.print() }
-
   function handleClientExport() {
     document.body.classList.add('client-print')
     window.print()
@@ -311,20 +388,13 @@ export default function CandidateReportPage({ params }) {
     if (!newNote.trim() || !user) return
     setNoteSaving(true)
     const supabase = createClient()
-    const { data: inserted } = await supabase
-      .from('candidate_notes')
-      .insert({
-        candidate_id: params.candidateId,
-        user_id: user.id,
-        author_name: profile?.company_name || user.email,
-        note_text: newNote.trim(),
-      })
-      .select()
-      .single()
-    if (inserted) {
-      setNotes(prev => [inserted, ...prev])
-      setNewNote('')
-    }
+    const { data: inserted } = await supabase.from('candidate_notes').insert({
+      candidate_id: params.candidateId,
+      user_id: user.id,
+      author_name: profile?.company_name || user.email,
+      note_text: newNote.trim(),
+    }).select().single()
+    if (inserted) { setNotes(prev => [inserted, ...prev]); setNewNote('') }
     setNoteSaving(false)
   }
 
@@ -341,7 +411,7 @@ export default function CandidateReportPage({ params }) {
 
   /* ── render ── */
   return (
-    <div style={{ background: BG, minHeight: '100vh', fontFamily: F }}>
+    <div style={{ background: '#f3f5f8', minHeight: '100vh', fontFamily: F }}>
       <style>{`
         @media print {
           aside { display: none !important; }
@@ -355,35 +425,28 @@ export default function CandidateReportPage({ params }) {
           body.client-print main { display: none !important; }
           body.client-print .client-report-container { display: block !important; }
         }
-        @keyframes pulse{0%,100%{opacity:.35}50%{opacity:.6}}
+        @keyframes pulse{0%,100%{opacity:.3}50%{opacity:.55}}
+        @keyframes glow{0%,100%{box-shadow:0 0 8px 2px rgba(0,191,165,0.25)}50%{box-shadow:0 0 18px 5px rgba(0,191,165,0.45)}}
+        html { scroll-behavior: smooth; }
       `}</style>
       <Sidebar active="assessment" />
 
-      <main style={{ marginLeft: 220, padding: '32px 40px', maxWidth: 980, boxSizing: 'border-box' }}>
+      <main style={{ marginLeft: 220, padding: '32px 40px', maxWidth: 1000, boxSizing: 'border-box' }}>
 
-        {/* ── 1. Navigation ── */}
+        {/* Back */}
         <button
           className="no-print"
           onClick={() => router.push(`/assessment/${params.id}`)}
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: F,
-            fontSize: 13.5,
-            fontWeight: 600,
-            color: TX2,
-            padding: '0 0 20px',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX2, padding: '0 0 22px',
           }}
         >
           <Ic name="left" size={16} color={TX2} />
           Back to assessment
         </button>
 
-        {/* ── loading / error ── */}
         {loading && <LoadingState />}
         {!loading && error && (
           <Card style={{ textAlign: 'center', padding: '40px 24px' }}>
@@ -393,94 +456,57 @@ export default function CandidateReportPage({ params }) {
 
         {!loading && !error && candidate && (
           <>
-            {/* ── 2. Candidate header card ── */}
-            <Card style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap' }}>
+
+            {/* ══════════════════════════════════════════════════
+                CANDIDATE HEADER
+            ══════════════════════════════════════════════════ */}
+            <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap' }}>
                 {/* Avatar + meta */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: 1, minWidth: 220 }}>
-                  <Avatar name={candidate.name || 'Candidate'} size={52} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: 1, minWidth: 240 }}>
+                  <Avatar name={candidate.name || 'Candidate'} size={56} />
                   <div>
-                    <h2 style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: TX, margin: '0 0 2px', letterSpacing: '-0.3px' }}>
+                    <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: '0 0 3px', letterSpacing: '-0.4px' }}>
                       {candidate.name || 'Unknown Candidate'}
                     </h2>
                     {candidate.email && (
-                      <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 6px' }}>
-                        {candidate.email}
-                      </p>
+                      <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px' }}>{candidate.email}</p>
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       {candidate.assessments?.role_title && (
-                        <Badge
-                          label={candidate.assessments.role_title}
-                          bg={TEALLT}
-                          color={TEALD}
-                          border={TEAL + '55'}
-                        />
+                        <Badge label={candidate.assessments.role_title} bg={TEALLT} color={TEALD} border={`${TEAL}55`} />
                       )}
                       {completedDate && (
-                        <span style={{ fontSize: 12, color: TX3, fontFamily: F }}>
-                          Completed {completedDate}
-                        </span>
+                        <span style={{ fontSize: 12, color: TX3, fontFamily: F }}>Completed {completedDate}</span>
                       )}
                       {candidate.rating && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                           {[1,2,3,4,5].map(i => (
-                            <span key={i} style={{ fontSize: 15, color: i <= candidate.rating ? '#f59e0b' : '#e2e8f0', lineHeight: 1 }}>★</span>
+                            <span key={i} style={{ fontSize: 14, color: i <= candidate.rating ? '#f59e0b' : '#e2e8f0', lineHeight: 1 }}>★</span>
                           ))}
-                          <span style={{ fontSize: 11.5, color: TX3, marginLeft: 4, fontFamily: F }}>Candidate rating</span>
+                          <span style={{ fontSize: 11.5, color: TX3, marginLeft: 4, fontFamily: F }}>Candidate self-rating</span>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Score + percentile + export */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexShrink: 0, flexWrap: 'wrap' }}>
+                {/* Score ring + actions */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 28, flexShrink: 0, flexWrap: 'wrap' }}>
                   {results && (
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, marginBottom: 8 }}>
-                        <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Overall Score</span>
-                        <InfoTooltip text="How this candidate performed across all 4 work simulation scenarios" />
+                      <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
+                        Overall Score
                       </div>
-                      {/* Circular progress ring */}
-                      <div style={{ position: 'relative', width: 100, height: 100, margin: '0 auto' }}>
-                        <svg width="100" height="100" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
-                          <circle cx="50" cy="50" r="42" fill="none" stroke={BD} strokeWidth="7" />
-                          <circle
-                            cx="50" cy="50" r="42"
-                            fill="none"
-                            stroke={scolor(score)}
-                            strokeWidth="7"
-                            strokeLinecap="round"
-                            strokeDasharray={`${2 * Math.PI * 42}`}
-                            strokeDashoffset={`${2 * Math.PI * 42 * (1 - score / 100)}`}
-                            style={{ transition: 'stroke-dashoffset 0.8s ease' }}
-                          />
-                        </svg>
-                        <div style={{
-                          position: 'absolute', inset: 0,
-                          display: 'flex', flexDirection: 'column',
-                          alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>{score}</span>
-                          <span style={{ fontFamily: F, fontSize: 9, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 2 }}>/100</span>
-                        </div>
-                      </div>
-                      <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: scolor(score), marginTop: 6 }}>
-                        {slabel(score)}
+                      <ScoreRing score={score} size={130} strokeWidth={9} />
+                      <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: sc(score), marginTop: 8 }}>
+                        {slbl(score)}
                       </div>
                       {results.percentile && (
                         <div style={{
-                          marginTop: 6,
-                          fontFamily: F,
-                          fontSize: 11.5,
-                          fontWeight: 600,
-                          color: TEALD,
-                          background: TEALLT,
-                          border: `1px solid ${TEAL}55`,
-                          borderRadius: 20,
-                          padding: '3px 10px',
-                          whiteSpace: 'nowrap',
+                          marginTop: 6, fontFamily: F, fontSize: 11.5, fontWeight: 600,
+                          color: TEALD, background: TEALLT, border: `1px solid ${TEAL}55`,
+                          borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap',
                         }}>
                           {results.percentile} of candidates
                         </div>
@@ -490,44 +516,20 @@ export default function CandidateReportPage({ params }) {
 
                   <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {results && (
-                      <button
-                        onClick={handleClientExport}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          background: NAVY,
-                          border: 'none',
-                          borderRadius: 8,
-                          cursor: 'pointer',
-                          fontFamily: F,
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: '#fff',
-                          padding: '9px 16px',
-                        }}
-                      >
+                      <button onClick={handleClientExport} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer',
+                        fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px',
+                      }}>
                         <Ic name="file" size={15} color={TEAL} />
                         Export Client Report
                       </button>
                     )}
-                    <button
-                      onClick={handlePrint}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        background: 'transparent',
-                        border: `1.5px solid ${BD}`,
-                        borderRadius: 8,
-                        cursor: 'pointer',
-                        fontFamily: F,
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: TX2,
-                        padding: '9px 16px',
-                      }}
-                    >
+                    <button onClick={handlePrint} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      background: 'transparent', border: `1.5px solid ${BD}`, borderRadius: 8,
+                      cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TX2, padding: '9px 16px',
+                    }}>
                       <Ic name="download" size={15} color={TX2} />
                       Export PDF
                     </button>
@@ -536,166 +538,136 @@ export default function CandidateReportPage({ params }) {
               </div>
             </Card>
 
-            {/* ── results not ready ── */}
-            {!results && (
-              <PendingState candidate={candidate} />
-            )}
+            {!results && <PendingState candidate={candidate} />}
 
             {results && (
               <>
-                {/* ── 3. Three-column summary row ── */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: 16,
-                  marginBottom: 20,
-                }}>
-                  {/* Pass prediction */}
-                  <Card style={{ textAlign: 'center' }}>
-                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-                      Predicted probation success
+
+                {/* ══════════════════════════════════════════════════
+                    TOP SUMMARY ROW — Pass Probability · Hiring Decision · Risk Level
+                ══════════════════════════════════════════════════ */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
+
+                  {/* Pass Probability */}
+                  <Card style={{ textAlign: 'center', padding: '24px 20px' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14 }}>
+                      Pass Probability
                     </div>
-                    <div style={{ fontFamily: FM, fontSize: 40, fontWeight: 700, color: scolor(score), lineHeight: 1, marginBottom: 8 }}>
-                      {passPct(score)}%
+                    <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 12px' }}>
+                      <SmallRing score={passProbability ?? score} size={80} strokeWidth={7} />
                     </div>
-                    <div style={{
-                      height: 6,
-                      borderRadius: 99,
-                      background: BD,
-                      overflow: 'hidden',
-                    }}>
-                      <div style={{
-                        height: '100%',
-                        width: `${passPct(score)}%`,
-                        background: scolor(score),
-                        borderRadius: 99,
-                        transition: 'width 0.6s ease',
-                      }} />
+                    <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: sc(passProbability ?? score), lineHeight: 1, marginBottom: 6 }}>
+                      {passProbability ?? score}%
                     </div>
-                    <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, marginTop: 8 }}>
-                      chance of passing probation
-                    </div>
+                    <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>predicted probation success</div>
                   </Card>
 
-                  {/* Hiring decision */}
-                  <Card style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-                      Hiring decision
+                  {/* Hiring Decision */}
+                  <Card style={{ textAlign: 'center', padding: '24px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14 }}>
+                      Hiring Decision
                     </div>
                     <div style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: '50%',
-                      background: sbg(score),
-                      border: `1px solid ${sbd(score)}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginBottom: 10,
+                      width: 52, height: 52, borderRadius: '50%',
+                      background: dBg(score), border: `2px solid ${dBd(score)}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12,
                     }}>
-                      <Ic name="award" size={22} color={scolor(score)} />
+                      <Ic name="award" size={24} color={dC(score)} />
                     </div>
                     <div style={{
-                      fontFamily: F,
-                      fontSize: 16,
-                      fontWeight: 800,
-                      color: dC(score),
-                      lineHeight: 1.2,
-                      textAlign: 'center',
+                      display: 'inline-flex', alignItems: 'center',
+                      padding: '6px 16px', borderRadius: 50,
+                      background: dBg(score), border: `1.5px solid ${dBd(score)}`,
                     }}>
-                      {dL(score)}
-                    </div>
-                  </Card>
-
-                  {/* Risk level */}
-                  <Card>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
-                      <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        Risk level
+                      <span style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: dC(score) }}>
+                        {dL(score)}
                       </span>
-                      <InfoTooltip text="The likelihood of this candidate struggling during probation" />
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  </Card>
+
+                  {/* Risk Level */}
+                  <Card style={{ padding: '24px 22px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Risk Level</span>
+                      <InfoTooltip text="Likelihood of this candidate struggling during probation based on their responses" />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                      <div style={{
+                        width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                        background: riskBg(results.risk_level), border: `1px solid ${riskBd(results.risk_level)}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <Ic name="alert" size={18} color={riskCol(results.risk_level)} />
+                      </div>
                       <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        padding: '4px 14px',
-                        borderRadius: 50,
-                        fontSize: 13,
-                        fontWeight: 800,
-                        background: riskBg(results.risk_level),
-                        color: riskCol(results.risk_level),
-                        border: `1px solid ${riskBd(results.risk_level)}`,
+                        fontFamily: F, fontSize: 17, fontWeight: 800, color: riskCol(results.risk_level),
+                        letterSpacing: '-0.2px',
                       }}>
                         {results.risk_level || 'Unknown'}
                       </span>
                     </div>
                     {results.risk_reason && (
                       <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.6 }}>
-                        {results.risk_reason}
+                        {results.risk_reason.slice(0, 160)}{results.risk_reason.length > 160 ? '…' : ''}
                       </p>
                     )}
                   </Card>
                 </div>
 
-                {/* ── 4. Response Integrity ── */}
+                {/* ══════════════════════════════════════════════════
+                    RESPONSE INTEGRITY — dark navy
+                ══════════════════════════════════════════════════ */}
                 {(() => {
                   const integrity = results.integrity || {}
                   const rq = integrity.response_quality
                   const hasIntegrity = !!rq
 
-                  // Colour scheme per quality rating
-                  const qColor = !rq ? TX3
-                    : rq === 'Genuine'              ? GRN
-                    : rq === 'Likely Genuine'        ? TEALD
-                    : rq === 'Possibly AI-Assisted'  ? AMB
-                    : RED
-                  const qBg = !rq ? BG
-                    : rq === 'Genuine'              ? GRNBG
-                    : rq === 'Likely Genuine'        ? TEALLT
-                    : rq === 'Possibly AI-Assisted'  ? AMBBG
-                    : REDBG
-                  const qBd = !rq ? BD
-                    : rq === 'Genuine'              ? GRNBD
-                    : rq === 'Likely Genuine'        ? `${TEAL}55`
-                    : rq === 'Possibly AI-Assisted'  ? '#fde68a'
-                    : '#fecaca'
-                  const qIcon = !rq ? 'eye'
-                    : rq === 'Genuine'              ? 'check'
-                    : rq === 'Likely Genuine'        ? 'check'
-                    : rq === 'Possibly AI-Assisted'  ? 'alert'
-                    : 'alert'
+                  const qColor = !rq ? TX3 : rq === 'Genuine' ? GRN : rq === 'Likely Genuine' ? TEAL : rq === 'Possibly AI-Assisted' ? AMB : RED
+                  const qBg    = !rq ? BG : rq === 'Genuine' ? GRNBG : rq === 'Likely Genuine' ? TEALLT : rq === 'Possibly AI-Assisted' ? AMBBG : REDBG
+                  const qBd    = !rq ? BD : rq === 'Genuine' ? GRNBD : rq === 'Likely Genuine' ? `${TEAL}55` : rq === 'Possibly AI-Assisted' ? AMBBD : REDBD
+                  const qIcon  = !rq ? 'eye' : (rq === 'Genuine' || rq === 'Likely Genuine') ? 'check' : 'alert'
+                  const glowStyle = hasIntegrity ? { animation: 'glow 2.5s ease-in-out infinite' } : {}
 
-                  // Format per-scenario timing from raw response data
-                  function fmtTime(s) {
-                    if (!s) return '-'
-                    const m = Math.floor(s / 60)
-                    const sec = s % 60
-                    return m > 0 ? `${m}m ${sec}s` : `${sec}s`
-                  }
+                  function fmtTime(s) { if (!s) return '—'; const m = Math.floor(s / 60); return m > 0 ? `${m}m ${s % 60}s` : `${s}s` }
                   function timingLabel(s) {
-                    if (!s) return { label: 'No data', color: TX3, bg: BG, bd: BD }
-                    if (s < 90)   return { label: 'Rushed', color: RED, bg: REDBG, bd: '#fecaca' }
-                    if (s < 180)  return { label: 'Fast',   color: AMB, bg: AMBBG, bd: '#fde68a' }
-                    if (s > 1200) return { label: 'Extended', color: TEALD, bg: TEALLT, bd: `${TEAL}55` }
-                    return { label: 'Normal', color: GRN, bg: GRNBG, bd: GRNBD }
+                    if (!s) return { label: 'No data', color: TX3, bg: 'rgba(255,255,255,0.05)', bd: 'rgba(255,255,255,0.1)' }
+                    if (s < 90)   return { label: 'Rushed',   color: RED,   bg: `${RED}18`,   bd: `${RED}40` }
+                    if (s < 180)  return { label: 'Fast',     color: AMB,   bg: `${AMB}18`,   bd: `${AMB}40` }
+                    if (s > 1200) return { label: 'Extended', color: TEAL,  bg: `${TEAL}18`,  bd: `${TEAL}40` }
+                    return               { label: 'Normal',   color: GRN,   bg: `${GRN}18`,   bd: `${GRN}40` }
                   }
 
                   const redFlags = integrity.red_flags || []
                   const consistencyRating = integrity.consistency_rating
-                  const cColor = !consistencyRating ? TX3
-                    : consistencyRating === 'High'   ? GRN
-                    : consistencyRating === 'Medium' ? AMB
-                    : RED
+                  const cColor = !consistencyRating ? TX3 : consistencyRating === 'High' ? GRN : consistencyRating === 'Medium' ? AMB : RED
 
                   return (
-                    <Card style={{ marginBottom: 20, border: `1px solid ${hasIntegrity ? qBd : BD}` }}>
-                      {/* Header row */}
-                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 18, flexWrap: 'wrap' }}>
+                    <div style={{
+                      marginBottom: 20,
+                      background: `linear-gradient(135deg, #0a1929 0%, #0f2137 60%, #0d2b45 100%)`,
+                      border: `1px solid rgba(255,255,255,0.1)`,
+                      borderRadius: 12,
+                      overflow: 'hidden',
+                      boxShadow: SHADOW_LG,
+                    }}>
+                      {/* Header */}
+                      <div style={{
+                        padding: '22px 28px 18px',
+                        borderBottom: '1px solid rgba(255,255,255,0.07)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14,
+                      }}>
                         <div>
-                          <SectionHeading tooltip="Analysis of response timing, consistency, and authenticity">Response Integrity</SectionHeading>
-                          <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '-8px 0 0' }}>
-                            AI analysis of response authenticity, timing, and consistency across all 4 scenarios.
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: 8, background: `${TEAL}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Ic name="eye" size={14} color={TEAL} />
+                            </div>
+                            <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.2px' }}>
+                              Response Integrity
+                            </h2>
+                            <InfoTooltip text="Analysis of response timing, authenticity, and consistency across scenarios" light />
+                          </div>
+                          <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.45)', margin: 0, paddingLeft: 36 }}>
+                            AI analysis of authenticity, timing, and engagement signals.
                           </p>
                         </div>
                         {hasIntegrity ? (
@@ -703,198 +675,183 @@ export default function CandidateReportPage({ params }) {
                             display: 'inline-flex', alignItems: 'center', gap: 8,
                             padding: '8px 16px', borderRadius: 10,
                             background: qBg, border: `1.5px solid ${qBd}`,
-                            flexShrink: 0,
+                            flexShrink: 0, ...glowStyle,
                           }}>
-                            <Ic name={qIcon} size={16} color={qColor} />
-                            <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: qColor }}>
-                              {rq}
-                            </span>
+                            <Ic name={qIcon} size={15} color={qColor} />
+                            <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 800, color: qColor }}>{rq}</span>
                           </div>
                         ) : (
-                          <span style={{ fontSize: 12.5, color: TX3, fontStyle: 'italic' }}>
+                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>
                             Integrity data available for new assessments
                           </span>
                         )}
                       </div>
 
-                      {/* Per-scenario timing tiles */}
-                      <div style={{ marginBottom: integrity.quality_notes || redFlags.length > 0 || consistencyRating ? 16 : 0 }}>
-                        <div style={{ fontSize: 11.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                      {/* Timing tiles */}
+                      <div style={{ padding: '18px 28px' }}>
+                        <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
                           Time per scenario
                         </div>
-                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 18 }}>
                           {[0, 1, 2, 3].map(i => {
                             const resp = responses.find(r => r.scenario_index === i)
                             const secs = resp?.time_taken_seconds ?? null
                             const tl = timingLabel(secs)
                             return (
                               <div key={i} style={{
-                                flex: '1 1 100px',
-                                background: tl.bg,
-                                border: `1px solid ${tl.bd}`,
-                                borderRadius: 8, padding: '10px 12px',
+                                background: tl.bg, border: `1px solid ${tl.bd}`,
+                                borderRadius: 10, padding: '12px 14px',
                               }}>
-                                <div style={{ fontSize: 11, fontWeight: 700, color: TX3, marginBottom: 4 }}>
+                                <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 5 }}>
                                   Scenario {i + 1}
                                 </div>
-                                <div style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: tl.color, lineHeight: 1, marginBottom: 3 }}>
+                                <div style={{ fontFamily: FM, fontSize: 20, fontWeight: 800, color: tl.color, lineHeight: 1, marginBottom: 4 }}>
                                   {fmtTime(secs)}
                                 </div>
-                                <div style={{
-                                  display: 'inline-block', fontSize: 10.5, fontWeight: 700,
-                                  color: tl.color, background: 'rgba(255,255,255,0.6)',
-                                  borderRadius: 4, padding: '1px 6px',
+                                <span style={{
+                                  display: 'inline-block', fontSize: 10, fontWeight: 700,
+                                  color: tl.color, background: 'rgba(255,255,255,0.1)',
+                                  borderRadius: 4, padding: '2px 7px',
                                 }}>
                                   {tl.label}
-                                </div>
+                                </span>
                               </div>
                             )
                           })}
                         </div>
-                      </div>
 
-                      {/* Quality notes */}
-                      {integrity.quality_notes && (
-                        <div style={{ marginBottom: 12 }}>
-                          <EvidenceBox color={qColor} bg={qBg} border={qBd}>
-                            {integrity.quality_notes}
-                          </EvidenceBox>
-                        </div>
-                      )}
-
-                      {/* Consistency */}
-                      {consistencyRating && (
-                        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 12.5, fontWeight: 700, color: TX2 }}>Response consistency:</span>
-                          <span style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 5,
-                            fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
-                            background: cColor === GRN ? GRNBG : cColor === AMB ? AMBBG : REDBG,
-                            color: cColor,
-                            border: `1px solid ${cColor === GRN ? GRNBD : cColor === AMB ? '#fde68a' : '#fecaca'}`,
+                        {/* Quality notes */}
+                        {integrity.quality_notes && (
+                          <div style={{
+                            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                            borderLeft: `3px solid ${qColor}55`, borderRadius: '0 8px 8px 0',
+                            padding: '10px 14px', marginBottom: 12,
                           }}>
-                            {consistencyRating}
-                          </span>
-                          {integrity.consistency_notes && (
-                            <span style={{ fontSize: 12.5, color: TX3 }}>{integrity.consistency_notes}</span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Red flags */}
-                      {redFlags.length > 0 && (
-                        <div>
-                          <div style={{ fontSize: 11.5, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                            Red flags detected
+                            <p style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: 0, lineHeight: 1.65, fontStyle: 'italic' }}>
+                              {integrity.quality_notes}
+                            </p>
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {redFlags.map((flag, i) => (
-                              <div key={i} style={{
-                                display: 'flex', gap: 8, alignItems: 'flex-start',
-                                background: REDBG, border: `1px solid #fecaca`,
-                                borderRadius: 8, padding: '9px 12px',
-                              }}>
-                                <Ic name="alert" size={13} color={RED} />
-                                <span style={{ fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.55 }}>
-                                  {typeof flag === 'string' ? flag : JSON.stringify(flag)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                        )}
 
-                      {/* No integrity data yet */}
-                      {!hasIntegrity && responses.length === 0 && (
-                        <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: 0 }}>
-                          Timing data was not recorded for this assessment. Response integrity analysis will appear for new assessments going forward.
-                        </p>
-                      )}
-                    </Card>
+                        {/* Consistency + notes */}
+                        {consistencyRating && (
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap', marginBottom: redFlags.length > 0 ? 12 : 0 }}>
+                            <span style={{ fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap', paddingTop: 2 }}>Consistency:</span>
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                              fontSize: 12, fontWeight: 700, padding: '3px 11px', borderRadius: 20,
+                              background: cColor === GRN ? GRNBG : cColor === AMB ? AMBBG : REDBG,
+                              color: cColor,
+                              border: `1px solid ${cColor === GRN ? GRNBD : cColor === AMB ? AMBBD : REDBD}`,
+                            }}>
+                              {consistencyRating}
+                            </span>
+                            {integrity.consistency_notes && (
+                              <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.4)', lineHeight: 1.55 }}>{integrity.consistency_notes}</span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Red flags */}
+                        {redFlags.length > 0 && (
+                          <div>
+                            <div style={{ fontSize: 10.5, fontWeight: 700, color: `${RED}cc`, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+                              Red flags detected
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {redFlags.map((flag, i) => (
+                                <div key={i} style={{
+                                  display: 'flex', gap: 8, alignItems: 'flex-start',
+                                  background: `${RED}14`, border: `1px solid ${RED}35`,
+                                  borderRadius: 8, padding: '9px 12px',
+                                }}>
+                                  <Ic name="alert" size={13} color={RED} />
+                                  <span style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>
+                                    {typeof flag === 'string' ? flag : JSON.stringify(flag)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )
                 })()}
 
-                {/* ── 5. Pressure-Fit Assessment ── */}
+                {/* ══════════════════════════════════════════════════
+                    PRESSURE-FIT — dark navy, animated bars
+                ══════════════════════════════════════════════════ */}
                 {(results.pressure_fit_score != null || results.pressure_fit) && (() => {
                   const pf = results.pressure_fit_score ?? null
                   const dims = results.pressure_fit ?? {}
 
-                  function pfScoreColor(s) {
-                    if (s == null) return TX3
-                    return s >= 80 ? GRN : s >= 55 ? TEALD : RED
-                  }
-                  function pfScoreBg(s) {
-                    if (s == null) return BG
-                    return s >= 80 ? GRNBG : s >= 55 ? TEALLT : REDBG
-                  }
-                  function pfScoreBd(s) {
-                    if (s == null) return BD
-                    return s >= 80 ? GRNBD : s >= 55 ? `${TEAL}55` : '#fecaca'
-                  }
-                  function verdictStyle(v) {
-                    if (v === 'Strength') return { color: GRN, bg: GRNBG, bd: GRNBD }
-                    if (v === 'Concern')  return { color: RED, bg: REDBG, bd: '#fecaca' }
-                    return { color: TEALD, bg: TEALLT, bd: `${TEAL}55` }
-                  }
-
                   const DIMENSIONS = [
-                    { key: 'decision_speed_quality',   label: 'Decision Speed & Quality',   icon: 'zap',      desc: 'Decisiveness and commitment when no perfect answer exists' },
-                    { key: 'composure_under_conflict',  label: 'Composure Under Conflict',   icon: 'alert',    desc: 'Emotional regulation when facing difficult conversations' },
-                    { key: 'prioritisation_under_load', label: 'Prioritisation Under Load',  icon: 'sliders',  desc: 'Framework and trade-off awareness when demands compete' },
-                    { key: 'ownership_accountability',  label: 'Ownership & Accountability', icon: 'award',    desc: 'Personal responsibility, active language, and specific commitments' },
+                    { key: 'decision_speed_quality',    label: 'Decision Speed & Quality',   icon: 'zap',     desc: 'Decisiveness and commitment when no perfect answer exists' },
+                    { key: 'composure_under_conflict',   label: 'Composure Under Conflict',   icon: 'alert',   desc: 'Emotional regulation when facing difficult conversations' },
+                    { key: 'prioritisation_under_load',  label: 'Prioritisation Under Load',  icon: 'sliders', desc: 'Framework and trade-off awareness when demands compete' },
+                    { key: 'ownership_accountability',   label: 'Ownership & Accountability', icon: 'award',   desc: 'Personal responsibility, active language, and specific commitments' },
                   ]
 
-                  const overallColor = pfScoreColor(pf)
-                  const overallBg    = pfScoreBg(pf)
-                  const overallBd    = pfScoreBd(pf)
-                  const overallLabel = pf == null ? '-' : pf >= 80 ? 'Strong' : pf >= 55 ? 'Moderate' : 'Concern'
+                  function vStyle(v) {
+                    if (v === 'Strength') return { bg: GRNBG, color: GRN, bd: GRNBD }
+                    if (v === 'Concern')  return { bg: REDBG,  color: RED, bd: REDBD }
+                    return { bg: TEALLT, color: TEALD, bd: `${TEAL}55` }
+                  }
 
                   return (
                     <div style={{
                       marginBottom: 20,
-                      background: `linear-gradient(135deg, #0f2137 0%, #0d3349 100%)`,
-                      border: `1px solid rgba(91,191,189,0.25)`,
-                      borderRadius: 14,
+                      background: `linear-gradient(135deg, #0a1929 0%, #0f2137 60%, #0d2b45 100%)`,
+                      border: `1px solid rgba(255,255,255,0.1)`,
+                      borderRadius: 12,
                       overflow: 'hidden',
+                      boxShadow: SHADOW_LG,
                     }}>
                       {/* Header */}
                       <div style={{
-                        padding: '22px 26px 18px',
-                        borderBottom: '1px solid rgba(255,255,255,0.08)',
-                        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+                        padding: '22px 28px 18px',
+                        borderBottom: '1px solid rgba(255,255,255,0.07)',
+                        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14,
                       }}>
                         <div>
-                          <h2 style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: '#fff', margin: '0 0 4px', letterSpacing: '-0.2px', display: 'flex', alignItems: 'center' }}>
-                            Pressure-Fit Assessment
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: 8, background: `${TEAL}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Ic name="sliders" size={14} color={TEAL} />
+                            </div>
+                            <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: '#fff', margin: 0 }}>
+                              Pressure-Fit Assessment
+                            </h2>
                             <InfoTooltip text="How this candidate handles pressure, conflict, and competing priorities" light />
-                          </h2>
-                          <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.5)', margin: 0 }}>
+                          </div>
+                          <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.45)', margin: 0, paddingLeft: 36 }}>
                             How this candidate performs when it matters most.
                           </p>
                         </div>
-                        <div style={{
-                          display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
-                          padding: '10px 18px', borderRadius: 10,
-                          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                        }}>
-                          <div style={{ fontFamily: FM, fontSize: 44, fontWeight: 800, color: overallColor, lineHeight: 1, letterSpacing: '-2px' }}>
-                            {pf ?? '-'}
+                        {pf != null && (
+                          <div style={{
+                            display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px',
+                            borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                            flexShrink: 0,
+                          }}>
+                            <div style={{ fontFamily: FM, fontSize: 42, fontWeight: 800, color: pfColor(pf), lineHeight: 1, letterSpacing: '-2px' }}>{pf}</div>
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 800, color: pfColor(pf) }}>{pfLbl(pf)}</div>
+                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>/ 100</div>
+                            </div>
                           </div>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: overallColor }}>{overallLabel}</div>
-                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>overall / 100</div>
-                          </div>
-                        </div>
+                        )}
                       </div>
 
-                      {/* 4 Dimensions */}
-                      <div style={{ padding: '20px 26px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-                        {DIMENSIONS.map(({ key, label, icon, desc }) => {
+                      {/* Dimensions */}
+                      <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        {DIMENSIONS.map(({ key, label, icon, desc }, idx) => {
                           const dim = dims[key] ?? {}
-                          const s   = dim.score ?? null
-                          const v   = dim.verdict ?? null
-                          const n   = dim.narrative ?? null
-                          const vs  = verdictStyle(v)
+                          const s = dim.score ?? null
+                          const v = dim.verdict ?? null
+                          const n = dim.narrative ?? null
+                          const vs = vStyle(v)
+                          const barColor = s == null ? TX3 : s >= 80 ? GRN : s >= 55 ? TEAL : RED
 
                           return (
                             <div key={key} style={{
@@ -903,23 +860,21 @@ export default function CandidateReportPage({ params }) {
                               borderRadius: 10,
                               padding: '16px 18px',
                             }}>
-                              {/* Row: label + verdict + score */}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
                                 <div style={{
-                                  width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-                                  background: 'rgba(91,191,189,0.15)',
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                                  background: `${TEAL}18`, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 }}>
-                                  <Ic name={icon} size={14} color={TEAL} />
+                                  <Ic name={icon} size={15} color={TEAL} />
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ fontSize: 13.5, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{label}</div>
-                                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{desc}</div>
+                                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.38)', marginTop: 2 }}>{desc}</div>
                                 </div>
                                 {v && (
                                   <span style={{
                                     display: 'inline-flex', alignItems: 'center',
-                                    padding: '3px 11px', borderRadius: 20,
+                                    padding: '4px 12px', borderRadius: 50,
                                     fontSize: 11.5, fontWeight: 700,
                                     background: vs.bg, color: vs.color, border: `1px solid ${vs.bd}`,
                                     flexShrink: 0,
@@ -928,41 +883,31 @@ export default function CandidateReportPage({ params }) {
                                   </span>
                                 )}
                                 {s != null && (
-                                  <span style={{ fontFamily: FM, fontSize: 20, fontWeight: 800, color: pfScoreColor(s), flexShrink: 0, minWidth: 36, textAlign: 'right' }}>
+                                  <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: barColor, flexShrink: 0, minWidth: 36, textAlign: 'right' }}>
                                     {s}
                                   </span>
                                 )}
                               </div>
 
-                              {/* Progress bar */}
                               {s != null && (
-                                <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.1)', overflow: 'hidden', marginBottom: n ? 12 : 0 }}>
-                                  <div style={{
-                                    height: '100%',
-                                    width: `${s}%`,
-                                    background: pfScoreColor(s),
-                                    borderRadius: 99,
-                                    transition: 'width 0.6s ease',
-                                    opacity: 0.85,
-                                  }} />
+                                <div style={{ marginBottom: n ? 12 : 0 }}>
+                                  <AnimBar pct={s} color={barColor} height={5} delay={idx * 80} />
                                 </div>
                               )}
 
-                              {/* Narrative */}
                               {n && (
                                 <p style={{
-                                  fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.65)',
+                                  fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.6)',
                                   margin: 0, lineHeight: 1.7,
-                                  borderLeft: `3px solid ${pfScoreColor(s) || TEAL}55`,
+                                  borderLeft: `3px solid ${barColor}55`,
                                   paddingLeft: 12,
                                 }}>
                                   {n}
                                 </p>
                               )}
 
-                              {/* No data fallback */}
                               {s == null && !n && (
-                                <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.3)', margin: 0, fontStyle: 'italic' }}>
+                                <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.25)', margin: 0, fontStyle: 'italic' }}>
                                   Data available for newly scored assessments.
                                 </p>
                               )}
@@ -974,18 +919,21 @@ export default function CandidateReportPage({ params }) {
                   )
                 })()}
 
-                {/* ── 6. AI Hiring Summary ── */}
+                {/* ══════════════════════════════════════════════════
+                    AI HIRING SUMMARY
+                ══════════════════════════════════════════════════ */}
                 {results.ai_summary && (
-                  <Card style={{ marginBottom: 20, borderLeft: `4px solid ${TEAL}` }}>
+                  <Card style={{ marginBottom: 20, borderLeft: `4px solid ${TEAL}`, boxShadow: SHADOW_LG }}>
                     <SectionHeading>AI Hiring Summary</SectionHeading>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                      {results.ai_summary.split('\n\n').filter(Boolean).map((para, i) => (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                      {results.ai_summary.split('\n\n').filter(p => p.trim()).map((para, i) => (
                         <p key={i} style={{
                           fontFamily: F,
-                          fontSize: 14,
-                          color: TX2,
-                          lineHeight: 1.75,
+                          fontSize: 14.5,
+                          color: i === 0 ? TX : TX2,
+                          lineHeight: 1.8,
                           margin: 0,
+                          fontWeight: i === 0 ? 500 : 400,
                         }}>
                           {para}
                         </p>
@@ -994,84 +942,55 @@ export default function CandidateReportPage({ params }) {
                   </Card>
                 )}
 
-                {/* ── 6. Skills Breakdown ── */}
+                {/* ══════════════════════════════════════════════════
+                    SKILLS BREAKDOWN — 2×2 grid with small rings
+                ══════════════════════════════════════════════════ */}
                 {results.scores && Object.keys(results.scores).length > 0 && (
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading tooltip="Individual scores for core workplace skills based on scenario responses">Skills Breakdown</SectionHeading>
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(2, 1fr)',
-                      gap: 16,
-                    }}>
+                    <SectionHeading tooltip="Individual scores for core workplace skills based on scenario responses">
+                      Skills Breakdown
+                    </SectionHeading>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
                       {Object.entries(results.scores).map(([skill, skillScore]) => {
                         const narrative = results.score_narratives?.[skill]
-                        const bmKey = skill.toLowerCase()
-                        const bmThreshold = bmMap[bmKey]
+                        const bmThreshold = bmMap[skill.toLowerCase()]
                         const belowBenchmark = bmThreshold != null && skillScore < bmThreshold
-
                         return (
                           <div key={skill} style={{
                             background: BG,
-                            border: `1px solid ${BD}`,
+                            border: `1.5px solid ${belowBenchmark ? REDBD : BD}`,
                             borderRadius: 10,
-                            padding: '16px 18px',
+                            padding: '18px 20px',
                           }}>
-                            {/* Skill name + score */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                              <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX }}>
-                                {skill}
-                              </span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontFamily: FM, fontSize: 20, fontWeight: 700, color: scolor(skillScore) }}>
-                                  {skillScore}
-                                </span>
-                                <Badge
-                                  label={slabel(skillScore)}
-                                  bg={sbg(skillScore)}
-                                  color={scolor(skillScore)}
-                                  border={sbd(skillScore)}
-                                />
+                            {/* Top row: ring + title + badge */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+                              <SmallRing score={skillScore} size={58} strokeWidth={5} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 5 }}>
+                                  {skill}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: sc(skillScore) }}>{skillScore}</span>
+                                  <Badge label={slbl(skillScore)} bg={sbg(skillScore)} color={sc(skillScore)} border={sbd(skillScore)} />
+                                </div>
                               </div>
-                            </div>
-
-                            {/* Progress bar */}
-                            <div style={{
-                              height: 7,
-                              borderRadius: 99,
-                              background: BD,
-                              overflow: 'hidden',
-                              marginBottom: 10,
-                            }}>
-                              <div style={{
-                                height: '100%',
-                                width: `${skillScore}%`,
-                                background: scolor(skillScore),
-                                borderRadius: 99,
-                                transition: 'width 0.6s ease',
-                              }} />
                             </div>
 
                             {/* Below benchmark flag */}
                             {belowBenchmark && (
                               <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 5,
-                                background: REDBG,
-                                border: `1px solid ${REDBD}`,
-                                borderRadius: 6,
-                                padding: '3px 9px',
-                                marginBottom: 8,
+                                display: 'inline-flex', alignItems: 'center', gap: 5,
+                                background: REDBG, border: `1px solid ${REDBD}`,
+                                borderRadius: 6, padding: '3px 9px', marginBottom: 10,
                               }}>
-                                <Ic name="alert" size={12} color={RED} />
+                                <Ic name="alert" size={11} color={RED} />
                                 <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: RED }}>
                                   Below benchmark (threshold: {bmThreshold})
                                 </span>
                               </div>
                             )}
 
-                            {/* Narrative */}
-                            <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.65 }}>
+                            <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.7 }}>
                               {narrative || 'Assessment based on scenario responses.'}
                             </p>
                           </div>
@@ -1081,10 +1000,14 @@ export default function CandidateReportPage({ params }) {
                   </Card>
                 )}
 
-                {/* ── 6. Strengths ── */}
+                {/* ══════════════════════════════════════════════════
+                    STRENGTHS
+                ══════════════════════════════════════════════════ */}
                 {results.strengths?.length > 0 && (
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading tooltip="Specific behaviours the candidate demonstrated well, with evidence">Strengths</SectionHeading>
+                    <SectionHeading tooltip="Specific behaviours the candidate demonstrated well, with direct evidence">
+                      Strengths
+                    </SectionHeading>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       {results.strengths.map((s, i) => {
                         const title = typeof s === 'object' ? (s.strength || s.title || s.text) : s
@@ -1094,25 +1017,32 @@ export default function CandidateReportPage({ params }) {
                           <div key={i} style={{
                             background: GRNBG,
                             border: `1px solid ${GRNBD}`,
-                            borderRadius: 10,
-                            padding: '14px 16px',
+                            borderLeft: `4px solid ${GRN}`,
+                            borderRadius: '0 10px 10px 0',
+                            padding: '16px 18px',
                           }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                              <div style={{ marginTop: 2, flexShrink: 0 }}>
-                                <Ic name="check" size={16} color={GRN} />
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: explanation || evidence ? 8 : 0 }}>
+                              <div style={{
+                                width: 24, height: 24, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                                background: `${GRN}20`, border: `1px solid ${GRNBD}`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}>
+                                <Ic name="check" size={13} color={GRN} />
                               </div>
-                              <div style={{ flex: 1 }}>
-                                <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '0 0 6px' }}>
-                                  {title}
-                                </p>
-                                {explanation && (
-                                  <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px', lineHeight: 1.6 }}>{explanation}</p>
-                                )}
-                                {evidence && (
-                                  <EvidenceBox>{evidence}</EvidenceBox>
-                                )}
-                              </div>
+                              <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: 0, lineHeight: 1.4 }}>
+                                {title}
+                              </p>
                             </div>
+                            {explanation && (
+                              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 6px', lineHeight: 1.7, paddingLeft: 34 }}>
+                                {explanation}
+                              </p>
+                            )}
+                            {evidence && (
+                              <div style={{ paddingLeft: 34 }}>
+                                <EvidenceBox>{evidence}</EvidenceBox>
+                              </div>
+                            )}
                           </div>
                         )
                       })}
@@ -1120,10 +1050,14 @@ export default function CandidateReportPage({ params }) {
                   </Card>
                 )}
 
-                {/* ── 7. Watch-outs ── */}
+                {/* ══════════════════════════════════════════════════
+                    WATCH-OUTS
+                ══════════════════════════════════════════════════ */}
                 {results.watchouts?.length > 0 && (
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading tooltip="Areas of concern with severity rating and recommended actions">Watch-outs</SectionHeading>
+                    <SectionHeading tooltip="Areas of concern with severity rating and recommended management actions">
+                      Watch-outs
+                    </SectionHeading>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       {results.watchouts.map((w, i) => {
                         const title = typeof w === 'object' ? (w.watchout || w.title || w.text) : w
@@ -1132,31 +1066,28 @@ export default function CandidateReportPage({ params }) {
                         const evidence = typeof w === 'object' ? w.evidence : null
                         const action = typeof w === 'object' ? w.action : null
                         const sev = sevStyle(severity)
-
                         return (
                           <div key={i} style={{
-                            background: CARD,
-                            border: `1px solid ${BD}`,
+                            background: sev.tint,
+                            border: `1px solid ${sev.border}`,
                             borderRadius: 10,
-                            padding: '14px 16px',
+                            padding: '16px 18px',
                           }}>
                             {severity && (
-                              <div style={{ marginBottom: 8 }}>
+                              <div style={{ marginBottom: 10 }}>
                                 <Badge label={`${severity} severity`} bg={sev.bg} color={sev.color} border={sev.border} />
                               </div>
                             )}
-                            <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '0 0 6px' }}>
+                            <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 8px' }}>
                               {title}
                             </p>
                             {explanation && (
-                              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px', lineHeight: 1.6 }}>{explanation}</p>
+                              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 6px', lineHeight: 1.7 }}>
+                                {explanation}
+                              </p>
                             )}
-                            {evidence && (
-                              <EvidenceBox>{evidence}</EvidenceBox>
-                            )}
-                            {action && (
-                              <ActionBox>{action}</ActionBox>
-                            )}
+                            {evidence && <EvidenceBox>{evidence}</EvidenceBox>}
+                            {action && <ActionBox>{action}</ActionBox>}
                           </div>
                         )
                       })}
@@ -1164,53 +1095,49 @@ export default function CandidateReportPage({ params }) {
                   </Card>
                 )}
 
-                {/* ── 8. Onboarding Plan ── */}
+                {/* ══════════════════════════════════════════════════
+                    ONBOARDING PLAN — timeline style
+                ══════════════════════════════════════════════════ */}
                 {results.onboarding_plan?.length > 0 && (
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading>Personalised Onboarding Plan</SectionHeading>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                    <div style={{ paddingLeft: 4 }}>
                       {results.onboarding_plan.map((item, i) => {
                         const text = typeof item === 'object' ? (item.text || item.title || JSON.stringify(item)) : item
-                        // Extract week label from start of string
-                        const match = text.match(/^(Week\s[\d–]+|Ongoing|Weeks\s[\d–]+):/i)
-                        const weekLabel = match ? match[1] : null
-                        const body = weekLabel ? text.slice(match[0].length).trim() : text
+                        const match = text.match(/^(Week\s*\d+):/i)
+                        const weekNum = match ? match[1].replace(/\s+/g, ' ') : null
+                        const body = weekNum ? text.slice(match[0].length).trim() : text
                         const isLast = i === results.onboarding_plan.length - 1
 
                         return (
                           <div key={i} style={{ display: 'flex', gap: 0 }}>
                             {/* Timeline column */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 32, flexShrink: 0 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 44, flexShrink: 0 }}>
                               <div style={{
-                                width: 12,
-                                height: 12,
-                                borderRadius: '50%',
-                                background: TEAL,
-                                border: `2px solid ${TEALLT}`,
-                                flexShrink: 0,
-                                marginTop: 4,
-                              }} />
+                                width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                                background: TEAL, boxShadow: `0 0 0 4px ${TEALLT}, 0 0 0 5px ${TEAL}30`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontFamily: FM, fontSize: 12, fontWeight: 800, color: '#fff',
+                                zIndex: 1,
+                              }}>
+                                {i + 1}
+                              </div>
                               {!isLast && (
-                                <div style={{ width: 2, flex: 1, background: `${TEAL}30`, minHeight: 24 }} />
+                                <div style={{ width: 2, flex: 1, background: `${TEAL}25`, minHeight: 32, marginTop: 2 }} />
                               )}
                             </div>
                             {/* Content */}
-                            <div style={{ paddingBottom: isLast ? 0 : 20, paddingLeft: 12, flex: 1 }}>
-                              {weekLabel && (
+                            <div style={{ paddingBottom: isLast ? 0 : 28, paddingLeft: 16, flex: 1, paddingTop: 6 }}>
+                              {weekNum && (
                                 <span style={{
-                                  fontFamily: F,
-                                  fontSize: 11,
-                                  fontWeight: 800,
-                                  color: TEALD,
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.06em',
-                                  display: 'block',
-                                  marginBottom: 3,
+                                  fontFamily: F, fontSize: 11, fontWeight: 800, color: TEALD,
+                                  textTransform: 'uppercase', letterSpacing: '0.07em',
+                                  display: 'block', marginBottom: 4,
                                 }}>
-                                  {weekLabel}
+                                  {weekNum}
                                 </span>
                               )}
-                              <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.65 }}>
+                              <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.7 }}>
                                 {body}
                               </p>
                             </div>
@@ -1221,61 +1148,55 @@ export default function CandidateReportPage({ params }) {
                   </Card>
                 )}
 
-                {/* ── 9. Interview Questions ── */}
+                {/* ══════════════════════════════════════════════════
+                    INTERVIEW QUESTIONS
+                ══════════════════════════════════════════════════ */}
                 {results.interview_questions?.length > 0 && (
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading>Suggested Interview Questions</SectionHeading>
-                    <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 18px', lineHeight: 1.5 }}>
-                      These questions are designed to probe the specific gaps identified in this assessment. Each includes a follow-up probe to test whether the candidate's answer is genuine.
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
+                      Designed to probe the specific gaps identified in this assessment. Each includes a follow-up probe.
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {results.interview_questions.map((q, i) => {
                         const text = typeof q === 'object' ? (q.question || q.text || JSON.stringify(q)) : q
-                        // Split main question from follow-up
-                        const followUpMatch = text.match(/\[Follow-up:\s*(.*?)\]$/i)
-                        const followUp = followUpMatch ? followUpMatch[1] : null
+                        // Parse (Follow-up probe: ...) or [Follow-up: ...]
+                        const followUpMatch = text.match(/\(Follow-up probe:\s*([\s\S]*?)\)\s*$/) || text.match(/\[Follow-up:\s*([\s\S]*?)\]\s*$/)
+                        const followUp = followUpMatch ? followUpMatch[1].trim() : null
                         const mainQ = followUpMatch ? text.slice(0, followUpMatch.index).trim() : text
-
                         return (
                           <div key={i} style={{
-                            background: BG,
+                            background: CARD,
                             border: `1px solid ${BD}`,
                             borderRadius: 10,
-                            padding: '16px 18px',
+                            padding: '18px 20px',
+                            boxShadow: '0 1px 4px rgba(15,33,55,0.05)',
                           }}>
-                            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                            <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                               <div style={{
-                                width: 26,
-                                height: 26,
-                                borderRadius: '50%',
-                                background: TEALLT,
-                                border: `1px solid ${TEAL}55`,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontFamily: FM,
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: TEALD,
-                                flexShrink: 0,
-                                marginTop: 1,
+                                width: 30, height: 30, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                                background: TEALLT, border: `1.5px solid ${TEAL}55`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontFamily: FM, fontSize: 13, fontWeight: 800, color: TEALD,
                               }}>
                                 {i + 1}
                               </div>
                               <div style={{ flex: 1 }}>
-                                <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX, margin: 0, lineHeight: 1.6 }}>
+                                <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 (followUp ? 12 : 0)', lineHeight: 1.65 }}>
                                   {mainQ}
                                 </p>
                                 {followUp && (
                                   <div style={{
-                                    marginTop: 10,
-                                    background: AMBBG,
-                                    border: `1px solid ${AMBBD}`,
-                                    borderRadius: 7,
-                                    padding: '8px 12px',
+                                    marginTop: 12,
+                                    background: '#f8fafc',
+                                    border: `1px solid ${BD}`,
+                                    borderLeft: `3px solid ${AMB}`,
+                                    borderRadius: '0 8px 8px 0',
+                                    padding: '9px 14px',
                                   }}>
-                                    <p style={{ fontFamily: F, fontSize: 12.5, color: AMB, margin: 0, lineHeight: 1.55 }}>
-                                      <strong>Follow-up:</strong> {followUp}
+                                    <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.6 }}>
+                                      <span style={{ fontWeight: 700, color: AMB }}>Follow-up probe: </span>
+                                      {followUp}
                                     </p>
                                   </div>
                                 )}
@@ -1287,11 +1208,12 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   </Card>
                 )}
-                {/* ── 10. Team Notes ── */}
+
+                {/* ══════════════════════════════════════════════════
+                    TEAM NOTES
+                ══════════════════════════════════════════════════ */}
                 <Card style={{ marginBottom: 40 }} className="no-print">
                   <SectionHeading>Team Notes</SectionHeading>
-
-                  {/* Add note */}
                   <div style={{ marginBottom: 20 }}>
                     <textarea
                       value={newNote}
@@ -1303,7 +1225,7 @@ export default function CandidateReportPage({ params }) {
                         padding: '10px 14px', borderRadius: 8,
                         border: `1px solid ${BD}`, fontFamily: F,
                         fontSize: 13.5, color: TX, lineHeight: 1.6,
-                        resize: 'vertical', outline: 'none',
+                        resize: 'vertical', outline: 'none', background: CARD,
                       }}
                       onFocus={e => e.target.style.borderColor = TEAL}
                       onBlur={e => e.target.style.borderColor = BD}
@@ -1326,25 +1248,19 @@ export default function CandidateReportPage({ params }) {
                       </button>
                     </div>
                   </div>
-
-                  {/* Notes list */}
                   {notes.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '24px 0', color: TX3, fontSize: 13 }}>
-                      No notes yet. Add one above.
-                    </div>
+                    <div style={{ textAlign: 'center', padding: '24px 0', color: TX3, fontSize: 13 }}>No notes yet. Add one above.</div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {notes.map(n => (
-                        <div key={n.id} style={{
-                          background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px',
-                        }}>
+                        <div key={n.id} style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px' }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <div style={{
-                                width: 28, height: 28, borderRadius: '50%',
+                                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
                                 background: `linear-gradient(135deg, ${TEAL}, ${TEALD})`,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 11, fontWeight: 800, color: '#fff', flexShrink: 0,
+                                fontSize: 11, fontWeight: 800, color: '#fff',
                               }}>
                                 {(n.author_name || '?').slice(0, 1).toUpperCase()}
                               </div>
@@ -1354,10 +1270,7 @@ export default function CandidateReportPage({ params }) {
                               </div>
                             </div>
                             {n.user_id === user?.id && (
-                              <button
-                                onClick={() => deleteNote(n.id)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: TX3, padding: 4, display: 'flex', alignItems: 'center' }}
-                              >
+                              <button onClick={() => deleteNote(n.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: TX3, padding: 4, display: 'flex', alignItems: 'center' }}>
                                 <Ic name="x" size={13} color={TX3} />
                               </button>
                             )}
@@ -1377,222 +1290,49 @@ export default function CandidateReportPage({ params }) {
         )}
       </main>
 
-      {/* ── CLIENT REPORT: hidden normally, printed via body.client-print ── */}
+      {/* ── CLIENT REPORT ── */}
       {candidate && results && (
         <div className="client-report-container" style={{ fontFamily: F, color: TX, padding: '40px 48px', maxWidth: 800, margin: '0 auto' }}>
-
-          {/* Header */}
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-            marginBottom: 32, paddingBottom: 20, borderBottom: `2px solid ${NAVY}`,
-          }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, paddingBottom: 20, borderBottom: `2px solid ${NAVY}` }}>
             <div>
-              <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: NAVY, letterSpacing: '0.06em', marginBottom: 3 }}>
-                PRODICTA
-              </div>
+              <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: NAVY, letterSpacing: '0.06em', marginBottom: 3 }}>PRODICTA</div>
               <div style={{ fontSize: 11.5, color: TX3 }}>AI-Powered Work Simulation Assessment</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              {profile?.company_name && (
-                <div style={{ fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: 3 }}>
-                  Prepared by {profile.company_name}
-                </div>
-              )}
+              {profile?.company_name && <div style={{ fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: 3 }}>Prepared by {profile.company_name}</div>}
               <div style={{ fontSize: 12, color: TX3 }}>Candidate Assessment Report</div>
-              {completedDate && (
-                <div style={{ fontSize: 11.5, color: TX3, marginTop: 2 }}>{completedDate}</div>
-              )}
+              {completedDate && <div style={{ fontSize: 11.5, color: TX3, marginTop: 2 }}>{completedDate}</div>}
             </div>
           </div>
-
-          {/* Candidate name + role */}
           <div style={{ marginBottom: 28 }}>
-            <h1 style={{ margin: '0 0 5px', fontSize: 28, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px' }}>
-              {candidate.name || 'Candidate'}
-            </h1>
-            {candidate.assessments?.role_title && (
-              <div style={{ fontSize: 14, color: TX2, fontWeight: 600 }}>
-                {candidate.assessments.role_title}
-              </div>
-            )}
+            <h1 style={{ margin: '0 0 5px', fontSize: 28, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px' }}>{candidate.name || 'Candidate'}</h1>
+            {candidate.assessments?.role_title && <div style={{ fontSize: 14, color: TX2, fontWeight: 600 }}>{candidate.assessments.role_title}</div>}
           </div>
-
-          {/* Score summary boxes */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: results.pressure_fit_score != null ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)',
-            gap: 12, marginBottom: 28,
-          }}>
-            {/* Overall score */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
             <div style={{ background: sbg(score), border: `1px solid ${sbd(score)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center' }}>
               <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Overall Score</div>
-              <div style={{ fontFamily: FM, fontSize: 38, fontWeight: 800, color: scolor(score), lineHeight: 1 }}>{score}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: scolor(score), marginTop: 5 }}>{slabel(score)}</div>
+              <div style={{ fontFamily: FM, fontSize: 38, fontWeight: 800, color: sc(score), lineHeight: 1 }}>{score}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: sc(score), marginTop: 5 }}>{slbl(score)}</div>
             </div>
-
-            {/* Pressure-Fit */}
-            {results.pressure_fit_score != null && (
-              <div style={{ background: pfBg(results.pressure_fit_score), border: `1px solid ${pfBd(results.pressure_fit_score)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center' }}>
-                <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Pressure-Fit</div>
-                <div style={{ fontFamily: FM, fontSize: 38, fontWeight: 800, color: pfColor(results.pressure_fit_score), lineHeight: 1 }}>{results.pressure_fit_score}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: pfColor(results.pressure_fit_score), marginTop: 5 }}>{pfLabel(results.pressure_fit_score)}</div>
-              </div>
-            )}
-
-            {/* Risk level */}
             <div style={{ background: riskBg(results.risk_level), border: `1px solid ${riskBd(results.risk_level)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Risk Level</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: riskCol(results.risk_level), lineHeight: 1.2 }}>{results.risk_level || '-'}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: riskCol(results.risk_level) }}>{results.risk_level || '—'}</div>
             </div>
-
-            {/* Recommendation */}
-            <div style={{ background: sbg(score), border: `1px solid ${sbd(score)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ background: dBg(score), border: `1px solid ${dBd(score)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Recommendation</div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: dC(score), lineHeight: 1.2 }}>{dL(score)}</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: dC(score), lineHeight: 1.2 }}>{dL(score)}</div>
             </div>
           </div>
-
-          {/* AI Summary */}
           {results.ai_summary && (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, paddingBottom: 6, borderBottom: `1.5px solid ${BD}` }}>
-                AI Assessment Summary
-              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 8, marginBottom: 14 }}>Summary</div>
               {results.ai_summary.split('\n\n').filter(Boolean).map((para, i) => (
-                <p key={i} style={{ fontSize: 13.5, color: TX2, lineHeight: 1.75, margin: i > 0 ? '10px 0 0' : 0 }}>{para}</p>
+                <p key={i} style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 12px', lineHeight: 1.75 }}>{para}</p>
               ))}
             </div>
           )}
-
-          {/* Skills breakdown */}
-          {results.scores && Object.keys(results.scores).length > 0 && (
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12, paddingBottom: 6, borderBottom: `1.5px solid ${BD}` }}>
-                Skills Breakdown
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {Object.entries(results.scores).map(([skill, skillScore]) => (
-                  <div key={skill} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 170, fontSize: 13, fontWeight: 600, color: TX, flexShrink: 0 }}>{skill}</div>
-                    <div style={{ flex: 1, height: 6, borderRadius: 99, background: BD, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${skillScore}%`, background: scolor(skillScore), borderRadius: 99 }} />
-                    </div>
-                    <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 700, color: scolor(skillScore), width: 36, textAlign: 'right', flexShrink: 0 }}>{skillScore}</div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: scolor(skillScore), width: 72, flexShrink: 0 }}>{slabel(skillScore)}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Strengths */}
-          {results.strengths?.length > 0 && (
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12, paddingBottom: 6, borderBottom: `1.5px solid ${BD}` }}>
-                Strengths
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {results.strengths.map((s, i) => {
-                  const title = typeof s === 'object' ? (s.strength || s.title || s.text) : s
-                  const evidence = typeof s === 'object' ? s.evidence : null
-                  return (
-                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: GRNBG, border: `1px solid ${GRNBD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                        <span style={{ fontSize: 12, fontWeight: 900, color: GRN, lineHeight: 1 }}>+</span>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: evidence ? 5 : 0 }}>{title}</div>
-                        {evidence && (
-                          <div style={{ fontSize: 12.5, color: TX2, fontStyle: 'italic', borderLeft: `2px solid ${TEAL}66`, paddingLeft: 10, lineHeight: 1.6 }}>{evidence}</div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Watch-outs (labelled "Areas to Probe" for client) */}
-          {results.watchouts?.length > 0 && (
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12, paddingBottom: 6, borderBottom: `1.5px solid ${BD}` }}>
-                Areas to Probe
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {results.watchouts.map((w, i) => {
-                  const title = typeof w === 'object' ? (w.watchout || w.title || w.text) : w
-                  const evidence = typeof w === 'object' ? w.evidence : null
-                  return (
-                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: AMBBG, border: `1px solid ${AMBBD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                        <span style={{ fontSize: 12, fontWeight: 900, color: AMB, lineHeight: 1 }}>!</span>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: evidence ? 5 : 0 }}>{title}</div>
-                        {evidence && (
-                          <div style={{ fontSize: 12.5, color: TX2, fontStyle: 'italic', borderLeft: `2px solid ${AMB}55`, paddingLeft: 10, lineHeight: 1.6 }}>{evidence}</div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Interview questions */}
-          {results.interview_questions?.length > 0 && (
-            <div style={{ marginBottom: 40 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12, paddingBottom: 6, borderBottom: `1.5px solid ${BD}` }}>
-                Suggested Interview Questions
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {results.interview_questions.map((q, i) => {
-                  const text = typeof q === 'object' ? (q.question || q.text || JSON.stringify(q)) : q
-                  const followUpMatch = text.match(/\[Follow-up:\s*(.*?)\]$/i)
-                  const followUp = followUpMatch ? followUpMatch[1] : null
-                  const mainQ = followUpMatch ? text.slice(0, followUpMatch.index).trim() : text
-                  return (
-                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                      <div style={{
-                        width: 24, height: 24, borderRadius: '50%',
-                        background: TEALLT, border: `1px solid ${TEAL}55`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: FM, fontSize: 11, fontWeight: 700, color: TEALD,
-                        flexShrink: 0, marginTop: 1,
-                      }}>
-                        {i + 1}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 600, color: TX, lineHeight: 1.6 }}>{mainQ}</div>
-                        {followUp && (
-                          <div style={{ fontSize: 12.5, color: AMB, marginTop: 5, fontStyle: 'italic' }}>
-                            Follow-up: {followUp}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Footer */}
-          <div style={{
-            borderTop: `1px solid ${BD}`, paddingTop: 16,
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          }}>
-            <div style={{ fontSize: 11.5, color: TX3 }}>
-              Prepared using <span style={{ fontWeight: 700, color: NAVY }}>PRODICTA</span> AI Assessment Platform
-            </div>
-            <div style={{ fontSize: 11, color: TX3 }}>prodicta.co.uk</div>
-          </div>
-
         </div>
       )}
-
     </div>
   )
 }
