@@ -40,10 +40,10 @@ function StatCard({ icon, label, value, sub, accent = TEAL }) {
         <span style={{ fontSize: 13, fontWeight: 600, color: TX2, fontFamily: F }}>{label}</span>
         <div style={{
           width: 34, height: 34, borderRadius: 9,
-          background: TEALLT,
+          background: `${accent}18`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Ic name={icon} size={16} color={TEALD} />
+          <Ic name={icon} size={16} color={accent} />
         </div>
       </div>
       <div>
@@ -107,23 +107,52 @@ function RiskBadge({ risk }) {
   )
 }
 
-function LoadingSpinner() {
+function LoadingSkeleton() {
+  const shimmer = {
+    background: 'linear-gradient(90deg, #f0f4f8 25%, #e4eaf2 50%, #f0f4f8 75%)',
+    backgroundSize: '200% 100%',
+    animation: 'shimmer 1.4s ease infinite',
+    borderRadius: 8,
+  }
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      minHeight: '100vh', background: BG,
-    }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{
-          width: 44, height: 44,
-          border: `3px solid ${BD}`,
-          borderTop: `3px solid ${TEAL}`,
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
-          margin: '0 auto 16px',
-        }} />
-        <div style={{ color: TX2, fontSize: 14, fontFamily: F }}>Loading dashboard…</div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    <div style={{ display: 'flex' }}>
+      <style>{`@keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }`}</style>
+      <div style={{ marginLeft: 220, padding: '32px 40px', minHeight: '100vh', background: '#f7f9fb', flex: 1 }}>
+        {/* Header skeleton */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 28 }}>
+          <div style={{ ...shimmer, width: 160, height: 32 }} />
+          <div style={{ ...shimmer, width: 200, height: 36, borderRadius: 8 }} />
+        </div>
+        {/* Stat cards */}
+        <div style={{ display: 'flex', gap: 16, marginBottom: 28 }}>
+          {[1,2,3,4].map(i => (
+            <div key={i} style={{ flex: 1, background: '#fff', border: '1px solid #e4e9f0', borderRadius: 14, padding: '22px 26px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div style={{ ...shimmer, width: 80, height: 14 }} />
+                <div style={{ ...shimmer, width: 34, height: 34, borderRadius: 9 }} />
+              </div>
+              <div style={{ ...shimmer, width: 60, height: 36, borderRadius: 6 }} />
+              <div style={{ ...shimmer, width: 100, height: 12, marginTop: 8 }} />
+            </div>
+          ))}
+        </div>
+        {/* Table skeleton */}
+        <div style={{ background: '#fff', border: '1px solid #e4e9f0', borderRadius: 14, overflow: 'hidden' }}>
+          <div style={{ padding: '18px 24px', borderBottom: '1px solid #e4e9f0' }}>
+            <div style={{ ...shimmer, width: 120, height: 18 }} />
+          </div>
+          {[1,2,3,4,5].map(i => (
+            <div key={i} style={{ padding: '14px 24px', borderBottom: '1px solid #e4e9f0', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ ...shimmer, width: 32, height: 32, borderRadius: '50%' }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ ...shimmer, width: 140, height: 14, marginBottom: 6 }} />
+                <div style={{ ...shimmer, width: 100, height: 11 }} />
+              </div>
+              <div style={{ ...shimmer, width: 60, height: 20, borderRadius: 20 }} />
+              <div style={{ ...shimmer, width: 40, height: 18, borderRadius: 6 }} />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -259,7 +288,7 @@ export default function DashboardPage() {
     }
   }
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <LoadingSkeleton />
 
   if (error) {
     return (
@@ -627,9 +656,10 @@ export default function DashboardPage() {
                             onMouseLeave={() => setHoveredRow(null)}
                             style={{
                               borderBottom: i < filtered.length - 1 ? `1px solid ${BD}` : 'none',
-                              background: isHovered ? TEALLT : CARD,
+                              background: isHovered && isClickable ? '#f0fdfb' : CARD,
                               cursor: isClickable ? 'pointer' : 'default',
-                              transition: 'background 0.12s',
+                              transition: 'background 0.15s',
+                              boxShadow: isHovered && isClickable ? `inset 3px 0 0 #3DD6D0` : 'none',
                             }}
                           >
                             {/* Candidate name + email */}

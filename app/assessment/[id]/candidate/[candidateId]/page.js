@@ -438,14 +438,35 @@ export default function CandidateReportPage({ params }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexShrink: 0, flexWrap: 'wrap' }}>
                   {results && (
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, marginBottom: 4 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, marginBottom: 8 }}>
                         <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Overall Score</span>
                         <InfoTooltip text="How this candidate performed across all 4 work simulation scenarios" />
                       </div>
-                      <div style={{ fontFamily: FM, fontSize: 52, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>
-                        {score}
+                      {/* Circular progress ring */}
+                      <div style={{ position: 'relative', width: 100, height: 100, margin: '0 auto' }}>
+                        <svg width="100" height="100" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+                          <circle cx="50" cy="50" r="42" fill="none" stroke={BD} strokeWidth="7" />
+                          <circle
+                            cx="50" cy="50" r="42"
+                            fill="none"
+                            stroke={scolor(score)}
+                            strokeWidth="7"
+                            strokeLinecap="round"
+                            strokeDasharray={`${2 * Math.PI * 42}`}
+                            strokeDashoffset={`${2 * Math.PI * 42 * (1 - score / 100)}`}
+                            style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+                          />
+                        </svg>
+                        <div style={{
+                          position: 'absolute', inset: 0,
+                          display: 'flex', flexDirection: 'column',
+                          alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>{score}</span>
+                          <span style={{ fontFamily: F, fontSize: 9, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 2 }}>/100</span>
+                        </div>
                       </div>
-                      <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: scolor(score), marginTop: 3 }}>
+                      <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: scolor(score), marginTop: 6 }}>
                         {slabel(score)}
                       </div>
                       {results.percentile && (

@@ -7,14 +7,14 @@ import ProdictaLogo from '@/components/ProdictaLogo'
 // ── Inline style constants ──────────────────────────────────────────────────
 
 const NAVY   = '#0f2137'
-const TEAL   = '#5bbfbd'
-const DARK_T = '#2d9e96'
+const TEAL   = '#3DD6D0'
+const DARK_T = '#2BB5AF'
 const LIGHT_T = '#e8f6f5'
 
 const styles = {
   page: {
     minHeight: '100vh',
-    background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)',
+    background: 'linear-gradient(160deg, #0a1929 0%, #0f2137 50%, #112240 100%)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -58,10 +58,14 @@ const styles = {
     lineHeight: 1,
   },
   tagline: {
-    marginTop: '10px',
-    fontSize: '14px',
-    color: 'rgba(255,255,255,0.55)',
-    letterSpacing: '0.01em',
+    marginTop: '12px',
+    fontSize: '13px',
+    color: 'rgba(255,255,255,0.45)',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    fontFamily: "'Outfit', system-ui, sans-serif",
+    textAlign: 'center',
+    margin: '10px 0 0',
   },
 
   // ── Card ──
@@ -70,7 +74,7 @@ const styles = {
     borderRadius: '16px',
     width: '100%',
     maxWidth: '420px',
-    boxShadow: '0 8px 40px rgba(0,0,0,0.28)',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)',
     overflow: 'hidden',
   },
 
@@ -220,8 +224,9 @@ function Logo() {
   return (
     <div style={styles.logoWrap}>
       <div style={styles.logoMark}>
-        <ProdictaLogo textColor="#ffffff" size={42} />
+        <ProdictaLogo textColor="#ffffff" size={52} />
       </div>
+      <p style={styles.tagline}>Pre-employment intelligence</p>
     </div>
   )
 }
@@ -519,6 +524,9 @@ export default function LoginPage() {
           <a href="/privacy" style={{ color: DARK_T, textDecoration: 'none' }}>Privacy Policy</a>.
         </p>
       </div>
+      <p style={{ marginTop: 28, fontSize: 12, color: 'rgba(255,255,255,0.3)', fontFamily: "'Outfit', system-ui, sans-serif", textAlign: 'center' }}>
+        © {new Date().getFullYear()} Prodicta. All rights reserved.
+      </p>
     </div>
   )
 }

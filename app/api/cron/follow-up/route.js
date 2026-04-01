@@ -48,7 +48,7 @@ export async function GET(request) {
 <body style="margin:0;padding:0;background:#f7f9fb;font-family:system-ui,sans-serif;">
   <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
     <div style="background:#0f2137;padding:28px 36px;">
-      <div style="color:#5bbfbd;font-size:20px;font-weight:900;letter-spacing:0.04em;">PRODICTA</div>
+      <div style="color:#3DD6D0;font-size:20px;font-weight:900;letter-spacing:0.04em;">PRODICTA</div>
       <div style="color:rgba(255,255,255,0.5);font-size:12px;margin-top:2px;">Work simulation assessment</div>
     </div>
     <div style="padding:36px;">
@@ -60,12 +60,12 @@ export async function GET(request) {
         The assessment takes around 45 minutes and you can complete it at any time from any device. Your link is still active.
       </p>
       <div style="text-align:center;margin:32px 0;">
-        <a href="${link}" style="display:inline-block;background:#5bbfbd;color:#0f2137;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none;">Start Assessment &rarr;</a>
+        <a href="${link}" style="display:inline-block;background:#3DD6D0;color:#0f2137;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none;">Start Assessment &rarr;</a>
       </div>
       <p style="font-size:13px;color:#94a1b3;margin:24px 0 0;">If you have any questions, reply to this email.</p>
     </div>
     <div style="background:#f7f9fb;padding:16px 36px;border-top:1px solid #e4e9f0;">
-      <p style="font-size:12px;color:#94a1b3;margin:0;text-align:center;">Powered by <strong style="color:#5bbfbd;">PRODICTA</strong> &middot; <a href="${appUrl}" style="color:#94a1b3;">prodicta.co.uk</a></p>
+      <p style="font-size:12px;color:#94a1b3;margin:0;text-align:center;">Powered by <strong style="color:#3DD6D0;">PRODICTA</strong> &middot; <a href="${appUrl}" style="color:#94a1b3;">prodicta.co.uk</a></p>
     </div>
   </div>
 </body>

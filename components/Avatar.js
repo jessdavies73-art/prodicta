@@ -1,16 +1,42 @@
-'use client'
-import { ACOL } from '../lib/constants'
+const TEAL = '#3DD6D0'
+const NAVY = '#0f2137'
+const F = "'Outfit', system-ui, sans-serif"
 
-export default function Avatar({ name, size = 36 }) {
-  const idx = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % ACOL.length
+// Generate a consistent colour from a name string
+function nameToColor(name = '') {
+  const colors = [
+    '#3DD6D0', '#6366f1', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6', '#0ea5e9', '#14b8a6',
+  ]
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return colors[Math.abs(hash) % colors.length]
+}
+
+function initials(name = '') {
+  return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'
+}
+
+export default function Avatar({ name = '', size = 36 }) {
+  const bg = nameToColor(name)
+  const fontSize = Math.round(size * 0.38)
   return (
     <div style={{
-      width: size, height: size, borderRadius: size * 0.35,
-      background: `linear-gradient(135deg,${ACOL[idx]},${ACOL[(idx + 2) % ACOL.length]})`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.36, fontWeight: 700, color: "#fff", flexShrink: 0
+      width: size,
+      height: size,
+      borderRadius: '50%',
+      background: bg,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+      fontFamily: F,
+      fontSize,
+      fontWeight: 700,
+      color: '#fff',
+      letterSpacing: '0.02em',
+      userSelect: 'none',
     }}>
-      {name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+      {initials(name)}
     </div>
   )
 }

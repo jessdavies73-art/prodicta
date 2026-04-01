@@ -140,11 +140,11 @@ function buildEmail({ companyName, monthLabel, total, completed, pending, avgSco
     </td>`
 
   const topCandidateBlock = topCandidate ? `
-    <div style="background:#e8f6f5;border:1px solid #5bbfbd55;border-radius:12px;padding:20px 24px;margin:0 0 24px;">
-      <div style="font-size:11px;font-weight:700;color:#2d9e96;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Top candidate this month</div>
+    <div style="background:#e8f6f5;border:1px solid #3DD6D055;border-radius:12px;padding:20px 24px;margin:0 0 24px;">
+      <div style="font-size:11px;font-weight:700;color:#2BB5AF;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Top candidate this month</div>
       <div style="display:flex;align-items:center;gap:16px;">
         <div style="width:44px;height:44px;border-radius:50%;background:#0f2137;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <span style="color:#5bbfbd;font-size:18px;font-weight:800;">${(topCandidate.name || '?')[0].toUpperCase()}</span>
+          <span style="color:#3DD6D0;font-size:18px;font-weight:800;">${(topCandidate.name || '?')[0].toUpperCase()}</span>
         </div>
         <div>
           <div style="font-size:15px;font-weight:800;color:#0f2137;">${topCandidate.name}</div>
@@ -175,12 +175,12 @@ function buildEmail({ companyName, monthLabel, total, completed, pending, avgSco
 
     <!-- Header -->
     <div style="background:#0f2137;border-radius:16px 16px 0 0;padding:28px 36px 24px;">
-      <div style="color:#5bbfbd;font-size:20px;font-weight:900;letter-spacing:0.04em;">PRODICTA</div>
+      <div style="color:#3DD6D0;font-size:20px;font-weight:900;letter-spacing:0.04em;">PRODICTA</div>
       <div style="color:rgba(255,255,255,0.5);font-size:12px;margin-top:2px;">AI-Powered Work Simulation Assessment</div>
     </div>
 
     <!-- Title band -->
-    <div style="background:#0d3349;padding:20px 36px 22px;border-bottom:3px solid #5bbfbd;">
+    <div style="background:#0d3349;padding:20px 36px 22px;border-bottom:3px solid #3DD6D0;">
       <div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.3px;">Your Monthly Hiring Summary</div>
       <div style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:4px;">${monthLabel}</div>
     </div>
@@ -217,7 +217,7 @@ function buildEmail({ companyName, monthLabel, total, completed, pending, avgSco
       <!-- CTA -->
       <div style="text-align:center;margin:28px 0 8px;">
         <a href="${appUrl}/assessment/new"
-           style="display:inline-block;background:#5bbfbd;color:#0f2137;font-weight:800;font-size:14px;padding:14px 36px;border-radius:10px;text-decoration:none;letter-spacing:-0.2px;">
+           style="display:inline-block;background:#3DD6D0;color:#0f2137;font-weight:800;font-size:14px;padding:14px 36px;border-radius:10px;text-decoration:none;letter-spacing:-0.2px;">
           Create your next assessment &rarr;
         </a>
       </div>
@@ -230,7 +230,7 @@ function buildEmail({ companyName, monthLabel, total, completed, pending, avgSco
     <!-- Footer -->
     <div style="background:#f7f9fb;border:1px solid #e4e9f0;border-top:none;border-radius:0 0 16px 16px;padding:16px 36px;">
       <p style="font-size:12px;color:#94a1b3;margin:0;text-align:center;">
-        <strong style="color:#5bbfbd;">PRODICTA</strong>
+        <strong style="color:#3DD6D0;">PRODICTA</strong>
         &nbsp;&middot;&nbsp;
         <a href="${appUrl}" style="color:#94a1b3;text-decoration:none;">prodicta.co.uk</a>
         &nbsp;&middot;&nbsp;

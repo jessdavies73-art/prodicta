@@ -26,7 +26,7 @@ const roleTypeBadgeStyle = type => {
   const map = {
     Sales:       { background: '#ecfdf5', color: '#16a34a' },
     Marketing:   { background: '#fffbeb', color: '#d97706' },
-    Engineering: { background: '#e8f6f5', color: '#2d9e96' },
+    Engineering: { background: '#e8f6f5', color: '#2BB5AF' },
     General:     { background: '#f1f5f9', color: '#5e6b7f' },
   }
   return map[type] || map.General
@@ -145,7 +145,7 @@ export default function NewAssessmentPage() {
             display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Ic name="file" size={16} color="#2d9e96" />
+              <Ic name="file" size={16} color="#2BB5AF" />
               <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a' }}>
                 Start from a template
               </span>
@@ -211,7 +211,7 @@ export default function NewAssessmentPage() {
                 color: '#0f172a', fontFamily: F, background: '#fff', outline: 'none',
                 transition: 'border-color 0.15s'
               }}
-              onFocus={e => e.target.style.borderColor = '#5bbfbd'}
+              onFocus={e => e.target.style.borderColor = '#3DD6D0'}
               onBlur={e => e.target.style.borderColor = '#e4e9f0'}
             />
           </div>
@@ -246,7 +246,7 @@ export default function NewAssessmentPage() {
                 color: '#0f172a', fontFamily: F, background: '#fff', outline: 'none',
                 resize: 'vertical', lineHeight: 1.6, transition: 'border-color 0.15s'
               }}
-              onFocus={e => e.target.style.borderColor = '#5bbfbd'}
+              onFocus={e => e.target.style.borderColor = '#3DD6D0'}
               onBlur={e => e.target.style.borderColor = '#e4e9f0'}
             />
             {jd.length > 0 && jd.length < 50 && (
@@ -269,8 +269,8 @@ export default function NewAssessmentPage() {
             <button
               onClick={resetEqual}
               style={{
-                fontSize: 12, fontWeight: 600, color: '#2d9e96', background: 'none',
-                border: '1px solid #5bbfbd', borderRadius: 7, padding: '5px 12px',
+                fontSize: 12, fontWeight: 600, color: '#2BB5AF', background: 'none',
+                border: '1px solid #3DD6D0', borderRadius: 7, padding: '5px 12px',
                 cursor: 'pointer', fontFamily: F
               }}
             >
@@ -307,7 +307,7 @@ export default function NewAssessmentPage() {
                   max={100}
                   value={weights[skill]}
                   onChange={e => setWeight(skill, e.target.value)}
-                  style={{ width: '100%', accentColor: '#5bbfbd', cursor: 'pointer' }}
+                  style={{ width: '100%', accentColor: '#3DD6D0', cursor: 'pointer' }}
                 />
               </div>
             ))}
@@ -339,7 +339,7 @@ export default function NewAssessmentPage() {
               type="checkbox"
               checked={saveAsTemplate}
               onChange={e => setSaveAsTemplate(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#5bbfbd', cursor: 'pointer' }}
+              style={{ width: 16, height: 16, accentColor: '#3DD6D0', cursor: 'pointer' }}
             />
             <span style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', fontFamily: F }}>
               Save as template
@@ -364,7 +364,7 @@ export default function NewAssessmentPage() {
                   padding: '9px 13px', borderRadius: 8, border: '1px solid #e4e9f0',
                   fontSize: 14, fontFamily: F, color: '#0f172a', outline: 'none',
                 }}
-                onFocus={e => e.target.style.borderColor = '#5bbfbd'}
+                onFocus={e => e.target.style.borderColor = '#3DD6D0'}
                 onBlur={e => e.target.style.borderColor = '#e4e9f0'}
               />
             </div>
@@ -386,10 +386,10 @@ export default function NewAssessmentPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '8px 0' }}>
               <div style={{
                 width: 22, height: 22, border: '3px solid #e8f6f5',
-                borderTopColor: '#5bbfbd', borderRadius: '50%',
+                borderTopColor: '#3DD6D0', borderRadius: '50%',
                 animation: 'spin 0.8s linear infinite'
               }} />
-              <span style={{ fontSize: 15, color: '#2d9e96', fontWeight: 600, fontFamily: F }}>
+              <span style={{ fontSize: 15, color: '#2BB5AF', fontWeight: 600, fontFamily: F }}>
                 Generating your work simulations with AI…
               </span>
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -400,7 +400,7 @@ export default function NewAssessmentPage() {
               disabled={!canGenerate}
               style={{
                 width: '100%', padding: '14px 0', borderRadius: 10, border: 'none',
-                background: canGenerate ? '#5bbfbd' : '#e4e9f0',
+                background: canGenerate ? '#3DD6D0' : '#e4e9f0',
                 color: canGenerate ? '#fff' : '#94a1b3',
                 fontSize: 16, fontWeight: 700, fontFamily: F,
                 cursor: canGenerate ? 'pointer' : 'not-allowed',
