@@ -89,7 +89,7 @@ Skills must be chosen only from: Communication, Problem solving, Prioritisation,
 Write in UK English throughout. No Americanisms. No generic scenarios.`
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-5-20251001',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 4096,
       messages: [{ role: 'user', content: prompt }]
     })
