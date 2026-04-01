@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Teal rounded-square background -->
+  <rect width="32" height="32" rx="7" fill="#3DD6D0"/>
+
+  <!-- Scale the 44x32 icon grid down to fit in ~26x19 centred in the 32x32 square -->
+  <!-- Translate to centre: offsetX=(32-26)/2=3, offsetY=(32-19)/2=6.5 -->
+  <g transform="translate(3, 6.5) scale(0.59)">
+    <!-- Converging lines -->
+    <line x1="7.5" y1="4"  x2="18" y2="16" stroke="white" stroke-width="1.6" stroke-linecap="round" opacity="0.5"/>
+    <line x1="7.5" y1="16" x2="18" y2="16" stroke="white" stroke-width="1.6" stroke-linecap="round" opacity="0.65"/>
+    <line x1="7.5" y1="28" x2="18" y2="16" stroke="white" stroke-width="1.6" stroke-linecap="round" opacity="0.8"/>
+
+    <!-- Centre glow -->
+    <circle cx="24" cy="16" r="14" fill="white" opacity="0.08"/>
+    <circle cx="24" cy="16" r="10" fill="white" opacity="0.12"/>
+
+    <!-- Left dots -->
+    <circle cx="5" cy="4"  r="2.5" fill="white" opacity="0.5"/>
+    <circle cx="5" cy="16" r="2.5" fill="white" opacity="0.65"/>
+    <circle cx="5" cy="28" r="2.5" fill="white" opacity="0.8"/>
+
+    <!-- Centre node -->
+    <circle cx="24" cy="16" r="6" fill="white"/>
+
+    <!-- Output arrow -->
+    <line x1="30" y1="16" x2="37" y2="16" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+    <polyline points="34,12.5 38,16 34,19.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+</svg>
