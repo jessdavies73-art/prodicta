@@ -1,25 +1,30 @@
 const TEAL = '#3DD6D0'
-const NAVY = '#0f2137'
 
-/**
- * ProdictaLogo — PNG icon + PRO/DICTA wordmark.
- * textColor controls the PRO half; DICTA is always teal.
- * size controls the height of the PNG icon (width scales automatically).
- */
 export default function ProdictaLogo({ textColor = '#ffffff', size = 36 }) {
-  const fontSize = Math.round(size * 0.55)
+  const fontSize = Math.round(size * 0.5)
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: Math.round(size * 0.3) }}>
-      <img
-        src="/prodicta-logo.png"
-        alt="Prodicta"
-        style={{ height: size, width: 'auto', display: 'block', flexShrink: 0 }}
-      />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      {/* Teal circle with eye SVG */}
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 36 36"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ flexShrink: 0 }}
+      >
+        <circle cx="18" cy="18" r="18" fill={TEAL} />
+        <path d="M7 18 C10 12, 26 12, 29 18 C26 24, 10 24, 7 18 Z" fill="white" />
+        <circle cx="18" cy="18" r="5" fill={TEAL} />
+        <circle cx="18" cy="18" r="2.5" fill="white" />
+      </svg>
+
+      {/* Wordmark: PRO in textColor, DICTA in teal */}
       <span style={{
         fontSize,
         fontWeight: 800,
-        letterSpacing: '0.04em',
+        letterSpacing: '0.5px',
         lineHeight: 1,
         fontFamily: "'Outfit', system-ui, sans-serif",
       }}>
