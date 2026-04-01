@@ -265,6 +265,17 @@ export default function AssessmentPage({ params }) {
   const scenarios = assessment.scenarios || []
   const isActive = assessment.status !== 'closed'
 
+  // Rank completed candidates by score
+  const rankMap = {}
+  ;[...candidates]
+    .filter(c => c.status === 'Completed' && (Array.isArray(c.results) ? c.results[0] : c.results)?.overall_score != null)
+    .sort((a, b) => {
+      const sa = (Array.isArray(a.results) ? a.results[0] : a.results)?.overall_score || 0
+      const sb = (Array.isArray(b.results) ? b.results[0] : b.results)?.overall_score || 0
+      return sb - sa
+    })
+    .forEach((c, i) => { rankMap[c.id] = i + 1 })
+
   return (
     <div style={{ fontFamily: F, background: '#f7f9fb', minHeight: '100vh' }}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -557,7 +568,19 @@ export default function AssessmentPage({ params }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Avatar name={candidate.name} size={32} />
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{candidate.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{candidate.name}</div>
+                        {rankMap[candidate.id] <= 3 && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5,
+                            background: rankMap[candidate.id] === 1 ? '#fef3c7' : rankMap[candidate.id] === 2 ? '#f1f5f9' : '#fef9ec',
+                            color: rankMap[candidate.id] === 1 ? '#b45309' : rankMap[candidate.id] === 2 ? '#475569' : '#92400e',
+                            border: `1px solid ${rankMap[candidate.id] === 1 ? '#fde68a' : rankMap[candidate.id] === 2 ? '#e2e8f0' : '#fcd34d'}`,
+                          }}>
+                            #{rankMap[candidate.id]}
+                          </span>
+                        )}
+                      </div>
                       <div style={{ fontSize: 12, color: '#94a1b3' }}>{candidate.email}</div>
                     </div>
                   </div>

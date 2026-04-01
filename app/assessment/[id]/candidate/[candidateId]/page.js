@@ -169,6 +169,9 @@ export default function CandidateReportPage({ params }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [error, setError] = useState(null)
+  const [notes, setNotes] = useState([])
+  const [newNote, setNewNote] = useState('')
+  const [noteSaving, setNoteSaving] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -211,6 +214,13 @@ export default function CandidateReportPage({ params }) {
         setBenchmarks(bm || [])
         setResponses(resps || [])
         setProfile(prof || null)
+
+        const { data: nts } = await supabase
+          .from('candidate_notes')
+          .select('*')
+          .eq('candidate_id', params.candidateId)
+          .order('created_at', { ascending: false })
+        setNotes(nts || [])
       } catch (e) {
         setError(e.message)
       } finally {
@@ -239,6 +249,38 @@ export default function CandidateReportPage({ params }) {
       document.body.classList.remove('client-print')
       window.removeEventListener('afterprint', cleanup)
     })
+  }
+
+  async function addNote() {
+    if (!newNote.trim() || !user) return
+    setNoteSaving(true)
+    const supabase = createClient()
+    const { data: inserted } = await supabase
+      .from('candidate_notes')
+      .insert({
+        candidate_id: params.candidateId,
+        user_id: user.id,
+        author_name: profile?.company_name || user.email,
+        note_text: newNote.trim(),
+      })
+      .select()
+      .single()
+    if (inserted) {
+      setNotes(prev => [inserted, ...prev])
+      setNewNote('')
+    }
+    setNoteSaving(false)
+  }
+
+  async function deleteNote(noteId) {
+    const supabase = createClient()
+    await supabase.from('candidate_notes').delete().eq('id', noteId)
+    setNotes(prev => prev.filter(n => n.id !== noteId))
+  }
+
+  function formatNoteDate(str) {
+    if (!str) return ''
+    return new Date(str).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   }
 
   /* ── render ── */
@@ -323,6 +365,14 @@ export default function CandidateReportPage({ params }) {
                         <span style={{ fontSize: 12, color: TX3, fontFamily: F }}>
                           Completed {completedDate}
                         </span>
+                      )}
+                      {candidate.rating && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                          {[1,2,3,4,5].map(i => (
+                            <span key={i} style={{ fontSize: 15, color: i <= candidate.rating ? '#f59e0b' : '#e2e8f0', lineHeight: 1 }}>★</span>
+                          ))}
+                          <span style={{ fontSize: 11.5, color: TX3, marginLeft: 4, fontFamily: F }}>Candidate rating</span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1080,7 +1130,7 @@ export default function CandidateReportPage({ params }) {
 
                 {/* ── 9. Interview Questions ── */}
                 {results.interview_questions?.length > 0 && (
-                  <Card style={{ marginBottom: 40 }}>
+                  <Card style={{ marginBottom: 20 }}>
                     <SectionHeading>Suggested Interview Questions</SectionHeading>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 18px', lineHeight: 1.5 }}>
                       These questions are designed to probe the specific gaps identified in this assessment. Each includes a follow-up probe to test whether the candidate's answer is genuine.
@@ -1144,6 +1194,89 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   </Card>
                 )}
+                {/* ── 10. Team Notes ── */}
+                <Card style={{ marginBottom: 40 }} className="no-print">
+                  <SectionHeading>Team Notes</SectionHeading>
+
+                  {/* Add note */}
+                  <div style={{ marginBottom: 20 }}>
+                    <textarea
+                      value={newNote}
+                      onChange={e => setNewNote(e.target.value)}
+                      placeholder="Add a note visible to your team…"
+                      rows={3}
+                      style={{
+                        width: '100%', boxSizing: 'border-box',
+                        padding: '10px 14px', borderRadius: 8,
+                        border: `1px solid ${BD}`, fontFamily: F,
+                        fontSize: 13.5, color: TX, lineHeight: 1.6,
+                        resize: 'vertical', outline: 'none',
+                      }}
+                      onFocus={e => e.target.style.borderColor = TEAL}
+                      onBlur={e => e.target.style.borderColor = BD}
+                      onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) addNote() }}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+                      <button
+                        onClick={addNote}
+                        disabled={!newNote.trim() || noteSaving}
+                        style={{
+                          padding: '8px 20px', borderRadius: 8, border: 'none',
+                          background: newNote.trim() && !noteSaving ? TEAL : BD,
+                          color: newNote.trim() && !noteSaving ? '#fff' : TX3,
+                          fontSize: 13, fontWeight: 700, fontFamily: F,
+                          cursor: newNote.trim() && !noteSaving ? 'pointer' : 'not-allowed',
+                          transition: 'background 0.15s',
+                        }}
+                      >
+                        {noteSaving ? 'Saving…' : 'Add note'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Notes list */}
+                  {notes.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '24px 0', color: TX3, fontSize: 13 }}>
+                      No notes yet. Add one above.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {notes.map(n => (
+                        <div key={n.id} style={{
+                          background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div style={{
+                                width: 28, height: 28, borderRadius: '50%',
+                                background: `linear-gradient(135deg, ${TEAL}, ${TEALD})`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 11, fontWeight: 800, color: '#fff', flexShrink: 0,
+                              }}>
+                                {(n.author_name || '?').slice(0, 1).toUpperCase()}
+                              </div>
+                              <div>
+                                <div style={{ fontSize: 12.5, fontWeight: 700, color: TX }}>{n.author_name || 'Team member'}</div>
+                                <div style={{ fontSize: 11, color: TX3 }}>{formatNoteDate(n.created_at)}</div>
+                              </div>
+                            </div>
+                            {n.user_id === user?.id && (
+                              <button
+                                onClick={() => deleteNote(n.id)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: TX3, padding: 4, display: 'flex', alignItems: 'center' }}
+                              >
+                                <Ic name="x" size={13} color={TX3} />
+                              </button>
+                            )}
+                          </div>
+                          <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
+                            {n.note_text}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
               </>
             )}
           </>

@@ -4,7 +4,7 @@ import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-
 
 export async function POST(request) {
   try {
-    const { role_title, job_description, skill_weights } = await request.json()
+    const { role_title, job_description, skill_weights, save_as_template, template_name } = await request.json()
 
     // Auth check
     const supabase = createServerSupabaseClient()
@@ -117,7 +117,11 @@ Write in UK English throughout. No Americanisms. No generic scenarios.`
         detected_role_type,
         scenarios,
         skill_weights: skill_weights || { Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 },
-        status: 'active'
+        status: 'active',
+        ...(save_as_template && {
+          is_template: true,
+          template_name: template_name?.trim() || role_title,
+        }),
       })
       .select()
       .single()
