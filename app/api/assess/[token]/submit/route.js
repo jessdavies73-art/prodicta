@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { waitUntil } from '@vercel/functions'
 import { createServiceClient } from '@/lib/supabase-server'
 import { scoreCandidate } from '@/lib/score-candidate'
 
@@ -56,10 +57,12 @@ export async function POST(request, { params }) {
       })
     } catch {}
 
-    // Run AI scoring directly — no HTTP round-trip, no port issues
-    // Run in background so candidate gets immediate success response
-    scoreCandidate(candidate.id).catch(err =>
-      console.error('Scoring failed for candidate', candidate.id, err)
+    // Run AI scoring in background — waitUntil keeps the function alive on Vercel
+    // after the response is sent, so scoring completes even in serverless environments
+    waitUntil(
+      scoreCandidate(candidate.id).catch(err =>
+        console.error('Scoring failed for candidate', candidate.id, err)
+      )
     )
 
     return NextResponse.json({ success: true })
