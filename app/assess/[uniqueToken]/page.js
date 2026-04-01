@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import ProdictaLogo from '@/components/ProdictaLogo'
 
 // ─── Brand tokens ────────────────────────────────────────────────────────────
 const NAVY   = '#0f2137'
@@ -62,15 +63,7 @@ function NavBar({ candidateName }) {
       top: 0,
       zIndex: 100,
     }}>
-      <span style={{
-        fontFamily: F,
-        fontWeight: 700,
-        fontSize: 20,
-        color: TEAL,
-        letterSpacing: '-0.5px',
-      }}>
-        Prodicta
-      </span>
+      <ProdictaLogo textColor="#ffffff" size={30} />
       {candidateName && (
         <span style={{
           fontFamily: F,
@@ -142,6 +135,9 @@ function AlreadyCompletedPage({ candidateName }) {
     <>
       <NavBar candidateName={candidateName} />
       <CentredCard>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+          <ProdictaLogo textColor={NAVY} size={36} />
+        </div>
         <Card style={{ textAlign: 'center', padding: '56px 36px' }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}>✅</div>
           <h2 style={{ fontFamily: F, color: TX, fontSize: 22, fontWeight: 700, margin: '0 0 12px' }}>
@@ -165,6 +161,9 @@ function IntroPage({ candidate, assessment, companyName, onBegin }) {
     <>
       <NavBar candidateName={candidate.name} />
       <CentredCard>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+          <ProdictaLogo textColor={NAVY} size={36} />
+        </div>
         <div style={{ marginBottom: 32 }}>
           <h1 style={{
             fontFamily: F,
@@ -611,6 +610,9 @@ function RatingPage({ candidateName, uniqueToken, onComplete }) {
     <>
       <NavBar candidateName={candidateName} />
       <CentredCard>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+          <ProdictaLogo textColor={NAVY} size={36} />
+        </div>
         <Card style={{ textAlign: 'center', padding: '48px 36px' }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}>🌟</div>
           <h2 style={{ fontFamily: F, color: TX, fontSize: 24, fontWeight: 800, margin: '0 0 10px' }}>
@@ -744,19 +746,9 @@ function CompletePage({ candidateName }) {
           <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 32px' }}>
             The hiring team will be notified and will be in touch.
           </p>
-          <div style={{
-            borderTop: `1px solid ${BD}`,
-            paddingTop: 24,
-          }}>
-            <span style={{
-              fontFamily: F,
-              fontWeight: 700,
-              fontSize: 16,
-              color: TEAL,
-            }}>
-              Prodicta
-            </span>
-            <p style={{ fontFamily: F, color: TX3, fontSize: 13, margin: '4px 0 0' }}>
+          <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <ProdictaLogo textColor={NAVY} size={28} />
+            <p style={{ fontFamily: F, color: TX3, fontSize: 13, margin: 0 }}>
               Work simulation assessments
             </p>
           </div>
