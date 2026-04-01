@@ -58,8 +58,17 @@ export async function POST(request, { params }) {
       })
     } catch {}
 
-    // Await scoring directly so it completes before responding
-    await scoreCandidate(candidate.id)
+    // Await scoring — wrap separately so a scoring failure doesn't lose the submission
+    try {
+      await scoreCandidate(candidate.id)
+    } catch (scoringErr) {
+      console.error('[submit] scoreCandidate failed for candidate', candidate.id, scoringErr?.message, scoringErr?.stack)
+      await adminClient
+        .from('candidates')
+        .update({ status: 'scoring_failed' })
+        .eq('id', candidate.id)
+      return NextResponse.json({ success: true, scoring_error: scoringErr.message })
+    }
 
     return NextResponse.json({ success: true })
   } catch (err) {
