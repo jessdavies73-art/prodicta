@@ -228,6 +228,8 @@ export default function CandidateReportPage({ params }) {
   const [notes, setNotes] = useState([])
   const [newNote, setNewNote] = useState('')
   const [noteSaving, setNoteSaving] = useState(false)
+  const [rescoring, setRescoring] = useState(false)
+  const [rescoreError, setRescoreError] = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -305,6 +307,27 @@ export default function CandidateReportPage({ params }) {
       document.body.classList.remove('client-print')
       window.removeEventListener('afterprint', cleanup)
     })
+  }
+
+  async function handleRescore() {
+    setRescoring(true)
+    setRescoreError(null)
+    try {
+      const res = await fetch(`/api/rescore/${params.candidateId}`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Rescoring failed')
+      const supabase = createClient()
+      const { data: newResults } = await supabase
+        .from('results')
+        .select('*')
+        .eq('candidate_id', params.candidateId)
+        .maybeSingle()
+      setResults(newResults || null)
+    } catch (e) {
+      setRescoreError(e.message)
+    } finally {
+      setRescoring(false)
+    }
   }
 
   async function addNote() {
@@ -1341,6 +1364,20 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   )}
                 </Card>
+
+                {/* ── Re-score ── */}
+                <div className="no-print" style={{ textAlign: 'center', marginBottom: 32 }}>
+                  <button
+                    onClick={handleRescore}
+                    disabled={rescoring}
+                    style={{ background: 'none', border: 'none', cursor: rescoring ? 'wait' : 'pointer', fontFamily: F, fontSize: 12.5, color: TX3, textDecoration: 'underline', padding: 0 }}
+                  >
+                    {rescoring ? 'Re-scoring — this may take 15–20 seconds…' : 'Re-score this candidate'}
+                  </button>
+                  {rescoreError && (
+                    <p style={{ fontFamily: F, fontSize: 12, color: RED, margin: '4px 0 0' }}>{rescoreError}</p>
+                  )}
+                </div>
               </>
             )}
           </>
