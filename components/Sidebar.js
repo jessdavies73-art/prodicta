@@ -330,7 +330,7 @@ export default function Sidebar({ active, companyName }) {
                     width: 30,
                     height: 30,
                     borderRadius: '50%',
-                    background: n.type === 'scoring_finished' ? '#ecfdf5' : '#e8f6f5',
+                    background: n.type === 'scoring_finished' ? '#ecfdf5' : '#e0f2f0',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

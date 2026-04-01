@@ -1,4 +1,4 @@
-const TEAL = '#3DD6D0'
+const TEAL = '#00BFA5'
 
 export default function ProdictaLogo({ textColor = '#ffffff', size = 36 }) {
   const fontSize = Math.round(size * 0.5)

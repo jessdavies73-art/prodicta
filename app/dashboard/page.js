@@ -659,7 +659,7 @@ export default function DashboardPage() {
                               background: isHovered && isClickable ? '#f0fdfb' : CARD,
                               cursor: isClickable ? 'pointer' : 'default',
                               transition: 'background 0.15s',
-                              boxShadow: isHovered && isClickable ? `inset 3px 0 0 #3DD6D0` : 'none',
+                              boxShadow: isHovered && isClickable ? `inset 3px 0 0 #00BFA5` : 'none',
                             }}
                           >
                             {/* Candidate name + email */}

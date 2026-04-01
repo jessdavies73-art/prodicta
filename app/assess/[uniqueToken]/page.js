@@ -4,9 +4,9 @@ import ProdictaLogo from '@/components/ProdictaLogo'
 
 // ─── Brand tokens ────────────────────────────────────────────────────────────
 const NAVY   = '#0f2137'
-const TEAL   = '#3DD6D0'
-const TEALD  = '#2BB5AF'
-const TEALLT = '#e8f6f5'
+const TEAL   = '#00BFA5'
+const TEALD  = '#009688'
+const TEALLT = '#e0f2f0'
 const BG     = '#f7f9fb'
 const CARD   = '#fff'
 const BD     = '#e4e9f0'

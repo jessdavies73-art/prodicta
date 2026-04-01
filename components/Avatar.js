@@ -1,11 +1,11 @@
-const TEAL = '#3DD6D0'
+const TEAL = '#00BFA5'
 const NAVY = '#0f2137'
 const F = "'Outfit', system-ui, sans-serif"
 
 // Generate a consistent colour from a name string
 function nameToColor(name = '') {
   const colors = [
-    '#3DD6D0', '#6366f1', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6', '#0ea5e9', '#14b8a6',
+    '#00BFA5', '#6366f1', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6', '#0ea5e9', '#14b8a6',
   ]
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)

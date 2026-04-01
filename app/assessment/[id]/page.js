@@ -18,7 +18,7 @@ const riskBg = r => (r === 'Very Low' || r === 'Low') ? '#ecfdf5' : r === 'Mediu
 
 const scenarioTypeBadge = type => {
   const map = {
-    'Email Response':      { bg: '#e8f6f5', color: '#2BB5AF' },
+    'Email Response':      { bg: '#e0f2f0', color: '#009688' },
     'Prioritisation':      { bg: '#fffbeb', color: '#d97706' },
     'Judgment Call':       { bg: '#f3e8ff', color: '#7c3aed' },
     'Strategic Thinking':  { bg: '#0f2137', color: '#fff' },
@@ -81,7 +81,7 @@ function ScenarioCard({ scenario, index }) {
               onClick={() => setExpanded(v => !v)}
               style={{
                 marginTop: 4, background: 'none', border: 'none', padding: 0,
-                fontSize: 12, fontWeight: 600, color: '#3DD6D0', cursor: 'pointer', fontFamily: F
+                fontSize: 12, fontWeight: 600, color: '#00BFA5', cursor: 'pointer', fontFamily: F
               }}
             >
               {expanded ? 'Show less' : 'Show more'}
@@ -114,7 +114,7 @@ function ScenarioCard({ scenario, index }) {
             {scenario.skills.map(skill => (
               <span key={skill} style={{
                 fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20,
-                background: '#e8f6f5', color: '#2BB5AF', fontFamily: F
+                background: '#e0f2f0', color: '#009688', fontFamily: F
               }}>
                 {skill}
               </span>
@@ -259,8 +259,8 @@ export default function AssessmentPage({ params }) {
         <main style={{ marginLeft: 220, padding: '32px 40px', minHeight: '100vh', background: '#f7f9fb' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12, color: '#5e6b7f' }}>
             <div style={{
-              width: 22, height: 22, border: '3px solid #e8f6f5',
-              borderTopColor: '#3DD6D0', borderRadius: '50%',
+              width: 22, height: 22, border: '3px solid #e0f2f0',
+              borderTopColor: '#00BFA5', borderRadius: '50%',
               animation: 'spin 0.8s linear infinite'
             }} />
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -402,12 +402,12 @@ export default function AssessmentPage({ params }) {
             <button
               onClick={() => router.push(`/compare?assessmentId=${id}`)}
               style={{
-                padding: '8px 18px', borderRadius: 8, border: '1px solid #3DD6D0',
-                background: '#e8f6f5', color: '#2BB5AF', fontSize: 13, fontWeight: 600,
+                padding: '8px 18px', borderRadius: 8, border: '1px solid #00BFA5',
+                background: '#e0f2f0', color: '#009688', fontSize: 13, fontWeight: 600,
                 cursor: 'pointer', fontFamily: F, display: 'flex', alignItems: 'center', gap: 7,
               }}
             >
-              <Ic name="sliders" size={14} color="#2BB5AF" />
+              <Ic name="sliders" size={14} color="#009688" />
               Compare candidates
             </button>
             {isActive && (
@@ -471,7 +471,7 @@ export default function AssessmentPage({ params }) {
                   borderRadius: 8, border: '1px solid #e4e9f0', fontSize: 14,
                   color: '#0f172a', fontFamily: F, outline: 'none'
                 }}
-                onFocus={e => e.target.style.borderColor = '#3DD6D0'}
+                onFocus={e => e.target.style.borderColor = '#00BFA5'}
                 onBlur={e => e.target.style.borderColor = '#e4e9f0'}
               />
             </div>
@@ -490,7 +490,7 @@ export default function AssessmentPage({ params }) {
                   borderRadius: 8, border: '1px solid #e4e9f0', fontSize: 14,
                   color: '#0f172a', fontFamily: F, outline: 'none'
                 }}
-                onFocus={e => e.target.style.borderColor = '#3DD6D0'}
+                onFocus={e => e.target.style.borderColor = '#00BFA5'}
                 onBlur={e => e.target.style.borderColor = '#e4e9f0'}
               />
             </div>
@@ -499,7 +499,7 @@ export default function AssessmentPage({ params }) {
               disabled={!inviteName.trim() || !inviteEmail.trim()}
               style={{
                 padding: '9px 20px', borderRadius: 8, border: 'none',
-                background: inviteName.trim() && inviteEmail.trim() ? '#3DD6D0' : '#e4e9f0',
+                background: inviteName.trim() && inviteEmail.trim() ? '#00BFA5' : '#e4e9f0',
                 color: inviteName.trim() && inviteEmail.trim() ? '#fff' : '#94a1b3',
                 fontSize: 14, fontWeight: 600, fontFamily: F,
                 cursor: inviteName.trim() && inviteEmail.trim() ? 'pointer' : 'not-allowed',
@@ -569,7 +569,7 @@ export default function AssessmentPage({ params }) {
             disabled={pendingInvites.length === 0 || inviting}
             style={{
               padding: '11px 28px', borderRadius: 9, border: 'none',
-              background: pendingInvites.length > 0 && !inviting ? '#3DD6D0' : '#e4e9f0',
+              background: pendingInvites.length > 0 && !inviting ? '#00BFA5' : '#e4e9f0',
               color: pendingInvites.length > 0 && !inviting ? '#fff' : '#94a1b3',
               fontSize: 15, fontWeight: 700, fontFamily: F,
               cursor: pendingInvites.length > 0 && !inviting ? 'pointer' : 'not-allowed',

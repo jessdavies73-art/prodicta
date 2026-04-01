@@ -75,7 +75,7 @@ export async function POST(request) {
 <body style="margin:0;padding:0;background:#f7f9fb;font-family:'Outfit',system-ui,sans-serif;">
   <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
     <div style="background:#0f2137;padding:28px 36px;">
-      <div style="color:#3DD6D0;font-size:22px;font-weight:800;letter-spacing:-0.5px;">Prodicta</div>
+      <div style="color:#00BFA5;font-size:22px;font-weight:800;letter-spacing:-0.5px;">Prodicta</div>
       <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-top:2px;">Work simulation assessment</div>
     </div>
     <div style="padding:36px;">
@@ -87,7 +87,7 @@ export async function POST(request) {
         The assessment consists of 4 realistic work scenarios that take approximately 45 minutes to complete. You can complete it from any device, at any time.
       </p>
       <div style="text-align:center;margin:32px 0;">
-        <a href="${assessmentLink}" style="display:inline-block;background:#3DD6D0;color:#0f2137;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none;">Start Assessment &#8594;</a>
+        <a href="${assessmentLink}" style="display:inline-block;background:#00BFA5;color:#0f2137;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none;">Start Assessment &#8594;</a>
       </div>
       <div style="background:#f7f9fb;border-radius:10px;padding:20px 24px;margin:24px 0;">
         <p style="font-size:14px;font-weight:700;color:#0f2137;margin:0 0 12px;">What to expect:</p>
@@ -102,7 +102,7 @@ export async function POST(request) {
       <p style="font-size:14px;color:#5e6b7f;margin:16px 0 0;">Best regards,<br><strong>${company_name}</strong></p>
     </div>
     <div style="background:#f7f9fb;padding:16px 36px;border-top:1px solid #e4e9f0;">
-      <p style="font-size:12px;color:#94a1b3;margin:0;text-align:center;">Powered by <strong style="color:#3DD6D0;">Prodicta</strong> &middot; <a href="${appUrl}" style="color:#94a1b3;">prodicta.co.uk</a></p>
+      <p style="font-size:12px;color:#94a1b3;margin:0;text-align:center;">Powered by <strong style="color:#00BFA5;">Prodicta</strong> &middot; <a href="${appUrl}" style="color:#94a1b3;">prodicta.co.uk</a></p>
     </div>
   </div>
 </body>

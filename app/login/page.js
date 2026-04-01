@@ -7,9 +7,9 @@ import ProdictaLogo from '@/components/ProdictaLogo'
 // ── Inline style constants ──────────────────────────────────────────────────
 
 const NAVY   = '#0f2137'
-const TEAL   = '#3DD6D0'
-const DARK_T = '#2BB5AF'
-const LIGHT_T = '#e8f6f5'
+const TEAL   = '#00BFA5'
+const DARK_T = '#009688'
+const LIGHT_T = '#e0f2f0'
 
 const styles = {
   page: {
