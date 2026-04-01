@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
+import { useToast } from '@/components/ToastProvider'
 
 const F = "'Outfit',system-ui,sans-serif"
 const FM = "'IBM Plex Mono',monospace"
@@ -34,6 +35,7 @@ const roleTypeBadgeStyle = type => {
 
 export default function NewAssessmentPage() {
   const router = useRouter()
+  const toast = useToast()
   const [companyName, setCompanyName] = useState('')
   const [roleTitle, setRoleTitle] = useState('')
   const [jd, setJd] = useState('')
@@ -104,7 +106,7 @@ export default function NewAssessmentPage() {
         })
       })
       const data = await res.json()
-      if (data.id) router.push(`/assessment/${data.id}`)
+      if (data.id) { toast('Assessment created'); router.push(`/assessment/${data.id}`) }
       else setError(data.error || 'Failed to generate')
     } catch {
       setError('Something went wrong. Please try again.')

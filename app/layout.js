@@ -1,5 +1,7 @@
 import { Outfit, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
+import ToastProvider from '@/components/ToastProvider'
+import PageTransition from '@/components/PageTransition'
 
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' })
 const ibmPlexMono = IBM_Plex_Mono({
@@ -29,7 +31,11 @@ export default function RootLayout({ children }) {
           color: '#0f172a'
         }}
       >
-        {children}
+        <ToastProvider>
+          <PageTransition>
+            {children}
+          </PageTransition>
+        </ToastProvider>
       </body>
     </html>
   )

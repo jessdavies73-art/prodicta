@@ -230,7 +230,9 @@ function Logo() {
   return (
     <div style={styles.logoWrap}>
       <div style={styles.logoMark}>
-        <ProdictaLogo textColor="#ffffff" size={52} />
+        <div style={{ filter: 'drop-shadow(0 0 10px rgba(0,191,165,0.55)) drop-shadow(0 0 22px rgba(0,191,165,0.28))' }}>
+          <ProdictaLogo textColor="#ffffff" size={52} />
+        </div>
       </div>
       <p style={styles.tagline}>Pre-employment intelligence</p>
     </div>

@@ -306,6 +306,141 @@ function PendingState({ candidate }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Confidence / Trajectory / Seniority badges
+───────────────────────────────────────────────────────────── */
+function ConfidenceBadge({ level }) {
+  const map = {
+    High:   { color: GRN,  bg: GRNBG,  bd: GRNBD,  tooltip: 'Responses were detailed enough for reliable assessment' },
+    Medium: { color: AMB,  bg: AMBBG,  bd: AMBBD,  tooltip: 'Some responses were brief, reducing scoring certainty' },
+    Low:    { color: RED,  bg: REDBG,  bd: REDBD,  tooltip: 'Multiple responses too short for high-confidence scoring' },
+  }
+  const s = map[level]
+  if (!s) return null
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: s.bg, color: s.color, border: `1px solid ${s.bd}` }}>
+      {level} confidence <InfoTooltip text={s.tooltip} />
+    </span>
+  )
+}
+
+function TrajectoryBadge({ trajectory }) {
+  const map = {
+    Improving: { arrow: '↑', color: GRN,  bg: GRNBG,  bd: GRNBD },
+    Stable:    { arrow: '→', color: TEALD, bg: TEALLT, bd: `${TEAL}55` },
+    Declining: { arrow: '↓', color: RED,  bg: REDBG,  bd: REDBD },
+  }
+  const s = map[trajectory]
+  if (!s) return null
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: s.bg, color: s.color, border: `1px solid ${s.bd}` }}>
+      {s.arrow} {trajectory} trajectory
+    </span>
+  )
+}
+
+function SeniorityBadge({ score }) {
+  if (score == null) return null
+  const color = score >= 75 ? GRN : score >= 50 ? AMB : RED
+  const bg    = score >= 75 ? GRNBG : score >= 50 ? AMBBG : REDBG
+  const bd    = score >= 75 ? GRNBD : score >= 50 ? AMBBD : REDBD
+  const label = score >= 75 ? 'Seniority matched' : score >= 50 ? 'Partial seniority match' : 'Below expected seniority'
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: bg, color, border: `1px solid ${bd}` }}>
+      <Ic name={score >= 65 ? 'check' : 'alert'} size={11} color={color} /> {label}
+    </span>
+  )
+}
+
+/* Fade-in-up on scroll */
+function ScrollReveal({ children, delay = 0, id }) {
+  const ref = useRef(null)
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect() } }, { threshold: 0.04 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+  return (
+    <div
+      id={id}
+      ref={ref}
+      style={{
+        scrollMarginTop: 56,
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(14px)',
+        transition: `opacity 0.45s ease ${delay}ms, transform 0.45s ease ${delay}ms`,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+/* Sticky section navigation */
+const NAV_SECTIONS = [
+  { id: 'summary',       label: 'Summary' },
+  { id: 'integrity',     label: 'Integrity' },
+  { id: 'pressure-fit',  label: 'Pressure-Fit' },
+  { id: 'ai-assessment', label: 'AI Assessment' },
+  { id: 'skills',        label: 'Skills' },
+  { id: 'strengths',     label: 'Strengths' },
+  { id: 'watchouts',     label: 'Watch-outs' },
+  { id: 'onboarding',    label: 'Onboarding' },
+  { id: 'questions',     label: 'Questions' },
+]
+
+function StickyNav({ active }) {
+  function scrollTo(id) {
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+  return (
+    <div className="no-print" style={{
+      position: 'sticky', top: 0, zIndex: 80,
+      background: 'rgba(243,245,248,0.95)',
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+      borderBottom: `1px solid ${BD}`,
+      marginLeft: -40, marginRight: -40,
+      paddingLeft: 40, paddingRight: 40,
+      marginBottom: 20,
+    }}>
+      <div style={{ display: 'flex', gap: 0, overflowX: 'auto', scrollbarWidth: 'none' }}>
+        {NAV_SECTIONS.map(({ id, label }) => {
+          const isActive = active === id
+          return (
+            <button
+              key={id}
+              onClick={() => scrollTo(id)}
+              data-no-lift
+              style={{
+                padding: '12px 14px',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: isActive ? `2px solid ${TEAL}` : '2px solid transparent',
+                cursor: 'pointer',
+                fontFamily: F,
+                fontSize: 12.5,
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? TEAL : TX3,
+                whiteSpace: 'nowrap',
+                transition: 'color 0.15s, border-color 0.15s',
+                flexShrink: 0,
+                marginBottom: -1,
+              }}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────
    Severity helpers
 ───────────────────────────────────────────────────────────── */
 function sevStyle(severity) {
@@ -330,6 +465,7 @@ export default function CandidateReportPage({ params }) {
   const [notes, setNotes] = useState([])
   const [newNote, setNewNote] = useState('')
   const [noteSaving, setNoteSaving] = useState(false)
+  const [activeSection, setActiveSection] = useState('summary')
 
   useEffect(() => {
     async function load() {
@@ -364,6 +500,21 @@ export default function CandidateReportPage({ params }) {
     }
     load()
   }, [params.candidateId])
+
+  // IntersectionObserver for sticky nav active section tracking
+  useEffect(() => {
+    if (!results) return
+    const ids = ['summary','integrity','pressure-fit','ai-assessment','skills','strengths','watchouts','onboarding','questions']
+    const observers = []
+    ids.forEach(id => {
+      const el = document.getElementById(id)
+      if (!el) return
+      const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) setActiveSection(id) }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 })
+      obs.observe(el)
+      observers.push(obs)
+    })
+    return () => observers.forEach(o => o.disconnect())
+  }, [results])
 
   const score = results?.overall_score ?? 0
   const passProbability = results?.pass_probability ?? null
@@ -488,6 +639,13 @@ export default function CandidateReportPage({ params }) {
                         </div>
                       )}
                     </div>
+                    {results && (results.confidence_level || results.trajectory || results.seniority_fit_score != null) && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                        <ConfidenceBadge level={results.confidence_level} />
+                        <TrajectoryBadge trajectory={results.trajectory} />
+                        <SeniorityBadge score={results.seniority_fit_score} />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -543,9 +701,12 @@ export default function CandidateReportPage({ params }) {
             {results && (
               <>
 
+                <StickyNav active={activeSection} />
+
                 {/* ══════════════════════════════════════════════════
                     TOP SUMMARY ROW — Pass Probability · Hiring Decision · Risk Level
                 ══════════════════════════════════════════════════ */}
+                <ScrollReveal id="summary">
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
 
                   {/* Pass Probability */}
@@ -613,10 +774,12 @@ export default function CandidateReportPage({ params }) {
                     )}
                   </Card>
                 </div>
+                </ScrollReveal>
 
                 {/* ══════════════════════════════════════════════════
                     RESPONSE INTEGRITY — dark navy
                 ══════════════════════════════════════════════════ */}
+                <ScrollReveal id="integrity" delay={60}>
                 {(() => {
                   const integrity = results.integrity || {}
                   const rq = integrity.response_quality
@@ -778,10 +941,12 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   )
                 })()}
+                </ScrollReveal>
 
                 {/* ══════════════════════════════════════════════════
                     PRESSURE-FIT — dark navy, animated bars
                 ══════════════════════════════════════════════════ */}
+                <ScrollReveal id="pressure-fit" delay={60}>
                 {(results.pressure_fit_score != null || results.pressure_fit) && (() => {
                   const pf = results.pressure_fit_score ?? null
                   const dims = results.pressure_fit ?? {}
@@ -918,11 +1083,13 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   )
                 })()}
+                </ScrollReveal>
 
                 {/* ══════════════════════════════════════════════════
                     AI HIRING SUMMARY
                 ══════════════════════════════════════════════════ */}
                 {results.ai_summary && (
+                  <ScrollReveal id="ai-assessment" delay={60}>
                   <Card style={{ marginBottom: 20, borderLeft: `4px solid ${TEAL}`, boxShadow: SHADOW_LG }}>
                     <SectionHeading>AI Hiring Summary</SectionHeading>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -940,12 +1107,14 @@ export default function CandidateReportPage({ params }) {
                       ))}
                     </div>
                   </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
                     SKILLS BREAKDOWN — 2×2 grid with small rings
                 ══════════════════════════════════════════════════ */}
                 {results.scores && Object.keys(results.scores).length > 0 && (
+                  <ScrollReveal id="skills" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading tooltip="Individual scores for core workplace skills based on scenario responses">
                       Skills Breakdown
@@ -998,12 +1167,14 @@ export default function CandidateReportPage({ params }) {
                       })}
                     </div>
                   </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
                     STRENGTHS
                 ══════════════════════════════════════════════════ */}
                 {results.strengths?.length > 0 && (
+                  <ScrollReveal id="strengths" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading tooltip="Specific behaviours the candidate demonstrated well, with direct evidence">
                       Strengths
@@ -1048,12 +1219,14 @@ export default function CandidateReportPage({ params }) {
                       })}
                     </div>
                   </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
                     WATCH-OUTS
                 ══════════════════════════════════════════════════ */}
                 {results.watchouts?.length > 0 && (
+                  <ScrollReveal id="watchouts" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading tooltip="Areas of concern with severity rating and recommended management actions">
                       Watch-outs
@@ -1093,12 +1266,14 @@ export default function CandidateReportPage({ params }) {
                       })}
                     </div>
                   </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
                     ONBOARDING PLAN — timeline style
                 ══════════════════════════════════════════════════ */}
                 {results.onboarding_plan?.length > 0 && (
+                  <ScrollReveal id="onboarding" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading>Personalised Onboarding Plan</SectionHeading>
                     <div style={{ paddingLeft: 4 }}>
@@ -1146,12 +1321,14 @@ export default function CandidateReportPage({ params }) {
                       })}
                     </div>
                   </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
                     INTERVIEW QUESTIONS
                 ══════════════════════════════════════════════════ */}
                 {results.interview_questions?.length > 0 && (
+                  <ScrollReveal id="questions" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading>Suggested Interview Questions</SectionHeading>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
@@ -1207,6 +1384,7 @@ export default function CandidateReportPage({ params }) {
                       })}
                     </div>
                   </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════

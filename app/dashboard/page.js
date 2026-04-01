@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
+import { useToast } from '@/components/ToastProvider'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, RED, REDBG,
@@ -213,6 +214,7 @@ function EmptyState() {
 
 export default function DashboardPage() {
   const router = useRouter()
+  const toast = useToast()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [profile, setProfile] = useState(null)
@@ -289,6 +291,7 @@ export default function DashboardPage() {
       const supabase = createClient()
       await supabase.from('candidates').update({ status: 'archived' }).eq('id', id)
       setCandidates(prev => prev.filter(c => c.id !== id))
+      toast('Candidate archived')
     } finally {
       setArchivingIds(prev => { const next = new Set(prev); next.delete(id); return next })
     }
@@ -303,6 +306,7 @@ export default function DashboardPage() {
       await supabase.from('results').delete().eq('candidate_id', id)
       await supabase.from('candidates').delete().eq('id', id)
       setCandidates(prev => prev.filter(c => c.id !== id))
+      toast('Candidate deleted')
     } finally {
       setDeletingIds(prev => { const next = new Set(prev); next.delete(id); return next })
     }

@@ -11,20 +11,22 @@ import {
 } from '@/lib/constants'
 
 function LoadingSpinner() {
+  const shimmer = {
+    background: 'linear-gradient(90deg, #e4e9f0 25%, #f1f5f9 50%, #e4e9f0 75%)',
+    backgroundSize: '200% 100%',
+    animation: 'shimmer 1.4s infinite',
+    borderRadius: 10,
+  }
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: BG }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{
-          width: 44, height: 44,
-          border: `3px solid ${BD}`,
-          borderTop: `3px solid ${TEAL}`,
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
-          margin: '0 auto 16px',
-        }} />
-        <div style={{ color: TX2, fontSize: 14, fontFamily: F }}>Loading settings…</div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
+    <div style={{ display: 'flex', fontFamily: F }}>
+      <Sidebar active="settings" />
+      <main style={{ marginLeft: 220, padding: '36px 40px', minHeight: '100vh', background: BG, flex: 1 }}>
+        <div style={{ ...shimmer, height: 34, width: 180, marginBottom: 36 }} />
+        <div style={{ ...shimmer, height: 52, width: 340, marginBottom: 28, borderRadius: 8 }} />
+        <div style={{ ...shimmer, height: 260, marginBottom: 20 }} />
+        <div style={{ ...shimmer, height: 200, marginBottom: 20 }} />
+        <div style={{ ...shimmer, height: 160 }} />
+      </main>
     </div>
   )
 }
