@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase-server'
 import { scoreCandidate } from '@/lib/score-candidate'
 
+export const maxDuration = 60
+
 export async function POST(request, { params }) {
   try {
     const { responses } = await request.json()
