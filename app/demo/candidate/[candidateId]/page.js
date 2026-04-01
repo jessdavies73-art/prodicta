@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import ProdictaLogo from '@/components/ProdictaLogo'
+import { DemoBanner, DemoSidebar } from '@/components/DemoShell'
 import { DEMO_CANDIDATES, DEMO_RESULTS, DEMO_RESPONSES } from '@/lib/demo-data'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
@@ -281,74 +282,6 @@ function SeniorityBadge({ score }) {
   return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: bg, color, border: `1px solid ${bd}` }}><Ic name={score >= 65 ? 'check' : 'alert'} size={11} color={color} /> {label}</span>
 }
 
-/* ── Demo banner ──────────────────────────────────────────────────────────── */
-function DemoBanner({ router }) {
-  return (
-    <div style={{
-      background: `linear-gradient(90deg, ${NAVY} 0%, #1a3a5c 100%)`,
-      borderBottom: `2px solid ${TEAL}`,
-      padding: '10px 24px',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
-      zIndex: 200, flexWrap: 'wrap',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ background: TEAL, color: NAVY, fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase', flexShrink: 0 }}>DEMO</div>
-        <span style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
-          You're viewing a demo. Sign up to assess your own candidates.
-        </span>
-      </div>
-      <button onClick={() => router.push('/login')} style={{ background: TEAL, color: NAVY, border: 'none', borderRadius: 7, padding: '8px 18px', fontFamily: F, fontSize: 13, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-        Sign up free →
-      </button>
-    </div>
-  )
-}
-
-/* ── Demo sidebar ─────────────────────────────────────────────────────────── */
-function DemoSidebar() {
-  const router = useRouter()
-  return (
-    <aside style={{ width: 220, minHeight: '100vh', background: NAVY, display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 100, fontFamily: F }}>
-      <div style={{ padding: '28px 24px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <ProdictaLogo textColor="#ffffff" size={32} />
-      </div>
-      <nav style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {[
-          { label: 'Dashboard', icon: 'grid', active: false, href: '/demo' },
-          { label: 'Compare', icon: 'sliders', disabled: true },
-          { label: 'Benchmarks', icon: 'layers', disabled: true },
-          { label: 'Archive', icon: 'archive', disabled: true },
-          { label: 'How It Works', icon: 'info', disabled: true },
-        ].map(({ label, icon, active, disabled, href }) => (
-          <div key={label} onClick={() => href && router.push(href)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 11, width: '100%', padding: '10px 12px',
-              borderRadius: 8, borderLeft: active ? `3px solid ${TEAL}` : '3px solid transparent',
-              fontFamily: F, fontSize: 13.5, fontWeight: active ? 700 : 500,
-              background: active ? 'rgba(0,191,165,0.12)' : 'transparent',
-              color: active ? TEAL : disabled ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.6)',
-              cursor: disabled ? 'default' : 'pointer',
-            }}
-          >
-            <Ic name={icon} size={17} color={active ? TEAL : disabled ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.5)'} />
-            {label}
-            {disabled && <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>locked</span>}
-          </div>
-        ))}
-      </nav>
-      <div style={{ padding: '14px 12px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ padding: '8px 12px', borderRadius: 8, background: `${TEAL}18`, border: `1px solid ${TEAL}30`, display: 'flex', alignItems: 'center', gap: 9 }}>
-          <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${TEAL}, ${TEALD})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: NAVY, flexShrink: 0 }}>D</div>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: TEAL }}>Demo Account</span>
-        </div>
-        <button onClick={() => router.push('/login')} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 12px', borderRadius: 8, border: `1px solid ${TEAL}40`, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, textAlign: 'left', background: `${TEAL}10`, color: TEAL }}>
-          <Ic name="award" size={16} color={TEAL} />
-          Sign up free
-        </button>
-      </div>
-    </aside>
-  )
-}
 
 /* ── Main page ────────────────────────────────────────────────────────────── */
 export default function DemoCandidatePage({ params }) {
@@ -437,10 +370,10 @@ export default function DemoCandidatePage({ params }) {
 
       {/* Demo banner fixed at top */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 300 }}>
-        <DemoBanner router={router} />
+        <DemoBanner />
       </div>
 
-      <DemoSidebar />
+      <DemoSidebar active={null} />
 
       <main style={{ marginLeft: 220, marginTop: 46, padding: '32px 40px', maxWidth: 1000, boxSizing: 'border-box' }}>
 
@@ -498,16 +431,15 @@ export default function DemoCandidatePage({ params }) {
                     </div>
                   )}
                 </div>
-                {/* Read-only indicator */}
+                {/* Actions */}
                 <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    background: TEALLT, border: `1px solid ${TEAL}44`,
-                    borderRadius: 8, padding: '9px 16px', cursor: 'default',
-                  }}>
-                    <Ic name="eye" size={14} color={TEALD} />
-                    <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TEALD }}>Demo — read only</span>
-                  </div>
+                  <button
+                    onClick={() => window.print()}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: CARD, border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TX2, padding: '9px 16px' }}
+                  >
+                    <Ic name="download" size={14} color={TX2} />
+                    Export PDF
+                  </button>
                   <button onClick={() => router.push('/login')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px' }}>
                     Sign up free →
                   </button>
