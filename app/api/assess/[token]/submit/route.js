@@ -10,7 +10,7 @@ export async function POST(request, { params }) {
     // Look up candidate by unique_link
     const { data: candidate, error: candError } = await adminClient
       .from('candidates')
-      .select('id, status')
+      .select('id, status, name, user_id, assessment_id')
       .eq('unique_link', params.token)
       .single()
 
@@ -43,6 +43,18 @@ export async function POST(request, { params }) {
       .eq('id', candidate.id)
 
     if (updateError) throw updateError
+
+    // Notification: candidate completed
+    try {
+      await adminClient.from('notifications').insert({
+        user_id: candidate.user_id,
+        type: 'candidate_completed',
+        title: `${candidate.name} completed their assessment`,
+        body: 'Results will be ready within minutes.',
+        candidate_id: candidate.id,
+        assessment_id: candidate.assessment_id,
+      })
+    } catch {}
 
     // Run AI scoring directly — no HTTP round-trip, no port issues
     // Run in background so candidate gets immediate success response

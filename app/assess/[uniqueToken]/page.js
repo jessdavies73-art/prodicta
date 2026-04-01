@@ -586,6 +586,135 @@ function SubmittingPage({ candidateName }) {
   )
 }
 
+// ─── State: Rating ───────────────────────────────────────────────────────────
+function RatingPage({ candidateName, uniqueToken, onComplete }) {
+  const [rating, setRating] = useState(0)
+  const [hovered, setHovered] = useState(0)
+  const [feedbackText, setFeedbackText] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleSubmitRating() {
+    setSubmitting(true)
+    try {
+      await fetch(`/api/assess/${uniqueToken}/rate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating, feedback: feedbackText }),
+      })
+    } catch {}
+    onComplete()
+  }
+
+  const filled = hovered || rating
+
+  return (
+    <>
+      <NavBar candidateName={candidateName} />
+      <CentredCard>
+        <Card style={{ textAlign: 'center', padding: '48px 36px' }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>🌟</div>
+          <h2 style={{ fontFamily: F, color: TX, fontSize: 24, fontWeight: 800, margin: '0 0 10px' }}>
+            How was your experience?
+          </h2>
+          <p style={{ fontFamily: F, color: TX2, fontSize: 15, margin: '0 0 32px', lineHeight: 1.6 }}>
+            Your feedback helps us improve the assessment experience for everyone.
+          </p>
+
+          {/* Stars */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 28 }}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <button
+                key={n}
+                onClick={() => setRating(n)}
+                onMouseEnter={() => setHovered(n)}
+                onMouseLeave={() => setHovered(0)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 4,
+                  transition: 'transform 0.12s',
+                  transform: filled >= n ? 'scale(1.2)' : 'scale(1)',
+                }}
+              >
+                <svg
+                  width={36} height={36} viewBox="0 0 24 24"
+                  fill={filled >= n ? '#f59e0b' : 'none'}
+                  stroke={filled >= n ? '#f59e0b' : '#e4e9f0'}
+                  strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+                >
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              </button>
+            ))}
+          </div>
+
+          {/* Optional feedback */}
+          {rating > 0 && (
+            <div style={{ textAlign: 'left', marginBottom: 24 }}>
+              <label style={{
+                fontFamily: F, fontSize: 13, fontWeight: 600, color: TX2,
+                display: 'block', marginBottom: 6,
+              }}>
+                Any other thoughts? (optional)
+              </label>
+              <textarea
+                value={feedbackText}
+                onChange={e => setFeedbackText(e.target.value)}
+                placeholder="What went well? What could be improved?"
+                rows={3}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  fontFamily: F,
+                  fontSize: 14,
+                  color: TX,
+                  background: CARD,
+                  border: `1.5px solid ${BD}`,
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  resize: 'none',
+                  outline: 'none',
+                  lineHeight: 1.65,
+                  transition: 'border-color 0.15s',
+                }}
+                onFocus={e => e.currentTarget.style.borderColor = TEAL}
+                onBlur={e => e.currentTarget.style.borderColor = BD}
+              />
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={onComplete}
+              style={{
+                fontFamily: F, fontSize: 14, fontWeight: 600, color: TX3,
+                background: 'none', border: 'none', cursor: 'pointer', padding: '10px 20px',
+              }}
+            >
+              Skip
+            </button>
+            {rating > 0 && (
+              <button
+                onClick={handleSubmitRating}
+                disabled={submitting}
+                style={{
+                  background: TEAL, color: '#fff', fontFamily: F,
+                  fontWeight: 700, fontSize: 15, border: 'none',
+                  borderRadius: 10, padding: '12px 32px', cursor: 'pointer',
+                  opacity: submitting ? 0.7 : 1,
+                }}
+              >
+                {submitting ? 'Submitting…' : 'Submit feedback'}
+              </button>
+            )}
+          </div>
+        </Card>
+      </CentredCard>
+    </>
+  )
+}
+
 // ─── State: Complete ──────────────────────────────────────────────────────────
 function CompletePage({ candidateName }) {
   return (
@@ -641,7 +770,7 @@ function CompletePage({ candidateName }) {
 export default function AssessPage({ params }) {
   const { uniqueToken } = params
 
-  const [uiState, setUiState] = useState('loading') // loading | error | already_complete | intro | active | submitting | complete
+  const [uiState, setUiState] = useState('loading') // loading | error | already_complete | intro | active | submitting | rating | complete
   const [errorMessage, setErrorMessage] = useState('')
   const [candidate, setCandidate] = useState(null)
   const [assessment, setAssessment] = useState(null)
@@ -693,7 +822,7 @@ export default function AssessPage({ params }) {
         setUiState('error')
         return
       }
-      setUiState('complete')
+      setUiState('rating')
     } catch {
       setErrorMessage('Submission failed. Please check your connection and try again.')
       setUiState('error')
@@ -729,6 +858,13 @@ export default function AssessPage({ params }) {
     />
   )
   if (uiState === 'submitting') return <SubmittingPage candidateName={candidate?.name} />
+  if (uiState === 'rating') return (
+    <RatingPage
+      candidateName={candidate?.name}
+      uniqueToken={uniqueToken}
+      onComplete={() => setUiState('complete')}
+    />
+  )
   if (uiState === 'complete') return <CompletePage candidateName={candidate?.name} />
 
   return null
