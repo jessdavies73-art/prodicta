@@ -14,6 +14,10 @@ import {
 
 /* ── score helpers ─────────────────────────────────────── */
 const passPct = s => s >= 85 ? 96 : s >= 75 ? 89 : s >= 60 ? 72 : s >= 45 ? 51 : 28
+const pfColor = s => s == null ? TX3 : s >= 80 ? GRN : s >= 55 ? TEALD : RED
+const pfBg    = s => s == null ? BG  : s >= 80 ? GRNBG : s >= 55 ? TEALLT : REDBG
+const pfBd    = s => s == null ? BD  : s >= 80 ? GRNBD : s >= 55 ? `${TEAL}55` : '#fecaca'
+const pfLabel = s => s == null ? '-' : s >= 80 ? 'Strong' : s >= 55 ? 'Moderate' : 'Concern'
 
 /* ── tiny reusable primitives ──────────────────────────── */
 const Card = ({ children, style = {} }) => (
@@ -163,6 +167,7 @@ export default function CandidateReportPage({ params }) {
   const [benchmarks, setBenchmarks] = useState([])
   const [responses, setResponses] = useState([])
   const [user, setUser] = useState(null)
+  const [profile, setProfile] = useState(null)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -173,7 +178,7 @@ export default function CandidateReportPage({ params }) {
         if (!u) { router.push('/login'); return }
         setUser(u)
 
-        const [{ data: cand, error: cErr }, { data: res }, { data: bm }, { data: resps }] = await Promise.all([
+        const [{ data: cand, error: cErr }, { data: res }, { data: bm }, { data: resps }, { data: prof }] = await Promise.all([
           supabase
             .from('candidates')
             .select('*, assessments(role_title, job_description, skill_weights)')
@@ -193,6 +198,11 @@ export default function CandidateReportPage({ params }) {
             .select('scenario_index, time_taken_seconds')
             .eq('candidate_id', params.candidateId)
             .order('scenario_index'),
+          supabase
+            .from('users')
+            .select('company_name, account_type')
+            .eq('id', u.id)
+            .maybeSingle(),
         ])
 
         if (cErr) throw cErr
@@ -200,6 +210,7 @@ export default function CandidateReportPage({ params }) {
         setResults(res || null)
         setBenchmarks(bm || [])
         setResponses(resps || [])
+        setProfile(prof || null)
       } catch (e) {
         setError(e.message)
       } finally {
@@ -221,10 +232,33 @@ export default function CandidateReportPage({ params }) {
 
   function handlePrint() { window.print() }
 
+  function handleClientExport() {
+    document.body.classList.add('client-print')
+    window.print()
+    window.addEventListener('afterprint', function cleanup() {
+      document.body.classList.remove('client-print')
+      window.removeEventListener('afterprint', cleanup)
+    })
+  }
+
   /* ── render ── */
   return (
     <div style={{ background: BG, minHeight: '100vh', fontFamily: F }}>
-      <style>{`@media print { aside { display: none !important; } main { margin-left: 0 !important; padding: 16px !important; } .no-print { display: none !important; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }`}</style>
+      <style>{`
+        @media print {
+          aside { display: none !important; }
+          main { margin-left: 0 !important; padding: 16px !important; }
+          .no-print { display: none !important; }
+          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+        .client-report-container { display: none; }
+        @media print {
+          body.client-print aside { display: none !important; }
+          body.client-print main { display: none !important; }
+          body.client-print .client-report-container { display: block !important; }
+        }
+        @keyframes pulse{0%,100%{opacity:.35}50%{opacity:.6}}
+      `}</style>
       <Sidebar active="assessment" />
 
       <main style={{ marginLeft: 220, padding: '32px 40px', maxWidth: 980, boxSizing: 'border-box' }}>
@@ -323,7 +357,29 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   )}
 
-                  <div className="no-print">
+                  <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {results && (
+                      <button
+                        onClick={handleClientExport}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          background: NAVY,
+                          border: 'none',
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          fontFamily: F,
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: '#fff',
+                          padding: '9px 16px',
+                        }}
+                      >
+                        <Ic name="file" size={15} color={TEAL} />
+                        Export Client Report
+                      </button>
+                    )}
                     <button
                       onClick={handlePrint}
                       style={{
@@ -1093,6 +1149,223 @@ export default function CandidateReportPage({ params }) {
           </>
         )}
       </main>
+
+      {/* ── CLIENT REPORT: hidden normally, printed via body.client-print ── */}
+      {candidate && results && (
+        <div className="client-report-container" style={{ fontFamily: F, color: TX, padding: '40px 48px', maxWidth: 800, margin: '0 auto' }}>
+
+          {/* Header */}
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+            marginBottom: 32, paddingBottom: 20, borderBottom: `2px solid ${NAVY}`,
+          }}>
+            <div>
+              <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: NAVY, letterSpacing: '0.06em', marginBottom: 3 }}>
+                PRODICTA
+              </div>
+              <div style={{ fontSize: 11.5, color: TX3 }}>AI-Powered Work Simulation Assessment</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              {profile?.company_name && (
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: 3 }}>
+                  Prepared by {profile.company_name}
+                </div>
+              )}
+              <div style={{ fontSize: 12, color: TX3 }}>Candidate Assessment Report</div>
+              {completedDate && (
+                <div style={{ fontSize: 11.5, color: TX3, marginTop: 2 }}>{completedDate}</div>
+              )}
+            </div>
+          </div>
+
+          {/* Candidate name + role */}
+          <div style={{ marginBottom: 28 }}>
+            <h1 style={{ margin: '0 0 5px', fontSize: 28, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px' }}>
+              {candidate.name || 'Candidate'}
+            </h1>
+            {candidate.assessments?.role_title && (
+              <div style={{ fontSize: 14, color: TX2, fontWeight: 600 }}>
+                {candidate.assessments.role_title}
+              </div>
+            )}
+          </div>
+
+          {/* Score summary boxes */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: results.pressure_fit_score != null ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)',
+            gap: 12, marginBottom: 28,
+          }}>
+            {/* Overall score */}
+            <div style={{ background: sbg(score), border: `1px solid ${sbd(score)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center' }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Overall Score</div>
+              <div style={{ fontFamily: FM, fontSize: 38, fontWeight: 800, color: scolor(score), lineHeight: 1 }}>{score}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: scolor(score), marginTop: 5 }}>{slabel(score)}</div>
+            </div>
+
+            {/* Pressure-Fit */}
+            {results.pressure_fit_score != null && (
+              <div style={{ background: pfBg(results.pressure_fit_score), border: `1px solid ${pfBd(results.pressure_fit_score)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center' }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Pressure-Fit</div>
+                <div style={{ fontFamily: FM, fontSize: 38, fontWeight: 800, color: pfColor(results.pressure_fit_score), lineHeight: 1 }}>{results.pressure_fit_score}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: pfColor(results.pressure_fit_score), marginTop: 5 }}>{pfLabel(results.pressure_fit_score)}</div>
+              </div>
+            )}
+
+            {/* Risk level */}
+            <div style={{ background: riskBg(results.risk_level), border: `1px solid ${riskBd(results.risk_level)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Risk Level</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: riskCol(results.risk_level), lineHeight: 1.2 }}>{results.risk_level || '-'}</div>
+            </div>
+
+            {/* Recommendation */}
+            <div style={{ background: sbg(score), border: `1px solid ${sbd(score)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Recommendation</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: dC(score), lineHeight: 1.2 }}>{dL(score)}</div>
+            </div>
+          </div>
+
+          {/* AI Summary */}
+          {results.ai_summary && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, paddingBottom: 6, borderBottom: `1.5px solid ${BD}` }}>
+                AI Assessment Summary
+              </div>
+              {results.ai_summary.split('\n\n').filter(Boolean).map((para, i) => (
+                <p key={i} style={{ fontSize: 13.5, color: TX2, lineHeight: 1.75, margin: i > 0 ? '10px 0 0' : 0 }}>{para}</p>
+              ))}
+            </div>
+          )}
+
+          {/* Skills breakdown */}
+          {results.scores && Object.keys(results.scores).length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12, paddingBottom: 6, borderBottom: `1.5px solid ${BD}` }}>
+                Skills Breakdown
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {Object.entries(results.scores).map(([skill, skillScore]) => (
+                  <div key={skill} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 170, fontSize: 13, fontWeight: 600, color: TX, flexShrink: 0 }}>{skill}</div>
+                    <div style={{ flex: 1, height: 6, borderRadius: 99, background: BD, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${skillScore}%`, background: scolor(skillScore), borderRadius: 99 }} />
+                    </div>
+                    <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 700, color: scolor(skillScore), width: 36, textAlign: 'right', flexShrink: 0 }}>{skillScore}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: scolor(skillScore), width: 72, flexShrink: 0 }}>{slabel(skillScore)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Strengths */}
+          {results.strengths?.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12, paddingBottom: 6, borderBottom: `1.5px solid ${BD}` }}>
+                Strengths
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {results.strengths.map((s, i) => {
+                  const title = typeof s === 'object' ? (s.strength || s.title || s.text) : s
+                  const evidence = typeof s === 'object' ? s.evidence : null
+                  return (
+                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: GRNBG, border: `1px solid ${GRNBD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                        <span style={{ fontSize: 12, fontWeight: 900, color: GRN, lineHeight: 1 }}>+</span>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: evidence ? 5 : 0 }}>{title}</div>
+                        {evidence && (
+                          <div style={{ fontSize: 12.5, color: TX2, fontStyle: 'italic', borderLeft: `2px solid ${TEAL}66`, paddingLeft: 10, lineHeight: 1.6 }}>{evidence}</div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Watch-outs (labelled "Areas to Probe" for client) */}
+          {results.watchouts?.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12, paddingBottom: 6, borderBottom: `1.5px solid ${BD}` }}>
+                Areas to Probe
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {results.watchouts.map((w, i) => {
+                  const title = typeof w === 'object' ? (w.watchout || w.title || w.text) : w
+                  const evidence = typeof w === 'object' ? w.evidence : null
+                  return (
+                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: AMBBG, border: `1px solid ${AMBBD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                        <span style={{ fontSize: 12, fontWeight: 900, color: AMB, lineHeight: 1 }}>!</span>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: evidence ? 5 : 0 }}>{title}</div>
+                        {evidence && (
+                          <div style={{ fontSize: 12.5, color: TX2, fontStyle: 'italic', borderLeft: `2px solid ${AMB}55`, paddingLeft: 10, lineHeight: 1.6 }}>{evidence}</div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Interview questions */}
+          {results.interview_questions?.length > 0 && (
+            <div style={{ marginBottom: 40 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12, paddingBottom: 6, borderBottom: `1.5px solid ${BD}` }}>
+                Suggested Interview Questions
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {results.interview_questions.map((q, i) => {
+                  const text = typeof q === 'object' ? (q.question || q.text || JSON.stringify(q)) : q
+                  const followUpMatch = text.match(/\[Follow-up:\s*(.*?)\]$/i)
+                  const followUp = followUpMatch ? followUpMatch[1] : null
+                  const mainQ = followUpMatch ? text.slice(0, followUpMatch.index).trim() : text
+                  return (
+                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <div style={{
+                        width: 24, height: 24, borderRadius: '50%',
+                        background: TEALLT, border: `1px solid ${TEAL}55`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: FM, fontSize: 11, fontWeight: 700, color: TEALD,
+                        flexShrink: 0, marginTop: 1,
+                      }}>
+                        {i + 1}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 600, color: TX, lineHeight: 1.6 }}>{mainQ}</div>
+                        {followUp && (
+                          <div style={{ fontSize: 12.5, color: AMB, marginTop: 5, fontStyle: 'italic' }}>
+                            Follow-up: {followUp}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          <div style={{
+            borderTop: `1px solid ${BD}`, paddingTop: 16,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          }}>
+            <div style={{ fontSize: 11.5, color: TX3 }}>
+              Prepared using <span style={{ fontWeight: 700, color: NAVY }}>PRODICTA</span> AI Assessment Platform
+            </div>
+            <div style={{ fontSize: 11, color: TX3 }}>prodicta.co.uk</div>
+          </div>
+
+        </div>
+      )}
+
     </div>
   )
 }
