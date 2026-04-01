@@ -228,8 +228,6 @@ export default function CandidateReportPage({ params }) {
   const [notes, setNotes] = useState([])
   const [newNote, setNewNote] = useState('')
   const [noteSaving, setNoteSaving] = useState(false)
-  const [rescoring, setRescoring] = useState(false)
-  const [rescoreError, setRescoreError] = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -307,28 +305,6 @@ export default function CandidateReportPage({ params }) {
       document.body.classList.remove('client-print')
       window.removeEventListener('afterprint', cleanup)
     })
-  }
-
-  async function handleRescore() {
-    setRescoring(true)
-    setRescoreError(null)
-    try {
-      const res = await fetch(`/api/rescore/${params.candidateId}`, { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Rescoring failed')
-      // Reload results
-      const supabase = createClient()
-      const { data: newResults } = await supabase
-        .from('results')
-        .select('*')
-        .eq('candidate_id', params.candidateId)
-        .maybeSingle()
-      setResults(newResults || null)
-    } catch (e) {
-      setRescoreError(e.message)
-    } finally {
-      setRescoring(false)
-    }
   }
 
   async function addNote() {
@@ -534,32 +510,6 @@ export default function CandidateReportPage({ params }) {
                       <Ic name="download" size={15} color={TX2} />
                       Export PDF
                     </button>
-                    <button
-                      onClick={handleRescore}
-                      disabled={rescoring}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        background: 'transparent',
-                        border: `1.5px solid ${BD}`,
-                        borderRadius: 8,
-                        cursor: rescoring ? 'wait' : 'pointer',
-                        fontFamily: F,
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: rescoring ? TX3 : AMB,
-                        padding: '9px 16px',
-                        opacity: rescoring ? 0.6 : 1,
-                      }}
-                    >
-                      <Ic name="refresh" size={15} color={rescoring ? TX3 : AMB} />
-                      {rescoring ? 'Scoring…' : 'Re-score'}
-                    </button>
-                    <InfoTooltip text="Re-run the AI scoring for this candidate. Use this if scoring failed or got stuck. Results will update within 20 seconds." />
-                    {rescoreError && (
-                      <p style={{ fontFamily: F, fontSize: 12, color: RED, margin: 0 }}>{rescoreError}</p>
-                    )}
                   </div>
                 </div>
               </div>
@@ -567,28 +517,7 @@ export default function CandidateReportPage({ params }) {
 
             {/* ── results not ready ── */}
             {!results && (
-              <>
-                <PendingState candidate={candidate} />
-                <div className="no-print" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                  <button
-                    onClick={handleRescore}
-                    disabled={rescoring}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      background: AMB, border: 'none', borderRadius: 8,
-                      cursor: rescoring ? 'wait' : 'pointer',
-                      fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff',
-                      padding: '10px 20px', opacity: rescoring ? 0.6 : 1,
-                    }}
-                  >
-                    <Ic name="refresh" size={15} color="#fff" />
-                    {rescoring ? 'Scoring — this may take 15–20 seconds…' : 'Trigger scoring now'}
-                  </button>
-                  {rescoreError && (
-                    <p style={{ fontFamily: F, fontSize: 12, color: RED, margin: 0 }}>{rescoreError}</p>
-                  )}
-                </div>
-              </>
+              <PendingState candidate={candidate} />
             )}
 
             {results && (
