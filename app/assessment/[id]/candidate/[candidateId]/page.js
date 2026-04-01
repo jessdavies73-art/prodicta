@@ -32,7 +32,7 @@ const Card = ({ children, style = {} }) => (
   </div>
 )
 
-const SectionHeading = ({ children }) => (
+const SectionHeading = ({ children, tooltip }) => (
   <h2 style={{
     fontFamily: F,
     fontSize: 16,
@@ -40,8 +40,11 @@ const SectionHeading = ({ children }) => (
     color: TX,
     margin: '0 0 16px',
     letterSpacing: '-0.2px',
+    display: 'flex',
+    alignItems: 'center',
   }}>
     {children}
+    {tooltip && <InfoTooltip text={tooltip} />}
   </h2>
 )
 
@@ -100,6 +103,59 @@ const ActionBox = ({ children }) => (
     </p>
   </div>
 )
+
+function InfoTooltip({ text, light = false }) {
+  const [visible, setVisible] = useState(false)
+  const bg = light ? 'rgba(255,255,255,0.12)' : NAVY
+  const tooltipBg = light ? '#1e3a52' : NAVY
+  return (
+    <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+      <span
+        onMouseEnter={() => setVisible(true)}
+        onMouseLeave={() => setVisible(false)}
+        style={{ cursor: 'help', display: 'inline-flex', alignItems: 'center', marginLeft: 6 }}
+      >
+        <Ic name="info" size={14} color={light ? 'rgba(255,255,255,0.45)' : TX3} />
+      </span>
+      {visible && (
+        <span style={{
+          position: 'absolute',
+          bottom: 'calc(100% + 8px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: tooltipBg,
+          color: '#fff',
+          fontSize: 12,
+          fontFamily: F,
+          fontWeight: 400,
+          lineHeight: 1.55,
+          padding: '9px 13px',
+          borderRadius: 8,
+          width: 240,
+          zIndex: 200,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+          pointerEvents: 'none',
+          textAlign: 'left',
+          whiteSpace: 'normal',
+          border: light ? '1px solid rgba(255,255,255,0.15)' : 'none',
+        }}>
+          {text}
+          <span style={{
+            position: 'absolute',
+            top: '100%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 0,
+            height: 0,
+            borderLeft: '6px solid transparent',
+            borderRight: '6px solid transparent',
+            borderTop: `6px solid ${tooltipBg}`,
+          }} />
+        </span>
+      )}
+    </span>
+  )
+}
 
 /* ── loading skeleton ──────────────────────────────────── */
 function LoadingState() {
@@ -257,7 +313,7 @@ export default function CandidateReportPage({ params }) {
     setRescoring(true)
     setRescoreError(null)
     try {
-      const res = await fetch(`/api/candidates/${params.candidateId}/rescore`, { method: 'POST' })
+      const res = await fetch(`/api/rescore/${params.candidateId}`, { method: 'POST' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Rescoring failed')
       // Reload results
@@ -406,6 +462,10 @@ export default function CandidateReportPage({ params }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexShrink: 0, flexWrap: 'wrap' }}>
                   {results && (
                     <div style={{ textAlign: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, marginBottom: 4 }}>
+                        <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Overall Score</span>
+                        <InfoTooltip text="How this candidate performed across all 4 work simulation scenarios" />
+                      </div>
                       <div style={{ fontFamily: FM, fontSize: 52, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>
                         {score}
                       </div>
@@ -598,8 +658,11 @@ export default function CandidateReportPage({ params }) {
 
                   {/* Risk level */}
                   <Card>
-                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-                      Risk level
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+                      <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Risk level
+                      </span>
+                      <InfoTooltip text="The likelihood of this candidate struggling during probation" />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                       <span style={{
@@ -679,7 +742,7 @@ export default function CandidateReportPage({ params }) {
                       {/* Header row */}
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 18, flexWrap: 'wrap' }}>
                         <div>
-                          <SectionHeading>Response Integrity</SectionHeading>
+                          <SectionHeading tooltip="Analysis of response timing, consistency, and authenticity">Response Integrity</SectionHeading>
                           <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '-8px 0 0' }}>
                             AI analysis of response authenticity, timing, and consistency across all 4 scenarios.
                           </p>
@@ -850,8 +913,9 @@ export default function CandidateReportPage({ params }) {
                         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
                       }}>
                         <div>
-                          <h2 style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: '#fff', margin: '0 0 4px', letterSpacing: '-0.2px' }}>
+                          <h2 style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: '#fff', margin: '0 0 4px', letterSpacing: '-0.2px', display: 'flex', alignItems: 'center' }}>
                             Pressure-Fit Assessment
+                            <InfoTooltip text="How this candidate handles pressure, conflict, and competing priorities" light />
                           </h2>
                           <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.5)', margin: 0 }}>
                             How this candidate performs when it matters most.
@@ -982,7 +1046,7 @@ export default function CandidateReportPage({ params }) {
                 {/* ── 6. Skills Breakdown ── */}
                 {results.scores && Object.keys(results.scores).length > 0 && (
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading>Skills Breakdown</SectionHeading>
+                    <SectionHeading tooltip="Individual scores for core workplace skills based on scenario responses">Skills Breakdown</SectionHeading>
                     <div style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(2, 1fr)',
@@ -1071,7 +1135,7 @@ export default function CandidateReportPage({ params }) {
                 {/* ── 6. Strengths ── */}
                 {results.strengths?.length > 0 && (
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading>Strengths</SectionHeading>
+                    <SectionHeading tooltip="Specific behaviours the candidate demonstrated well, with evidence">Strengths</SectionHeading>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       {results.strengths.map((s, i) => {
                         const title = typeof s === 'object' ? (s.strength || s.title || s.text) : s
@@ -1106,7 +1170,7 @@ export default function CandidateReportPage({ params }) {
                 {/* ── 7. Watch-outs ── */}
                 {results.watchouts?.length > 0 && (
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading>Watch-outs</SectionHeading>
+                    <SectionHeading tooltip="Areas of concern with severity rating and recommended actions">Watch-outs</SectionHeading>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       {results.watchouts.map((w, i) => {
                         const title = typeof w === 'object' ? (w.watchout || w.title || w.text) : w
