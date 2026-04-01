@@ -194,7 +194,7 @@ function SkillRow({ skill, threshold, onChange, candidateData, router }) {
           }}>
             <Ic name="info" size={14} color={TX3} />
             <span style={{ fontSize: 13, color: TX3, fontFamily: F }}>
-              No threshold set — candidates will not be flagged for this skill.
+              No threshold set. Candidates will not be flagged for this skill.
             </span>
           </div>
         )}
@@ -210,7 +210,7 @@ function SkillRow({ skill, threshold, onChange, candidateData, router }) {
           {expanded === 'flagged' ? (
             <>
               <div style={{ fontSize: 12, fontWeight: 700, color: RED, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Flagged — scored below {val}
+                Flagged: scored below {val}
               </div>
               {flagged.length === 0 ? (
                 <div style={{ fontSize: 13, color: TX3 }}>No candidates flagged.</div>
@@ -281,7 +281,7 @@ function SkillRow({ skill, threshold, onChange, candidateData, router }) {
           ) : (
             <>
               <div style={{ fontSize: 12, fontWeight: 700, color: GRN, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Passing — scored {val} or above
+                Passing: scored {val} or above
               </div>
               {passing.length === 0 ? (
                 <div style={{ fontSize: 13, color: TX3 }}>No candidates passing yet.</div>

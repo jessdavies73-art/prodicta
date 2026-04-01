@@ -522,7 +522,7 @@ export default function SettingsPage() {
                       £79<span style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.55)' }}>/month</span>
                     </div>
                     <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>
-                      Unlimited — no seat limits, no usage caps
+                      Unlimited. No seat limits, no usage caps.
                     </div>
                   </div>
                   <span style={{

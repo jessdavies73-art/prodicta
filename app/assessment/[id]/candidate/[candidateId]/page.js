@@ -141,7 +141,7 @@ function PendingState({ candidate }) {
           : 'This candidate has not completed the assessment yet, or scoring is still in progress.'}
       </p>
       <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: 0 }}>
-        Check back shortly — AI analysis typically takes under two minutes once the candidate finishes.
+        Check back shortly. AI analysis typically takes under two minutes once the candidate finishes.
       </p>
     </Card>
   )
@@ -476,7 +476,7 @@ export default function CandidateReportPage({ params }) {
 
                   // Format per-scenario timing from raw response data
                   function fmtTime(s) {
-                    if (!s) return '—'
+                    if (!s) return '-'
                     const m = Math.floor(s / 60)
                     const sec = s % 60
                     return m > 0 ? `${m}m ${sec}s` : `${sec}s`
@@ -655,7 +655,7 @@ export default function CandidateReportPage({ params }) {
                   const overallColor = pfScoreColor(pf)
                   const overallBg    = pfScoreBg(pf)
                   const overallBd    = pfScoreBd(pf)
-                  const overallLabel = pf == null ? '—' : pf >= 80 ? 'Strong' : pf >= 55 ? 'Moderate' : 'Concern'
+                  const overallLabel = pf == null ? '-' : pf >= 80 ? 'Strong' : pf >= 55 ? 'Moderate' : 'Concern'
 
                   return (
                     <div style={{
@@ -685,7 +685,7 @@ export default function CandidateReportPage({ params }) {
                           background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
                         }}>
                           <div style={{ fontFamily: FM, fontSize: 44, fontWeight: 800, color: overallColor, lineHeight: 1, letterSpacing: '-2px' }}>
-                            {pf ?? '—'}
+                            {pf ?? '-'}
                           </div>
                           <div>
                             <div style={{ fontSize: 13, fontWeight: 800, color: overallColor }}>{overallLabel}</div>

@@ -14,7 +14,7 @@ import {
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(dateStr) {
-  if (!dateStr) return '—'
+  if (!dateStr) return '-'
   return new Date(dateStr).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short'
   })
@@ -88,7 +88,7 @@ function StatusBadge({ status }) {
 }
 
 function RiskBadge({ risk }) {
-  if (!risk) return <span style={{ color: TX3, fontSize: 12 }}>—</span>
+  if (!risk) return <span style={{ color: TX3, fontSize: 12 }}>-</span>
   return (
     <span style={{
       display: 'inline-block',
@@ -510,7 +510,7 @@ export default function DashboardPage() {
           <StatCard
             icon="bar"
             label="Avg score"
-            value={avgScore !== null ? `${avgScore}` : '—'}
+            value={avgScore !== null ? `${avgScore}` : '-'}
             sub={avgScore !== null ? slabel(avgScore) : 'No data yet'}
           />
           <StatCard
@@ -659,7 +659,7 @@ export default function DashboardPage() {
                                 overflow: 'hidden', textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap', display: 'block',
                               }}>
-                                {c.assessments?.role_title || '—'}
+                                {c.assessments?.role_title || '-'}
                               </span>
                             </td>
 
@@ -681,7 +681,7 @@ export default function DashboardPage() {
                                   <span style={{ fontSize: 10.5, color: TX3 }}>/100</span>
                                 </div>
                               ) : (
-                                <span style={{ color: TX3, fontSize: 13 }}>—</span>
+                                <span style={{ color: TX3, fontSize: 13 }}>-</span>
                               )}
                             </td>
 
@@ -698,13 +698,13 @@ export default function DashboardPage() {
                                   <span style={{ fontSize: 10.5, color: TX3 }}>/100</span>
                                 </div>
                               ) : (
-                                <span style={{ color: TX3, fontSize: 13 }}>—</span>
+                                <span style={{ color: TX3, fontSize: 13 }}>-</span>
                               )}
                             </td>
 
                             {/* Risk */}
                             <td style={{ padding: '12px 12px' }}>
-                              {isCompleted ? <RiskBadge risk={risk} /> : <span style={{ color: TX3, fontSize: 13 }}>—</span>}
+                              {isCompleted ? <RiskBadge risk={risk} /> : <span style={{ color: TX3, fontSize: 13 }}>-</span>}
                             </td>
 
                             {/* Date */}
@@ -916,19 +916,19 @@ function HiringRiskOverview({ completed }) {
   const METRICS = [
     {
       label: 'Assessed',
-      value: assessed > 0 ? assessed : '—',
+      value: assessed > 0 ? assessed : '-',
       sub: isThisMonth ? 'This month' : 'All time',
       color: TEALD, bg: TEALLT, bd: `${TEAL}55`,
     },
     {
       label: 'Pass rate',
-      value: passRate !== null ? `${passRate}%` : '—',
+      value: passRate !== null ? `${passRate}%` : '-',
       sub: `${passed} of ${assessed} scored 70+`,
       color: passColor, bg: passBg, bd: passBd,
     },
     {
       label: 'Average score',
-      value: avgScore !== null ? avgScore : '—',
+      value: avgScore !== null ? avgScore : '-',
       sub: avgScore !== null ? (avgScore >= 70 ? 'Above threshold' : avgScore >= 50 ? 'Below threshold' : 'Needs attention') : 'No data yet',
       color: avgColor, bg: avgBg, bd: `${avgColor}55`,
     },
@@ -954,7 +954,7 @@ function HiringRiskOverview({ completed }) {
             Hiring Pipeline Health
           </h2>
           <p style={{ margin: 0, fontSize: 12.5, color: TX3, fontFamily: F }}>
-            Quality snapshot across all active assessments — useful for employers and recruitment agencies alike.
+            Quality snapshot across all active assessments, useful for employers and recruitment agencies alike.
           </p>
         </div>
         <span style={{
@@ -975,7 +975,7 @@ function HiringRiskOverview({ completed }) {
           /* Empty state */
           <div style={{ textAlign: 'center', padding: '24px 0', color: TX3, fontSize: 13.5 }}>
             <Ic name="bar" size={28} color={BD} />
-            <div style={{ marginTop: 10 }}>No completed assessments yet — stats will appear here once candidates finish.</div>
+            <div style={{ marginTop: 10 }}>No completed assessments yet. Stats will appear here once candidates finish.</div>
           </div>
         ) : (
           <>
@@ -1229,7 +1229,7 @@ function PlacementRiskCard({ completed = [] }) {
             {[
               { label: 'Lost placement fee',         value: gbp(feeVal),          note: 'Not recovered on failed placement',           color: RED,    bg: REDBG },
               { label: 'Replacement search cost',    value: gbp(replacementSearch), note: 'Average cost to source a replacement',       color: AMB,    bg: AMBBG },
-              { label: 'Client relationship damage', value: 'Reputational',        note: 'Loss of future instructions — hard to quantify', color: PURPLE, bg: '#f5f3ff' },
+              { label: 'Client relationship damage', value: 'Reputational',        note: 'Loss of future instructions, hard to quantify', color: PURPLE, bg: '#f5f3ff' },
             ].map(({ label, value, note, color, bg }) => (
               <div key={label} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1257,7 +1257,7 @@ function PlacementRiskCard({ completed = [] }) {
           marginBottom: 16,
         }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-            Total financial exposure — 1 failed placement
+            Total financial exposure: 1 failed placement
           </div>
           <div style={{ fontFamily: FM, fontSize: 40, fontWeight: 800, color: RED, lineHeight: 1, marginBottom: 4 }}>
             {gbp(totalLoss)}
@@ -1276,7 +1276,7 @@ function PlacementRiskCard({ completed = [] }) {
         }}>
           <Ic name="shield" size={15} color={TEAL} />
           <p style={{ margin: 0, fontSize: 12.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, fontFamily: F }}>
-            <strong style={{ color: TEAL }}>PRODICTA</strong> helps you send candidates your clients can trust —{' '}
+            <strong style={{ color: TEAL }}>PRODICTA</strong> helps you send candidates your clients can trust,{' '}
             identifying high-risk placements before you submit CVs.
           </p>
         </div>
@@ -1450,7 +1450,7 @@ function RiskCalculator({ profile, completed = [] }) {
             borderRadius: 12, padding: '18px 20px',
           }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-              Total exposure — 1 bad hire
+              Total exposure: 1 bad hire
             </div>
             <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: AMB, lineHeight: 1, marginBottom: 4 }}>
               {gbp(totalPerHire)}
@@ -1468,7 +1468,7 @@ function RiskCalculator({ profile, completed = [] }) {
             borderRadius: 12, padding: '18px 20px',
           }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-              Total exposure — 20% failure rate
+              Total exposure: 20% failure rate
             </div>
             <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: RED, lineHeight: 1, marginBottom: 4 }}>
               {gbp(totalExposure)}
@@ -1490,7 +1490,7 @@ function RiskCalculator({ profile, completed = [] }) {
           <Ic name="alert" size={15} color={TEAL} />
           <p style={{ margin: 0, fontSize: 12.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, fontFamily: F }}>
             <strong style={{ color: '#fff' }}>From January 2027,</strong> unfair dismissal claims can be made after just 6 months of employment, with no compensation cap.{' '}
-            <strong style={{ color: TEAL }}>PRODICTA</strong> helps you identify high-risk hires before they start — reducing your ERA 2025 exposure.
+            <strong style={{ color: TEAL }}>PRODICTA</strong> helps you identify high-risk hires before they start, reducing your ERA 2025 exposure.
           </p>
         </div>
       </div>

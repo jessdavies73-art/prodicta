@@ -31,7 +31,7 @@ function LoadingSpinner() {
 }
 
 function fmt(dateStr) {
-  if (!dateStr) return '—'
+  if (!dateStr) return '-'
   return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
@@ -261,7 +261,7 @@ export default function ArchivePage() {
                             whiteSpace: 'nowrap',
                             display: 'block',
                           }}>
-                            {c.assessments?.role_title || '—'}
+                            {c.assessments?.role_title || '-'}
                           </span>
                         </td>
 
@@ -281,7 +281,7 @@ export default function ArchivePage() {
                               <span style={{ fontSize: 11, color: TX3 }}>/100</span>
                             </div>
                           ) : (
-                            <span style={{ fontSize: 13, color: TX3 }}>—</span>
+                            <span style={{ fontSize: 13, color: TX3 }}>-</span>
                           )}
                         </td>
 

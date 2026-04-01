@@ -586,7 +586,7 @@ export default function AssessmentPage({ params }) {
                         </span>
                       </span>
                     ) : (
-                      <span style={{ fontSize: 13, color: '#e4e9f0' }}>—</span>
+                      <span style={{ fontSize: 13, color: '#e4e9f0' }}>-</span>
                     )}
                   </div>
 
@@ -600,7 +600,7 @@ export default function AssessmentPage({ params }) {
                         {risk}
                       </span>
                     ) : (
-                      <span style={{ fontSize: 13, color: '#e4e9f0' }}>—</span>
+                      <span style={{ fontSize: 13, color: '#e4e9f0' }}>-</span>
                     )}
                   </div>
 

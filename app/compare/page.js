@@ -39,7 +39,7 @@ function LoadingSpinner() {
 }
 
 function RiskBadge({ risk }) {
-  if (!risk) return <span style={{ color: TX3, fontSize: 12, fontFamily: F }}>—</span>
+  if (!risk) return <span style={{ color: TX3, fontSize: 12, fontFamily: F }}>-</span>
   return (
     <span style={{
       display: 'inline-block',
@@ -176,7 +176,7 @@ function CandidateSelector({ candidates, selected, onChange, placeholder, usedId
                     {c.name}
                   </div>
                   <div style={{ fontSize: 11.5, color: TX3 }}>
-                    {c.assessments?.role_title || '—'}
+                    {c.assessments?.role_title || '-'}
                   </div>
                 </div>
                 {c.results?.[0]?.overall_score != null && (
@@ -274,7 +274,7 @@ function CandidateColumn({ candidate, allScores, skillOrder, assessmentId }) {
             {candidate.name}
           </div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
-            {candidate.assessments?.role_title || '—'}
+            {candidate.assessments?.role_title || '-'}
           </div>
         </div>
       </div>
@@ -292,7 +292,7 @@ function CandidateColumn({ candidate, allScores, skillOrder, assessmentId }) {
             lineHeight: 1,
             letterSpacing: '-2px',
           }}>
-            {score ?? '—'}
+            {score ?? '-'}
           </div>
           <div style={{ fontSize: 12, color: TX3, marginTop: 4 }}>
             {score !== null ? slabel(score) : 'No score'}
@@ -375,7 +375,7 @@ function CandidateColumn({ candidate, allScores, skillOrder, assessmentId }) {
                       <div key={key}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
                           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{short}</span>
-                          <span style={{ fontFamily: FM, fontSize: 11.5, fontWeight: 700, color: dc }}>{s ?? '—'}</span>
+                          <span style={{ fontFamily: FM, fontSize: 11.5, fontWeight: 700, color: dc }}>{s ?? '-'}</span>
                         </div>
                         <div style={{ height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                           {s != null && (
@@ -425,7 +425,7 @@ function CandidateColumn({ candidate, allScores, skillOrder, assessmentId }) {
                         </svg>
                       )}
                       <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: s !== null ? scoreColour(s) : TX3 }}>
-                        {s ?? '—'}
+                        {s ?? '-'}
                       </span>
                     </div>
                   </div>

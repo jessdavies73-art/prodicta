@@ -33,7 +33,7 @@ const RESULTS = {
   score_narratives: {
     Communication: 'Sarah\'s written communication is a clear strength. Her email response in Scenario 1 was professional, concise, and well-structured, with an appropriate tone for the stakeholder involved. She demonstrated an ability to simplify complex information without losing key detail.',
     'Problem Solving': 'Sarah showed solid analytical thinking, identifying root causes rather than surface symptoms in Scenarios 2 and 3. She is methodical but occasionally over-explains her reasoning, which can dilute the impact of her recommendations.',
-    Prioritisation: 'Her prioritisation approach is sound but slightly formulaic — she defaults to impact/effort analysis without always accounting for political or time-sensitive factors. In Scenario 2, she ranked correctly but for partially incomplete reasons.',
+    Prioritisation: 'Her prioritisation approach is sound but slightly formulaic. She defaults to impact/effort analysis without always accounting for political or time-sensitive factors. In Scenario 2, she ranked correctly but for partially incomplete reasons.',
     Leadership: 'Sarah demonstrates a collaborative leadership style with strong stakeholder management language. She mentions bringing others along and consulting team members before deciding, which is appropriate for this seniority level.',
   },
   pressure_fit_score: 74,
@@ -41,18 +41,18 @@ const RESULTS = {
     decision_speed_quality: { score: 78, verdict: 'Moderate', narrative: 'Sarah makes decisions within her responses but frequently adds qualifiers. In the conflict scenario, she proposed a clear path but then partially walked it back. She would benefit from more confident commitment in high-pressure moments.' },
     composure_under_conflict: { score: 72, verdict: 'Moderate', narrative: 'Her conflict response was measured and professional. She avoided escalation language and proposed a structured resolution. No emotional reactivity detected, though she sometimes over-explains to avoid confrontation.' },
     prioritisation_under_load: { score: 69, verdict: 'Moderate', narrative: 'When faced with competing demands in Scenario 2, Sarah produced a solid framework but took longer to arrive at a clear conclusion than expected. She was strong on rationale but weaker on speed of commitment.' },
-    ownership_accountability: { score: 80, verdict: 'Strength', narrative: 'Sarah consistently used first-person ownership language and made specific, actionable commitments. This is a notable strength — she does not deflect or attribute issues to external circumstances.' },
+    ownership_accountability: { score: 80, verdict: 'Strength', narrative: 'Sarah consistently used first-person ownership language and made specific, actionable commitments. This is a notable strength. She does not deflect or attribute issues to external circumstances.' },
   },
-  ai_summary: `Sarah Mitchell is a well-rounded marketing professional whose written responses demonstrate clear commercial thinking and strong interpersonal awareness. Across all four scenarios, she engaged thoughtfully with each situation, producing structured and professional responses that reflect her experience level.\n\nHer communication skills stand out — she writes clearly, adapts her tone to different audiences, and avoids jargon. Her stakeholder management approach is collaborative and considered, which suggests she would navigate the cross-functional nature of this role effectively.\n\nThe main area to probe is her decision confidence under ambiguity. In two of the four scenarios, she produced excellent analysis but was slower to commit to a clear recommendation than you would typically expect at Marketing Manager level. This is not a red flag — many strong performers hedge more in written exercises than they do in live situations — but it is worth exploring directly in interview.\n\nOverall, Sarah presents as a strong candidate for this role. Her profile suggests she would perform well through probation with a structured onboarding plan that gives her early visibility and clear ownership.`,
+  ai_summary: `Sarah Mitchell is a well-rounded marketing professional whose written responses demonstrate clear commercial thinking and strong interpersonal awareness. Across all four scenarios, she engaged thoughtfully with each situation, producing structured and professional responses that reflect her experience level.\n\nHer communication skills stand out. She writes clearly, adapts her tone to different audiences, and avoids jargon. Her stakeholder management approach is collaborative and considered, which suggests she would navigate the cross-functional nature of this role effectively.\n\nThe main area to probe is her decision confidence under ambiguity. In two of the four scenarios, she produced excellent analysis but was slower to commit to a clear recommendation than you would typically expect at Marketing Manager level. This is not a red flag. Many strong performers hedge more in written exercises than they do in live situations, but it is worth exploring directly in interview.\n\nOverall, Sarah presents as a strong candidate for this role. Her profile suggests she would perform well through probation with a structured onboarding plan that gives her early visibility and clear ownership.`,
   strengths: [
     {
       text: 'Compelling written communication',
-      evidence: '"I\'d recommend we shift focus to the mid-market segment for Q3, given the margin improvement we saw in March — this positions us ahead of the competitor announcement expected in July." Clear, specific, and commercially framed.',
+      evidence: '"I\'d recommend we shift focus to the mid-market segment for Q3, given the margin improvement we saw in March. This positions us ahead of the competitor announcement expected in July." Clear, specific, and commercially framed.',
       severity: 'High',
     },
     {
       text: 'Strong stakeholder awareness',
-      evidence: '"Before finalising this, I\'d want a quick alignment call with finance and the regional leads — they\'ll need to brief their teams before this goes public." Proactively identifies who needs to be included.',
+      evidence: '"Before finalising this, I\'d want a quick alignment call with finance and the regional leads. They\'ll need to brief their teams before this goes public." Proactively identifies who needs to be included.',
       severity: 'High',
     },
     {
@@ -64,7 +64,7 @@ const RESULTS = {
   watchouts: [
     {
       text: 'Decision confidence under ambiguity',
-      evidence: '"I\'d want to see the full dataset before committing to a direction here..." — said across two different scenarios, suggesting a pattern of deferring commitment when data is incomplete.',
+      evidence: '"I\'d want to see the full dataset before committing to a direction here..." Said across two different scenarios, suggesting a pattern of deferring commitment when data is incomplete.',
       severity: 'Medium',
       action: 'Ask directly in interview: "Tell me about a time you had to make a significant call with incomplete information. What did you decide and what happened?"',
     },
@@ -72,22 +72,22 @@ const RESULTS = {
       text: 'Limited evidence of direct team management',
       evidence: 'References "working with the team" and "coordinating with designers" but does not describe managing, directing, or developing direct reports in any response.',
       severity: 'Low',
-      action: 'Clarify the size and structure of teams she has managed previously — the role may require line management from day one.',
+      action: 'Clarify the size and structure of teams she has managed previously. The role may require line management from day one.',
     },
   ],
   onboarding_plan: [
-    'Weeks 1–2: Brand and product immersion — shadowing current campaigns, reviewing competitor landscape, and meeting key internal stakeholders.',
+    'Weeks 1 to 2: Brand and product immersion, shadowing current campaigns, reviewing competitor landscape, and meeting key internal stakeholders.',
     'Weeks 3–4: Audit of existing campaign performance against targets; identify quick wins for Q2 pipeline.',
-    'Month 2: Lead one mid-sized campaign end-to-end with senior oversight — this builds confidence and creates early visible impact.',
+    'Month 2: Lead one mid-sized campaign end-to-end with senior oversight. This builds confidence and creates early visible impact.',
     'Month 3: Full ownership of campaign calendar. Structured 30-day check-in with line manager to review priorities and flag any blockers.',
-    'Month 6 (probation review): Full assessment against KPIs set at onboarding — with particular focus on cross-functional relationship quality and decision-making independence.',
+    'Month 6 (probation review): Full assessment against KPIs set at onboarding, with particular focus on cross-functional relationship quality and decision-making independence.',
   ],
   interview_questions: [
     'Tell me about a time you had to launch a campaign with incomplete data. What did you decide and how did it land?',
     'How do you handle it when a key stakeholder pushes back hard on your creative direction?',
     'Describe a moment where you had to reprioritise a major project mid-flight. What triggered the change and what did you do?',
     'What does "good" look like for you personally in the first 90 days in this role?',
-    'Walk me through a campaign you\'re most proud of — what was the measurable impact and what would you do differently?',
+    'Walk me through a campaign you\'re most proud of. What was the measurable impact and what would you do differently?',
   ],
   timing: [
     { label: 'Scenario 1', time: '11m 24s', flag: 'Normal' },
@@ -634,7 +634,7 @@ export default function SampleReportPage() {
         <Card style={{ marginBottom: 32 }}>
           <SectionHeading>Tailored Interview Questions</SectionHeading>
           <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 18px' }}>
-            Generated from what this specific assessment surfaced — to help you probe the areas that matter most.
+            Generated from what this specific assessment surfaced, to help you probe the areas that matter most.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {RESULTS.interview_questions.map((q, i) => (
@@ -675,7 +675,7 @@ export default function SampleReportPage() {
             Assess your own candidates like this
           </h2>
           <p style={{ margin: '0 0 24px', fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, maxWidth: 440, marginLeft: 'auto', marginRight: 'auto' }}>
-            Paste a job description. Get four AI-generated scenarios. Receive a full evidence-backed report like this one — within minutes of your candidate finishing.
+            Paste a job description. Get four AI-generated scenarios. Receive a full evidence-backed report like this one, within minutes of your candidate finishing.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
             <button

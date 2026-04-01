@@ -245,7 +245,7 @@ export default function NewAssessmentPage() {
             </span>
             {totalWeight !== 100 && (
               <span style={{ fontSize: 12, color: '#dc2626' }}>
-                — must equal 100%
+                Must equal 100%
               </span>
             )}
           </div>

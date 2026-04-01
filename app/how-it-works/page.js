@@ -15,7 +15,7 @@ const STEPS = [
     n: '01',
     icon: 'file',
     title: 'You paste a job description',
-    body: 'Paste the JD for any role — no templates, no setup. Prodicta reads it and understands the context: the industry, seniority level, and the skills that actually matter for that specific position.',
+    body: 'Paste the JD for any role. No templates, no setup. Prodicta reads it and understands the context: the industry, seniority level, and the skills that actually matter for that specific position.',
     accent: TEALD,
     bg: TEALLT,
     bd: `${TEAL}55`,
@@ -24,7 +24,7 @@ const STEPS = [
     n: '02',
     icon: 'zap',
     title: 'AI generates 4 realistic work simulations',
-    body: 'Using your exact job description, the AI writes four scenario-based tasks — an email response, a prioritisation challenge, a judgment call, and a strategic problem. These are not generic questions; they reference the real context of your role.',
+    body: 'Using your exact job description, the AI writes four scenario-based tasks: an email response, a prioritisation challenge, a judgment call, and a strategic problem. These are not generic questions; they reference the real context of your role.',
     accent: PURPLE,
     bg: '#f5f3ff',
     bd: `${PURPLE}44`,
@@ -33,7 +33,7 @@ const STEPS = [
     n: '03',
     icon: 'play',
     title: 'Candidate completes the assessment',
-    body: 'Candidates receive a link and work through each scenario independently. Each scenario is timed. They write free-text responses — no multiple choice, no personality scales. Just real work, done in real time.',
+    body: 'Candidates receive a link and work through each scenario independently. Each scenario is timed. They write free-text responses. No multiple choice, no personality scales. Just real work, done in real time.',
     accent: AMB,
     bg: AMBBG,
     bd: '#fde68a',
@@ -42,7 +42,7 @@ const STEPS = [
     n: '04',
     icon: 'target',
     title: 'AI scores every response with evidence',
-    body: 'Each response is scored across Communication, Problem Solving, Prioritisation, Leadership, and the unique Pressure-Fit Assessment. Crucially, every score comes with a direct quote from what the candidate actually wrote — nothing is inferred.',
+    body: 'Each response is scored across Communication, Problem Solving, Prioritisation, Leadership, and the unique Pressure-Fit Assessment. Crucially, every score comes with a direct quote from what the candidate actually wrote. Nothing is inferred.',
     accent: TEALD,
     bg: TEALLT,
     bd: `${TEAL}55`,
@@ -69,12 +69,12 @@ const PRINCIPLES = [
   {
     icon: 'file',
     title: 'Generated from your job description',
-    body: 'Every scenario is created fresh from your specific JD. A Marketing Manager assessment and a Sales Manager assessment will look completely different — because the roles are completely different.',
+    body: 'Every scenario is created fresh from your specific JD. A Marketing Manager assessment and a Sales Manager assessment will look completely different, because the roles are completely different.',
   },
   {
     icon: 'shield',
     title: 'Scored across skills that predict success',
-    body: 'Responses are evaluated across Communication, Problem Solving, Prioritisation, Leadership, and the unique Pressure-Fit Assessment — four dimensions that measure how a candidate performs under real pressure.',
+    body: 'Responses are evaluated across Communication, Problem Solving, Prioritisation, Leadership, and the unique Pressure-Fit Assessment. Four dimensions that measure how a candidate performs under real pressure.',
   },
   {
     icon: 'search',
@@ -84,12 +84,12 @@ const PRINCIPLES = [
   {
     icon: 'check',
     title: 'No black box',
-    body: 'There are no hidden weights or opaque algorithms. If Prodicta flags a risk, it shows you why — in the candidate\'s own words. Every recommendation is fully explainable.',
+    body: 'There are no hidden weights or opaque algorithms. If Prodicta flags a risk, it shows you why, in the candidate\'s own words. Every recommendation is fully explainable.',
   },
   {
     icon: 'clock',
     title: 'Results in minutes, not days',
-    body: 'Candidates complete the assessment in 45–60 minutes. Within two minutes of their final submission, the full report is available — no waiting for a human scorer to review responses.',
+    body: 'Candidates complete the assessment in 45 to 60 minutes. Within two minutes of their final submission, the full report is available. No waiting for a human scorer to review responses.',
   },
 ]
 
@@ -149,7 +149,7 @@ export default function HowItWorksPage() {
             The five-step process
           </h2>
           <p style={{ margin: '0 0 28px', fontSize: 13.5, color: TX3, fontFamily: F }}>
-            From job description to hiring recommendation — here is what happens at every step.
+            From job description to hiring recommendation. Here is what happens at every step.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -253,7 +253,7 @@ export default function HowItWorksPage() {
             The Pressure-Fit Assessment
           </h2>
           <p style={{ margin: '0 0 24px', fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.65, maxWidth: 560 }}>
-            Most assessments test knowledge. Prodicta also measures how a candidate behaves under pressure — because that is what determines whether they pass probation. Pressure-Fit is scored across four dimensions:
+            Most assessments test knowledge. Prodicta also measures how a candidate behaves under pressure, because that is what determines whether they pass probation. Pressure-Fit is scored across four dimensions:
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
@@ -291,7 +291,7 @@ export default function HowItWorksPage() {
               { label: 'Contextual scoring', body: 'A response that is excellent for a junior role may be adequate for a senior one. Scoring is calibrated to the seniority and context specified in the job description.' },
               { label: 'Quote-backed evidence', body: 'Every strength and watch-out in the report includes a direct quote from the candidate\'s response. You are never asked to take the AI\'s word for it.' },
               { label: 'Weighted by skill importance', body: 'You can adjust skill weights before generating scenarios. If Communication matters more than Leadership for your role, the scoring reflects that.' },
-              { label: 'ERA 2025 ready', body: 'Reports include a risk level and reasoning that can support your hiring decision. Prodicta helps you document objective, evidence-based reasoning — reducing tribunal exposure under the Employment Rights Act 2025.' },
+              { label: 'ERA 2025 ready', body: 'Reports include a risk level and reasoning that can support your hiring decision. Prodicta helps you document objective, evidence-based reasoning, reducing tribunal exposure under the Employment Rights Act 2025.' },
             ].map(item => (
               <div key={item.label} style={{
                 display: 'flex', gap: 14, alignItems: 'flex-start',
@@ -323,7 +323,7 @@ export default function HowItWorksPage() {
               Want to see a real report?
             </div>
             <div style={{ fontSize: 13.5, color: TX2 }}>
-              View a full sample report for a fictional Marketing Manager candidate — every section, every score, every piece of evidence.
+              View a full sample report for a fictional Marketing Manager candidate. Every section, every score, every piece of evidence.
             </div>
           </div>
           <a
