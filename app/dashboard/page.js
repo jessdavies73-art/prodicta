@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
@@ -11,7 +11,27 @@ import {
   F, FM, scolor, sbg, slabel, dL, dC, riskCol, riskBg, riskBd, cs, ps, bs
 } from '@/lib/constants'
 
-// ── helpers ──────────────────────────────────────────────────────────────────
+// ── CountUp ───────────────────────────────────────────────────────────────────
+function CountUp({ target }) {
+  const [val, setVal] = useState(0)
+  const ref = useRef(null)
+  useEffect(() => {
+    if (typeof target !== 'number') return
+    let frame = 0
+    const total = 36
+    if (ref.current) clearInterval(ref.current)
+    ref.current = setInterval(() => {
+      frame++
+      const eased = 1 - Math.pow(1 - frame / total, 3)
+      setVal(Math.round(target * eased))
+      if (frame >= total) { clearInterval(ref.current); setVal(target) }
+    }, 14)
+    return () => clearInterval(ref.current)
+  }, [target])
+  return typeof target === 'number' ? val : target
+}
+
+// ── helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(dateStr) {
   if (!dateStr) return '-'
@@ -51,7 +71,7 @@ function StatCard({ icon, label, value, sub, accent = TEAL }) {
           fontSize: 34, fontWeight: 800, color: NAVY, fontFamily: FM,
           lineHeight: 1, letterSpacing: '-1px'
         }}>
-          {value}
+          {typeof value === 'number' ? <CountUp target={value} /> : value}
         </div>
         {sub && (
           <div style={{ fontSize: 12, color: TX3, marginTop: 6, fontFamily: F }}>{sub}</div>

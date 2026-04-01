@@ -14,7 +14,9 @@ const LIGHT_T = '#e0f2f0'
 const styles = {
   page: {
     minHeight: '100vh',
-    background: 'linear-gradient(160deg, #0a1929 0%, #0f2137 50%, #112240 100%)',
+    background: 'linear-gradient(-45deg, #0a1929, #0f2137, #0d2a43, #112240, #091624)',
+    backgroundSize: '400% 400%',
+    animation: 'gradientShift 14s ease infinite',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -27,6 +29,7 @@ const styles = {
   logoWrap: {
     marginBottom: '32px',
     textAlign: 'center',
+    animation: 'fadeInUp 0.35s ease-out',
   },
   logoMark: {
     display: 'inline-flex',
@@ -70,12 +73,15 @@ const styles = {
 
   // ── Card ──
   card: {
-    background: '#ffffff',
+    background: 'rgba(255,255,255,0.97)',
+    backdropFilter: 'blur(24px)',
+    WebkitBackdropFilter: 'blur(24px)',
     borderRadius: '16px',
     width: '100%',
     maxWidth: '420px',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)',
+    boxShadow: '0 24px 72px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.1)',
     overflow: 'hidden',
+    animation: 'fadeInUp 0.45s ease-out',
   },
 
   // ── Tabs ──

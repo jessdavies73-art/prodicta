@@ -282,19 +282,34 @@ function CandidateColumn({ candidate, allScores, skillOrder, assessmentId }) {
       {/* Body */}
       <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 18, flex: 1 }}>
 
-        {/* Overall score */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            fontFamily: FM,
-            fontSize: 52,
-            fontWeight: 800,
-            color: scoreColour(score),
-            lineHeight: 1,
-            letterSpacing: '-2px',
-          }}>
-            {score ?? '-'}
-          </div>
-          <div style={{ fontSize: 12, color: TX3, marginTop: 4 }}>
+        {/* Overall score ring */}
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          {score !== null ? (() => {
+            const sz = 96, sw = 8, r = (sz - sw) / 2
+            const circ = 2 * Math.PI * r
+            const dash = (score / 100) * circ
+            const col = scoreColour(score)
+            return (
+              <div style={{ position: 'relative', width: sz, height: sz }}>
+                <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)' }}>
+                  <circle cx={sz/2} cy={sz/2} r={r} fill="none" stroke={`${col}22`} strokeWidth={sw} />
+                  <circle cx={sz/2} cy={sz/2} r={r} fill="none" stroke={col} strokeWidth={sw}
+                    strokeDasharray={`${dash} ${circ - dash}`} strokeLinecap="round"
+                    style={{ transition: 'stroke-dasharray 0.6s ease' }} />
+                </svg>
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: col, lineHeight: 1 }}>{score}</span>
+                  <span style={{ fontSize: 10, color: TX3, marginTop: 1 }}>/100</span>
+                </div>
+              </div>
+            )
+          })() : (
+            <div style={{ fontFamily: FM, fontSize: 40, fontWeight: 800, color: TX3, lineHeight: 1 }}>—</div>
+          )}
+          <div style={{ fontSize: 12, color: TX3 }}>
             {score !== null ? slabel(score) : 'No score'}
           </div>
         </div>

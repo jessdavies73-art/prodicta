@@ -1,0 +1,88 @@
+/* ── Custom scrollbar ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d9e6;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b0bdd0;
+}
+
+/* ── Global animations ─────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0 }
+  100% { background-position: -200% 0 }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg) }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
+
+@keyframes gradientShift {
+  0%   { background-position: 0% 50% }
+  50%  { background-position: 100% 50% }
+  100% { background-position: 0% 50% }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 12px rgba(0,191,165,0.3) }
+  50%       { box-shadow: 0 0 24px rgba(0,191,165,0.55) }
+}
+
+@keyframes confettiFall {
+  0%   { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(260px) rotate(540deg); opacity: 0; }
+}
+
+@keyframes slideInToast {
+  from { transform: translateX(120%); opacity: 0 }
+  to   { transform: translateX(0);    opacity: 1 }
+}
+
+@keyframes slideOutToast {
+  from { transform: translateX(0);    opacity: 1 }
+  to   { transform: translateX(120%); opacity: 0 }
+}
+
+/* ── Button hover lift (not disabled) ─────────────────────────────────────── */
+button:not([disabled]):not([data-no-lift]) {
+  transition-property: transform, box-shadow, background, color, border-color, opacity;
+  transition-duration: 0.15s;
+  transition-timing-function: ease;
+}
+button:not([disabled]):not([data-no-lift]):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15,33,55,0.1);
+}
+button:not([disabled]):not([data-no-lift]):active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* ── Smooth focus outlines ─────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #00BFA5;
+  outline-offset: 2px;
+}
+
+/* ── Selection colour ──────────────────────────────────────────────────────── */
+::selection {
+  background: rgba(0,191,165,0.18);
+  color: inherit;
+}

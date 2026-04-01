@@ -1,4 +1,5 @@
 import { Outfit, IBM_Plex_Mono } from 'next/font/google'
+import './globals.css'
 
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' })
 const ibmPlexMono = IBM_Plex_Mono({

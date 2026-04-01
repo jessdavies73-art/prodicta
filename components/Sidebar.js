@@ -153,20 +153,23 @@ export default function Sidebar({ active, companyName }) {
                 gap: 11,
                 width: '100%',
                 padding: '10px 12px',
+                paddingLeft: isActive ? 9 : 12,
                 borderRadius: 8,
                 border: 'none',
+                borderLeft: isActive ? `3px solid ${TEAL}` : '3px solid transparent',
                 cursor: 'pointer',
                 fontFamily: F,
                 fontSize: 13.5,
                 fontWeight: isActive ? 700 : 500,
                 textAlign: 'left',
-                transition: 'background 0.15s, color 0.15s',
+                transition: 'background 0.15s, color 0.15s, border-color 0.15s',
                 background: isActive
-                  ? 'rgba(91,191,189,0.15)'
+                  ? 'rgba(0,191,165,0.12)'
                   : isHovered
                   ? 'rgba(255,255,255,0.06)'
                   : 'transparent',
                 color: isActive ? TEAL : isHovered ? '#fff' : 'rgba(255,255,255,0.6)',
+                boxShadow: isActive ? 'inset 0 0 16px rgba(0,191,165,0.08)' : 'none',
               }}
             >
               <Ic

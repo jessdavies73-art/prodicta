@@ -44,8 +44,21 @@ function Toast({ message, type = 'success', onDismiss }) {
       fontSize: 13,
       fontWeight: 600,
       fontFamily: F,
+      animation: 'fadeInUp 0.25s ease-out',
     }}>
-      <Ic name={isSuccess ? 'check' : 'alert'} size={14} color={isSuccess ? GRN : RED} />
+      {isSuccess ? (
+        <div style={{
+          width: 18, height: 18, borderRadius: '50%',
+          background: GRN, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+      ) : (
+        <Ic name="alert" size={14} color={RED} />
+      )}
       {message}
     </div>
   )
@@ -135,6 +148,7 @@ export default function SettingsPage() {
   const [industry, setIndustry] = useState('')
   const [companySize, setCompanySize] = useState('')
   const [savingCompany, setSavingCompany] = useState(false)
+  const [companySaved, setCompanySaved] = useState(false)
   const [companyToast, setCompanyToast] = useState(null)
   const [companyFocused, setCompanyFocused] = useState(false)
   const [industryFocused, setIndustryFocused] = useState(false)
@@ -187,6 +201,8 @@ export default function SettingsPage() {
         .eq('id', profile.id)
       if (updateErr) throw updateErr
       setProfile(prev => ({ ...prev, company_name: companyName, industry, company_size: companySize, account_type: accountType }))
+      setCompanySaved(true)
+      setTimeout(() => setCompanySaved(false), 2000)
       setCompanyToast({ type: 'success', message: 'Changes saved.' })
       setTimeout(() => setCompanyToast(null), 3500)
     } catch (err) {
@@ -420,10 +436,19 @@ export default function SettingsPage() {
                     ...bs('primary', 'md'),
                     opacity: savingCompany ? 0.65 : 1,
                     cursor: savingCompany ? 'wait' : 'pointer',
+                    background: companySaved
+                      ? 'linear-gradient(135deg, #10b981, #059669)'
+                      : undefined,
                   }}
                 >
-                  <Ic name="check" size={15} color={NAVY} />
-                  {savingCompany ? 'Saving…' : 'Save changes'}
+                  {companySaved ? (
+                    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    <Ic name="check" size={15} color={NAVY} />
+                  )}
+                  {savingCompany ? 'Saving…' : companySaved ? 'Saved!' : 'Save changes'}
                 </button>
                 {companyToast && <Toast message={companyToast.message} type={companyToast.type} />}
               </div>

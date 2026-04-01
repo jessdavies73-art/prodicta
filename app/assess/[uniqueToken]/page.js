@@ -220,7 +220,7 @@ function IntroPage({ candidate, assessment, companyName, onBegin }) {
                   width: 32,
                   height: 32,
                   borderRadius: '50%',
-                  background: NAVY,
+                  background: `linear-gradient(135deg, ${TEAL}, ${TEALD})`,
                   color: '#fff',
                   display: 'flex',
                   alignItems: 'center',
@@ -230,6 +230,7 @@ function IntroPage({ candidate, assessment, companyName, onBegin }) {
                   fontSize: 14,
                   flexShrink: 0,
                   marginTop: 2,
+                  boxShadow: `0 2px 8px rgba(0,191,165,0.3)`,
                 }}>
                   {i + 1}
                 </div>
@@ -717,34 +718,70 @@ function RatingPage({ candidateName, uniqueToken, onComplete }) {
   )
 }
 
+// ─── Confetti ─────────────────────────────────────────────────────────────────
+const CONFETTI_COLORS = ['#00BFA5','#4F46E5','#F59E0B','#10B981','#F43F5E','#3B82F6','#7C3AED']
+function Confetti() {
+  const pieces = Array.from({ length: 30 }, (_, i) => ({
+    id: i,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    left: `${(i * 3.33) % 100}%`,
+    delay: `${(i * 0.07).toFixed(2)}s`,
+    size: 6 + (i % 4) * 2,
+    duration: `${0.9 + (i % 5) * 0.15}s`,
+  }))
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+      {pieces.map(p => (
+        <div
+          key={p.id}
+          style={{
+            position: 'absolute',
+            top: -8,
+            left: p.left,
+            width: p.size,
+            height: p.size,
+            borderRadius: p.id % 3 === 0 ? '50%' : 2,
+            background: p.color,
+            animation: `confettiFall ${p.duration} ease-in ${p.delay} both`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 // ─── State: Complete ──────────────────────────────────────────────────────────
 function CompletePage({ candidateName }) {
   return (
     <>
       <NavBar candidateName={candidateName} />
       <CentredCard>
-        <Card style={{ textAlign: 'center', padding: '64px 36px' }}>
+        <Card style={{ textAlign: 'center', padding: '64px 36px', position: 'relative', overflow: 'hidden' }}>
+          <Confetti />
           <div style={{
-            width: 64,
-            height: 64,
+            width: 72,
+            height: 72,
             borderRadius: '50%',
-            background: TEALLT,
+            background: `linear-gradient(135deg, ${TEAL}, #009688)`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 24px',
-            fontSize: 32,
+            boxShadow: `0 8px 24px rgba(0,191,165,0.35)`,
+            animation: 'fadeInUp 0.4s ease-out',
           }}>
-            ✓
+            <svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
           </div>
-          <h2 style={{ fontFamily: F, color: TX, fontSize: 24, fontWeight: 800, margin: '0 0 12px' }}>
-            Thank You!
+          <h2 style={{ fontFamily: F, color: TX, fontSize: 26, fontWeight: 800, margin: '0 0 12px', animation: 'fadeInUp 0.45s ease-out' }}>
+            All done — thank you!
           </h2>
-          <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 8px' }}>
+          <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 8px', lineHeight: 1.6 }}>
             Your responses have been submitted successfully.
           </p>
-          <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 32px' }}>
-            The hiring team will be notified and will be in touch.
+          <p style={{ fontFamily: F, color: TX2, fontSize: 15, margin: '0 0 36px', lineHeight: 1.6 }}>
+            The hiring team will review your assessment and be in touch.
           </p>
           <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
             <ProdictaLogo textColor={NAVY} size={28} />
@@ -822,11 +859,29 @@ export default function AssessPage({ params }) {
   }
 
   if (uiState === 'loading') {
+    const shimmer = {
+      background: 'linear-gradient(90deg, #f0f4f8 25%, #e4eaf2 50%, #f0f4f8 75%)',
+      backgroundSize: '200% 100%',
+      animation: 'shimmer 1.4s ease infinite',
+      borderRadius: 8,
+    }
     return (
       <>
         <NavBar />
-        <div style={{ background: BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontFamily: F, color: TX3, fontSize: 15 }}>Loading assessment…</span>
+        <div style={{ background: BG, minHeight: '100vh', fontFamily: F }}>
+          <style>{`@keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }`}</style>
+          <div style={{ maxWidth: 780, margin: '0 auto', padding: '40px 20px' }}>
+            <div style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 16, padding: '32px 36px' }}>
+              <div style={{ ...shimmer, width: 120, height: 22, marginBottom: 20 }} />
+              <div style={{ ...shimmer, width: '75%', height: 14, marginBottom: 10 }} />
+              <div style={{ ...shimmer, width: '55%', height: 14, marginBottom: 28 }} />
+              <div style={{ ...shimmer, width: '100%', height: 120, borderRadius: 10, marginBottom: 20 }} />
+              <div style={{ ...shimmer, width: '100%', height: 80, borderRadius: 10, marginBottom: 24 }} />
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <div style={{ ...shimmer, width: 200, height: 52, borderRadius: 12 }} />
+              </div>
+            </div>
+          </div>
         </div>
       </>
     )
