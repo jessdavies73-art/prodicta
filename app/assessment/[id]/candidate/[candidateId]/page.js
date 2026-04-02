@@ -1157,6 +1157,247 @@ export default function CandidateReportPage({ params }) {
                 })()}
 
                 {/* ══════════════════════════════════════════════════
+                    CANDIDATE DOCUMENTS , agency only
+                ══════════════════════════════════════════════════ */}
+                {profile?.account_type === 'agency' && (
+                  <Card style={{ marginBottom: 20 }} className="no-print">
+                    <SectionHeading>
+                      <Ic name="paperclip" size={15} color={TEAL} />
+                      Candidate Documents
+                    </SectionHeading>
+                    <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 20px', lineHeight: 1.6 }}>
+                      Attach the candidate's CV and cover letter. Uploaded files are included when you use <strong>Send to Client</strong>.
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                      {['cv', 'cover_letter'].map(docType => {
+                        const doc = documents[docType]
+                        const label = docType === 'cv' ? 'CV / Résumé' : 'Cover Letter'
+                        const isUploading = uploadingDoc === docType
+                        const isDeleting  = deletingDoc  === docType
+                        return (
+                          <div key={docType} style={{
+                            border: `2px dashed ${doc ? TEAL : BD}`,
+                            borderRadius: 12, padding: '20px 20px', textAlign: 'center',
+                            background: doc ? TEALLT : BG, transition: 'all 0.15s',
+                          }}>
+                            <Ic name="file" size={28} color={doc ? TEAL : TX3} />
+                            <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '10px 0 4px' }}>{label}</div>
+                            {doc ? (
+                              <>
+                                <div style={{ fontFamily: F, fontSize: 12, color: TX2, marginBottom: 14 }}>
+                                  {doc.file_name}<br />
+                                  <span style={{ color: TX3 }}>{Math.round((doc.file_size || 0) / 1024)}KB</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                                  <a
+                                    href={`/api/documents/${doc.id}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 7, background: TEAL, color: NAVY, fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}
+                                  >
+                                    <Ic name="download" size={12} color={NAVY} /> View
+                                  </a>
+                                  <button
+                                    onClick={() => handleDocDelete(doc.id, docType)}
+                                    disabled={isDeleting}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 7, background: REDBG, color: RED, border: `1px solid ${REDBD}`, fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: isDeleting ? 'not-allowed' : 'pointer' }}
+                                  >
+                                    <Ic name="trash" size={12} color={RED} /> {isDeleting ? 'Removing…' : 'Remove'}
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 14 }}>PDF only, max 10MB</div>
+                                <label style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                                  padding: '8px 18px', borderRadius: 7,
+                                  background: isUploading ? BD : NAVY, color: isUploading ? TX3 : '#fff',
+                                  fontFamily: F, fontSize: 13, fontWeight: 700,
+                                  cursor: isUploading ? 'not-allowed' : 'pointer',
+                                }}>
+                                  <Ic name="upload" size={13} color={isUploading ? TX3 : TEAL} />
+                                  {isUploading ? 'Uploading…' : 'Upload PDF'}
+                                  <input
+                                    type="file"
+                                    accept=".pdf,application/pdf"
+                                    style={{ display: 'none' }}
+                                    disabled={isUploading}
+                                    onChange={e => {
+                                      const f = e.target.files?.[0]
+                                      if (f) handleDocUpload(docType, f)
+                                      e.target.value = ''
+                                    }}
+                                  />
+                                </label>
+                              </>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </Card>
+                )}
+
+                {/* ══════════════════════════════════════════════════
+                    ACCOUNTABILITY TRAIL , agency only
+                ══════════════════════════════════════════════════ */}
+                {profile?.account_type === 'agency' && (
+                  <Card style={{ marginBottom: 20 }} className="no-print">
+                    <SectionHeading tooltip="Create a timestamped accountability record of this assessment for client-facing documentation.">
+                      Document This Assessment
+                    </SectionHeading>
+                    {!accountRecord ? (
+                      <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
+                        <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 16px', lineHeight: 1.7 }}>
+                          Generate a timestamped accountability record containing key findings, watch-outs, and recommended interview questions. Store it for your records and share with clients.
+                        </p>
+                        <button
+                          onClick={generateAccountabilityRecord}
+                          disabled={savingRecord || !results}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 7,
+                            padding: '10px 22px', borderRadius: 9, border: 'none',
+                            background: results && !savingRecord ? TEAL : BD,
+                            color: results && !savingRecord ? NAVY : TX3,
+                            fontFamily: F, fontSize: 13.5, fontWeight: 700,
+                            cursor: results && !savingRecord ? 'pointer' : 'not-allowed',
+                          }}
+                        >
+                          <Ic name="file" size={15} color={results && !savingRecord ? NAVY : TX3} />
+                          {savingRecord ? 'Generating…' : 'Generate Accountability Record'}
+                        </button>
+                        {recordError && (
+                          <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: REDBG, border: `1px solid ${REDBD}`, fontFamily: F, fontSize: 13, color: RED, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Ic name="alert" size={14} color={RED} />
+                            {recordError}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        {/* Record header */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{
+                              width: 36, height: 36, borderRadius: 9,
+                              background: TEALLT, border: `1px solid ${TEAL}55`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              <Ic name="check" size={16} color={TEALD} />
+                            </div>
+                            <div>
+                              <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX }}>Record generated</div>
+                              <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>
+                                {new Date(accountRecord.generated_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                              onClick={handleAccountabilityPrint}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                padding: '8px 16px', borderRadius: 8,
+                                background: NAVY, border: 'none', cursor: 'pointer',
+                                fontFamily: F, fontSize: 12.5, fontWeight: 700, color: '#fff',
+                              }}
+                            >
+                              <Ic name="download" size={14} color={TEAL} />
+                              Download Record
+                            </button>
+                            <button
+                              onClick={generateAccountabilityRecord}
+                              disabled={savingRecord}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                padding: '8px 16px', borderRadius: 8,
+                                background: 'transparent', border: `1.5px solid ${BD}`,
+                                cursor: savingRecord ? 'not-allowed' : 'pointer',
+                                fontFamily: F, fontSize: 12.5, fontWeight: 600, color: TX2,
+                              }}
+                            >
+                              {savingRecord ? 'Regenerating…' : 'Regenerate'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Key findings */}
+                        {accountRecord.key_findings && (
+                          <div style={{ marginBottom: 16 }}>
+                            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Key Findings</div>
+                            <div style={{ background: BG, border: `1px solid ${BD}`, borderLeft: `3px solid ${TEAL}`, borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
+                              {accountRecord.key_findings.split('\n').filter(Boolean).map((line, i) => (
+                                <div key={i} style={{ fontFamily: FM, fontSize: 12.5, color: TX, lineHeight: 1.7 }}>{line}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Watch-outs */}
+                        {accountRecord.watch_outs && (
+                          <div style={{ marginBottom: 16 }}>
+                            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Watch-outs</div>
+                            <div style={{ background: REDBG, border: `1px solid ${REDBD}`, borderLeft: `3px solid ${RED}`, borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
+                              {accountRecord.watch_outs.split('\n').filter(Boolean).map((line, i) => (
+                                <div key={i} style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.7 }}>{line}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Recommended actions */}
+                        {accountRecord.recommended_actions && (
+                          <div style={{ marginBottom: 20 }}>
+                            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Recommended Interview Questions</div>
+                            <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderLeft: `3px solid ${AMB}`, borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
+                              {accountRecord.recommended_actions.split('\n').filter(Boolean).map((line, i) => (
+                                <div key={i} style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.7 }}>{line}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Shared with client date */}
+                        <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                          <label style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX2 }}>
+                            Date shared with client:
+                          </label>
+                          <input
+                            type="date"
+                            value={recordSharedDate}
+                            onChange={e => setRecordSharedDate(e.target.value)}
+                            style={{
+                              padding: '7px 12px', borderRadius: 7, border: `1px solid ${BD}`,
+                              fontFamily: FM, fontSize: 13, color: TX, outline: 'none',
+                              background: CARD,
+                            }}
+                            onFocus={e => e.target.style.borderColor = TEAL}
+                            onBlur={e => e.target.style.borderColor = BD}
+                          />
+                          <button
+                            onClick={saveSharedDate}
+                            disabled={savingSharedDate}
+                            style={{
+                              padding: '7px 16px', borderRadius: 7, border: 'none',
+                              background: TEAL, color: NAVY,
+                              fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                            }}
+                          >
+                            {savingSharedDate ? 'Saving…' : 'Save'}
+                          </button>
+                          {accountRecord.shared_with_client_at && (
+                            <span style={{ fontFamily: F, fontSize: 12.5, color: GRN, fontWeight: 600 }}>
+                              Shared {new Date(accountRecord.shared_with_client_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                )}
+
+                {/* ══════════════════════════════════════════════════
                     RESPONSE INTEGRITY , dark navy
                 ══════════════════════════════════════════════════ */}
                 <ScrollReveal id="integrity" delay={60}>
@@ -1935,246 +2176,6 @@ export default function CandidateReportPage({ params }) {
                   )}
                 </Card>
 
-                {/* ══════════════════════════════════════════════════
-                    CANDIDATE DOCUMENTS , agency only
-                ══════════════════════════════════════════════════ */}
-                {profile?.account_type === 'agency' && (
-                  <Card style={{ marginBottom: 20 }} className="no-print">
-                    <SectionHeading>
-                      <Ic name="paperclip" size={15} color={TEAL} />
-                      Candidate Documents
-                    </SectionHeading>
-                    <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 20px', lineHeight: 1.6 }}>
-                      Attach the candidate's CV and cover letter. Uploaded files are included when you use <strong>Send to Client</strong>.
-                    </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                      {['cv', 'cover_letter'].map(docType => {
-                        const doc = documents[docType]
-                        const label = docType === 'cv' ? 'CV / Résumé' : 'Cover Letter'
-                        const isUploading = uploadingDoc === docType
-                        const isDeleting  = deletingDoc  === docType
-                        return (
-                          <div key={docType} style={{
-                            border: `2px dashed ${doc ? TEAL : BD}`,
-                            borderRadius: 12, padding: '20px 20px', textAlign: 'center',
-                            background: doc ? TEALLT : BG, transition: 'all 0.15s',
-                          }}>
-                            <Ic name="file" size={28} color={doc ? TEAL : TX3} />
-                            <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '10px 0 4px' }}>{label}</div>
-                            {doc ? (
-                              <>
-                                <div style={{ fontFamily: F, fontSize: 12, color: TX2, marginBottom: 14 }}>
-                                  {doc.file_name}<br />
-                                  <span style={{ color: TX3 }}>{Math.round((doc.file_size || 0) / 1024)}KB</span>
-                                </div>
-                                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-                                  <a
-                                    href={`/api/documents/${doc.id}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 7, background: TEAL, color: NAVY, fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}
-                                  >
-                                    <Ic name="download" size={12} color={NAVY} /> View
-                                  </a>
-                                  <button
-                                    onClick={() => handleDocDelete(doc.id, docType)}
-                                    disabled={isDeleting}
-                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 7, background: REDBG, color: RED, border: `1px solid ${REDBD}`, fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: isDeleting ? 'not-allowed' : 'pointer' }}
-                                  >
-                                    <Ic name="trash" size={12} color={RED} /> {isDeleting ? 'Removing…' : 'Remove'}
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 14 }}>PDF only, max 10MB</div>
-                                <label style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                                  padding: '8px 18px', borderRadius: 7,
-                                  background: isUploading ? BD : NAVY, color: isUploading ? TX3 : '#fff',
-                                  fontFamily: F, fontSize: 13, fontWeight: 700,
-                                  cursor: isUploading ? 'not-allowed' : 'pointer',
-                                }}>
-                                  <Ic name="upload" size={13} color={isUploading ? TX3 : TEAL} />
-                                  {isUploading ? 'Uploading…' : 'Upload PDF'}
-                                  <input
-                                    type="file"
-                                    accept=".pdf,application/pdf"
-                                    style={{ display: 'none' }}
-                                    disabled={isUploading}
-                                    onChange={e => {
-                                      const f = e.target.files?.[0]
-                                      if (f) handleDocUpload(docType, f)
-                                      e.target.value = ''
-                                    }}
-                                  />
-                                </label>
-                              </>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </Card>
-                )}
-
-                {/* ══════════════════════════════════════════════════
-                    ACCOUNTABILITY TRAIL , agency only
-                ══════════════════════════════════════════════════ */}
-                {profile?.account_type === 'agency' && (
-                  <Card style={{ marginBottom: 40 }} className="no-print">
-                    <SectionHeading tooltip="Create a timestamped accountability record of this assessment for client-facing documentation.">
-                      Document This Assessment
-                    </SectionHeading>
-                    {!accountRecord ? (
-                      <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
-                        <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 16px', lineHeight: 1.7 }}>
-                          Generate a timestamped accountability record containing key findings, watch-outs, and recommended interview questions. Store it for your records and share with clients.
-                        </p>
-                        <button
-                          onClick={generateAccountabilityRecord}
-                          disabled={savingRecord || !results}
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 7,
-                            padding: '10px 22px', borderRadius: 9, border: 'none',
-                            background: results && !savingRecord ? TEAL : BD,
-                            color: results && !savingRecord ? NAVY : TX3,
-                            fontFamily: F, fontSize: 13.5, fontWeight: 700,
-                            cursor: results && !savingRecord ? 'pointer' : 'not-allowed',
-                          }}
-                        >
-                          <Ic name="file" size={15} color={results && !savingRecord ? NAVY : TX3} />
-                          {savingRecord ? 'Generating…' : 'Generate Accountability Record'}
-                        </button>
-                        {recordError && (
-                          <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: REDBG, border: `1px solid ${REDBD}`, fontFamily: F, fontSize: 13, color: RED, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Ic name="alert" size={14} color={RED} />
-                            {recordError}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div>
-                        {/* Record header */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{
-                              width: 36, height: 36, borderRadius: 9,
-                              background: TEALLT, border: `1px solid ${TEAL}55`,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            }}>
-                              <Ic name="check" size={16} color={TEALD} />
-                            </div>
-                            <div>
-                              <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX }}>Record generated</div>
-                              <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>
-                                {new Date(accountRecord.generated_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                              </div>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button
-                              onClick={handleAccountabilityPrint}
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 6,
-                                padding: '8px 16px', borderRadius: 8,
-                                background: NAVY, border: 'none', cursor: 'pointer',
-                                fontFamily: F, fontSize: 12.5, fontWeight: 700, color: '#fff',
-                              }}
-                            >
-                              <Ic name="download" size={14} color={TEAL} />
-                              Download Record
-                            </button>
-                            <button
-                              onClick={generateAccountabilityRecord}
-                              disabled={savingRecord}
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 6,
-                                padding: '8px 16px', borderRadius: 8,
-                                background: 'transparent', border: `1.5px solid ${BD}`,
-                                cursor: savingRecord ? 'not-allowed' : 'pointer',
-                                fontFamily: F, fontSize: 12.5, fontWeight: 600, color: TX2,
-                              }}
-                            >
-                              {savingRecord ? 'Regenerating…' : 'Regenerate'}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Key findings */}
-                        {accountRecord.key_findings && (
-                          <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Key Findings</div>
-                            <div style={{ background: BG, border: `1px solid ${BD}`, borderLeft: `3px solid ${TEAL}`, borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
-                              {accountRecord.key_findings.split('\n').filter(Boolean).map((line, i) => (
-                                <div key={i} style={{ fontFamily: FM, fontSize: 12.5, color: TX, lineHeight: 1.7 }}>{line}</div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Watch-outs */}
-                        {accountRecord.watch_outs && (
-                          <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Watch-outs</div>
-                            <div style={{ background: REDBG, border: `1px solid ${REDBD}`, borderLeft: `3px solid ${RED}`, borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
-                              {accountRecord.watch_outs.split('\n').filter(Boolean).map((line, i) => (
-                                <div key={i} style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.7 }}>{line}</div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Recommended actions */}
-                        {accountRecord.recommended_actions && (
-                          <div style={{ marginBottom: 20 }}>
-                            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Recommended Interview Questions</div>
-                            <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderLeft: `3px solid ${AMB}`, borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
-                              {accountRecord.recommended_actions.split('\n').filter(Boolean).map((line, i) => (
-                                <div key={i} style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.7 }}>{line}</div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Shared with client date */}
-                        <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                          <label style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX2 }}>
-                            Date shared with client:
-                          </label>
-                          <input
-                            type="date"
-                            value={recordSharedDate}
-                            onChange={e => setRecordSharedDate(e.target.value)}
-                            style={{
-                              padding: '7px 12px', borderRadius: 7, border: `1px solid ${BD}`,
-                              fontFamily: FM, fontSize: 13, color: TX, outline: 'none',
-                              background: CARD,
-                            }}
-                            onFocus={e => e.target.style.borderColor = TEAL}
-                            onBlur={e => e.target.style.borderColor = BD}
-                          />
-                          <button
-                            onClick={saveSharedDate}
-                            disabled={savingSharedDate}
-                            style={{
-                              padding: '7px 16px', borderRadius: 7, border: 'none',
-                              background: TEAL, color: NAVY,
-                              fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                            }}
-                          >
-                            {savingSharedDate ? 'Saving…' : 'Save'}
-                          </button>
-                          {accountRecord.shared_with_client_at && (
-                            <span style={{ fontFamily: F, fontSize: 12.5, color: GRN, fontWeight: 600 }}>
-                              Shared {new Date(accountRecord.shared_with_client_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </Card>
-                )}
 
               </>
             )}
