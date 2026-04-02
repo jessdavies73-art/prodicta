@@ -1,26 +1,30 @@
 'use client'
 
-// A-C: jade | D-F: indigo | G-I: purple | J-L: coral
-// M-O: rose | P-R: amber  | S-U: blue   | V-Z: emerald
-const CLASSES = ['avatar-jade','avatar-indigo','avatar-purple','avatar-coral','avatar-rose','avatar-amber','avatar-blue','avatar-emerald']
-
-function getClass(name) {
-  const first = (name || '').trim()[0]
-  if (!first) return CLASSES[0]
-  const code = first.toUpperCase().charCodeAt(0)
-  if (code < 65 || code > 90) return CLASSES[0]
-  return CLASSES[Math.min(Math.floor((code - 65) / 3), 7)]
+const GRADS = {
+  'A': ['#00BFA5','#009688'], 'B': ['#00BFA5','#009688'], 'C': ['#00BFA5','#009688'],
+  'D': ['#4F46E5','#3730A3'], 'E': ['#4F46E5','#3730A3'], 'F': ['#4F46E5','#3730A3'],
+  'G': ['#7C3AED','#6D28D9'], 'H': ['#7C3AED','#6D28D9'], 'I': ['#7C3AED','#6D28D9'],
+  'J': ['#F97316','#EA580C'], 'K': ['#F97316','#EA580C'], 'L': ['#F97316','#EA580C'],
+  'M': ['#F43F5E','#E11D48'], 'N': ['#F43F5E','#E11D48'], 'O': ['#F43F5E','#E11D48'],
+  'P': ['#F59E0B','#D97706'], 'Q': ['#F59E0B','#D97706'], 'R': ['#F59E0B','#D97706'],
+  'S': ['#3B82F6','#2563EB'], 'T': ['#3B82F6','#2563EB'], 'U': ['#3B82F6','#2563EB'],
+  'V': ['#10B981','#059669'], 'W': ['#10B981','#059669'], 'X': ['#10B981','#059669'],
+  'Y': ['#10B981','#059669'], 'Z': ['#10B981','#059669'],
 }
 
-function getInitials(name) {
-  return (name || '').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'
-}
+let counter = 0
 
 export default function Avatar({ name = '', size = 36 }) {
+  const first = (name || '').trim()[0]
+  const upper = (first || '?').toUpperCase()
+  const [from, to] = GRADS[upper] || ['#00BFA5','#009688']
+  const initials = (name || '').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'
+  const id = 'av-' + (counter++)
+
   return (
-    <div
-      className={getClass(name)}
-      style={{
+    <>
+      <style>{`#${id}{background:linear-gradient(135deg,${from},${to})}`}</style>
+      <div id={id} style={{
         width: size,
         height: size,
         borderRadius: '50%',
@@ -28,15 +32,12 @@ export default function Avatar({ name = '', size = 36 }) {
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
-        fontFamily: "'Outfit', system-ui, sans-serif",
         fontSize: Math.round(size * 0.38),
         fontWeight: 700,
         color: '#fff',
-        letterSpacing: '0.02em',
-        userSelect: 'none',
-      }}
-    >
-      {getInitials(name)}
-    </div>
+      }}>
+        {initials}
+      </div>
+    </>
   )
 }
