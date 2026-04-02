@@ -158,6 +158,12 @@ export default function SettingsPage() {
   const [accountType, setAccountType] = useState('employer')
   const [accountTypeFocused, setAccountTypeFocused] = useState(null)
 
+  // Weightings tab (employer only)
+  const DEFAULT_WEIGHTS = { Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 }
+  const [weights, setWeights] = useState(DEFAULT_WEIGHTS)
+  const [savingWeights, setSavingWeights] = useState(false)
+  const [weightsToast, setWeightsToast] = useState(null)
+
   // Password state
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -183,6 +189,7 @@ export default function SettingsPage() {
         setIndustry(prof?.industry || '')
         setCompanySize(prof?.company_size || '')
         setAccountType(prof?.account_type || 'employer')
+        if (prof?.default_weightings) setWeights({ ...DEFAULT_WEIGHTS, ...prof.default_weightings })
       } catch (err) {
         setError(err.message)
       } finally {
@@ -211,6 +218,22 @@ export default function SettingsPage() {
       setCompanyToast({ type: 'error', message: err.message })
     } finally {
       setSavingCompany(false)
+    }
+  }
+
+  async function handleSaveWeights() {
+    setSavingWeights(true)
+    setWeightsToast(null)
+    try {
+      const supabase = createClient()
+      const { error: e } = await supabase.from('users').update({ default_weightings: weights }).eq('id', profile.id)
+      if (e) throw e
+      setWeightsToast({ type: 'success', message: 'Default weightings saved.' })
+      setTimeout(() => setWeightsToast(null), 3500)
+    } catch (err) {
+      setWeightsToast({ type: 'error', message: err.message })
+    } finally {
+      setSavingWeights(false)
     }
   }
 
@@ -243,9 +266,10 @@ export default function SettingsPage() {
   if (loading) return <LoadingSpinner />
 
   const TABS = [
-    { key: 'company', label: 'Company' },
-    { key: 'billing', label: 'Billing' },
-    { key: 'team', label: 'Team' },
+    { key: 'company',    label: 'Company' },
+    { key: 'billing',    label: 'Billing' },
+    { key: 'team',       label: 'Team' },
+    ...(accountType === 'employer' ? [{ key: 'weightings', label: 'Score Weightings' }] : []),
   ]
 
   const INDUSTRIES = [
@@ -690,6 +714,117 @@ export default function SettingsPage() {
               </button>
               <p style={{ margin: '10px 0 0', fontSize: 12, color: TX3, fontFamily: F }}>
                 Team management coming soon
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Weightings tab — employer only */}
+        {activeTab === 'weightings' && accountType === 'employer' && (
+          <div style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ ...cs }}>
+              <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX }}>Default Score Weightings</h2>
+              <p style={{ margin: '0 0 24px', fontSize: 13, color: TX2, lineHeight: 1.6 }}>
+                Set how each skill is weighted in the overall candidate score. Weights must total 100%. These become the default for all new assessments — you can also adjust per-assessment when creating one.
+              </p>
+
+              {Object.entries(weights).map(([skill, val]) => {
+                const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0)
+                return (
+                  <div key={skill} style={{ marginBottom: 22 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <label style={{ fontFamily: F, fontSize: 14, fontWeight: 600, color: TX }}>{skill}</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <input
+                          type="number"
+                          min={0} max={100}
+                          value={val}
+                          onChange={e => {
+                            const n = Math.max(0, Math.min(100, Number(e.target.value)))
+                            setWeights(prev => ({ ...prev, [skill]: n }))
+                          }}
+                          style={{
+                            width: 60, padding: '5px 8px', borderRadius: 7,
+                            border: `1.5px solid ${BD}`, fontFamily: FM, fontSize: 14,
+                            color: TX, textAlign: 'right', outline: 'none',
+                          }}
+                          onFocus={e => e.target.style.borderColor = TEAL}
+                          onBlur={e => e.target.style.borderColor = BD}
+                        />
+                        <span style={{ fontFamily: FM, fontSize: 13, color: TX3, width: 16 }}>%</span>
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min={0} max={100}
+                      value={val}
+                      onChange={e => setWeights(prev => ({ ...prev, [skill]: Number(e.target.value) }))}
+                      style={{ width: '100%', accentColor: TEAL, cursor: 'pointer' }}
+                    />
+                  </div>
+                )
+              })}
+
+              {/* Total indicator */}
+              {(() => {
+                const total = Object.values(weights).reduce((a, b) => a + b, 0)
+                return (
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    padding: '10px 14px', borderRadius: 8, marginBottom: 20,
+                    background: total === 100 ? GRNBG : REDBG,
+                    border: `1px solid ${total === 100 ? GRNBD : REDBD}`,
+                  }}>
+                    <Ic name={total === 100 ? 'check' : 'alert'} size={14} color={total === 100 ? GRN : RED} />
+                    <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: total === 100 ? GRN : RED }}>
+                      Total: {total}%{total !== 100 ? ' — must equal 100%' : ''}
+                    </span>
+                  </div>
+                )
+              })()}
+
+              {/* Preview: how rankings change */}
+              <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
+                <div style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  What this means
+                </div>
+                {Object.entries(weights).sort((a, b) => b[1] - a[1]).map(([skill, w], i) => (
+                  <div key={skill} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <div style={{
+                      width: `${Math.max(4, w)}%`, height: 6, borderRadius: 99,
+                      background: i === 0 ? TEAL : i === 1 ? GRN : i === 2 ? AMB : '#cbd5e1',
+                      transition: 'width 0.3s ease', minWidth: 4,
+                    }} />
+                    <span style={{ fontFamily: F, fontSize: 12.5, color: TX2, whiteSpace: 'nowrap' }}>
+                      {skill} <span style={{ fontFamily: FM, fontWeight: 700, color: TX }}>{w}%</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <button
+                  onClick={handleSaveWeights}
+                  disabled={savingWeights || Object.values(weights).reduce((a, b) => a + b, 0) !== 100}
+                  style={{
+                    ...bs('primary', 'md'),
+                    opacity: savingWeights || Object.values(weights).reduce((a, b) => a + b, 0) !== 100 ? 0.55 : 1,
+                    cursor: savingWeights || Object.values(weights).reduce((a, b) => a + b, 0) !== 100 ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <Ic name="check" size={15} color={NAVY} />
+                  {savingWeights ? 'Saving…' : 'Save as default'}
+                </button>
+                <button
+                  onClick={() => setWeights(DEFAULT_WEIGHTS)}
+                  style={{ ...bs('outline', 'md'), fontFamily: F }}
+                >
+                  Reset to equal
+                </button>
+                {weightsToast && <Toast message={weightsToast.message} type={weightsToast.type} />}
+              </div>
+              <p style={{ margin: '12px 0 0', fontSize: 12, color: TX3, fontFamily: F, lineHeight: 1.6 }}>
+                These defaults apply to all new assessments. You can override them per-assessment on the New Assessment page.
               </p>
             </div>
           </div>

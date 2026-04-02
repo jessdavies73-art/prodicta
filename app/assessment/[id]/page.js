@@ -126,11 +126,38 @@ function ScenarioCard({ scenario, index }) {
   )
 }
 
+const TEAL = '#00BFA5'
+const TEALD = '#009688'
+const TEALLT = '#e0f2f0'
+const GRN = '#22C55E'
+const GRNBG = '#f0fdf4'
+const GRNBD = '#86efac'
+const AMB = '#F59E0B'
+const AMBBG = '#fffbeb'
+const AMBBD = '#fcd34d'
+const RED = '#EF4444'
+const REDBG = '#fef2f2'
+const REDBD = '#fca5a5'
+const BD = '#e4e9f0'
+const BG = '#f7f9fb'
+const CARD = '#fff'
+const TX = '#0f172a'
+const TX2 = '#5e6b7f'
+const TX3 = '#94a1b3'
+
+function parseBulkEmails(text) {
+  return text
+    .split(/[\n,;]+/)
+    .map(e => e.trim())
+    .filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+}
+
 export default function AssessmentPage({ params }) {
   const router = useRouter()
   const { id } = params
 
   const [companyName, setCompanyName] = useState('')
+  const [accountType, setAccountType] = useState(null)
   const [assessment, setAssessment] = useState(null)
   const [candidates, setCandidates] = useState([])
   const [loadingPage, setLoadingPage] = useState(true)
@@ -142,6 +169,15 @@ export default function AssessmentPage({ params }) {
   const [inviting, setInviting] = useState(false)
   const [inviteSuccess, setInviteSuccess] = useState(false)
   const [inviteError, setInviteError] = useState('')
+
+  // Bulk invite (agency)
+  const [bulkModal, setBulkModal] = useState(false)
+  const [bulkText, setBulkText] = useState('')
+
+  // Shortlist (agency)
+  const [shortlistThreshold, setShortlistThreshold] = useState(70)
+  const [shortlisted, setShortlisted] = useState(new Set())
+  const [shortlistMode, setShortlistMode] = useState(false)
 
   // Close assessment state
   const [closing, setClosing] = useState(false)
@@ -156,8 +192,9 @@ export default function AssessmentPage({ params }) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
-      const { data: profile } = await supabase.from('profiles').select('company_name').eq('id', user.id).single()
+      const { data: profile } = await supabase.from('users').select('company_name, account_type').eq('id', user.id).maybeSingle()
       if (profile?.company_name) setCompanyName(profile.company_name)
+      if (profile?.account_type) setAccountType(profile.account_type)
 
       const { data: assess } = await supabase
         .from('assessments')
@@ -252,6 +289,39 @@ export default function AssessmentPage({ params }) {
     }
   }
 
+  function handleBulkAdd() {
+    const emails = parseBulkEmails(bulkText)
+    const existing = new Set(candidates.map(c => c.email).concat(pendingInvites.map(p => p.email)))
+    const toAdd = emails.filter(e => !existing.has(e))
+    setPendingInvites(prev => [
+      ...prev,
+      ...toAdd.map(email => ({ name: email.split('@')[0], email })),
+    ])
+    setBulkText('')
+    setBulkModal(false)
+  }
+
+  function autoShortlist() {
+    const ids = candidates
+      .filter(c => {
+        const s = (Array.isArray(c.results) ? c.results[0] : c.results)?.overall_score
+        return s != null && s >= shortlistThreshold
+      })
+      .map(c => c.id)
+    setShortlisted(new Set(ids))
+    setShortlistMode(true)
+  }
+
+  function clearShortlist() {
+    setShortlisted(new Set())
+    setShortlistMode(false)
+  }
+
+  function goToCompareShortlisted() {
+    const ids = [...shortlisted].join(',')
+    router.push(`/compare?assessmentId=${id}&ids=${ids}`)
+  }
+
   if (loadingPage) {
     return (
       <div style={{ fontFamily: F, background: '#f7f9fb', minHeight: '100vh' }}>
@@ -300,6 +370,61 @@ export default function AssessmentPage({ params }) {
     <div style={{ fontFamily: F, background: '#f7f9fb', minHeight: '100vh' }}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <Sidebar companyName={companyName} />
+
+      {/* Bulk Invite Modal */}
+      {bulkModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,33,55,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={() => setBulkModal(false)}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: CARD, borderRadius: 16, padding: '28px 32px', maxWidth: 480, width: '100%', boxShadow: '0 16px 48px rgba(15,33,55,0.22)' }}>
+            <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 6px' }}>Bulk Invite</h3>
+            <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+              Paste email addresses (one per line, or comma-separated). Names will be taken from the email prefix.
+            </p>
+            <textarea
+              rows={8}
+              value={bulkText}
+              onChange={e => setBulkText(e.target.value)}
+              placeholder={"alice@company.com\nbob@agency.co.uk\ncarol@firm.com"}
+              style={{
+                width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8,
+                border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX,
+                resize: 'vertical', outline: 'none', background: BG, lineHeight: 1.7,
+                marginBottom: 10,
+              }}
+              onFocus={e => e.target.style.borderColor = TEAL}
+              onBlur={e => e.target.style.borderColor = BD}
+            />
+            {bulkText.trim() && (
+              <p style={{ fontFamily: F, fontSize: 12.5, color: TEALD, margin: '0 0 14px' }}>
+                {parseBulkEmails(bulkText).length} valid email{parseBulkEmails(bulkText).length !== 1 ? 's' : ''} detected
+              </p>
+            )}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={handleBulkAdd}
+                disabled={parseBulkEmails(bulkText).length === 0}
+                style={{
+                  flex: 1, padding: '11px 0', borderRadius: 9, border: 'none',
+                  background: parseBulkEmails(bulkText).length > 0 ? TEAL : BD,
+                  color: parseBulkEmails(bulkText).length > 0 ? '#0f172a' : TX3,
+                  fontFamily: F, fontSize: 14, fontWeight: 700,
+                  cursor: parseBulkEmails(bulkText).length > 0 ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Add {parseBulkEmails(bulkText).length > 0 ? `${parseBulkEmails(bulkText).length} ` : ''}to invite list
+              </button>
+              <button
+                onClick={() => setBulkModal(false)}
+                style={{ flex: 1, padding: '11px 0', borderRadius: 9, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete candidate confirmation modal */}
       {confirmDeleteCandidate && (
@@ -450,10 +575,28 @@ export default function AssessmentPage({ params }) {
           background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
           padding: '28px 32px', marginBottom: 28
         }}>
-          <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: '#0f172a', fontFamily: F }}>
-            Invite Candidates
-          </h2>
-
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f172a', fontFamily: F }}>
+              Invite Candidates
+            </h2>
+            {accountType === 'agency' && (
+              <button
+                onClick={() => setBulkModal(true)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 7,
+                  padding: '8px 18px', borderRadius: 8, border: `1px solid ${TEAL}`,
+                  background: TEALLT, color: TEALD,
+                  fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                Bulk Invite
+              </button>
+            )}
+          </div>
           {/* Add candidate form */}
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 16 }}>
             <div style={{ flex: '1 1 180px' }}>
@@ -590,19 +733,80 @@ export default function AssessmentPage({ params }) {
         {/* Candidates table */}
         {candidates.length > 0 && (
           <div style={{
-            background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
-            overflow: 'hidden'
+            background: '#fff', borderRadius: 14, border: `1px solid ${shortlistMode ? `${TEAL}55` : '#e4e9f0'}`,
+            overflow: 'hidden',
+            boxShadow: shortlistMode ? `0 0 0 2px ${TEALLT}` : 'none',
           }}>
-            <div style={{ padding: '20px 28px 16px', borderBottom: '1px solid #e4e9f0' }}>
-              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f172a', fontFamily: F }}>
-                Candidates
-                <span style={{
-                  marginLeft: 10, fontSize: 12, fontWeight: 600, padding: '2px 9px',
-                  borderRadius: 20, background: '#f1f5f9', color: '#5e6b7f'
-                }}>
+            <div style={{ padding: '18px 28px 14px', borderBottom: '1px solid #e4e9f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f172a', fontFamily: F }}>
+                  Candidates
+                </h2>
+                <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 9px', borderRadius: 20, background: '#f1f5f9', color: '#5e6b7f' }}>
                   {candidates.length}
                 </span>
-              </h2>
+                {shortlistMode && shortlisted.size > 0 && (
+                  <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 9px', borderRadius: 20, background: TEALLT, color: TEALD, border: `1px solid ${TEAL}55` }}>
+                    {shortlisted.size} shortlisted
+                  </span>
+                )}
+              </div>
+              {accountType === 'agency' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  {!shortlistMode ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <label style={{ fontFamily: F, fontSize: 12.5, fontWeight: 600, color: TX2 }}>Score threshold:</label>
+                      <input
+                        type="number"
+                        min={0} max={100}
+                        value={shortlistThreshold}
+                        onChange={e => setShortlistThreshold(Number(e.target.value))}
+                        style={{
+                          width: 56, padding: '5px 8px', borderRadius: 7, border: `1px solid ${BD}`,
+                          fontFamily: FM, fontSize: 13, color: TX, textAlign: 'center', outline: 'none',
+                        }}
+                      />
+                      <button
+                        onClick={autoShortlist}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          padding: '7px 16px', borderRadius: 8, border: `1px solid ${TEAL}`,
+                          background: TEALLT, color: TEALD,
+                          fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                        }}
+                      >
+                        Auto-Shortlist
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {shortlisted.size >= 2 && (
+                        <button
+                          onClick={goToCompareShortlisted}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '7px 16px', borderRadius: 8, border: 'none',
+                            background: TEAL, color: '#0f172a',
+                            fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                          }}
+                        >
+                          Compare shortlisted ({shortlisted.size})
+                        </button>
+                      )}
+                      <button
+                        onClick={clearShortlist}
+                        style={{
+                          padding: '7px 14px', borderRadius: 8, border: `1px solid ${BD}`,
+                          background: 'transparent', color: TX2,
+                          fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                        }}
+                      >
+                        Clear shortlist
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Table header */}
@@ -628,6 +832,8 @@ export default function AssessmentPage({ params }) {
               const statusStyle = statusBadge(candidate.status)
               const isCompleted = candidate.status === 'Completed'
               const isDeleting = deletingCandidateId === candidate.id
+              const isShortlisted = shortlisted.has(candidate.id)
+              const rowBg = isShortlisted ? `${TEALLT}80` : '#fff'
 
               return (
                 <div
@@ -638,13 +844,14 @@ export default function AssessmentPage({ params }) {
                     gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 44px',
                     padding: '14px 28px',
                     borderBottom: i < candidates.length - 1 ? '1px solid #e4e9f0' : 'none',
+                    borderLeft: isShortlisted ? `3px solid ${TEAL}` : '3px solid transparent',
                     alignItems: 'center',
                     cursor: isCompleted ? 'pointer' : 'default',
                     transition: 'background 0.12s',
-                    background: '#fff'
+                    background: rowBg,
                   }}
-                  onMouseEnter={e => { if (isCompleted) e.currentTarget.style.background = '#f7f9fb' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#fff' }}
+                  onMouseEnter={e => { if (isCompleted) e.currentTarget.style.background = isShortlisted ? TEALLT : '#f7f9fb' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = rowBg }}
                 >
                   {/* Name / Email */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -652,6 +859,14 @@ export default function AssessmentPage({ params }) {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                         <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{candidate.name}</div>
+                        {shortlisted.has(candidate.id) && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5,
+                            background: TEALLT, color: TEALD, border: `1px solid ${TEAL}55`,
+                          }}>
+                            Shortlisted
+                          </span>
+                        )}
                         {rankMap[candidate.id] <= 3 && (
                           <span style={{
                             fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 5,

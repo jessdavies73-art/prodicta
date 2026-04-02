@@ -482,6 +482,12 @@ export default function CandidateReportPage({ params }) {
   const [recordSharedDate, setRecordSharedDate] = useState('')
   const [savingSharedDate, setSavingSharedDate] = useState(false)
 
+  // Report section prefs (agency — Feature 6)
+  const DEFAULT_SECTIONS = { overall_score: true, pressure_fit: true, ai_summary: true, skills: true, strengths: true, watchouts: true, interview_questions: true }
+  const [reportSections, setReportSections] = useState(DEFAULT_SECTIONS)
+  const [reportSectionsModal, setReportSectionsModal] = useState(false)
+  const [savingReportPrefs, setSavingReportPrefs] = useState(false)
+
   useEffect(() => {
     async function load() {
       try {
@@ -495,7 +501,7 @@ export default function CandidateReportPage({ params }) {
           supabase.from('results').select('*').eq('candidate_id', params.candidateId).maybeSingle(),
           supabase.from('benchmarks').select('*').eq('user_id', u.id),
           supabase.from('responses').select('scenario_index, time_taken_seconds').eq('candidate_id', params.candidateId).order('scenario_index'),
-          supabase.from('users').select('company_name, account_type').eq('id', u.id).maybeSingle(),
+          supabase.from('users').select('company_name, account_type, report_sections').eq('id', u.id).maybeSingle(),
         ])
 
         if (cErr) throw cErr
@@ -504,6 +510,7 @@ export default function CandidateReportPage({ params }) {
         setBenchmarks(bm || [])
         setResponses(resps || [])
         setProfile(prof || null)
+        if (prof?.report_sections) setReportSections({ ...DEFAULT_SECTIONS, ...prof.report_sections })
 
         const { data: nts } = await supabase.from('candidate_notes').select('*').eq('candidate_id', params.candidateId).order('created_at', { ascending: false })
         setNotes(nts || [])
@@ -550,13 +557,26 @@ export default function CandidateReportPage({ params }) {
   benchmarks.forEach(b => { if (b.skill_name) bmMap[b.skill_name.toLowerCase()] = b.threshold })
 
   function handlePrint() { window.print() }
-  function handleClientExport() {
+  function doClientPrint() {
     document.body.classList.add('client-print')
     window.print()
     window.addEventListener('afterprint', function cleanup() {
       document.body.classList.remove('client-print')
       window.removeEventListener('afterprint', cleanup)
     })
+  }
+  function handleClientExport() {
+    if (profile?.account_type === 'agency') { setReportSectionsModal(true) } else { doClientPrint() }
+  }
+  async function saveReportPrefsAndExport() {
+    setSavingReportPrefs(true)
+    if (user) {
+      const supabase = createClient()
+      await supabase.from('users').update({ report_sections: reportSections }).eq('id', user.id)
+    }
+    setSavingReportPrefs(false)
+    setReportSectionsModal(false)
+    doClientPrint()
   }
 
   async function addNote() {
@@ -1824,6 +1844,61 @@ export default function CandidateReportPage({ params }) {
         )}
       </main>
 
+      {/* ── REPORT SECTIONS MODAL (agency only — Feature 6) ── */}
+      {reportSectionsModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,33,55,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={() => setReportSectionsModal(false)}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: CARD, borderRadius: 16, padding: '28px 32px', maxWidth: 440, width: '100%', boxShadow: '0 16px 48px rgba(15,33,55,0.22)' }}>
+            <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 6px' }}>Configure Client Report</h3>
+            <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 20px', lineHeight: 1.6 }}>
+              Choose which sections to include. Your preference is saved for next time.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+              {[
+                { key: 'overall_score',      label: 'Overall Score & Recommendation' },
+                { key: 'pressure_fit',       label: 'Pressure-Fit Assessment' },
+                { key: 'ai_summary',         label: 'AI Hiring Summary' },
+                { key: 'skills',             label: 'Skills Breakdown' },
+                { key: 'strengths',          label: 'Strengths' },
+                { key: 'watchouts',          label: 'Watch-outs' },
+                { key: 'interview_questions',label: 'Interview Questions' },
+              ].map(({ key, label }) => (
+                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 12px', borderRadius: 8, border: `1px solid ${reportSections[key] ? `${TEAL}55` : BD}`, background: reportSections[key] ? TEALLT : BG, transition: 'all 0.12s' }}>
+                  <input
+                    type="checkbox"
+                    checked={!!reportSections[key]}
+                    onChange={e => setReportSections(prev => ({ ...prev, [key]: e.target.checked }))}
+                    style={{ width: 15, height: 15, accentColor: TEAL, cursor: 'pointer' }}
+                  />
+                  <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: reportSections[key] ? TEALD : TX2 }}>{label}</span>
+                </label>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={saveReportPrefsAndExport}
+                disabled={savingReportPrefs}
+                style={{
+                  flex: 1, padding: '11px 0', borderRadius: 9, border: 'none',
+                  background: TEAL, color: NAVY,
+                  fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                {savingReportPrefs ? 'Saving…' : 'Export Report'}
+              </button>
+              <button
+                onClick={() => setReportSectionsModal(false)}
+                style={{ flex: 1, padding: '11px 0', borderRadius: 9, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── LOG OUTCOME MODAL (employer only) ── */}
       {outcomeModal && (
         <div
@@ -1923,6 +1998,7 @@ export default function CandidateReportPage({ params }) {
       {/* ── CLIENT REPORT ── */}
       {candidate && results && (
         <div className="client-report-container" style={{ fontFamily: F, color: TX, padding: '40px 48px', maxWidth: 800, margin: '0 auto' }}>
+          {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, paddingBottom: 20, borderBottom: `2px solid ${NAVY}` }}>
             <div>
               <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: NAVY, letterSpacing: '0.06em', marginBottom: 3 }}>PRODICTA</div>
@@ -1934,31 +2010,124 @@ export default function CandidateReportPage({ params }) {
               {completedDate && <div style={{ fontSize: 11.5, color: TX3, marginTop: 2 }}>{completedDate}</div>}
             </div>
           </div>
+
+          {/* Feature 5: Agency cover explainer */}
+          {profile?.account_type === 'agency' && (
+            <div style={{ marginBottom: 28, padding: '18px 20px', background: '#f8fafc', border: `1px solid ${TEAL}33`, borderLeft: `4px solid ${TEAL}`, borderRadius: '0 10px 10px 0' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>How to read this report</div>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px', lineHeight: 1.75 }}>
+                This report is generated by Prodicta, an AI-powered work simulation platform. Rather than relying on a CV, {candidate.name || 'this candidate'} completed a series of realistic work scenarios tailored to the <strong>{candidate.assessments?.role_title || 'role'}</strong>. Their responses were analysed across four key competencies: communication, problem solving, prioritisation, and leadership.
+              </p>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px', lineHeight: 1.75 }}>
+                <strong>Overall Score (0–100):</strong> A score of 75+ indicates a strong candidate. 65–74 is good with some development areas. Below 65 suggests gaps worth exploring in interview.
+              </p>
+              {results.pressure_fit_score != null && (
+                <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px', lineHeight: 1.75 }}>
+                  <strong>Pressure-Fit Score:</strong> Measures how the candidate performs under real workplace pressure — conflicting priorities, difficult conversations, and time constraints. This is often a stronger predictor of long-term performance than technical skills alone.
+                </p>
+              )}
+              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.75 }}>
+                Scores are calibrated against a strict benchmark — averages typically sit between 60–72. A score of 80+ places this candidate in the top tier. This data goes beyond what any CV or interview alone can reveal.
+              </p>
+            </div>
+          )}
+
           <div style={{ marginBottom: 28 }}>
             <h1 style={{ margin: '0 0 5px', fontSize: 28, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px' }}>{candidate.name || 'Candidate'}</h1>
             {candidate.assessments?.role_title && <div style={{ fontSize: 14, color: TX2, fontWeight: 600 }}>{candidate.assessments.role_title}</div>}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
-            <div style={{ background: sbg(score), border: `1px solid ${sbd(score)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center' }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Overall Score</div>
-              <div style={{ fontFamily: FM, fontSize: 38, fontWeight: 800, color: sc(score), lineHeight: 1 }}>{score}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: sc(score), marginTop: 5 }}>{slbl(score)}</div>
+
+          {/* Feature 6: Conditional sections */}
+          {reportSections.overall_score && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
+              <div style={{ background: sbg(score), border: `1px solid ${sbd(score)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center' }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Overall Score</div>
+                <div style={{ fontFamily: FM, fontSize: 38, fontWeight: 800, color: sc(score), lineHeight: 1 }}>{score}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: sc(score), marginTop: 5 }}>{slbl(score)}</div>
+              </div>
+              <div style={{ background: riskBg(results.risk_level), border: `1px solid ${riskBd(results.risk_level)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Risk Level</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: riskCol(results.risk_level) }}>{results.risk_level || '—'}</div>
+              </div>
+              <div style={{ background: dBg(score), border: `1px solid ${dBd(score)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Recommendation</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: dC(score), lineHeight: 1.2 }}>{dL(score)}</div>
+              </div>
             </div>
-            <div style={{ background: riskBg(results.risk_level), border: `1px solid ${riskBd(results.risk_level)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Risk Level</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: riskCol(results.risk_level) }}>{results.risk_level || '—'}</div>
+          )}
+          {reportSections.pressure_fit && results.pressure_fit_score != null && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 8, marginBottom: 14 }}>Pressure-Fit</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: pfColor(results.pressure_fit_score), lineHeight: 1 }}>{results.pressure_fit_score}</div>
+                <div style={{ fontFamily: F, fontSize: 13.5, color: TX2, lineHeight: 1.7 }}>
+                  <strong>{pfLbl(results.pressure_fit_score)}</strong> — measures how this candidate handles workplace pressure, conflict, and competing priorities.
+                </div>
+              </div>
             </div>
-            <div style={{ background: dBg(score), border: `1px solid ${dBd(score)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Recommendation</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: dC(score), lineHeight: 1.2 }}>{dL(score)}</div>
-            </div>
-          </div>
-          {results.ai_summary && (
+          )}
+          {reportSections.ai_summary && results.ai_summary && (
             <div style={{ marginBottom: 28 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 8, marginBottom: 14 }}>Summary</div>
               {results.ai_summary.split('\n\n').filter(Boolean).map((para, i) => (
                 <p key={i} style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 12px', lineHeight: 1.75 }}>{para}</p>
               ))}
+            </div>
+          )}
+          {reportSections.skills && results.scores && Object.keys(results.scores).length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 8, marginBottom: 14 }}>Skills</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
+                {Object.entries(results.scores).map(([skill, s]) => (
+                  <div key={skill} style={{ padding: '10px 14px', borderRadius: 8, border: `1px solid ${BD}`, display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: sc(s), minWidth: 36 }}>{s}</div>
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX }}>{skill}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {reportSections.strengths && results.strengths?.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${GRN}`, paddingBottom: 8, marginBottom: 14 }}>Strengths</div>
+              {results.strengths.map((s, i) => {
+                const t = typeof s === 'object' ? (s.text || s.title || '') : s
+                const ev = typeof s === 'object' ? (s.evidence || s.quote || '') : ''
+                return (
+                  <div key={i} style={{ marginBottom: 10, padding: '10px 14px', background: GRNBG, borderRadius: 8, borderLeft: `3px solid ${GRN}` }}>
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, marginBottom: ev ? 4 : 0 }}>{t}</div>
+                    {ev && <div style={{ fontFamily: F, fontSize: 12, color: TX2, fontStyle: 'italic' }}>"{ev}"</div>}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+          {reportSections.watchouts && results.watchouts?.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${RED}`, paddingBottom: 8, marginBottom: 14 }}>Watch-outs</div>
+              {results.watchouts.map((w, i) => {
+                const t = typeof w === 'object' ? (w.text || w.title || '') : w
+                const sev = typeof w === 'object' ? w.severity : ''
+                return (
+                  <div key={i} style={{ marginBottom: 8, padding: '10px 14px', background: sev === 'High' ? REDBG : sev === 'Medium' ? AMBBG : BG, borderRadius: 8, borderLeft: `3px solid ${sev === 'High' ? RED : sev === 'Medium' ? AMB : BD}` }}>
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX }}>{sev && `[${sev}] `}{t}</div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+          {reportSections.interview_questions && results.interview_questions?.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${AMB}`, paddingBottom: 8, marginBottom: 14 }}>Suggested Interview Questions</div>
+              {results.interview_questions.slice(0, 4).map((q, i) => {
+                const text = typeof q === 'object' ? (q.question || q.text || '') : q
+                return (
+                  <div key={i} style={{ marginBottom: 8, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <div style={{ fontFamily: FM, fontSize: 12, fontWeight: 800, color: TEALD, minWidth: 20 }}>{i + 1}.</div>
+                    <div style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.65 }}>{text}</div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
