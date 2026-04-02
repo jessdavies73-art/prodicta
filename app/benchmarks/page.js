@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
+import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
@@ -229,15 +230,7 @@ function SkillRow({ skill, threshold, onChange, candidateData, router }) {
                           gap: 12,
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                            <div style={{
-                              width: 28, height: 28, borderRadius: '50%',
-                              background: REDBG, border: `1px solid ${REDBD}`,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              flexShrink: 0,
-                              fontSize: 11, fontWeight: 800, color: RED, fontFamily: FM,
-                            }}>
-                              {c.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                            </div>
+                            <Avatar name={c.name} size={28} />
                             <div style={{ minWidth: 0 }}>
                               <div style={{
                                 fontSize: 13.5, fontWeight: 600, color: TX,
@@ -298,15 +291,7 @@ function SkillRow({ skill, threshold, onChange, candidateData, router }) {
                         gap: 12,
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                          <div style={{
-                            width: 28, height: 28, borderRadius: '50%',
-                            background: GRNBG, border: `1px solid ${GRNBD}`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            flexShrink: 0,
-                            fontSize: 11, fontWeight: 800, color: GRN, fontFamily: FM,
-                          }}>
-                            {c.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                          </div>
+                          <Avatar name={c.name} size={28} />
                           <div style={{
                             fontSize: 13.5, fontWeight: 600, color: TX,
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
