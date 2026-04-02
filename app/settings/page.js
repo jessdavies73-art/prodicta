@@ -171,6 +171,7 @@ export default function SettingsPage() {
   const [cpwFocused, setCpwFocused] = useState(false)
 
   const [error, setError] = useState(null)
+  const [monthlyCount, setMonthlyCount] = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -187,6 +188,15 @@ export default function SettingsPage() {
         setIndustry(prof?.industry || '')
         setCompanySize(prof?.company_size || '')
         setWeights({ ...DEFAULT_WEIGHTS, ...(prof?.default_weightings || {}) })
+
+        // Monthly assessment count for billing tab
+        const now = new Date()
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+        const { count } = await supabase.from('assessments')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('created_at', startOfMonth)
+        setMonthlyCount(count || 0)
       } catch (err) {
         setError(err.message)
       } finally {
@@ -279,14 +289,26 @@ export default function SettingsPage() {
     '201,1000 employees', '1000+ employees',
   ]
 
-  const STARTER_FEATURES = [
-    'Unlimited assessments',
-    'AI scenario generation',
-    'AI candidate scoring',
-    'Email invitations',
-    'Candidate comparison',
-    'Benchmarking',
-  ]
+  const PLAN_META = {
+    starter:  { name: 'Starter',          price: '£49',  limit: 10,   period: 'month', color: TEAL,    desc: 'Perfect for small teams getting started with AI assessment.' },
+    growth:   { name: 'Growth',           price: '£99',  limit: 30,   period: 'month', color: '#7C3AED', desc: 'For growing teams with higher hiring volumes.' },
+    scale:    { name: 'Scale',            price: '£120', limit: null,  period: 'month', color: GRN,     desc: 'Unlimited assessments for high-volume hiring.' },
+    founding: { name: 'Founding Member',  price: '£79',  limit: null,  period: 'month', color: TEAL,    desc: 'Founder pricing locked in. Unlimited everything.' },
+  }
+  const PLAN_FEATURES = {
+    starter:  ['10 assessments per month', 'AI scenario assessment', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs & interview questions'],
+    growth:   ['30 assessments per month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking', 'Onboarding plans'],
+    scale:    ['Unlimited assessments', 'Everything in Growth', 'Archive & outcomes tracking', 'Agency features', 'Priority support'],
+    founding: ['Unlimited assessments', 'Everything in Scale', 'Founding member rate locked in', 'Direct feedback line', 'Feature co-creation'],
+  }
+  const planKey    = (profile?.plan || 'starter').toLowerCase()
+  const planMeta   = PLAN_META[planKey] || PLAN_META.starter
+  const planFeats  = PLAN_FEATURES[planKey] || PLAN_FEATURES.starter
+  const planLimit  = planMeta.limit
+  const isUnlimited = planLimit === null
+  const usagePct   = isUnlimited ? 0 : Math.min(100, Math.round((monthlyCount / planLimit) * 100))
+  const atLimit    = !isUnlimited && monthlyCount >= planLimit
+  const monthLabel = new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 
   const emailInitial = userEmail ? userEmail[0].toUpperCase() : '?'
 
@@ -511,88 +533,177 @@ export default function SettingsPage() {
 
         {/* Billing tab */}
         {activeTab === 'billing' && (
-          <div style={{ maxWidth: 520 }}>
-            <div style={{ ...cs }}>
-              <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: TX }}>
-                Your plan
-              </h2>
+          <div style={{ maxWidth: 560 }}>
 
-              {/* Plan card */}
+            {/* ── Current plan card ── */}
+            <div style={{ ...cs, marginBottom: 16 }}>
+              <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: TX }}>Current plan</h2>
               <div style={{
-                background: NAVY,
-                borderRadius: 12,
-                padding: '22px 24px',
-                marginBottom: 20,
+                background: NAVY, borderRadius: 12, padding: '24px 26px', marginBottom: 20,
               }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 18 }}>
                   <div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
-                      Founding Member
+                    <div style={{ fontFamily: F, fontSize: 19, fontWeight: 800, color: '#fff', marginBottom: 6, letterSpacing: '-0.2px' }}>
+                      {planMeta.name}
                     </div>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: TEAL, lineHeight: 1 }}>
-                      £79<span style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.55)' }}>/month</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                      <span style={{ fontFamily: F, fontSize: 30, fontWeight: 800, color: planMeta.color, lineHeight: 1, letterSpacing: '-0.5px' }}>{planMeta.price}</span>
+                      <span style={{ fontFamily: F, fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.45)' }}>/{planMeta.period}</span>
                     </div>
-                    <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>
-                      Unlimited. No seat limits, no usage caps.
+                    <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.45)', marginTop: 5 }}>
+                      {planMeta.desc}
                     </div>
                   </div>
                   <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    padding: '4px 12px',
-                    borderRadius: 50,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    background: `${TEAL}25`,
-                    color: TEAL,
-                    border: `1px solid ${TEAL}55`,
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '5px 13px', borderRadius: 50, fontSize: 11, fontWeight: 700,
+                    background: `${TEAL}22`, color: TEAL, border: `1px solid ${TEAL}44`,
                     flexShrink: 0,
                   }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: TEAL, display: 'inline-block' }} />
                     Active
                   </span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {STARTER_FEATURES.map(f => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  {planFeats.map(f => (
                     <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                      <Ic name="check" size={14} color={TEAL} />
-                      <span style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.75)', fontFamily: F }}>{f}</span>
+                      <Ic name="check" size={13} color={planMeta.color} />
+                      <span style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.75)' }}>{f}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Billing details */}
+              {/* ── Usage counter ── */}
               <div style={{
-                background: BG,
-                border: `1px solid ${BD}`,
-                borderRadius: 10,
-                padding: '16px 18px',
-                marginBottom: 20,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
+                background: BG, border: `1px solid ${atLimit ? '#fecaca' : BD}`,
+                borderRadius: 10, padding: '16px 18px', marginBottom: 6,
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 13, color: TX2, fontFamily: F }}>Next billing date</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: TX, fontFamily: F }}>1 May 2025</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isUnlimited ? 0 : 10 }}>
+                  <div>
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX, marginBottom: 2 }}>
+                      Assessments used — {monthLabel}
+                    </div>
+                    <div style={{ fontFamily: F, fontSize: 12, color: TX3 }}>
+                      {isUnlimited
+                        ? `${monthlyCount} created this month · Unlimited`
+                        : `${monthlyCount} of ${planLimit} used`
+                      }
+                    </div>
+                  </div>
+                  <div style={{
+                    fontFamily: F, fontSize: 22, fontWeight: 800, letterSpacing: '-0.5px',
+                    color: atLimit ? RED : isUnlimited ? GRN : TX,
+                  }}>
+                    {isUnlimited ? '∞' : `${monthlyCount}/${planLimit}`}
+                  </div>
                 </div>
-                <div style={{ height: 1, background: BD }} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 13, color: TX2, fontFamily: F }}>Payment method</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: TX3, fontFamily: F }}>•••• •••• •••• 4242</span>
-                </div>
+                {!isUnlimited && (
+                  <div>
+                    <div style={{ height: 6, background: '#e5e7eb', borderRadius: 50, overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', borderRadius: 50, transition: 'width 0.4s ease',
+                        width: `${usagePct}%`,
+                        background: atLimit
+                          ? RED
+                          : usagePct >= 80
+                          ? AMB
+                          : `linear-gradient(90deg, ${TEAL}, ${TEALD})`,
+                      }} />
+                    </div>
+                    {atLimit && (
+                      <div style={{ fontFamily: F, fontSize: 12, color: RED, fontWeight: 600, marginTop: 6 }}>
+                        Limit reached. Upgrade to create more assessments this month.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-
-              <button
-                disabled
-                style={{ ...bs('primary', 'md'), opacity: 0.5, cursor: 'default' }}
-              >
-                Manage billing
-              </button>
-              <p style={{ margin: '10px 0 0', fontSize: 12, color: TX3, fontFamily: F }}>
-                Billing management coming soon
-              </p>
             </div>
+
+            {/* ── Subscription status ── */}
+            <div style={{ ...cs, marginBottom: 16 }}>
+              <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: TX }}>Subscription</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0, background: BG, border: `1px solid ${BD}`, borderRadius: 10, overflow: 'hidden' }}>
+                {[
+                  { label: 'Status', value: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600, color: GRN }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: GRN, display: 'inline-block' }} />Active</span> },
+                  { label: 'Plan', value: <span style={{ fontWeight: 600, color: TX }}>{planMeta.name} · {planMeta.price}/mo</span> },
+                  { label: 'Billing', value: <span style={{ color: TX2 }}>Monthly</span> },
+                  { label: 'Payment method', value: <span style={{ color: TX3, fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5 }}>Managed by Prodicta</span> },
+                ].map(({ label, value }, i, arr) => (
+                  <div key={label} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '12px 16px', fontFamily: F, fontSize: 13.5,
+                    borderBottom: i < arr.length - 1 ? `1px solid ${BD}` : 'none',
+                  }}>
+                    <span style={{ color: TX2 }}>{label}</span>
+                    {value}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Upgrade / manage ── */}
+            {!isUnlimited ? (
+              <div style={{ ...cs }}>
+                <h2 style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: TX }}>Upgrade your plan</h2>
+                <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 20px', lineHeight: 1.6 }}>
+                  Get more assessments and unlock premium features.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                  {[
+                    { plan: 'Growth', price: '£99/mo', limit: '30 assessments/mo', current: planKey === 'growth' },
+                    { plan: 'Scale', price: '£120/mo', limit: 'Unlimited', current: false },
+                    { plan: 'Founding', price: '£79/mo', limit: 'Unlimited · Limited time', current: false },
+                  ].filter(p => !p.current).map(p => (
+                    <div key={p.plan} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '14px 16px', borderRadius: 10, border: `1.5px solid ${BD}`,
+                      background: '#fff',
+                    }}>
+                      <div>
+                        <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{p.plan}</div>
+                        <div style={{ fontFamily: F, fontSize: 12.5, color: TX3 }}>{p.limit}</div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY }}>{p.price}</span>
+                        <a
+                          href={`mailto:hello@prodicta.co.uk?subject=Upgrade to ${p.plan}`}
+                          style={{
+                            fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY,
+                            background: TEAL, textDecoration: 'none',
+                            padding: '7px 16px', borderRadius: 7,
+                          }}
+                        >
+                          Upgrade
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: 0 }}>
+                  To upgrade, email <a href="mailto:hello@prodicta.co.uk" style={{ color: TEALD }}>hello@prodicta.co.uk</a> and we'll update your plan within 24 hours.
+                </p>
+              </div>
+            ) : (
+              <div style={{ ...cs }}>
+                <h2 style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: TX }}>Manage billing</h2>
+                <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 16px', lineHeight: 1.6 }}>
+                  To make changes to your subscription or billing details, contact us directly.
+                </p>
+                <a
+                  href="mailto:hello@prodicta.co.uk?subject=Billing enquiry"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 7,
+                    fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY,
+                    background: TEAL, textDecoration: 'none',
+                    padding: '10px 20px', borderRadius: 9,
+                  }}
+                >
+                  Contact us →
+                </a>
+              </div>
+            )}
           </div>
         )}
 
