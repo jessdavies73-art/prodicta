@@ -12,19 +12,16 @@ const GRADS = {
   'Y': ['#10B981','#059669'], 'Z': ['#10B981','#059669'],
 }
 
-let counter = 0
-
 export default function Avatar({ name = '', size = 36 }) {
   const first = (name || '').trim()[0]
   const upper = (first || '?').toUpperCase()
   const [from, to] = GRADS[upper] || ['#00BFA5','#009688']
   const initials = (name || '').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'
-  const id = 'av-' + (counter++)
 
   return (
-    <>
-      <style>{`#${id}{background:linear-gradient(135deg,${from},${to})}`}</style>
-      <div id={id} style={{
+    <div
+      ref={el => { if (el) el.style.background = 'linear-gradient(135deg, ' + from + ', ' + to + ')' }}
+      style={{
         width: size,
         height: size,
         borderRadius: '50%',
@@ -35,9 +32,9 @@ export default function Avatar({ name = '', size = 36 }) {
         fontSize: Math.round(size * 0.38),
         fontWeight: 700,
         color: '#fff',
-      }}>
-        {initials}
-      </div>
-    </>
+      }}
+    >
+      {initials}
+    </div>
   )
 }
