@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ic } from './Icons'
 import ProdictaLogo from './ProdictaLogo'
@@ -43,16 +44,19 @@ export function DemoBanner() {
 
 // ── Demo Sidebar ──────────────────────────────────────────────────────────────
 const NAV = [
-  { key: 'dashboard',    label: 'Dashboard',     icon: 'grid',     href: '/demo' },
-  { key: 'compare',      label: 'Compare',        icon: 'sliders',  href: '/demo/compare' },
-  { key: 'benchmarks',   label: 'Benchmarks',     icon: 'layers',   href: '/demo/benchmarks' },
-  { key: 'archive',      label: 'Archive',        icon: 'archive',  href: '/demo/archive' },
-  { key: 'how-it-works', label: 'How It Works',   icon: 'info',     href: '/how-it-works' },
-  { key: 'settings',     label: 'Settings',       icon: 'settings', href: '/demo/settings' },
+  { key: 'dashboard',    label: 'Dashboard',      icon: 'grid',     href: '/demo' },
+  { key: 'assessment',   label: 'New assessment',  icon: 'plus',     restricted: true },
+  { key: 'compare',      label: 'Compare',         icon: 'sliders',  href: '/demo/compare' },
+  { key: 'benchmarks',   label: 'Benchmarks',      icon: 'layers',   href: '/demo/benchmarks' },
+  { key: 'archive',      label: 'Archive',         icon: 'archive',  href: '/demo/archive' },
+  { key: 'how-it-works', label: 'How It Works',    icon: 'info',     href: '/how-it-works' },
+  { key: 'settings',     label: 'Settings',        icon: 'settings', href: '/demo/settings' },
+  { key: 'outcomes',     label: 'Outcomes',         icon: 'target',   restricted: true },
 ]
 
 export function DemoSidebar({ active }) {
   const router = useRouter()
+  const [signupModal, setSignupModal] = useState(false)
   return (
     <aside style={{
       width: 220, minHeight: '100vh', background: NAVY,
@@ -65,8 +69,30 @@ export function DemoSidebar({ active }) {
       </div>
 
       <nav style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV.map(({ key, label, icon, href }) => {
+        {NAV.map(({ key, label, icon, href, restricted }) => {
           const isActive = active === key
+          if (restricted) {
+            return (
+              <button
+                key={key}
+                onClick={() => setSignupModal(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 11,
+                  width: '100%', padding: '10px 12px',
+                  borderRadius: 8, border: 'none', borderLeft: '3px solid transparent',
+                  cursor: 'pointer', fontFamily: F, fontSize: 13.5, fontWeight: 500,
+                  textAlign: 'left', background: 'transparent',
+                  color: 'rgba(255,255,255,0.3)', transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+              >
+                <Ic name={icon} size={17} color="rgba(255,255,255,0.18)" />
+                {label}
+                <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>sign up</span>
+              </button>
+            )
+          }
           return (
             <button
               key={key}
@@ -92,16 +118,21 @@ export function DemoSidebar({ active }) {
             </button>
           )
         })}
-
-        {/* New assessment , restricted */}
-        <div style={{ margin: '8px 0 0', padding: '10px 12px', borderRadius: 8, borderLeft: '3px solid transparent', display: 'flex', alignItems: 'center', gap: 11, color: 'rgba(255,255,255,0.3)', fontSize: 13.5, fontWeight: 500, cursor: 'default', userSelect: 'none' }}>
-          <Ic name="plus" size={17} color="rgba(255,255,255,0.18)" />
-          New assessment
-          <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>sign up</span>
-        </div>
       </nav>
 
       <div style={{ padding: '14px 12px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {/* Notifications bell , restricted */}
+        <button
+          onClick={() => setSignupModal(true)}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 500, textAlign: 'left', background: 'transparent', color: 'rgba(255,255,255,0.3)', transition: 'background 0.15s' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+        >
+          <Ic name="bell" size={16} color="rgba(255,255,255,0.2)" />
+          Notifications
+          <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>sign up</span>
+        </button>
+
         <div style={{ padding: '8px 12px', borderRadius: 8, background: `${TEAL}18`, border: `1px solid ${TEAL}30`, display: 'flex', alignItems: 'center', gap: 9 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${TEAL}, #009688)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: NAVY, flexShrink: 0 }}>D</div>
           <span style={{ fontSize: 12.5, fontWeight: 700, color: TEAL }}>Demo Account</span>
@@ -114,6 +145,8 @@ export function DemoSidebar({ active }) {
           Sign up
         </button>
       </div>
+
+      {signupModal && <SignUpModal onClose={() => setSignupModal(false)} />}
     </aside>
   )
 }
