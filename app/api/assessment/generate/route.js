@@ -42,6 +42,25 @@ Use these facts to make every scenario feel specific and grounded. Do not write 
 
 ---
 
+TWO JOB DESCRIPTIONS WITH THE SAME ROLE TITLE MUST PRODUCE DIFFERENT SCENARIOS.
+
+A 'Sales Executive' at a car dealership is completely different from a 'Sales Executive' at a SaaS company. The JD tells you everything. Read it carefully.
+
+Base your scenarios on:
+- The SPECIFIC duties listed in THIS job description, not generic duties for the role title
+- The SPECIFIC skills and requirements mentioned
+- The SPECIFIC industry, company size, and market
+- The SPECIFIC challenges implied by the JD (e.g. if it mentions 'fast-paced environment' create a scenario with genuine time pressure specific to their work)
+- The SPECIFIC tools, systems, or processes mentioned
+
+If the JD mentions 'Salesforce CRM', put Salesforce in the scenario. If it mentions '£500k annual target', use that number. If it mentions 'managing a team of 5', include team management. If it mentions 'cold calling', create a cold calling scenario.
+
+The scenarios should feel like they were written by someone who works at that company, not by someone who googled the job title.
+
+Do NOT default to generic scenarios just because the role title sounds familiar. READ THE JD.
+
+---
+
 STEP 2 , WRITE 4 SCENARIOS
 
 Each scenario must:
