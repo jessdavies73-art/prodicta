@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import ProdictaLogo from '@/components/ProdictaLogo'
 
 const NAVY    = '#0f2137'
 const NAVY2   = '#0d1e30'
@@ -83,19 +84,8 @@ function Nav() {
       padding: '0 48px', height: 68,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     }}>
-      <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none' }}>
-        <div style={{
-          width: 34, height: 34, borderRadius: 9,
-          background: `linear-gradient(135deg, ${TEAL} 0%, ${TEALD} 100%)`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: `0 0 14px ${TEAL}55`,
-        }}>
-          <svg width={16} height={16} viewBox="0 0 20 20" fill="none">
-            <circle cx={10} cy={10} r={8} stroke="#fff" strokeWidth={2}/>
-            <path d="M6 10h8M13 7l3 3-3 3" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-        <span style={{ fontFamily: F, fontSize: 19, fontWeight: 800, color: '#fff', letterSpacing: '-0.4px' }}>PRODICTA</span>
+      <a href="/" style={{ textDecoration: 'none' }}>
+        <ProdictaLogo size={36} textColor="#ffffff" />
       </a>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         <a href="#how-it-works" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, transition: 'color 0.15s' }}
@@ -179,23 +169,8 @@ export default function LandingPage() {
         </div>
 
         {/* Logo mark */}
-        <div style={{ marginBottom: 28, position: 'relative', zIndex: 1 }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 14,
-            filter: `drop-shadow(0 0 24px ${TEAL}44)`,
-          }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: 14,
-              background: `linear-gradient(135deg, ${TEAL}, ${TEALD})`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <svg width={26} height={26} viewBox="0 0 24 24" fill="none">
-                <circle cx={12} cy={12} r={9} stroke="#fff" strokeWidth={2}/>
-                <path d="M8 12h8M14 8.5l3.5 3.5-3.5 3.5" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <span style={{ fontFamily: F, fontSize: 36, fontWeight: 900, color: '#fff', letterSpacing: '-1px' }}>PRODICTA</span>
-          </div>
+        <div style={{ marginBottom: 28, position: 'relative', zIndex: 1, filter: `drop-shadow(0 0 24px ${TEAL}44)` }}>
+          <ProdictaLogo size={56} textColor="#ffffff" />
         </div>
 
         {/* Headline */}
@@ -863,14 +838,8 @@ export default function LandingPage() {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 32, marginBottom: 40 }}>
             {/* Brand */}
             <div style={{ maxWidth: 280 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, background: `linear-gradient(135deg, ${TEAL}, ${TEALD})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-                    <circle cx={12} cy={12} r={8} stroke="#fff" strokeWidth={2.2}/>
-                    <path d="M8 12h8M14 8.5l3.5 3.5-3.5 3.5" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                <span style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>PRODICTA</span>
+              <div style={{ marginBottom: 14 }}>
+                <ProdictaLogo size={32} textColor="#ffffff" />
               </div>
               <p style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.35)', lineHeight: 1.7 }}>
                 AI-powered candidate assessment that predicts probation outcomes before you hire.
