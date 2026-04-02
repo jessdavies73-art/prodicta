@@ -23,12 +23,20 @@ export function DemoBanner() {
           You're viewing a demo. Sign up to assess your own candidates.
         </span>
       </div>
-      <button
-        onClick={() => router.push('/login')}
-        style={{ background: TEAL, color: NAVY, border: 'none', borderRadius: 7, padding: '8px 18px', fontFamily: F, fontSize: 13, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
-      >
-        Sign up free →
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <button
+          onClick={() => router.push('/login')}
+          style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 7, padding: '7px 14px', fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+        >
+          Exit Demo
+        </button>
+        <button
+          onClick={() => router.push('/login')}
+          style={{ background: TEAL, color: NAVY, border: 'none', borderRadius: 7, padding: '8px 18px', fontFamily: F, fontSize: 13, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}
+        >
+          Sign Up Free →
+        </button>
+      </div>
     </div>
   )
 }

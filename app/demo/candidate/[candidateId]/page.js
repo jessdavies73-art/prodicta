@@ -178,6 +178,46 @@ function SmallRing({ score, size = 60, strokeWidth = 5 }) {
   )
 }
 
+function PFRing({ score, size = 110 }) {
+  const [display, setDisplay] = useState(0)
+  const [drawn, setDrawn] = useState(false)
+  const strokeWidth = 9
+  const r = (size - strokeWidth * 2) / 2
+  const circ = 2 * Math.PI * r
+  const color = score >= 75 ? GRN : score >= 50 ? AMB : RED
+  const offset = circ * (1 - display / 100)
+  useEffect(() => {
+    const target = score || 0
+    const duration = 1300
+    const fps = 60
+    const steps = duration / (1000 / fps)
+    let step = 0
+    setDrawn(true)
+    const t = setInterval(() => {
+      step++
+      const eased = 1 - Math.pow(1 - Math.min(step / steps, 1), 3)
+      setDisplay(Math.round(target * eased))
+      if (step >= steps) clearInterval(t)
+    }, 1000 / fps)
+    return () => clearInterval(t)
+  }, [score])
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0, filter: `drop-shadow(0 0 ${Math.round(size * 0.07)}px ${color}55)` }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={`${color}18`} strokeWidth={strokeWidth} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
+          strokeDasharray={circ} strokeDashoffset={drawn ? offset : circ}
+          style={{ transition: 'stroke-dashoffset 0.016s linear' }}
+        />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontFamily: FM, fontSize: size * 0.26, fontWeight: 800, color, lineHeight: 1, letterSpacing: '-1px' }}>{display}</span>
+        <span style={{ fontFamily: F, fontSize: size * 0.09, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>/100</span>
+      </div>
+    </div>
+  )
+}
+
 function AnimBar({ pct, color, height = 6, delay = 0 }) {
   const [w, setW] = useState(0)
   useEffect(() => { const t = setTimeout(() => setW(pct), 120 + delay); return () => clearTimeout(t) }, [pct, delay])
@@ -570,53 +610,55 @@ export default function DemoCandidatePage({ params }) {
             {/* ── PRESSURE-FIT ── */}
             {pf != null && (
               <ScrollReveal id="pressure-fit" delay={60}>
-                <div style={{ marginBottom: 20, background: `linear-gradient(135deg, #0a1929 0%, #0f2137 60%, #0d2b45 100%)`, border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 12, overflow: 'hidden', boxShadow: SHADOW_LG }}>
-                  <div style={{ padding: '22px 28px 18px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+                <div style={{ marginBottom: 20, background: 'linear-gradient(135deg, #0a1929 0%, #0f2137 60%, #0d2b45 100%)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, overflow: 'hidden', boxShadow: SHADOW_LG }}>
+                  {/* Header */}
+                  <div style={{ padding: '28px 32px 26px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: 8, background: `${TEAL}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Ic name="sliders" size={14} color={TEAL} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: `${TEAL}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Ic name="sliders" size={15} color={TEAL} />
                         </div>
-                        <div>
-                          <h2 style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.2 }}>Pressure-Fit Assessment</h2>
-                          <div style={{ height: 3, width: 40, borderRadius: 99, background: TEAL, marginTop: 5 }} />
-                        </div>
+                        <span style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Pressure-Fit Assessment</span>
                         <InfoTooltip text="How this candidate handles pressure, conflict, and competing priorities" light />
                       </div>
-                      <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.45)', margin: 0, paddingLeft: 36 }}>How this candidate performs when it matters most.</p>
+                      <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 12px', lineHeight: 1.25 }}>How this candidate performs<br />when it matters most</h2>
+                      <div style={{ height: 3, width: 48, borderRadius: 99, background: TEAL }} />
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
-                      <div style={{ fontFamily: FM, fontSize: 42, fontWeight: 800, color: pfColor(pf), lineHeight: 1, letterSpacing: '-2px' }}>{pf}</div>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: pfColor(pf) }}>{pfLbl(pf)}</div>
-                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>/ 100</div>
+                    {pf != null && (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        <PFRing score={pf} size={110} />
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: pf >= 75 ? GRN : pf >= 50 ? AMB : RED, textAlign: 'center', fontFamily: F }}>{pfLbl(pf)}</div>
                       </div>
-                    </div>
+                    )}
                   </div>
-
-                  <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {/* 2×2 grid */}
+                  <div style={{ padding: '24px 28px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                     {DIMENSIONS.map(({ key, label, icon, desc }, idx) => {
                       const dim = dims[key] ?? {}
                       const s = dim.score ?? null
                       const v = dim.verdict ?? null
                       const n = dim.narrative ?? null
                       const vs = vStyle(v)
-                      const barColor = s == null ? TX3 : s >= 80 ? GRN : s >= 55 ? TEAL : RED
+                      const barColor = v === 'Strength' ? GRN : v === 'Concern' ? RED : AMB
                       return (
-                        <div key={key} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '16px 18px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-                            <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, background: `${TEAL}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Ic name={icon} size={15} color={TEAL} />
+                        <div key={key} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '20px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 9, flexShrink: 0, background: `${TEAL}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Ic name={icon} size={16} color={TEAL} />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{label}</div>
-                              <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.38)', marginTop: 2 }}>{desc}</div>
+                              <div style={{ fontSize: 14.5, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: 4 }}>{label}</div>
+                              <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.38)', lineHeight: 1.4 }}>{desc}</div>
                             </div>
-                            {v && <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 12px', borderRadius: 50, fontSize: 11.5, fontWeight: 700, background: vs.bg, color: vs.color, border: `1px solid ${vs.bd}`, flexShrink: 0 }}>{v}</span>}
-                            {s != null && <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: barColor, flexShrink: 0, minWidth: 36, textAlign: 'right' }}>{s}</span>}
+                            {s != null && <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: barColor, flexShrink: 0, lineHeight: 1 }}>{s}</div>}
                           </div>
-                          {s != null && <div style={{ marginBottom: n ? 12 : 0 }}><AnimBar pct={s} color={barColor} height={5} delay={idx * 80} /></div>}
-                          {n && <p style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: 0, lineHeight: 1.7, borderLeft: `3px solid ${barColor}55`, paddingLeft: 12 }}>{n}</p>}
+                          {v && <div><span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 12px', borderRadius: 50, fontSize: 11.5, fontWeight: 700, background: vs.bg, color: vs.color, border: `1px solid ${vs.bd}` }}>{v}</span></div>}
+                          {s != null && <AnimBar pct={s} color={barColor} height={6} delay={idx * 80} />}
+                          <div style={{ borderLeft: `3px solid ${n ? barColor : 'rgba(255,255,255,0.15)'}`, paddingLeft: 14 }}>
+                            <p style={{ fontFamily: F, fontSize: 13, lineHeight: 1.75, margin: 0, color: n ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.25)', fontStyle: n ? 'normal' : 'italic' }}>
+                              {n || 'Detailed narrative available for newly scored assessments.'}
+                            </p>
+                          </div>
                         </div>
                       )
                     })}
@@ -734,22 +776,83 @@ export default function DemoCandidatePage({ params }) {
               <ScrollReveal id="onboarding" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
                   <SectionHeading>Personalised Onboarding Plan</SectionHeading>
-                  <div style={{ paddingLeft: 4 }}>
+                  <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
+                    Tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {results.onboarding_plan.map((item, i) => {
-                      const text = typeof item === 'object' ? (item.text || item.title || JSON.stringify(item)) : item
-                      const match = text.match(/^(Week\s*\d+):/i)
-                      const weekNum = match ? match[1].replace(/\s+/g, ' ') : null
-                      const body = weekNum ? text.slice(match[0].length).trim() : text
-                      const isLast = i === results.onboarding_plan.length - 1
-                      return (
-                        <div key={i} style={{ display: 'flex', gap: 0 }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 44, flexShrink: 0 }}>
-                            <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, background: TEAL, boxShadow: `0 0 0 4px ${TEALLT}, 0 0 0 5px ${TEAL}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 12, fontWeight: 800, color: '#fff', zIndex: 1 }}>{i + 1}</div>
-                            {!isLast && <div style={{ width: 2, flex: 1, background: `${TEAL}25`, minHeight: 32, marginTop: 2 }} />}
+                      const isStructured = typeof item === 'object' && item !== null && item.objective
+                      if (!isStructured) {
+                        const text = typeof item === 'object' ? (item.text || item.title || '') : (item || '')
+                        const match = text.match(/^(Week\s*\d+):/i)
+                        const weekLabel = match ? match[1] : `Week ${i + 1}`
+                        const body = match ? text.slice(match[0].length).trim() : text
+                        return (
+                          <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                            <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: TEAL, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 13, fontWeight: 800, color: NAVY }}>{i + 1}</div>
+                            <div style={{ flex: 1, paddingTop: 8 }}>
+                              <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{weekLabel}</div>
+                              <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.7 }}>{body}</p>
+                            </div>
                           </div>
-                          <div style={{ paddingBottom: isLast ? 0 : 28, paddingLeft: 16, flex: 1, paddingTop: 6 }}>
-                            {weekNum && <span style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 }}>{weekNum}</span>}
-                            <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.7 }}>{body}</p>
+                        )
+                      }
+                      return (
+                        <div key={i} style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 4px rgba(15,33,55,0.05)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderBottom: `1px solid ${BD}`, background: '#f8fafc' }}>
+                            <div style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, background: TEAL, boxShadow: `0 0 0 4px ${TEALLT}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 14, fontWeight: 800, color: NAVY }}>{item.week}</div>
+                            <div>
+                              <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Week {item.week}</div>
+                              <div style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, lineHeight: 1.2 }}>{item.title}</div>
+                            </div>
+                          </div>
+                          <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            {item.objective && (
+                              <div>
+                                <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Objective</div>
+                                <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX, margin: 0, lineHeight: 1.65 }}>{item.objective}</p>
+                              </div>
+                            )}
+                            {item.activities?.length > 0 && (
+                              <div>
+                                <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Activities</div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                  {item.activities.map((act, ai) => (
+                                    <div key={ai} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                      <div style={{ width: 20, height: 20, borderRadius: '50%', flexShrink: 0, marginTop: 1, background: TEALLT, border: `1.5px solid ${TEAL}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 10, fontWeight: 800, color: TEALD }}>{ai + 1}</div>
+                                      <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.65 }}>{act}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {item.checkpoint && (
+                              <div style={{ background: TEALLT, border: `1px solid ${TEAL}40`, borderRadius: 8, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                <Ic name="check" size={14} color={TEALD} />
+                                <div>
+                                  <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Checkpoint</div>
+                                  <p style={{ fontFamily: F, fontSize: 13, color: TEALD, fontWeight: 600, margin: 0, lineHeight: 1.6 }}>{item.checkpoint}</p>
+                                </div>
+                              </div>
+                            )}
+                            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                              {item.involves?.length > 0 && (
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Who's Involved</div>
+                                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                    {item.involves.map((role, ri) => (
+                                      <span key={ri} style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 50, fontFamily: F, fontSize: 11.5, fontWeight: 600, background: '#f1f5f9', color: TX2, border: `1px solid ${BD}`, whiteSpace: 'nowrap' }}>{role}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {item.notes && (
+                                <div style={{ flexShrink: 0, maxWidth: 340 }}>
+                                  <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>UK Best Practice</div>
+                                  <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: 0, lineHeight: 1.55, fontStyle: 'italic' }}>{item.notes}</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )
