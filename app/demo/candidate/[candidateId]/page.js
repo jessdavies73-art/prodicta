@@ -431,7 +431,7 @@ export default function DemoCandidatePage({ params }) {
         <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: 1, minWidth: 240 }}>
-              <Avatar name={candidate.name} size={48} />
+              <Avatar name={candidate.name} size={28} />
               <div>
                 <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: '0 0 3px', letterSpacing: '-0.4px' }}>
                   {candidate.name}
