@@ -520,7 +520,6 @@ export default function LandingPage() {
                   'Track your hiring accuracy over time and see which scores predict real-world success',
                   'Custom skill weightings that match what your roles actually need',
                   'Personalised onboarding plan for every candidate, tailored to their specific gaps',
-                  'Equality Act compliant: never penalises spelling, grammar, or writing style',
                 ],
                 bg: '#f0fdf8',
                 dark: false,
