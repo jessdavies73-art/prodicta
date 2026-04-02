@@ -333,6 +333,8 @@ export default function DemoCandidatePage({ params }) {
     return s >= 80 ? 'passed_probation' : s >= 70 ? 'still_in_probation' : null
   })
   const [signupPrompt, setSignupPrompt] = useState(false)
+  const [sendModal, setSendModal] = useState(false)
+  const [sendEmail, setSendEmail] = useState('')
 
   const candidate = DEMO_CANDIDATES.find(c => c.id === params.candidateId)
   const results = DEMO_RESULTS[params.candidateId] || null
@@ -492,6 +494,13 @@ export default function DemoCandidatePage({ params }) {
                   >
                     <Ic name="file" size={14} color={TEAL} />
                     Export Client Report
+                  </button>
+                  <button
+                    onClick={() => setSendModal(true)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEAL, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px' }}
+                  >
+                    <Ic name="send" size={14} color={NAVY} />
+                    Send to Client
                   </button>
                   <button
                     onClick={() => window.print()}
@@ -919,6 +928,51 @@ export default function DemoCandidatePage({ params }) {
               </ScrollReveal>
             )}
 
+            {/* ── CANDIDATE DOCUMENTS (agency feature demo) ── */}
+            <Card style={{ marginBottom: 20 }} className="no-print">
+              <SectionHeading>
+                <Ic name="paperclip" size={15} color={TEAL} />
+                Candidate Documents
+              </SectionHeading>
+              <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 20px', lineHeight: 1.6 }}>
+                Attach the candidate's CV and cover letter. Uploaded files are included when you use <strong>Send to Client</strong>.
+              </p>
+              {/* Demo notice */}
+              <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Ic name="info" size={14} color={AMB} />
+                <span style={{ fontFamily: F, fontSize: 12.5, color: '#92400e' }}>Demo preview. Sign up to upload real documents and send candidate packs.</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                {/* CV — shown as pre-uploaded to demo the filled state */}
+                <div style={{ border: `2px dashed ${TEAL}`, borderRadius: 12, padding: '20px 20px', textAlign: 'center', background: TEALLT }}>
+                  <Ic name="file" size={28} color={TEAL} />
+                  <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '10px 0 4px' }}>CV / Résumé</div>
+                  <div style={{ fontFamily: F, fontSize: 12, color: TX2, marginBottom: 14 }}>
+                    {candidate?.name?.split(' ')[0] || 'Candidate'}_CV.pdf<br />
+                    <span style={{ color: TX3 }}>142KB</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button onClick={() => router.push('/login')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 7, background: TEAL, color: NAVY, fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none' }}>
+                      <Ic name="download" size={12} color={NAVY} /> View
+                    </button>
+                    <button onClick={() => router.push('/login')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 7, background: REDBG, color: RED, border: `1px solid ${REDBD}`, fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+                      <Ic name="trash" size={12} color={RED} /> Remove
+                    </button>
+                  </div>
+                </div>
+                {/* Cover Letter — shown as empty to demo the upload state */}
+                <div style={{ border: `2px dashed ${BD}`, borderRadius: 12, padding: '20px 20px', textAlign: 'center', background: BG }}>
+                  <Ic name="file" size={28} color={TX3} />
+                  <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '10px 0 4px' }}>Cover Letter</div>
+                  <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 14 }}>PDF only, max 10MB</div>
+                  <button onClick={() => router.push('/login')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 7, background: NAVY, color: '#fff', fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none' }}>
+                    <Ic name="upload" size={13} color={TEAL} />
+                    Upload PDF
+                  </button>
+                </div>
+              </div>
+            </Card>
+
             {/* ── DEMO CTA ── */}
             <div style={{ marginBottom: 40, background: `linear-gradient(135deg, ${NAVY} 0%, #1a3a5c 100%)`, borderRadius: 14, padding: '32px 36px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap', boxShadow: SHADOW_LG }}>
               <div>
@@ -993,6 +1047,87 @@ export default function DemoCandidatePage({ params }) {
           </div>
         )}
       </main>
+
+      {/* ── SEND TO CLIENT MODAL ── */}
+      {sendModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={() => setSendModal(false)}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: CARD, borderRadius: 16, padding: '28px 32px', maxWidth: 480, width: '100%', boxShadow: '0 16px 48px rgba(15,33,55,0.22)', position: 'relative' }}>
+            <button onClick={() => setSendModal(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <Ic name="x" size={18} color={TX3} />
+            </button>
+
+            <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 5px' }}>Send Candidate Pack</h3>
+            <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 16px', lineHeight: 1.55 }}>
+              Send {candidate?.name || 'this candidate'}'s full report to a client. Attached documents are included automatically.
+            </p>
+
+            {/* Demo notice */}
+            <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, padding: '10px 14px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Ic name="info" size={14} color={AMB} />
+              <span style={{ fontFamily: F, fontSize: 12.5, color: '#92400e' }}>Demo preview. Sign up to send real candidate packs via email.</span>
+            </div>
+
+            {/* What's included */}
+            <div style={{ background: TEALLT, border: `1px solid ${TEAL}44`, borderRadius: 10, padding: '12px 16px', marginBottom: 18 }}>
+              <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>What's included</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: TEALD }}>
+                  <Ic name="check" size={13} color={GRN} /> Full candidate report (score, strengths, watch-outs, questions)
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: TEALD }}>
+                  <Ic name="check" size={13} color={GRN} /> CV / Résumé ({candidate?.name?.split(' ')[0] || 'Candidate'}_CV.pdf)
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: TX3 }}>
+                  <Ic name="x" size={13} color={TX3} /> Cover Letter — not attached
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Client email address</label>
+              <input
+                type="email"
+                value={sendEmail}
+                onChange={e => setSendEmail(e.target.value)}
+                placeholder="client@company.com"
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 13px', borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: F, fontSize: 14, color: TX, background: BG, outline: 'none' }}
+                onFocus={e => e.target.style.borderColor = TEAL}
+                onBlur={e => e.target.style.borderColor = BD}
+              />
+            </div>
+
+            <div style={{ marginBottom: 22 }}>
+              <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Personal message (optional)</label>
+              <textarea
+                placeholder="Add a note to the client…"
+                rows={2}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 13px', borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: F, fontSize: 13.5, color: TX, background: BG, outline: 'none', resize: 'vertical' }}
+                onFocus={e => e.target.style.borderColor = TEAL}
+                onBlur={e => e.target.style.borderColor = BD}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => router.push('/login')}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', borderRadius: 9, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                <Ic name="send" size={15} color={NAVY} />
+                Sign up to send →
+              </button>
+              <button
+                onClick={() => setSendModal(false)}
+                style={{ flex: 1, padding: '11px 0', borderRadius: 9, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
