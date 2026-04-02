@@ -11,6 +11,9 @@ import {
   GRN, GRNBG, GRNBD, AMB, AMBBG, RED, REDBG,
   F, FM, scolor, sbg, slabel, dL, dC, riskCol, riskBg, riskBd, cs, ps, bs
 } from '@/lib/constants'
+import OnboardingWizard from '@/components/OnboardingWizard'
+
+const PLAN_LIMITS = { starter: 10, growth: 30, scale: null, founding: null }
 
 const PURPLE = '#7C3AED'
 
@@ -235,6 +238,9 @@ export default function DashboardPage() {
   const [openMenu, setOpenMenu] = useState(null)
   const [confirmArchive, setConfirmArchive] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [monthlyCount, setMonthlyCount] = useState(0)
+  const [showUpgrade, setShowUpgrade] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -280,6 +286,18 @@ export default function DashboardPage() {
 
         if (assessErr) throw assessErr
         setAssessments(assess || [])
+
+        // Monthly usage count
+        const now = new Date()
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+        const { count } = await supabase.from('assessments')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('created_at', startOfMonth)
+        setMonthlyCount(count || 0)
+
+        // Show onboarding wizard for new users
+        if (prof && !prof.onboarding_complete) setShowOnboarding(true)
       } catch (err) {
         console.error(err)
         setError(err.message || 'Failed to load dashboard')
@@ -337,6 +355,11 @@ export default function DashboardPage() {
     )
   }
 
+  // ── plan / usage ────────────────────────────────────────────────────────────
+  const planKey = (profile?.plan || 'starter').toLowerCase()
+  const planLimit = PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter
+  const atLimit = planLimit !== null && monthlyCount >= planLimit
+
   // ── computed stats ──────────────────────────────────────────────────────────
 
   const completed = candidates.filter(c => c.status === 'completed')
@@ -367,6 +390,76 @@ export default function DashboardPage() {
   return (
     <div style={{ display: 'flex', fontFamily: F }}>
       <Sidebar active="dashboard" companyName={profile?.company_name} />
+
+      {/* ── Onboarding wizard ── */}
+      {showOnboarding && (
+        <OnboardingWizard
+          userId={profile?.id}
+          initialAccountType={profile?.account_type}
+          onComplete={(accountType) => {
+            setShowOnboarding(false)
+            setProfile(prev => ({ ...prev, account_type: accountType, onboarding_complete: true }))
+          }}
+        />
+      )}
+
+      {/* ── Upgrade modal ── */}
+      {showUpgrade && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 1500, background: 'rgba(15,33,55,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={() => setShowUpgrade(false)}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: CARD, borderRadius: 18, padding: '36px 36px 32px', maxWidth: 460, width: '100%', boxShadow: '0 24px 72px rgba(0,0,0,0.25)' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: AMBBG, border: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+              <Ic name="layers" size={22} color={AMB} />
+            </div>
+            <h3 style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: NAVY, margin: '0 0 8px' }}>
+              Assessment limit reached
+            </h3>
+            <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: '0 0 6px', lineHeight: 1.65 }}>
+              You've used <strong>{monthlyCount} of {planLimit}</strong> assessments this month on the <strong style={{ textTransform: 'capitalize' }}>{planKey}</strong> plan.
+            </p>
+            <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: '0 0 28px', lineHeight: 1.65 }}>
+              Upgrade to create unlimited assessments and access premium features.
+            </p>
+            <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 12, padding: '16px 20px', marginBottom: 24 }}>
+              <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Available plans</div>
+              {[
+                { plan: 'Growth', price: '£99', limit: '30 assessments/mo', highlight: false },
+                { plan: 'Scale', price: '£120', limit: 'Unlimited', highlight: true },
+                { plan: 'Founding', price: '£79', limit: 'Unlimited · Limited time', highlight: false },
+              ].map(p => (
+                <div key={p.plan} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${BD}` }}>
+                  <div>
+                    <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX }}>{p.plan}</span>
+                    {p.highlight && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: TEAL, background: TEALLT, padding: '1px 6px', borderRadius: 50 }}>POPULAR</span>}
+                    <div style={{ fontFamily: F, fontSize: 12, color: TX3 }}>{p.limit}</div>
+                  </div>
+                  <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY }}>{p.price}<span style={{ fontSize: 11, fontWeight: 500, color: TX3 }}>/mo</span></span>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <a
+                href="mailto:hello@prodicta.co.uk?subject=Upgrade my plan"
+                style={{
+                  display: 'block', width: '100%', padding: '12px 0', borderRadius: 10, border: 'none',
+                  background: TEAL, color: NAVY, fontFamily: F, fontSize: 14.5, fontWeight: 800,
+                  cursor: 'pointer', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box',
+                }}
+              >
+                Upgrade my plan →
+              </a>
+              <button
+                onClick={() => setShowUpgrade(false)}
+                style={{ width: '100%', padding: '11px 0', borderRadius: 10, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Maybe later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Confirmation modal ── */}
       {confirmArchive && (
@@ -540,13 +633,32 @@ export default function DashboardPage() {
               />
             </div>
 
-            <button
-              onClick={() => router.push('/assessment/new')}
-              style={bs('primary', 'md')}
-            >
-              <Ic name="plus" size={15} color={NAVY} />
-              New assessment
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+              <button
+                onClick={() => atLimit ? setShowUpgrade(true) : router.push('/assessment/new')}
+                style={{
+                  ...bs('primary', 'md'),
+                  background: atLimit ? '#e2e8f0' : undefined,
+                  color: atLimit ? TX3 : undefined,
+                  cursor: atLimit ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <Ic name="plus" size={15} color={atLimit ? TX3 : NAVY} />
+                New assessment
+              </button>
+              {planLimit !== null && (
+                <div style={{
+                  fontFamily: F, fontSize: 11.5, fontWeight: 600,
+                  color: atLimit ? '#b91c1c' : TX3,
+                  background: atLimit ? '#fef2f2' : BG,
+                  border: `1px solid ${atLimit ? '#fecaca' : BD}`,
+                  borderRadius: 6, padding: '2px 9px',
+                }}>
+                  {monthlyCount} of {planLimit} this month
+                  {atLimit && ' · Limit reached'}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

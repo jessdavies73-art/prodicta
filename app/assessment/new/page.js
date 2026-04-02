@@ -90,6 +90,8 @@ export default function NewAssessmentPage() {
   const [weights, setWeights] = useState({ Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [atLimit, setAtLimit] = useState(false)
+  const [limitInfo, setLimitInfo] = useState({ used: 0, limit: 10 })
 
   // Templates
   const [templates, setTemplates] = useState([])
@@ -98,12 +100,28 @@ export default function NewAssessmentPage() {
   const [templateName, setTemplateName] = useState('')
 
   useEffect(() => {
+    const PLAN_LIMITS = { starter: 10, growth: 30, scale: null, founding: null }
     const init = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: profile } = await supabase.from('profiles').select('company_name').eq('id', user.id).single()
+      const { data: profile } = await supabase.from('users').select('company_name, plan').eq('id', user.id).single()
       if (profile?.company_name) setCompanyName(profile.company_name)
+
+      // Check monthly usage limit
+      const planKey = (profile?.plan || 'starter').toLowerCase()
+      const planLimit = PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter
+      if (planLimit !== null) {
+        const now = new Date()
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+        const { count } = await supabase.from('assessments')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('created_at', startOfMonth)
+        const used = count || 0
+        setLimitInfo({ used, limit: planLimit })
+        if (used >= planLimit) setAtLimit(true)
+      }
 
       // Load saved templates
       const { data: tmpl } = await supabase
@@ -164,6 +182,50 @@ export default function NewAssessmentPage() {
   }
 
   const badgeStyle = roleTypeBadgeStyle(roleType)
+
+  if (atLimit) {
+    return (
+      <div style={{ fontFamily: F, background: '#f7f9fb', minHeight: '100vh' }}>
+        <Sidebar companyName={companyName} />
+        <main style={{ marginLeft: 220, padding: '32px 40px', minHeight: '100vh', background: '#f7f9fb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ maxWidth: 480, width: '100%', background: '#fff', borderRadius: 16, padding: '40px 40px', boxShadow: '0 2px 16px rgba(15,33,55,0.08)', textAlign: 'center' }}>
+            <div style={{ width: 56, height: 56, borderRadius: 14, background: '#fffbeb', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1={12} y1={9} x2={12} y2={13}/><line x1={12} y1={17} x2="12.01" y2={17}/>
+              </svg>
+            </div>
+            <h2 style={{ fontFamily: F, fontSize: 21, fontWeight: 800, color: '#0f2137', margin: '0 0 10px' }}>
+              Assessment limit reached
+            </h2>
+            <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', margin: '0 0 6px', lineHeight: 1.65 }}>
+              You've used <strong>{limitInfo.used} of {limitInfo.limit}</strong> assessments this month.
+            </p>
+            <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', margin: '0 0 28px', lineHeight: 1.65 }}>
+              Upgrade your plan to continue creating assessments.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <a
+                href="mailto:hello@prodicta.co.uk?subject=Upgrade my plan"
+                style={{
+                  display: 'block', padding: '12px 0', borderRadius: 10,
+                  background: '#00BFA5', color: '#0f2137', fontFamily: F, fontSize: 14.5, fontWeight: 800,
+                  textDecoration: 'none', textAlign: 'center',
+                }}
+              >
+                Upgrade my plan →
+              </a>
+              <button
+                onClick={() => router.push('/dashboard')}
+                style={{ padding: '11px 0', borderRadius: 10, border: '1.5px solid #e4e9f0', background: 'transparent', color: '#5e6b7f', fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Back to dashboard
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div style={{ fontFamily: F, background: '#f7f9fb', minHeight: '100vh' }}>

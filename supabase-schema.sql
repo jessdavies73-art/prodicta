@@ -6,6 +6,9 @@ create table if not exists public.users (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
   company_name text,
+  account_type text default 'employer' check (account_type in ('employer', 'agency')),
+  plan text default 'starter' check (plan in ('starter', 'growth', 'scale', 'founding')),
+  onboarding_complete boolean default true,
   created_at timestamp with time zone default now()
 );
 

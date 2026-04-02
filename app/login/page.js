@@ -380,6 +380,7 @@ export default function LoginPage() {
             email: data.user.email,
             company_name: suCompany.trim(),
             account_type: suAccountType,
+            onboarding_complete: false,
           },
           { onConflict: 'id', ignoreDuplicates: false }
         )
@@ -459,6 +460,16 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />
+              </div>
+
+              <div style={{ textAlign: 'right', marginBottom: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => router.push('/forgot-password')}
+                  style={{ background: 'none', border: 'none', color: DARK_T, fontFamily: "'Outfit', system-ui, sans-serif", fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                >
+                  Forgot password?
+                </button>
               </div>
 
               <button
