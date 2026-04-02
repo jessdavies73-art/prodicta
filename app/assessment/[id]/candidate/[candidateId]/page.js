@@ -1538,51 +1538,151 @@ export default function CandidateReportPage({ params }) {
                 )}
 
                 {/* ══════════════════════════════════════════════════
-                    ONBOARDING PLAN — timeline style
+                    ONBOARDING PLAN — structured week cards
                 ══════════════════════════════════════════════════ */}
                 {results.onboarding_plan?.length > 0 && (
                   <ScrollReveal id="onboarding" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading>Personalised Onboarding Plan</SectionHeading>
-                    <div style={{ paddingLeft: 4 }}>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
+                      Tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                       {results.onboarding_plan.map((item, i) => {
-                        const text = typeof item === 'object' ? (item.text || item.title || JSON.stringify(item)) : item
-                        const match = text.match(/^(Week\s*\d+):/i)
-                        const weekNum = match ? match[1].replace(/\s+/g, ' ') : null
-                        const body = weekNum ? text.slice(match[0].length).trim() : text
-                        const isLast = i === results.onboarding_plan.length - 1
+                        // Support both new structured objects and legacy plain strings
+                        const isStructured = typeof item === 'object' && item !== null && item.objective
+                        if (!isStructured) {
+                          // Legacy fallback: plain string
+                          const text = typeof item === 'object' ? (item.text || item.title || '') : (item || '')
+                          const match = text.match(/^(Week\s*\d+):/i)
+                          const weekLabel = match ? match[1] : `Week ${i + 1}`
+                          const body = match ? text.slice(match[0].length).trim() : text
+                          return (
+                            <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                              <div style={{
+                                width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
+                                background: TEAL, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontFamily: FM, fontSize: 13, fontWeight: 800, color: NAVY,
+                              }}>{i + 1}</div>
+                              <div style={{ flex: 1, paddingTop: 8 }}>
+                                <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{weekLabel}</div>
+                                <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.7 }}>{body}</p>
+                              </div>
+                            </div>
+                          )
+                        }
 
                         return (
-                          <div key={i} style={{ display: 'flex', gap: 0 }}>
-                            {/* Timeline column */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 44, flexShrink: 0 }}>
+                          <div key={i} style={{
+                            background: CARD,
+                            border: `1px solid ${BD}`,
+                            borderRadius: 12,
+                            overflow: 'hidden',
+                            boxShadow: '0 1px 4px rgba(15,33,55,0.05)',
+                          }}>
+                            {/* Card header */}
+                            <div style={{
+                              display: 'flex', alignItems: 'center', gap: 14,
+                              padding: '16px 20px',
+                              borderBottom: `1px solid ${BD}`,
+                              background: BG,
+                            }}>
                               <div style={{
-                                width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                                background: TEAL, boxShadow: `0 0 0 4px ${TEALLT}, 0 0 0 5px ${TEAL}30`,
+                                width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                                background: TEAL, boxShadow: `0 0 0 4px ${TEALLT}`,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontFamily: FM, fontSize: 12, fontWeight: 800, color: '#fff',
-                                zIndex: 1,
+                                fontFamily: FM, fontSize: 14, fontWeight: 800, color: NAVY,
                               }}>
-                                {i + 1}
+                                {item.week}
                               </div>
-                              {!isLast && (
-                                <div style={{ width: 2, flex: 1, background: `${TEAL}25`, minHeight: 32, marginTop: 2 }} />
-                              )}
+                              <div>
+                                <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
+                                  Week {item.week}
+                                </div>
+                                <div style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, lineHeight: 1.2 }}>
+                                  {item.title}
+                                </div>
+                              </div>
                             </div>
-                            {/* Content */}
-                            <div style={{ paddingBottom: isLast ? 0 : 28, paddingLeft: 16, flex: 1, paddingTop: 6 }}>
-                              {weekNum && (
-                                <span style={{
-                                  fontFamily: F, fontSize: 11, fontWeight: 800, color: TEALD,
-                                  textTransform: 'uppercase', letterSpacing: '0.07em',
-                                  display: 'block', marginBottom: 4,
-                                }}>
-                                  {weekNum}
-                                </span>
+
+                            {/* Card body */}
+                            <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                              {/* Objective */}
+                              {item.objective && (
+                                <div>
+                                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Objective</div>
+                                  <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX, margin: 0, lineHeight: 1.65 }}>
+                                    {item.objective}
+                                  </p>
+                                </div>
                               )}
-                              <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.7 }}>
-                                {body}
-                              </p>
+
+                              {/* Activities */}
+                              {item.activities?.length > 0 && (
+                                <div>
+                                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Activities</div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    {item.activities.map((act, ai) => (
+                                      <div key={ai} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                        <div style={{
+                                          width: 20, height: 20, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                                          background: TEALLT, border: `1.5px solid ${TEAL}55`,
+                                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                          fontFamily: FM, fontSize: 10, fontWeight: 800, color: TEALD,
+                                        }}>
+                                          {ai + 1}
+                                        </div>
+                                        <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.65 }}>{act}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Checkpoint */}
+                              {item.checkpoint && (
+                                <div style={{
+                                  background: TEALLT, border: `1px solid ${TEAL}40`,
+                                  borderRadius: 8, padding: '12px 14px',
+                                  display: 'flex', gap: 10, alignItems: 'flex-start',
+                                }}>
+                                  <Ic name="check" size={14} color={TEALD} style={{ flexShrink: 0, marginTop: 1 }} />
+                                  <div>
+                                    <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Checkpoint</div>
+                                    <p style={{ fontFamily: F, fontSize: 13, color: TEALD, fontWeight: 600, margin: 0, lineHeight: 1.6 }}>{item.checkpoint}</p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Bottom row: involves + notes */}
+                              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                                {item.involves?.length > 0 && (
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Who's Involved</div>
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                      {item.involves.map((role, ri) => (
+                                        <span key={ri} style={{
+                                          display: 'inline-flex', alignItems: 'center',
+                                          padding: '3px 10px', borderRadius: 50,
+                                          fontFamily: F, fontSize: 11.5, fontWeight: 600,
+                                          background: BG, color: TX2, border: `1px solid ${BD}`,
+                                          whiteSpace: 'nowrap',
+                                        }}>
+                                          {role}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {item.notes && (
+                                  <div style={{ flexShrink: 0, maxWidth: 340 }}>
+                                    <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>UK Best Practice</div>
+                                    <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: 0, lineHeight: 1.55, fontStyle: 'italic' }}>{item.notes}</p>
+                                  </div>
+                                )}
+                              </div>
+
                             </div>
                           </div>
                         )
