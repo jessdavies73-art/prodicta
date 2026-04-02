@@ -1,3 +1,13 @@
+/* ── Avatar gradients ──────────────────────────────────────────────────────── */
+.avatar-jade    { background: linear-gradient(135deg, #00BFA5, #009688) !important; }
+.avatar-indigo  { background: linear-gradient(135deg, #4F46E5, #3730A3) !important; }
+.avatar-purple  { background: linear-gradient(135deg, #7C3AED, #6D28D9) !important; }
+.avatar-coral   { background: linear-gradient(135deg, #F97316, #EA580C) !important; }
+.avatar-rose    { background: linear-gradient(135deg, #F43F5E, #E11D48) !important; }
+.avatar-amber   { background: linear-gradient(135deg, #F59E0B, #D97706) !important; }
+.avatar-blue    { background: linear-gradient(135deg, #3B82F6, #2563EB) !important; }
+.avatar-emerald { background: linear-gradient(135deg, #10B981, #059669) !important; }
+
 /* ── Custom scrollbar ──────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
