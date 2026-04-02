@@ -93,7 +93,7 @@ export function DemoSidebar({ active }) {
           )
         })}
 
-        {/* New assessment — restricted */}
+        {/* New assessment , restricted */}
         <div style={{ margin: '8px 0 0', padding: '10px 12px', borderRadius: 8, borderLeft: '3px solid transparent', display: 'flex', alignItems: 'center', gap: 11, color: 'rgba(255,255,255,0.3)', fontSize: 13.5, fontWeight: 500, cursor: 'default', userSelect: 'none' }}>
           <Ic name="plus" size={17} color="rgba(255,255,255,0.18)" />
           New assessment

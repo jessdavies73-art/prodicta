@@ -146,7 +146,7 @@ function SkillRow({ skill, threshold, onChange, candidateData, router }) {
                 <span style={{ fontSize: 13, color: TX2, fontFamily: F }}>out of 100</span>
               </div>
 
-              {/* Live candidate pills — clickable */}
+              {/* Live candidate pills , clickable */}
               {total > 0 && (
                 <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
                   <button
@@ -522,7 +522,7 @@ export default function BenchmarksPage() {
           display: 'flex', gap: 32, flexWrap: 'wrap',
         }}>
           {[
-            { icon: 'sliders', title: 'Set a threshold', desc: 'Drag the slider or type a score from 0–100 for any skill.' },
+            { icon: 'sliders', title: 'Set a threshold', desc: 'Drag the slider or type a score from 0,100 for any skill.' },
             { icon: 'alert',   title: 'Candidates are flagged', desc: 'Any candidate scoring below the threshold is highlighted in red on their report.' },
             { icon: 'check',   title: 'Thresholds are global', desc: 'Benchmarks apply across all your assessments, not per role.' },
           ].map(({ icon, title, desc }) => (

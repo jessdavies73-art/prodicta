@@ -77,7 +77,7 @@ const RESULTS = {
   ],
   onboarding_plan: [
     'Weeks 1 to 2: Brand and product immersion, shadowing current campaigns, reviewing competitor landscape, and meeting key internal stakeholders.',
-    'Weeks 3–4: Audit of existing campaign performance against targets; identify quick wins for Q2 pipeline.',
+    'Weeks 3-4: Audit of existing campaign performance against targets; identify quick wins for Q2 pipeline.',
     'Month 2: Lead one mid-sized campaign end-to-end with senior oversight. This builds confidence and creates early visible impact.',
     'Month 3: Full ownership of campaign calendar. Structured 30-day check-in with line manager to review priorities and flag any blockers.',
     'Month 6 (probation review): Full assessment against KPIs set at onboarding, with particular focus on cross-functional relationship quality and decision-making independence.',

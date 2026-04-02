@@ -33,7 +33,7 @@ function CompanyTab({ onSave }) {
       <Field label="Company name" value="Acme Recruiting Co." />
       <Field label="Website" value="https://acmerecruiting.demo" type="url" />
       <Field label="Industry" value="Technology" />
-      <Field label="Company size" value="51–200 employees" />
+      <Field label="Company size" value="51-200 employees" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <label style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>Default assessment language</label>
         <select disabled style={{ padding: '10px 13px', borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: F, fontSize: 14, color: TX, background: BG, appearance: 'none', cursor: 'not-allowed' }}>

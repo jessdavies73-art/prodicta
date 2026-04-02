@@ -1030,7 +1030,7 @@ function HiringRiskOverview({ completed }) {
                 </div>
               ))}
 
-              {/* High risk callout — larger, red */}
+              {/* High risk callout , larger, red */}
               <div style={{
                 flex: '1 1 180px',
                 background: highRisk.length > 0
@@ -1188,7 +1188,7 @@ function PlacementRiskCard({ completed = [] }) {
 
       <div style={{ padding: '24px 28px' }}>
 
-        {/* This-month candidate stats — only shown when there is data */}
+        {/* This-month candidate stats , only shown when there is data */}
         {assessedThisMonth > 0 && (
           <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
             <div style={{

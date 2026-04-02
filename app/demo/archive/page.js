@@ -12,7 +12,7 @@ const SHADOW = '0 2px 12px rgba(15,33,55,0.08)'
 const archivedCandidates = DEMO_CANDIDATES.filter(c => c.status === 'archived')
 
 function fmt(iso) {
-  if (!iso) return '—'
+  if (!iso) return ','
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
@@ -86,10 +86,10 @@ export default function DemoArchivePage() {
                         <span style={{ display: 'inline-block', marginLeft: 8, padding: '2px 8px', borderRadius: 50, fontSize: 11, fontWeight: 700, background: riskBg(r.risk_level), color: riskCol(r.risk_level) }}>{r.risk_level}</span>
                       </div>
                     ) : (
-                      <span style={{ fontFamily: F, fontSize: 13.5, color: TX3 }}>—</span>
+                      <span style={{ fontFamily: F, fontSize: 13.5, color: TX3 }}>,</span>
                     )}
                     {/* Rating */}
-                    <div>{c.rating ? <StarRating value={c.rating} /> : <span style={{ color: TX3, fontFamily: F, fontSize: 13 }}>—</span>}</div>
+                    <div>{c.rating ? <StarRating value={c.rating} /> : <span style={{ color: TX3, fontFamily: F, fontSize: 13 }}>,</span>}</div>
                     {/* Archived date */}
                     <span style={{ fontFamily: F, fontSize: 13, color: TX3 }}>{fmt(c.completed_at)}</span>
                     {/* Actions */}

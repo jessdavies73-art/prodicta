@@ -19,7 +19,7 @@ const sbd  = s => s >= 85 ? GRNBD : s >= 70 ? `${TEAL}55` : s >= 50 ? AMBBD : RE
 const slbl = s => s >= 85 ? 'Excellent' : s >= 75 ? 'Strong' : s >= 65 ? 'Good' : s >= 50 ? 'Developing' : 'Concern'
 
 const pfColor = s => s == null ? TX3  : s >= 80 ? GRN  : s >= 55 ? TEALD : RED
-const pfLbl   = s => s == null ? '—'  : s >= 80 ? 'Strong' : s >= 55 ? 'Moderate' : 'Concern'
+const pfLbl   = s => s == null ? ','  : s >= 80 ? 'Strong' : s >= 55 ? 'Moderate' : 'Concern'
 
 const dL  = s => s >= 80 ? 'Strong hire' : s >= 70 ? 'Hire with plan' : s >= 55 ? 'Proceed with caution' : 'Not recommended'
 const dC  = s => s >= 80 ? GRN : s >= 70 ? TEAL : s >= 55 ? AMB : RED
@@ -377,7 +377,7 @@ export default function DemoCandidatePage({ params }) {
     return { bg: TEALLT, color: TEALD, bd: `${TEAL}55` }
   }
 
-  function fmtTime(s) { if (!s) return '—'; const m = Math.floor(s / 60); return m > 0 ? `${m}m ${s % 60}s` : `${s}s` }
+  function fmtTime(s) { if (!s) return ','; const m = Math.floor(s / 60); return m > 0 ? `${m}m ${s % 60}s` : `${s}s` }
   function timingLabel(s) {
     if (!s) return { label: 'No data', color: TX3, bg: 'rgba(255,255,255,0.05)', bd: 'rgba(255,255,255,0.1)' }
     if (s < 90)   return { label: 'Rushed',   color: RED,   bg: `${RED}18`,   bd: `${RED}40` }
@@ -757,7 +757,7 @@ export default function DemoCandidatePage({ params }) {
                       const action = typeof w === 'object' ? w.action : null
                       const sev = sevStyle(severity)
                       return (
-                        <div key={i} style={{ background: sev.tint, border: `1px solid ${sev.border}`, borderRadius: 10, padding: '16px 18px' }}>
+                        <div key={i} style={{ background: sev.bg, border: `1px solid ${sev.border}`, borderLeft: `4px solid ${sev.color}`, borderRadius: '0 10px 10px 0', padding: '16px 18px' }}>
                           {severity && <div style={{ marginBottom: 10 }}><Badge label={`${severity} severity`} bg={sev.bg} color={sev.color} border={sev.border} /></div>}
                           <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 8px' }}>{title}</p>
                           {explanation && <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 6px', lineHeight: 1.7 }}>{explanation}</p>}

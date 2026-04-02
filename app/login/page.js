@@ -384,7 +384,7 @@ export default function LoginPage() {
           { onConflict: 'id', ignoreDuplicates: false }
         )
 
-        // If a session was returned, email confirmation is off — go straight to dashboard
+        // If a session was returned, email confirmation is off , go straight to dashboard
         if (data.session) {
           router.push('/dashboard')
           return

@@ -160,7 +160,7 @@ export default function OutcomesPage() {
           <StatCard
             icon="award"
             label="Pass rate"
-            value={passRate !== null ? `${passRate}%` : '—'}
+            value={passRate !== null ? `${passRate}%` : ','}
             sub={concluded.length > 0 ? `${concluded.length} concluded hires` : 'No concluded outcomes yet'}
             accent={passRate !== null ? (passRate >= 70 ? GRN : passRate >= 50 ? AMB : RED) : TEAL}
           />
@@ -271,11 +271,11 @@ export default function OutcomesPage() {
                   onMouseLeave={e => { e.currentTarget.style.background = CARD }}
                 >
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: TX, fontFamily: F }}>{cand?.name || '—'}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: TX, fontFamily: F }}>{cand?.name || ','}</div>
                     <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>{cand?.email || ''}</div>
                   </div>
                   <div style={{ fontSize: 13, color: TX2, fontFamily: F }}>
-                    {cand?.assessments?.role_title || '—'}
+                    {cand?.assessments?.role_title || ','}
                   </div>
                   <div>
                     <OutcomeBadge outcome={o.outcome} />
@@ -286,7 +286,7 @@ export default function OutcomesPage() {
                         {new Date(o.outcome_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
                     ) : (
-                      <span style={{ fontSize: 12, color: TX3 }}>—</span>
+                      <span style={{ fontSize: 12, color: TX3 }}>,</span>
                     )}
                     {o.notes && (
                       <div style={{ fontSize: 11.5, color: TX3, marginTop: 2, fontStyle: 'italic', fontFamily: F }}>{o.notes}</div>

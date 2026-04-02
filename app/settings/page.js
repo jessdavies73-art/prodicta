@@ -279,8 +279,8 @@ export default function SettingsPage() {
   ]
 
   const COMPANY_SIZES = [
-    '1–10 employees', '11–50 employees', '51–200 employees',
-    '201–1000 employees', '1000+ employees',
+    '1,10 employees', '11,50 employees', '51,200 employees',
+    '201,1000 employees', '1000+ employees',
   ]
 
   const STARTER_FEATURES = [
@@ -720,7 +720,7 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Weightings tab — employer only */}
+        {/* Weightings tab , employer only */}
         {activeTab === 'weightings' && accountType === 'employer' && (
           <div style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div style={{ ...cs }}>

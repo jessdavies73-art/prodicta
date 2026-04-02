@@ -58,7 +58,7 @@ export async function POST(request, { params }) {
       })
     } catch {}
 
-    // Await scoring — wrap separately so a scoring failure doesn't lose the submission
+    // Await scoring , wrap separately so a scoring failure doesn't lose the submission
     try {
       await scoreCandidate(candidate.id)
     } catch (scoringErr) {

@@ -312,7 +312,7 @@ function CandidateColumn({ candidate, allScores, skillOrder, assessmentId }) {
               </div>
             )
           })() : (
-            <div style={{ fontFamily: FM, fontSize: 40, fontWeight: 800, color: TX3, lineHeight: 1 }}>—</div>
+            <div style={{ fontFamily: FM, fontSize: 40, fontWeight: 800, color: TX3, lineHeight: 1 }}>,</div>
           )}
           <div style={{ fontSize: 12, color: TX3 }}>
             {score !== null ? slabel(score) : 'No score'}

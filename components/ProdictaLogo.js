@@ -29,7 +29,7 @@ export default function ProdictaLogo({ textColor = '#ffffff', size = 36 }) {
         <circle cx="5" cy="16" r="2.5" fill={TEAL} opacity="0.55" />
         <circle cx="5" cy="28" r="2.5" fill={TEAL} opacity="0.7"  />
 
-        {/* Centre node — solid, on top of glow */}
+        {/* Centre node , solid, on top of glow */}
         <circle cx="24" cy="16" r="6" fill={TEAL} />
 
         {/* Output arrow */}

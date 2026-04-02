@@ -13,8 +13,8 @@ import {
 } from '@/lib/constants'
 
 /* ─────────────────────────────────────────────────────────────
-   Score colour helpers — updated thresholds
-   <50 red · 50–69 amber · 70–84 jade · 85+ green
+   Score colour helpers , updated thresholds
+   <50 red · 50,69 amber · 70,84 jade · 85+ green
 ───────────────────────────────────────────────────────────── */
 const sc   = s => s >= 85 ? GRN  : s >= 70 ? TEAL : s >= 50 ? AMB  : RED
 const sbg  = s => s >= 85 ? GRNBG : s >= 70 ? TEALLT : s >= 50 ? AMBBG : REDBG
@@ -24,7 +24,7 @@ const slbl = s => s >= 85 ? 'Excellent' : s >= 75 ? 'Strong' : s >= 65 ? 'Good' 
 const pfColor = s => s == null ? TX3  : s >= 80 ? GRN  : s >= 55 ? TEALD : RED
 const pfBg    = s => s == null ? BG   : s >= 80 ? GRNBG : s >= 55 ? TEALLT : REDBG
 const pfBd    = s => s == null ? BD   : s >= 80 ? GRNBD : s >= 55 ? `${TEAL}55` : REDBD
-const pfLbl   = s => s == null ? '—'  : s >= 80 ? 'Strong' : s >= 55 ? 'Moderate' : 'Concern'
+const pfLbl   = s => s == null ? ','  : s >= 80 ? 'Strong' : s >= 55 ? 'Moderate' : 'Concern'
 
 /* hiring decision from score */
 const dL = s => s >= 80 ? 'Strong hire' : s >= 70 ? 'Hire with plan' : s >= 55 ? 'Proceed with caution' : 'Not recommended'
@@ -258,7 +258,7 @@ function SmallRing({ score, size = 60, strokeWidth = 5 }) {
   )
 }
 
-/* Pressure-Fit score ring — colour: green 75+, amber 50-74, red below 50 */
+/* Pressure-Fit score ring , colour: green 75+, amber 50-74, red below 50 */
 function PFRing({ score, size = 110 }) {
   const [display, setDisplay] = useState(0)
   const [drawn, setDrawn] = useState(false)
@@ -527,7 +527,7 @@ export default function CandidateReportPage({ params }) {
   const [recordSharedDate, setRecordSharedDate] = useState('')
   const [savingSharedDate, setSavingSharedDate] = useState(false)
 
-  // Report section prefs (agency — Feature 6)
+  // Report section prefs (agency , Feature 6)
   const DEFAULT_SECTIONS = { overall_score: true, pressure_fit: true, ai_summary: true, skills: true, strengths: true, watchouts: true, interview_questions: true }
   const [reportSections, setReportSections] = useState(DEFAULT_SECTIONS)
   const [reportSectionsModal, setReportSectionsModal] = useState(false)
@@ -912,7 +912,7 @@ export default function CandidateReportPage({ params }) {
                 <StickyNav active={activeSection} />
 
                 {/* ══════════════════════════════════════════════════
-                    TOP SUMMARY ROW — Pass Probability · Hiring Decision · Risk Level
+                    TOP SUMMARY ROW , Pass Probability · Hiring Decision · Risk Level
                 ══════════════════════════════════════════════════ */}
                 <ScrollReveal id="summary">
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
@@ -988,7 +988,7 @@ export default function CandidateReportPage({ params }) {
                 </ScrollReveal>
 
                 {/* ══════════════════════════════════════════════════
-                    PLACEMENT RISK SCORE — agency only
+                    PLACEMENT RISK SCORE , agency only
                 ══════════════════════════════════════════════════ */}
                 {profile?.account_type === 'agency' && (() => {
                   const prs = calcPlacementRisk(results, candidate?.assessments?.role_title)
@@ -1046,7 +1046,7 @@ export default function CandidateReportPage({ params }) {
                 })()}
 
                 {/* ══════════════════════════════════════════════════
-                    RESPONSE INTEGRITY — dark navy
+                    RESPONSE INTEGRITY , dark navy
                 ══════════════════════════════════════════════════ */}
                 <ScrollReveal id="integrity" delay={60}>
                 {(() => {
@@ -1060,7 +1060,7 @@ export default function CandidateReportPage({ params }) {
                   const qIcon  = !rq ? 'eye' : (rq === 'Genuine' || rq === 'Likely Genuine') ? 'check' : 'alert'
                   const glowStyle = hasIntegrity ? { animation: 'glow 2.5s ease-in-out infinite' } : {}
 
-                  function fmtTime(s) { if (!s) return '—'; const m = Math.floor(s / 60); return m > 0 ? `${m}m ${s % 60}s` : `${s}s` }
+                  function fmtTime(s) { if (!s) return ','; const m = Math.floor(s / 60); return m > 0 ? `${m}m ${s % 60}s` : `${s}s` }
                   function timingLabel(s) {
                     if (!s) return { label: 'No data', color: TX3, bg: 'rgba(255,255,255,0.05)', bd: 'rgba(255,255,255,0.1)' }
                     if (s < 90)   return { label: 'Rushed',   color: RED,   bg: `${RED}18`,   bd: `${RED}40` }
@@ -1213,7 +1213,7 @@ export default function CandidateReportPage({ params }) {
                 </ScrollReveal>
 
                 {/* ══════════════════════════════════════════════════
-                    PRESSURE-FIT — dark navy, 2×2 grid
+                    PRESSURE-FIT , dark navy, 2×2 grid
                 ══════════════════════════════════════════════════ */}
                 <ScrollReveal id="pressure-fit" delay={60}>
                 {(results.pressure_fit_score != null || results.pressure_fit) && (() => {
@@ -1328,7 +1328,7 @@ export default function CandidateReportPage({ params }) {
                                 <AnimBar pct={s} color={barColor} height={6} delay={idx * 80} />
                               )}
 
-                              {/* Narrative — always shown */}
+                              {/* Narrative , always shown */}
                               <div style={{
                                 borderLeft: `3px solid ${n ? barColor : 'rgba(255,255,255,0.15)'}`,
                                 paddingLeft: 14,
@@ -1376,7 +1376,7 @@ export default function CandidateReportPage({ params }) {
                 )}
 
                 {/* ══════════════════════════════════════════════════
-                    SKILLS BREAKDOWN — 2×2 grid with small rings
+                    SKILLS BREAKDOWN , 2×2 grid with small rings
                 ══════════════════════════════════════════════════ */}
                 {results.scores && Object.keys(results.scores).length > 0 && (
                   <ScrollReveal id="skills" delay={60}>
@@ -1509,9 +1509,10 @@ export default function CandidateReportPage({ params }) {
                         const sev = sevStyle(severity)
                         return (
                           <div key={i} style={{
-                            background: sev.tint,
+                            background: sev.bg,
                             border: `1px solid ${sev.border}`,
-                            borderRadius: 10,
+                            borderLeft: `4px solid ${sev.color}`,
+                            borderRadius: '0 10px 10px 0',
                             padding: '16px 18px',
                           }}>
                             {severity && (
@@ -1538,7 +1539,7 @@ export default function CandidateReportPage({ params }) {
                 )}
 
                 {/* ══════════════════════════════════════════════════
-                    ONBOARDING PLAN — structured week cards
+                    ONBOARDING PLAN , structured week cards
                 ══════════════════════════════════════════════════ */}
                 {results.onboarding_plan?.length > 0 && (
                   <ScrollReveal id="onboarding" delay={60}>
@@ -1824,7 +1825,7 @@ export default function CandidateReportPage({ params }) {
                 </Card>
 
                 {/* ══════════════════════════════════════════════════
-                    ACCOUNTABILITY TRAIL — agency only
+                    ACCOUNTABILITY TRAIL , agency only
                 ══════════════════════════════════════════════════ */}
                 {profile?.account_type === 'agency' && (
                   <Card style={{ marginBottom: 40 }} className="no-print">
@@ -1981,7 +1982,7 @@ export default function CandidateReportPage({ params }) {
         )}
       </main>
 
-      {/* ── REPORT SECTIONS MODAL (agency only — Feature 6) ── */}
+      {/* ── REPORT SECTIONS MODAL (agency only , Feature 6) ── */}
       {reportSectionsModal && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,33,55,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
@@ -2156,7 +2157,7 @@ export default function CandidateReportPage({ params }) {
                 This report is generated by Prodicta, an AI-powered work simulation platform. Rather than relying on a CV, {candidate.name || 'this candidate'} completed a series of realistic work scenarios tailored to the <strong>{candidate.assessments?.role_title || 'role'}</strong>. Their responses were analysed across four key competencies: communication, problem solving, prioritisation, and leadership.
               </p>
               <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px', lineHeight: 1.75 }}>
-                <strong>Overall Score (0–100):</strong> A score of 75+ indicates a strong candidate. 65–74 is good with some development areas. Below 65 suggests gaps worth exploring in interview.
+                <strong>Overall Score (0,100):</strong> A score of 75+ indicates a strong candidate. 65,74 is good with some development areas. Below 65 suggests gaps worth exploring in interview.
               </p>
               {results.pressure_fit_score != null && (
                 <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px', lineHeight: 1.75 }}>
@@ -2184,7 +2185,7 @@ export default function CandidateReportPage({ params }) {
               </div>
               <div style={{ background: riskBg(results.risk_level), border: `1px solid ${riskBd(results.risk_level)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Risk Level</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: riskCol(results.risk_level) }}>{results.risk_level || '—'}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: riskCol(results.risk_level) }}>{results.risk_level || ','}</div>
               </div>
               <div style={{ background: dBg(score), border: `1px solid ${dBd(score)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Recommendation</div>

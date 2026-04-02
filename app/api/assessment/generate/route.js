@@ -27,10 +27,10 @@ ${job_description}
 
 ---
 
-STEP 1 — EXTRACT ROLE INTELLIGENCE (do this before writing scenarios)
+STEP 1 , EXTRACT ROLE INTELLIGENCE (do this before writing scenarios)
 
 Read the job description carefully and extract:
-- The specific responsibilities this person will own in weeks 1–12
+- The specific responsibilities this person will own in weeks 1,12
 - The key stakeholders they will work with (internal and external)
 - The tools, systems, or processes likely used in this role
 - The commercial pressures, targets, or KPIs they will be measured against
@@ -42,30 +42,30 @@ Use these facts to make every scenario feel specific and grounded. Do not write 
 
 ---
 
-STEP 2 — WRITE 4 SCENARIOS
+STEP 2 , WRITE 4 SCENARIOS
 
 Each scenario must:
 - Use realistic UK company names, UK colleague names (mix of genders and cultural backgrounds), and monetary figures appropriate for the industry and role seniority
-- Include specific numbers: budgets, percentages, deadlines, team sizes, deal values, headcounts — all plausible for this exact role
-- Be written in present tense as if it is already happening — never use "imagine", "suppose", or "pretend"
-- Include an ongoing situation the candidate has walked into — with history, politics, and competing pressures already in play
-- Have genuine ambiguity — no single obvious "right answer"
+- Include specific numbers: budgets, percentages, deadlines, team sizes, deal values, headcounts , all plausible for this exact role
+- Be written in present tense as if it is already happening , never use "imagine", "suppose", or "pretend"
+- Include an ongoing situation the candidate has walked into , with history, politics, and competing pressures already in play
+- Have genuine ambiguity , no single obvious "right answer"
 - Have a context section of at least 150 words with named characters and specific details
-- Have a task that demands a real work product (an actual email, a specific ranked plan, a concrete decision with rationale) — not a reflection or opinion
+- Have a task that demands a real work product (an actual email, a specific ranked plan, a concrete decision with rationale) , not a reflection or opinion
 
 ---
 
-SCENARIO 1 — Written Communication Under Pressure (Type: "Email Response", Time: 12 minutes)
+SCENARIO 1 , Written Communication Under Pressure (Type: "Email Response", Time: 12 minutes)
 The candidate must write an actual email to a real stakeholder situation specific to this role. Include the full email or message thread they are responding to, with realistic names and specifics. The situation must involve competing interests, some emotional or political charge, and a consequence if handled badly. The email thread must be at least 80 words of realistic dialogue.
 
-SCENARIO 2 — Triage and Prioritisation (Type: "Prioritisation", Time: 10 minutes)
-The candidate arrives on a Monday morning to find 6 competing urgent demands, each from a named stakeholder with a legitimate reason for urgency. At least one item must carry a legal, compliance, or reputational risk specific to this industry. At least one item must feel urgent but be genuinely deferrable. The candidate must rank all 6, delegate where appropriate, and explain their reasoning — not just list the order.
+SCENARIO 2 , Triage and Prioritisation (Type: "Prioritisation", Time: 10 minutes)
+The candidate arrives on a Monday morning to find 6 competing urgent demands, each from a named stakeholder with a legitimate reason for urgency. At least one item must carry a legal, compliance, or reputational risk specific to this industry. At least one item must feel urgent but be genuinely deferrable. The candidate must rank all 6, delegate where appropriate, and explain their reasoning , not just list the order.
 
-SCENARIO 3 — Judgment Call in a Difficult Situation (Type: "Judgment Call", Time: 12 minutes)
-The candidate faces a situation with no clean resolution specific to this role and industry. It must involve a named colleague, client, or stakeholder behaving in a way that creates a real dilemma. Include interpersonal or political complexity — a broken process, an ethical grey area, or a decision that requires acting without full information or authority. They must state what they would do, how they would handle the person involved, and what they would not do.
+SCENARIO 3 , Judgment Call in a Difficult Situation (Type: "Judgment Call", Time: 12 minutes)
+The candidate faces a situation with no clean resolution specific to this role and industry. It must involve a named colleague, client, or stakeholder behaving in a way that creates a real dilemma. Include interpersonal or political complexity , a broken process, an ethical grey area, or a decision that requires acting without full information or authority. They must state what they would do, how they would handle the person involved, and what they would not do.
 
-SCENARIO 4 — Commercial or Strategic Diagnosis (Type: "Strategic Thinking", Time: 14 minutes)
-The candidate is shown specific data that reveals something is going wrong — declining performance, a deal at risk, a process failing, a team issue. The data must be precise enough to require genuine analysis (percentages, timelines, named accounts or team members). They must identify the most likely root cause from the evidence, propose 2–3 specific interventions with reasoning, and explain how they would measure success within 30 days.
+SCENARIO 4 , Commercial or Strategic Diagnosis (Type: "Strategic Thinking", Time: 14 minutes)
+The candidate is shown specific data that reveals something is going wrong , declining performance, a deal at risk, a process failing, a team issue. The data must be precise enough to require genuine analysis (percentages, timelines, named accounts or team members). They must identify the most likely root cause from the evidence, propose 2,3 specific interventions with reasoning, and explain how they would measure success within 30 days.
 
 ---
 
