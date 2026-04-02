@@ -12,6 +12,8 @@ import {
   F, FM, scolor, sbg, slabel, dL, dC, riskCol, riskBg, riskBd, cs, ps, bs
 } from '@/lib/constants'
 
+const PURPLE = '#7C3AED'
+
 // ── CountUp ───────────────────────────────────────────────────────────────────
 function CountUp({ target }) {
   const [val, setVal] = useState(0)
