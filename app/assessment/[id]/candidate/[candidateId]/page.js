@@ -395,7 +395,9 @@ const NAV_SECTIONS = [
 function StickyNav({ active }) {
   function scrollTo(id) {
     const el = document.getElementById(id)
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (!el) return
+    const top = el.getBoundingClientRect().top + window.scrollY - 56
+    window.scrollTo({ top, behavior: 'smooth' })
   }
   return (
     <div className="no-print" style={{
@@ -532,19 +534,25 @@ export default function CandidateReportPage({ params }) {
     load()
   }, [params.candidateId])
 
-  // IntersectionObserver for sticky nav active section tracking
+  // Scroll listener for sticky nav active section tracking
   useEffect(() => {
     if (!results) return
     const ids = ['summary','integrity','pressure-fit','ai-assessment','skills','strengths','watchouts','onboarding','questions']
-    const observers = []
-    ids.forEach(id => {
-      const el = document.getElementById(id)
-      if (!el) return
-      const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) setActiveSection(id) }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 })
-      obs.observe(el)
-      observers.push(obs)
-    })
-    return () => observers.forEach(o => o.disconnect())
+    function onScroll() {
+      const offset = 80
+      let current = ids[0]
+      for (const id of ids) {
+        const el = document.getElementById(id)
+        if (!el) continue
+        if (el.getBoundingClientRect().top + window.scrollY <= window.scrollY + offset) {
+          current = id
+        }
+      }
+      setActiveSection(current)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
   }, [results])
 
   const score = results?.overall_score ?? 0
