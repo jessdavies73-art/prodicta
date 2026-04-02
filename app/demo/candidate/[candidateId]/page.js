@@ -75,11 +75,11 @@ const EvidenceBox = ({ children }) => (
 
 const ActionBox = ({ children }) => (
   <div style={{
-    background: TEALLT, border: `1px solid ${TEAL}44`, borderRadius: 8,
-    padding: '10px 14px', marginTop: 10, display: 'flex', gap: 8, alignItems: 'flex-start',
+    background: '#f8fafc', border: `1px solid ${BD}`, borderLeft: `3px solid ${TX3}`,
+    borderRadius: '0 8px 8px 0', padding: '10px 14px', marginTop: 10, display: 'flex', gap: 8, alignItems: 'flex-start',
   }}>
-    <Ic name="zap" size={13} color={TEALD} />
-    <p style={{ fontFamily: F, fontSize: 13, color: TEALD, margin: 0, lineHeight: 1.55 }}>
+    <Ic name="zap" size={13} color={TX3} />
+    <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.55 }}>
       <strong>Recommended action:</strong> {children}
     </p>
   </div>
