@@ -263,7 +263,6 @@ function Logo() {
           <ProdictaLogo textColor="#ffffff" size={52} />
         </div>
       </div>
-      <p style={styles.tagline}>Pre-employment intelligence</p>
     </div>
   )
 }
