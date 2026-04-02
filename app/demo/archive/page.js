@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
 import { Ic } from '@/components/Icons'
+import Avatar from '@/components/Avatar'
 import { DEMO_CANDIDATES } from '@/lib/demo-data'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, F, FM, riskBg, riskCol } from '@/lib/constants'
 
@@ -69,9 +70,12 @@ export default function DemoArchivePage() {
                     }}
                   >
                     {/* Candidate */}
-                    <div>
-                      <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 2px' }}>{c.name}</p>
-                      <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: 0 }}>{c.email}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Avatar name={c.name} size={32} />
+                      <div>
+                        <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 2px' }}>{c.name}</p>
+                        <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: 0 }}>{c.email}</p>
+                      </div>
                     </div>
                     {/* Role */}
                     <span style={{ fontFamily: F, fontSize: 13.5, color: TX2 }}>{c.assessments.role_title}</span>

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
 import { Ic } from '@/components/Icons'
+import Avatar from '@/components/Avatar'
 import { DEMO_ASSESSMENTS, DEMO_CANDIDATES, getDemoCandidatesFull } from '@/lib/demo-data'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, F, FM, riskBg, riskCol, riskBd } from '@/lib/constants'
 
@@ -76,9 +77,12 @@ function Col({ candidateId, onClear, onViewReport }) {
       {/* Header */}
       <div style={{ background: NAVY, padding: '20px 20px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 14 }}>
-          <div>
-            <p style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: '#fff', margin: '0 0 3px' }}>{c.name}</p>
-            <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.55)', margin: 0 }}>{c.assessments.role_title}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Avatar name={c.name} size={40} />
+            <div>
+              <p style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: '#fff', margin: '0 0 3px' }}>{c.name}</p>
+              <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.55)', margin: 0 }}>{c.assessments.role_title}</p>
+            </div>
           </div>
           <button onClick={onClear} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 6, padding: '5px 7px', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
             <Ic name="x" size={14} color="rgba(255,255,255,0.5)" />
