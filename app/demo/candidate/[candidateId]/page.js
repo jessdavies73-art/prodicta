@@ -1083,7 +1083,7 @@ export default function DemoCandidatePage({ params }) {
                   <Ic name="check" size={13} color={GRN} /> CV / Résumé ({candidate?.name?.split(' ')[0] || 'Candidate'}_CV.pdf)
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: TX3 }}>
-                  <Ic name="x" size={13} color={TX3} /> Cover Letter — not attached
+                  <Ic name="x" size={13} color={TX3} /> Cover Letter (not attached)
                 </div>
               </div>
             </div>

@@ -582,7 +582,7 @@ export default function SettingsPage() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isUnlimited ? 0 : 10 }}>
                   <div>
                     <div style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX, marginBottom: 2 }}>
-                      Assessments used — {monthLabel}
+                      Assessments used: {monthLabel}
                     </div>
                     <div style={{ fontFamily: F, fontSize: 12, color: TX3 }}>
                       {isUnlimited

@@ -290,13 +290,13 @@ export default function LandingPage() {
               {
                 stat: '£12,000–30,000+',
                 label: 'Cost of a bad hire',
-                body: 'Recruitment fees, onboarding, lost productivity, and management time — before you even consider the cost of starting over.',
+                body: 'Recruitment fees, onboarding, lost productivity, and management time. Before you even consider the cost of starting over.',
                 accent: '#EF4444',
               },
               {
                 stat: '77%',
                 label: 'Employers say probation reveals more than interviews',
-                body: 'Yet most organisations still rely on interviews alone to make hiring decisions. Prodicta changes that.',
+                body: 'Yet most organisations still rely on interviews alone to make hiring decisions. PRODICTA changes that.',
                 accent: '#F59E0B',
               },
               {
@@ -340,69 +340,59 @@ export default function LandingPage() {
             </div>
           </Reveal>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24, position: 'relative' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0 }}>
             {[
               {
-                n: '01',
-                icon: (
-                  <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1={16} y1={13} x2={8} y2={13}/>
-                    <line x1={16} y1={17} x2={8} y2={17}/>
-                    <polyline points="10 9 9 9 8 9"/>
-                  </svg>
-                ),
+                n: 1,
                 title: 'Paste your job description',
-                body: 'Add your role title and job description. Prodicta auto-detects the role type and configures the assessment accordingly.',
+                body: 'The AI analyses the role and generates 4 realistic work scenarios tailored to that specific position.',
               },
               {
-                n: '02',
-                icon: (
-                  <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <polyline points="22,6 12,13 2,6"/>
-                  </svg>
-                ),
-                title: 'Send to candidates',
-                body: 'Invite candidates via email. They receive a unique link and complete four AI-generated work scenarios at their own pace.',
+                n: 2,
+                title: 'Invite candidates',
+                body: 'Each candidate receives a branded email with a unique link. 45 minutes to complete. No login needed.',
               },
               {
-                n: '03',
-                icon: (
-                  <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx={12} cy={12} r={10}/>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                    <line x1={12} y1={17} x2="12.01" y2={17}/>
-                  </svg>
-                ),
-                title: 'AI scores their responses',
-                body: 'Our model analyses communication, problem solving, prioritisation, and leadership — plus pressure-fit and response integrity.',
+                n: 3,
+                title: 'AI scores responses',
+                body: 'Two-pass AI analysis scores every response across skills, pressure handling, integrity, and commercial awareness.',
               },
               {
-                n: '04',
-                icon: (
-                  <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                    <line x1={18} y1={20} x2={18} y2={10}/><line x1={12} y1={20} x2={12} y2={4}/><line x1={6} y1={20} x2={6} y2={14}/>
-                  </svg>
-                ),
-                title: 'Receive your hiring report',
-                body: 'A detailed report with scores, watch-outs with recommended interview questions, an onboarding plan, and a hiring recommendation.',
+                n: 4,
+                title: 'Receive your report',
+                body: 'A detailed hiring report with scores, risk levels, evidence-backed insights, and a personalised onboarding plan.',
               },
             ].map((s, i) => (
               <Reveal key={s.n} delay={i * 80}>
-                <div style={{ background: '#f7f9fb', borderRadius: 16, padding: '32px 26px', height: '100%', position: 'relative', border: '1px solid #e8edf4' }}>
-                  <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 600, color: `${TEAL}90`, letterSpacing: '0.06em', marginBottom: 18 }}>STEP {s.n}</div>
+                <div style={{
+                  padding: '40px 32px',
+                  borderRight: i < 3 ? '1px solid #e8edf4' : 'none',
+                  height: '100%',
+                  position: 'relative',
+                }}>
+                  {/* Connector line */}
+                  {i < 3 && (
+                    <div style={{
+                      position: 'absolute', top: 56, right: -1,
+                      width: 0, height: 0,
+                      borderTop: '8px solid transparent',
+                      borderBottom: '8px solid transparent',
+                      borderLeft: `8px solid ${TEAL}55`,
+                    }} />
+                  )}
+                  {/* Number circle */}
                   <div style={{
-                    width: 52, height: 52, borderRadius: 13,
-                    background: `${TEAL}14`, border: `1px solid ${TEAL}30`,
+                    width: 48, height: 48, borderRadius: '50%',
+                    background: TEAL,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    marginBottom: 20,
+                    fontFamily: FM, fontSize: 18, fontWeight: 700, color: NAVY,
+                    marginBottom: 24, flexShrink: 0,
+                    boxShadow: `0 4px 16px ${TEAL}44`,
                   }}>
-                    {s.icon}
+                    {s.n}
                   </div>
-                  <h3 style={{ fontFamily: F, fontSize: 16.5, fontWeight: 700, color: NAVY, marginBottom: 10 }}>{s.title}</h3>
-                  <p style={{ fontFamily: F, fontSize: 13.5, color: '#5e6b7f', lineHeight: 1.7 }}>{s.body}</p>
+                  <h3 style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: NAVY, marginBottom: 10, letterSpacing: '-0.1px' }}>{s.title}</h3>
+                  <p style={{ fontFamily: F, fontSize: 13.5, color: '#5e6b7f', lineHeight: 1.75 }}>{s.body}</p>
                 </div>
               </Reveal>
             ))}
@@ -433,7 +423,7 @@ export default function LandingPage() {
               {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
                 title: 'Pressure-Fit Assessment',
-                body: "Measures how candidates perform under workplace pressure — conflicting priorities, difficult conversations, and tight deadlines. The #1 predictor of whether someone passes probation.",
+                body: "Measures how candidates perform under workplace pressure: conflicting priorities, difficult conversations, and tight deadlines. The #1 predictor of whether someone passes probation.",
               },
               {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx={12} cy={12} r={3}/></svg>,
@@ -443,7 +433,7 @@ export default function LandingPage() {
               {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><circle cx={12} cy={12} r={10}/><path d="M12 8v4l3 3"/></svg>,
                 title: 'Intelligent AI Scoring',
-                body: 'Four skill dimensions — Communication, Problem Solving, Prioritisation, and Leadership — each scored with detailed narrative explanations.',
+                body: 'Four skill dimensions (Communication, Problem Solving, Prioritisation, and Leadership), each scored with detailed narrative explanations.',
               },
               {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><line x1={18} y1={20} x2={18} y2={10}/><line x1={12} y1={20} x2={12} y2={4}/><line x1={6} y1={20} x2={6} y2={14}/></svg>,
@@ -506,9 +496,9 @@ export default function LandingPage() {
               {
                 tag: 'For Recruitment Agencies',
                 headline: 'Send pre-assessed candidates your clients can trust',
-                body: 'Stop presenting candidates based on CVs and hope. Send clients a Prodicta report with every shortlist — show them the score, the pressure-fit, the watch-outs, and the interview questions. Build a reputation for placements that stick.',
+                body: 'Stop presenting candidates based on CVs and hope. Send clients a PRODICTA report with every shortlist. Show them the score, the pressure-fit, the watch-outs, and the interview questions. Build a reputation for placements that stick.',
                 points: [
-                  'Placement Risk Score — know before you place',
+                  'Placement Risk Score: know before you place',
                   'Send Candidate Pack directly to clients',
                   'Accountability records for every placement',
                   'Agency-specific dashboard and document upload',
@@ -519,7 +509,7 @@ export default function LandingPage() {
               {
                 tag: 'For Direct Employers',
                 headline: 'Know who will pass probation before you hire them',
-                body: "Interview performance and probation performance are different things. Prodicta shows you how candidates behave under real workplace pressure, not how they present in a 45-minute interview. Make better decisions, reduce early leavers, and build teams that last.",
+                body: "Interview performance and probation performance are different things. PRODICTA shows you how candidates behave under real workplace pressure, not how they present in a 45-minute interview. Make better decisions, reduce early leavers, and build teams that last.",
                 points: [
                   'Predict probation outcomes before hiring',
                   'Reduce costly early leavers',
@@ -687,7 +677,7 @@ export default function LandingPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <div style={{ background: `${TEAL}22`, border: `1px solid ${TEAL}44`, borderRadius: 10, padding: '8px 14px', fontFamily: FM, fontSize: 13, fontWeight: 700, color: TEAL, whiteSpace: 'nowrap' }}>LIMITED</div>
                 <div>
-                  <div style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Founding Member — £79/month</div>
+                  <div style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Founding Member: £79/month</div>
                   <div style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.55)' }}>First 6 customers only: unlimited assessments, all features, for 12 months. Lock in before it's gone.</div>
                 </div>
               </div>
@@ -796,9 +786,9 @@ export default function LandingPage() {
             <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '28px 32px', marginBottom: 32, textAlign: 'left' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {[
-                  { label: 'From January 2027', body: 'Employees will have unfair dismissal protection from their first day of employment — with no qualifying period.' },
+                  { label: 'From January 2027', body: 'Employees will have unfair dismissal protection from their first day of employment, with no qualifying period.' },
                   { label: 'No compensation cap', body: "The upper limit on unfair dismissal compensation will be removed, exposing employers to significantly larger awards." },
-                  { label: 'Probationary periods tightened', body: "You'll still be able to dismiss during a defined probation period, but only with a clear, fair process — and you'll need to evidence it." },
+                  { label: 'Probationary periods tightened', body: "You'll still be able to dismiss during a defined probation period, but only with a clear, fair process. You'll need to evidence it." },
                 ].map(({ label, body }) => (
                   <div key={label} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                     <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#EF4444', marginTop: 7, flexShrink: 0 }} />
@@ -837,7 +827,7 @@ export default function LandingPage() {
               Start making better hires today
             </h2>
             <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.75, marginBottom: 40 }}>
-              Join employers and recruitment agencies across the UK using Prodicta to hire with confidence.
+              Join employers and recruitment agencies across the UK using PRODICTA to hire with confidence.
             </p>
             <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
               <a href="/login" style={{
@@ -912,7 +902,7 @@ export default function LandingPage() {
               AIAURA Group Ltd trading as PRODICTA · Registered in England and Wales
             </p>
             <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.28)' }}>
-              © {new Date().getFullYear()} Prodicta. All rights reserved.
+              © {new Date().getFullYear()} PRODICTA. All rights reserved.
             </p>
           </div>
         </div>

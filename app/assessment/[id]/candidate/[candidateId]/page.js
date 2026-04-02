@@ -2218,11 +2218,11 @@ export default function CandidateReportPage({ params }) {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: documents.cv ? TEALD : TX3 }}>
                       <Ic name={documents.cv ? 'check' : 'x'} size={13} color={documents.cv ? GRN : TX3} />
-                      CV / Résumé {documents.cv ? `(${documents.cv.file_name})` : '— not attached'}
+                      CV / Résumé {documents.cv ? `(${documents.cv.file_name})` : '(not attached)'}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: documents.cover_letter ? TEALD : TX3 }}>
                       <Ic name={documents.cover_letter ? 'check' : 'x'} size={13} color={documents.cover_letter ? GRN : TX3} />
-                      Cover Letter {documents.cover_letter ? `(${documents.cover_letter.file_name})` : '— not attached'}
+                      Cover Letter {documents.cover_letter ? `(${documents.cover_letter.file_name})` : '(not attached)'}
                     </div>
                   </div>
                 </div>

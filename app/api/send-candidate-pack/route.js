@@ -69,7 +69,7 @@ export async function POST(request) {
       const sev   = typeof w === 'object' ? (w.severity || 'Medium') : 'Medium'
       const title = typeof w === 'object' ? (w.title || w.text || '') : w
       const text  = typeof w === 'object' ? (w.text || '') : ''
-      return `<tr><td style="padding:8px 12px 8px 0;vertical-align:top;"><span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:${sev === 'High' ? '#fee2e2' : sev === 'Medium' ? '#fef3c7' : '#f1f5f9'};color:${sevColor(sev)};">${sev}</span></td><td style="padding:8px 0;font-size:13px;color:#5e6b7f;line-height:1.55;"><strong style="color:#0f172a;">${title}</strong>${text && title !== text ? ` — ${text}` : ''}</td></tr>`
+      return `<tr><td style="padding:8px 12px 8px 0;vertical-align:top;"><span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:${sev === 'High' ? '#fee2e2' : sev === 'Medium' ? '#fef3c7' : '#f1f5f9'};color:${sevColor(sev)};">${sev}</span></td><td style="padding:8px 0;font-size:13px;color:#5e6b7f;line-height:1.55;"><strong style="color:#0f172a;">${title}</strong>${text && title !== text ? `: ${text}` : ''}</td></tr>`
     }
 
     function questionRow(q, i) {
@@ -175,8 +175,8 @@ export async function POST(request) {
       <!-- Attached documents -->
       <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px 18px;margin-bottom:8px;">
         <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:8px;">Attached Documents</div>
-        ${cvDoc ? `<div style="font-size:13px;color:#15803d;margin-bottom:4px;">&#128206; CV / Résumé — ${cvDoc.file_name}</div>` : ''}
-        ${clDoc ? `<div style="font-size:13px;color:#15803d;">&#128206; Cover Letter — ${clDoc.file_name}</div>` : ''}
+        ${cvDoc ? `<div style="font-size:13px;color:#15803d;margin-bottom:4px;">&#128206; CV / Résumé: ${cvDoc.file_name}</div>` : ''}
+        ${clDoc ? `<div style="font-size:13px;color:#15803d;">&#128206; Cover Letter: ${clDoc.file_name}</div>` : ''}
       </div>
       ` : ''}
 
@@ -197,7 +197,7 @@ export async function POST(request) {
     await resend.emails.send({
       from: `${companyName} via Prodicta <reports@prodicta.co.uk>`,
       to: [clientEmail],
-      subject: `Candidate Brief: ${candidate.name} — ${roleTitle}`,
+      subject: `Candidate Brief: ${candidate.name} - ${roleTitle}`,
       html,
       ...(attachments.length ? { attachments } : {}),
     })

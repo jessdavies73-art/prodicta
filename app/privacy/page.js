@@ -79,12 +79,12 @@ export default function PrivacyPage() {
         <P>For data protection queries, contact us at <a href={`mailto:${EMAIL}`} style={{ color: TEAL }}>{EMAIL}</a>.</P>
 
         <H2>2. Data We Collect</H2>
-        <P><strong>Account and profile data</strong> — when you create an account, we collect your email address, company name, and account type (direct employer or recruitment agency). We also collect any profile information you add in Settings.</P>
-        <P><strong>Assessment content</strong> — job titles, job descriptions, skill weightings, and assessment templates you create.</P>
-        <P><strong>Candidate data</strong> — names, email addresses, and assessment responses of candidates you invite. You are the data controller for this data; we process it on your behalf as a data processor.</P>
-        <P><strong>Usage data</strong> — information about how you use the Service, including pages visited, features used, and assessment activity. This helps us improve the platform and enforce usage limits.</P>
-        <P><strong>Technical data</strong> — IP address, browser type, device information, and session data collected automatically when you use the Service.</P>
-        <P><strong>Payment data</strong> — if you have a paid subscription, payment processing is handled by our payment provider. We do not store full card numbers.</P>
+        <P><strong>Account and profile data:</strong> when you create an account, we collect your email address, company name, and account type (direct employer or recruitment agency). We also collect any profile information you add in Settings.</P>
+        <P><strong>Assessment content:</strong> job titles, job descriptions, skill weightings, and assessment templates you create.</P>
+        <P><strong>Candidate data:</strong> names, email addresses, and assessment responses of candidates you invite. You are the data controller for this data; we process it on your behalf as a data processor.</P>
+        <P><strong>Usage data:</strong> information about how you use the Service, including pages visited, features used, and assessment activity. This helps us improve the platform and enforce usage limits.</P>
+        <P><strong>Technical data:</strong> IP address, browser type, device information, and session data collected automatically when you use the Service.</P>
+        <P><strong>Payment data:</strong> if you have a paid subscription, payment processing is handled by our payment provider. We do not store full card numbers.</P>
 
         <H2>3. How We Use Your Data</H2>
         <UL items={[
@@ -140,7 +140,7 @@ export default function PrivacyPage() {
           We will respond to requests within one month. If you are unsatisfied with our response, you have the right to lodge a complaint with the Information Commissioner's Office (ICO) at <a href="https://ico.org.uk" target="_blank" rel="noreferrer" style={{ color: TEAL }}>ico.org.uk</a>.
         </P>
 
-        <H2>8. Candidate Data — Special Note for Employers</H2>
+        <H2>8. Candidate Data: Special Note for Employers</H2>
         <P>
           When you use Prodicta to assess candidates, you act as the data controller for candidate personal data. You are responsible for:
         </P>
@@ -156,7 +156,7 @@ export default function PrivacyPage() {
 
         <H2>9. Cookies</H2>
         <P>
-          Prodicta uses essential cookies only. These are strictly necessary for the platform to function — specifically for managing authentication sessions. We do not use advertising, analytics, or tracking cookies.
+          Prodicta uses essential cookies only. These are strictly necessary for the platform to function, specifically for managing authentication sessions. We do not use advertising, analytics, or tracking cookies.
         </P>
         <P>
           You can control cookies through your browser settings, but disabling essential cookies will prevent you from logging in.
