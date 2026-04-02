@@ -528,6 +528,16 @@ export default function CandidateReportPage({ params }) {
   const [recordSharedDate, setRecordSharedDate] = useState('')
   const [savingSharedDate, setSavingSharedDate] = useState(false)
 
+  // Documents (agency only)
+  const [documents, setDocuments] = useState({})
+  const [uploadingDoc, setUploadingDoc] = useState(null)
+  const [deletingDoc, setDeletingDoc] = useState(null)
+  const [sendModal, setSendModal] = useState(false)
+  const [sendEmail, setSendEmail] = useState('')
+  const [sendMessage, setSendMessage] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sendSuccess, setSendSuccess] = useState(false)
+
   // Report section prefs (agency , Feature 6)
   const DEFAULT_SECTIONS = { overall_score: true, pressure_fit: true, ai_summary: true, skills: true, strengths: true, watchouts: true, interview_questions: true }
   const [reportSections, setReportSections] = useState(DEFAULT_SECTIONS)
@@ -560,6 +570,13 @@ export default function CandidateReportPage({ params }) {
 
         const { data: nts } = await supabase.from('candidate_notes').select('*').eq('candidate_id', params.candidateId).order('created_at', { ascending: false })
         setNotes(nts || [])
+
+        if (prof?.account_type === 'agency') {
+          const { data: docList } = await supabase.from('candidate_documents').select('*').eq('candidate_id', params.candidateId).eq('user_id', u.id)
+          const docMap = {}
+          ;(docList || []).forEach(d => { docMap[d.doc_type] = d })
+          setDocuments(docMap)
+        }
 
         const [{ data: outcome }, { data: acRec }] = await Promise.all([
           supabase.from('candidate_outcomes').select('*').eq('candidate_id', params.candidateId).eq('user_id', u.id).maybeSingle(),
@@ -607,6 +624,58 @@ export default function CandidateReportPage({ params }) {
 
   const bmMap = {}
   benchmarks.forEach(b => { if (b.skill_name) bmMap[b.skill_name.toLowerCase()] = b.threshold })
+
+  async function handleDocUpload(docType, file) {
+    if (!file || !user) return
+    setUploadingDoc(docType)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('candidateId', params.candidateId)
+      formData.append('docType', docType)
+      const res = await fetch('/api/documents/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setDocuments(prev => ({ ...prev, [docType]: data.document }))
+    } catch (e) {
+      console.error('Upload error:', e)
+    } finally {
+      setUploadingDoc(null)
+    }
+  }
+
+  async function handleDocDelete(docId, docType) {
+    setDeletingDoc(docType)
+    try {
+      const res = await fetch(`/api/documents/${docId}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setDocuments(prev => ({ ...prev, [docType]: null }))
+    } catch (e) {
+      console.error('Delete error:', e)
+    } finally {
+      setDeletingDoc(null)
+    }
+  }
+
+  async function sendCandidatePack() {
+    if (!sendEmail.trim() || !user) return
+    setSending(true)
+    try {
+      const res = await fetch('/api/send-candidate-pack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidateId: params.candidateId, clientEmail: sendEmail.trim(), message: sendMessage.trim() }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setSendSuccess(true)
+      setTimeout(() => { setSendModal(false); setSendSuccess(false); setSendEmail(''); setSendMessage('') }, 2800)
+    } catch (e) {
+      console.error('Send error:', e)
+      setSending(false)
+    }
+  }
 
   function handlePrint() { window.print() }
   function doClientPrint() {
@@ -890,6 +959,16 @@ export default function CandidateReportPage({ params }) {
                       }}>
                         <Ic name="file" size={15} color={TEAL} />
                         Export Client Report
+                      </button>
+                    )}
+                    {results && profile?.account_type === 'agency' && (
+                      <button onClick={() => setSendModal(true)} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: TEAL, border: 'none', borderRadius: 8, cursor: 'pointer',
+                        fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px',
+                      }}>
+                        <Ic name="send" size={15} color={NAVY} />
+                        Send to Client
                       </button>
                     )}
                     <button onClick={handlePrint} style={{
@@ -1826,6 +1905,89 @@ export default function CandidateReportPage({ params }) {
                 </Card>
 
                 {/* ══════════════════════════════════════════════════
+                    CANDIDATE DOCUMENTS , agency only
+                ══════════════════════════════════════════════════ */}
+                {profile?.account_type === 'agency' && (
+                  <Card style={{ marginBottom: 20 }} className="no-print">
+                    <SectionHeading>
+                      <Ic name="paperclip" size={15} color={TEAL} />
+                      Candidate Documents
+                    </SectionHeading>
+                    <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 20px', lineHeight: 1.6 }}>
+                      Attach the candidate's CV and cover letter. Uploaded files are included when you use <strong>Send to Client</strong>.
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                      {['cv', 'cover_letter'].map(docType => {
+                        const doc = documents[docType]
+                        const label = docType === 'cv' ? 'CV / Résumé' : 'Cover Letter'
+                        const isUploading = uploadingDoc === docType
+                        const isDeleting  = deletingDoc  === docType
+                        return (
+                          <div key={docType} style={{
+                            border: `2px dashed ${doc ? TEAL : BD}`,
+                            borderRadius: 12, padding: '20px 20px', textAlign: 'center',
+                            background: doc ? TEALLT : BG, transition: 'all 0.15s',
+                          }}>
+                            <Ic name="file" size={28} color={doc ? TEAL : TX3} />
+                            <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '10px 0 4px' }}>{label}</div>
+                            {doc ? (
+                              <>
+                                <div style={{ fontFamily: F, fontSize: 12, color: TX2, marginBottom: 14 }}>
+                                  {doc.file_name}<br />
+                                  <span style={{ color: TX3 }}>{Math.round((doc.file_size || 0) / 1024)}KB</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                                  <a
+                                    href={`/api/documents/${doc.id}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 7, background: TEAL, color: NAVY, fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}
+                                  >
+                                    <Ic name="download" size={12} color={NAVY} /> View
+                                  </a>
+                                  <button
+                                    onClick={() => handleDocDelete(doc.id, docType)}
+                                    disabled={isDeleting}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 7, background: REDBG, color: RED, border: `1px solid ${REDBD}`, fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: isDeleting ? 'not-allowed' : 'pointer' }}
+                                  >
+                                    <Ic name="trash" size={12} color={RED} /> {isDeleting ? 'Removing…' : 'Remove'}
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 14 }}>PDF only, max 10MB</div>
+                                <label style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                                  padding: '8px 18px', borderRadius: 7,
+                                  background: isUploading ? BD : NAVY, color: isUploading ? TX3 : '#fff',
+                                  fontFamily: F, fontSize: 13, fontWeight: 700,
+                                  cursor: isUploading ? 'not-allowed' : 'pointer',
+                                }}>
+                                  <Ic name="upload" size={13} color={isUploading ? TX3 : TEAL} />
+                                  {isUploading ? 'Uploading…' : 'Upload PDF'}
+                                  <input
+                                    type="file"
+                                    accept=".pdf,application/pdf"
+                                    style={{ display: 'none' }}
+                                    disabled={isUploading}
+                                    onChange={e => {
+                                      const f = e.target.files?.[0]
+                                      if (f) handleDocUpload(docType, f)
+                                      e.target.value = ''
+                                    }}
+                                  />
+                                </label>
+                              </>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </Card>
+                )}
+
+                {/* ══════════════════════════════════════════════════
                     ACCOUNTABILITY TRAIL , agency only
                 ══════════════════════════════════════════════════ */}
                 {profile?.account_type === 'agency' && (
@@ -1982,6 +2144,105 @@ export default function CandidateReportPage({ params }) {
           </>
         )}
       </main>
+
+      {/* ── SEND TO CLIENT MODAL (agency only) ── */}
+      {sendModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,33,55,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={() => { if (!sending) setSendModal(false) }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: CARD, borderRadius: 16, padding: '28px 32px', maxWidth: 480, width: '100%', boxShadow: '0 16px 48px rgba(15,33,55,0.22)', position: 'relative' }}>
+            <button onClick={() => setSendModal(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <Ic name="x" size={18} color={TX3} />
+            </button>
+
+            {sendSuccess ? (
+              <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: GRNBG, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                  <Ic name="check" size={24} color={GRN} />
+                </div>
+                <div style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: TX, marginBottom: 6 }}>Sent successfully</div>
+                <div style={{ fontFamily: F, fontSize: 13.5, color: TX2 }}>The candidate pack has been delivered to {sendEmail}</div>
+              </div>
+            ) : (
+              <>
+                <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 5px' }}>Send Candidate Pack</h3>
+                <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 20px', lineHeight: 1.55 }}>
+                  Send {candidate?.name || 'this candidate'}'s full report to a client. Attached documents are included automatically.
+                </p>
+
+                {/* What's included */}
+                <div style={{ background: TEALLT, border: `1px solid ${TEAL}44`, borderRadius: 10, padding: '12px 16px', marginBottom: 18 }}>
+                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>What's included</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: TEALD }}>
+                      <Ic name="check" size={13} color={GRN} /> Full candidate report (score, strengths, watch-outs, questions)
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: documents.cv ? TEALD : TX3 }}>
+                      <Ic name={documents.cv ? 'check' : 'x'} size={13} color={documents.cv ? GRN : TX3} />
+                      CV / Résumé {documents.cv ? `(${documents.cv.file_name})` : '— not attached'}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: documents.cover_letter ? TEALD : TX3 }}>
+                      <Ic name={documents.cover_letter ? 'check' : 'x'} size={13} color={documents.cover_letter ? GRN : TX3} />
+                      Cover Letter {documents.cover_letter ? `(${documents.cover_letter.file_name})` : '— not attached'}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Client email address</label>
+                  <input
+                    type="email"
+                    value={sendEmail}
+                    onChange={e => setSendEmail(e.target.value)}
+                    placeholder="client@company.com"
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 13px', borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: F, fontSize: 14, color: TX, background: BG, outline: 'none' }}
+                    onFocus={e => e.target.style.borderColor = TEAL}
+                    onBlur={e => e.target.style.borderColor = BD}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 22 }}>
+                  <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Personal message (optional)</label>
+                  <textarea
+                    value={sendMessage}
+                    onChange={e => setSendMessage(e.target.value)}
+                    placeholder="Add a note to the client…"
+                    rows={2}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 13px', borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: F, fontSize: 13.5, color: TX, background: BG, outline: 'none', resize: 'vertical' }}
+                    onFocus={e => e.target.style.borderColor = TEAL}
+                    onBlur={e => e.target.style.borderColor = BD}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    onClick={sendCandidatePack}
+                    disabled={!sendEmail.trim() || sending}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                      padding: '11px 0', borderRadius: 9, border: 'none',
+                      background: sendEmail.trim() && !sending ? TEAL : BD,
+                      color: sendEmail.trim() && !sending ? NAVY : TX3,
+                      fontFamily: F, fontSize: 14, fontWeight: 700,
+                      cursor: sendEmail.trim() && !sending ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    <Ic name="send" size={15} color={sendEmail.trim() && !sending ? NAVY : TX3} />
+                    {sending ? 'Sending…' : 'Send candidate pack'}
+                  </button>
+                  <button
+                    onClick={() => setSendModal(false)}
+                    style={{ flex: 1, padding: '11px 0', borderRadius: 9, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── REPORT SECTIONS MODAL (agency only , Feature 6) ── */}
       {reportSectionsModal && (
@@ -2264,6 +2525,27 @@ export default function CandidateReportPage({ params }) {
               })}
             </div>
           )}
+          {/* Supporting Documents */}
+          {(documents.cv || documents.cover_letter) && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 8, marginBottom: 14 }}>Supporting Documents</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {documents.cv && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: TX2 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, background: TEALLT, color: TEALD, padding: '2px 8px', borderRadius: 20 }}>CV</span>
+                    {documents.cv.file_name}
+                  </div>
+                )}
+                {documents.cover_letter && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: TX2 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, background: TEALLT, color: TEALD, padding: '2px 8px', borderRadius: 20 }}>Cover Letter</span>
+                    {documents.cover_letter.file_name}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {reportSections.interview_questions && results.interview_questions?.length > 0 && (
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${AMB}`, paddingBottom: 8, marginBottom: 14 }}>Suggested Interview Questions</div>
