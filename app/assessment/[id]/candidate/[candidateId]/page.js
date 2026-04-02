@@ -468,6 +468,20 @@ export default function CandidateReportPage({ params }) {
   const [noteSaving, setNoteSaving] = useState(false)
   const [activeSection, setActiveSection] = useState('summary')
 
+  // Outcome Tracking (employer only)
+  const [outcomeModal, setOutcomeModal] = useState(false)
+  const [selectedOutcome, setSelectedOutcome] = useState('')
+  const [outcomeDate, setOutcomeDate] = useState('')
+  const [outcomeNoteText, setOutcomeNoteText] = useState('')
+  const [savingOutcome, setSavingOutcome] = useState(false)
+  const [existingOutcome, setExistingOutcome] = useState(null)
+
+  // Accountability Trail (agency only)
+  const [accountRecord, setAccountRecord] = useState(null)
+  const [savingRecord, setSavingRecord] = useState(false)
+  const [recordSharedDate, setRecordSharedDate] = useState('')
+  const [savingSharedDate, setSavingSharedDate] = useState(false)
+
   useEffect(() => {
     async function load() {
       try {
@@ -493,6 +507,15 @@ export default function CandidateReportPage({ params }) {
 
         const { data: nts } = await supabase.from('candidate_notes').select('*').eq('candidate_id', params.candidateId).order('created_at', { ascending: false })
         setNotes(nts || [])
+
+        const [{ data: outcome }, { data: acRec }] = await Promise.all([
+          supabase.from('candidate_outcomes').select('*').eq('candidate_id', params.candidateId).eq('user_id', u.id).maybeSingle(),
+          supabase.from('accountability_records').select('*').eq('candidate_id', params.candidateId).eq('user_id', u.id).maybeSingle(),
+        ])
+        setExistingOutcome(outcome || null)
+        if (outcome) { setSelectedOutcome(outcome.outcome); setOutcomeDate(outcome.outcome_date || ''); setOutcomeNoteText(outcome.notes || '') }
+        setAccountRecord(acRec || null)
+        if (acRec?.shared_with_client_at) setRecordSharedDate(acRec.shared_with_client_at)
       } catch (e) {
         setError(e.message)
       } finally {
@@ -556,6 +579,101 @@ export default function CandidateReportPage({ params }) {
     setNotes(prev => prev.filter(n => n.id !== noteId))
   }
 
+  async function logOutcome() {
+    if (!selectedOutcome || !user) return
+    setSavingOutcome(true)
+    const supabase = createClient()
+    const payload = {
+      candidate_id: params.candidateId,
+      user_id: user.id,
+      outcome: selectedOutcome,
+      outcome_date: outcomeDate || null,
+      notes: outcomeNoteText.trim() || null,
+    }
+    let saved
+    if (existingOutcome) {
+      const { data } = await supabase.from('candidate_outcomes').update(payload).eq('id', existingOutcome.id).select().single()
+      saved = data
+    } else {
+      const { data } = await supabase.from('candidate_outcomes').insert(payload).select().single()
+      saved = data
+    }
+    if (saved) { setExistingOutcome(saved); setOutcomeModal(false) }
+    setSavingOutcome(false)
+  }
+
+  async function generateAccountabilityRecord() {
+    if (!user || !results) return
+    setSavingRecord(true)
+    const supabase = createClient()
+    const keyFindings = [
+      `Overall Score: ${results.overall_score}/100 (${slbl(results.overall_score)})`,
+      results.pressure_fit_score != null ? `Pressure-Fit Score: ${results.pressure_fit_score}/100` : null,
+      `Hiring Decision: ${dL(results.overall_score)}`,
+      results.risk_level ? `Risk Level: ${results.risk_level}` : null,
+      results.trajectory ? `Performance Trajectory: ${results.trajectory}` : null,
+      results.confidence_level ? `Confidence Level: ${results.confidence_level}` : null,
+    ].filter(Boolean).join('\n')
+    const watchOuts = (results.watchouts || []).map(w =>
+      typeof w === 'object' ? `[${w.severity || 'Medium'}] ${w.text || w.title || ''}` : w
+    ).join('\n')
+    const actions = (results.interview_questions || []).slice(0, 3).map((q, i) =>
+      `${i + 1}. ${typeof q === 'object' ? (q.question || q.text || '') : q}`
+    ).join('\n')
+    const payload = {
+      candidate_id: params.candidateId,
+      user_id: user.id,
+      generated_at: new Date().toISOString(),
+      key_findings: keyFindings,
+      watch_outs: watchOuts,
+      recommended_actions: actions,
+    }
+    let saved
+    if (accountRecord) {
+      const { data } = await supabase.from('accountability_records').update(payload).eq('id', accountRecord.id).select().single()
+      saved = data
+    } else {
+      const { data } = await supabase.from('accountability_records').insert(payload).select().single()
+      saved = data
+    }
+    if (saved) setAccountRecord(saved)
+    setSavingRecord(false)
+  }
+
+  async function saveSharedDate() {
+    if (!accountRecord || !user) return
+    setSavingSharedDate(true)
+    const supabase = createClient()
+    const { data } = await supabase.from('accountability_records').update({ shared_with_client_at: recordSharedDate || null }).eq('id', accountRecord.id).select().single()
+    if (data) setAccountRecord(data)
+    setSavingSharedDate(false)
+  }
+
+  function handleAccountabilityPrint() {
+    document.body.classList.add('accountability-print')
+    window.print()
+    window.addEventListener('afterprint', function cleanup() {
+      document.body.classList.remove('accountability-print')
+      window.removeEventListener('afterprint', cleanup)
+    })
+  }
+
+  function calcPlacementRisk(res, roleTitle) {
+    if (!res) return null
+    const assessmentScore = res.overall_score ?? 0
+    const pressureFit = res.pressure_fit_score ?? 50
+    const seniorityFit = res.seniority_fit_score ?? 50
+    const integrityMap = { 'Genuine': 95, 'Likely Genuine': 80, 'Adequate': 65, 'Possibly AI-Assisted': 40, 'Suspect': 20 }
+    const integrityScore = integrityMap[res.integrity?.response_quality] ?? 65
+    const rt = (roleTitle || '').toLowerCase()
+    let industrySafety = 65
+    if (/finance|legal|engineer|software|tech|consult|analy|account/.test(rt)) industrySafety = 80
+    if (/sales|retail|hospitality|customer|support|call centre/.test(rt)) industrySafety = 45
+    return Math.min(100, Math.max(0, Math.round(
+      assessmentScore * 0.40 + pressureFit * 0.25 + seniorityFit * 0.15 + industrySafety * 0.10 + integrityScore * 0.10
+    )))
+  }
+
   function formatNoteDate(str) {
     if (!str) return ''
     return new Date(str).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -572,10 +690,15 @@ export default function CandidateReportPage({ params }) {
           * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
         .client-report-container { display: none; }
+        .accountability-record-print { display: none; }
         @media print {
           body.client-print aside { display: none !important; }
           body.client-print main { display: none !important; }
           body.client-print .client-report-container { display: block !important; }
+          body.accountability-print aside { display: none !important; }
+          body.accountability-print main { display: none !important; }
+          body.accountability-print .client-report-container { display: none !important; }
+          body.accountability-print .accountability-record-print { display: block !important; }
         }
         @keyframes pulse{0%,100%{opacity:.3}50%{opacity:.55}}
         @keyframes glow{0%,100%{box-shadow:0 0 8px 2px rgba(0,191,165,0.25)}50%{box-shadow:0 0 18px 5px rgba(0,191,165,0.45)}}
@@ -674,6 +797,19 @@ export default function CandidateReportPage({ params }) {
                   )}
 
                   <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {results && profile?.account_type === 'employer' && (
+                      <button onClick={() => setOutcomeModal(true)} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: existingOutcome ? GRNBG : TEALLT,
+                        border: `1.5px solid ${existingOutcome ? GRNBD : `${TEAL}55`}`,
+                        borderRadius: 8, cursor: 'pointer',
+                        fontFamily: F, fontSize: 13, fontWeight: 700,
+                        color: existingOutcome ? GRN : TEALD, padding: '9px 16px',
+                      }}>
+                        <Ic name="check" size={15} color={existingOutcome ? GRN : TEALD} />
+                        {existingOutcome ? 'Update Outcome' : 'Log Outcome'}
+                      </button>
+                    )}
                     {results && (
                       <button onClick={handleClientExport} style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -779,6 +915,64 @@ export default function CandidateReportPage({ params }) {
                   </Card>
                 </div>
                 </ScrollReveal>
+
+                {/* ══════════════════════════════════════════════════
+                    PLACEMENT RISK SCORE — agency only
+                ══════════════════════════════════════════════════ */}
+                {profile?.account_type === 'agency' && (() => {
+                  const prs = calcPlacementRisk(results, candidate?.assessments?.role_title)
+                  if (prs == null) return null
+                  const prsColor = prs >= 75 ? GRN : prs >= 50 ? AMB : RED
+                  const prsBg    = prs >= 75 ? GRNBG : prs >= 50 ? AMBBG : REDBG
+                  const prsBd    = prs >= 75 ? GRNBD : prs >= 50 ? AMBBD : REDBD
+                  const prsLabel = prs >= 75 ? 'Low Risk' : prs >= 50 ? 'Medium Risk' : 'High Risk'
+                  const prsDesc  = prs >= 75
+                    ? 'Strong chance of successful placement. Candidate profile aligns well with role demands.'
+                    : prs >= 50
+                    ? 'Moderate placement risk. Review watch-outs and consider probing questions before placing.'
+                    : 'High placement risk. Significant gaps detected — discuss concerns with client before proceeding.'
+                  return (
+                    <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20, border: `1.5px solid ${prsBd}`, background: `linear-gradient(135deg, ${prsBg} 0%, #fff 60%)` }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: 220 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+                            <span style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TX, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              Placement Risk Score
+                            </span>
+                            <InfoTooltip text="Combines assessment score (40%), pressure-fit (25%), seniority fit (15%), industry turnover risk (10%), and response integrity (10%) to estimate placement success likelihood." />
+                          </div>
+                          <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 14px', lineHeight: 1.65 }}>
+                            {prsDesc}
+                          </p>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 11.5, fontWeight: 600, color: TX3, fontFamily: F }}>
+                            <span>Assessment score ×0.40</span>
+                            <span>·</span>
+                            <span>Pressure-fit ×0.25</span>
+                            <span>·</span>
+                            <span>Seniority fit ×0.15</span>
+                            <span>·</span>
+                            <span>Industry risk ×0.10</span>
+                            <span>·</span>
+                            <span>Integrity ×0.10</span>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                          <SmallRing score={prs} size={80} strokeWidth={7} />
+                          <div style={{
+                            marginTop: 8, display: 'inline-flex', alignItems: 'center',
+                            padding: '4px 14px', borderRadius: 50, fontFamily: F,
+                            fontSize: 12, fontWeight: 800, background: prsBg,
+                            color: prsColor, border: `1px solid ${prsBd}`,
+                          }}>
+                            {prsLabel}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                    </ScrollReveal>
+                  )
+                })()}
 
                 {/* ══════════════════════════════════════════════════
                     RESPONSE INTEGRITY — dark navy
@@ -1472,11 +1666,259 @@ export default function CandidateReportPage({ params }) {
                   )}
                 </Card>
 
+                {/* ══════════════════════════════════════════════════
+                    ACCOUNTABILITY TRAIL — agency only
+                ══════════════════════════════════════════════════ */}
+                {profile?.account_type === 'agency' && (
+                  <Card style={{ marginBottom: 40 }} className="no-print">
+                    <SectionHeading tooltip="Create a timestamped accountability record of this assessment for client-facing documentation.">
+                      Document This Assessment
+                    </SectionHeading>
+                    {!accountRecord ? (
+                      <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
+                        <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 16px', lineHeight: 1.7 }}>
+                          Generate a timestamped accountability record containing key findings, watch-outs, and recommended interview questions. Store it for your records and share with clients.
+                        </p>
+                        <button
+                          onClick={generateAccountabilityRecord}
+                          disabled={savingRecord || !results}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 7,
+                            padding: '10px 22px', borderRadius: 9, border: 'none',
+                            background: results && !savingRecord ? TEAL : BD,
+                            color: results && !savingRecord ? NAVY : TX3,
+                            fontFamily: F, fontSize: 13.5, fontWeight: 700,
+                            cursor: results && !savingRecord ? 'pointer' : 'not-allowed',
+                          }}
+                        >
+                          <Ic name="file" size={15} color={results && !savingRecord ? NAVY : TX3} />
+                          {savingRecord ? 'Generating…' : 'Generate Accountability Record'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        {/* Record header */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{
+                              width: 36, height: 36, borderRadius: 9,
+                              background: TEALLT, border: `1px solid ${TEAL}55`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              <Ic name="check" size={16} color={TEALD} />
+                            </div>
+                            <div>
+                              <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX }}>Record generated</div>
+                              <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>
+                                {new Date(accountRecord.generated_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                              onClick={handleAccountabilityPrint}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                padding: '8px 16px', borderRadius: 8,
+                                background: NAVY, border: 'none', cursor: 'pointer',
+                                fontFamily: F, fontSize: 12.5, fontWeight: 700, color: '#fff',
+                              }}
+                            >
+                              <Ic name="download" size={14} color={TEAL} />
+                              Download Record
+                            </button>
+                            <button
+                              onClick={generateAccountabilityRecord}
+                              disabled={savingRecord}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                padding: '8px 16px', borderRadius: 8,
+                                background: 'transparent', border: `1.5px solid ${BD}`,
+                                cursor: savingRecord ? 'not-allowed' : 'pointer',
+                                fontFamily: F, fontSize: 12.5, fontWeight: 600, color: TX2,
+                              }}
+                            >
+                              {savingRecord ? 'Regenerating…' : 'Regenerate'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Key findings */}
+                        {accountRecord.key_findings && (
+                          <div style={{ marginBottom: 16 }}>
+                            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Key Findings</div>
+                            <div style={{ background: BG, border: `1px solid ${BD}`, borderLeft: `3px solid ${TEAL}`, borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
+                              {accountRecord.key_findings.split('\n').filter(Boolean).map((line, i) => (
+                                <div key={i} style={{ fontFamily: FM, fontSize: 12.5, color: TX, lineHeight: 1.7 }}>{line}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Watch-outs */}
+                        {accountRecord.watch_outs && (
+                          <div style={{ marginBottom: 16 }}>
+                            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Watch-outs</div>
+                            <div style={{ background: REDBG, border: `1px solid ${REDBD}`, borderLeft: `3px solid ${RED}`, borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
+                              {accountRecord.watch_outs.split('\n').filter(Boolean).map((line, i) => (
+                                <div key={i} style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.7 }}>{line}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Recommended actions */}
+                        {accountRecord.recommended_actions && (
+                          <div style={{ marginBottom: 20 }}>
+                            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Recommended Interview Questions</div>
+                            <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderLeft: `3px solid ${AMB}`, borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
+                              {accountRecord.recommended_actions.split('\n').filter(Boolean).map((line, i) => (
+                                <div key={i} style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.7 }}>{line}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Shared with client date */}
+                        <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                          <label style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX2 }}>
+                            Date shared with client:
+                          </label>
+                          <input
+                            type="date"
+                            value={recordSharedDate}
+                            onChange={e => setRecordSharedDate(e.target.value)}
+                            style={{
+                              padding: '7px 12px', borderRadius: 7, border: `1px solid ${BD}`,
+                              fontFamily: FM, fontSize: 13, color: TX, outline: 'none',
+                              background: CARD,
+                            }}
+                            onFocus={e => e.target.style.borderColor = TEAL}
+                            onBlur={e => e.target.style.borderColor = BD}
+                          />
+                          <button
+                            onClick={saveSharedDate}
+                            disabled={savingSharedDate}
+                            style={{
+                              padding: '7px 16px', borderRadius: 7, border: 'none',
+                              background: TEAL, color: NAVY,
+                              fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                            }}
+                          >
+                            {savingSharedDate ? 'Saving…' : 'Save'}
+                          </button>
+                          {accountRecord.shared_with_client_at && (
+                            <span style={{ fontFamily: F, fontSize: 12.5, color: GRN, fontWeight: 600 }}>
+                              Shared {new Date(accountRecord.shared_with_client_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                )}
+
               </>
             )}
           </>
         )}
       </main>
+
+      {/* ── LOG OUTCOME MODAL (employer only) ── */}
+      {outcomeModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,33,55,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={() => setOutcomeModal(false)}
+        >
+          <div onClick={e => e.stopPropagation()} style={{
+            background: CARD, borderRadius: 16, padding: '28px 32px',
+            maxWidth: 460, width: '100%', boxShadow: '0 16px 48px rgba(15,33,55,0.22)',
+          }}>
+            <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 6px' }}>
+              Log Hire Outcome
+            </h3>
+            <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 22px', lineHeight: 1.6 }}>
+              Record how {candidate?.name || 'this candidate'} performed after being hired. This builds your predictive accuracy over time.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
+              {[
+                { value: 'passed_probation',  label: 'Passed probation',          color: GRN,  bg: GRNBG,  bd: GRNBD },
+                { value: 'still_probation',   label: 'Still in probation',         color: TEAL, bg: TEALLT, bd: `${TEAL}55` },
+                { value: 'failed_probation',  label: 'Failed probation',           color: RED,  bg: REDBG,  bd: REDBD },
+                { value: 'left_probation',    label: 'Left during probation',      color: AMB,  bg: AMBBG,  bd: AMBBD },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setSelectedOutcome(opt.value)}
+                  style={{
+                    padding: '11px 16px', borderRadius: 9, cursor: 'pointer',
+                    border: `1.5px solid ${selectedOutcome === opt.value ? opt.bd : BD}`,
+                    background: selectedOutcome === opt.value ? opt.bg : BG,
+                    color: selectedOutcome === opt.value ? opt.color : TX2,
+                    fontFamily: F, fontSize: 14, fontWeight: selectedOutcome === opt.value ? 700 : 500,
+                    textAlign: 'left', transition: 'all 0.12s',
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Date (optional)</label>
+              <input
+                type="date"
+                value={outcomeDate}
+                onChange={e => setOutcomeDate(e.target.value)}
+                style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+                onFocus={e => e.target.style.borderColor = TEAL}
+                onBlur={e => e.target.style.borderColor = BD}
+              />
+            </div>
+
+            <div style={{ marginBottom: 22 }}>
+              <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Notes (optional)</label>
+              <textarea
+                rows={2}
+                value={outcomeNoteText}
+                onChange={e => setOutcomeNoteText(e.target.value)}
+                placeholder="e.g. Exceeded targets in first 3 months"
+                style={{ width: '100%', boxSizing: 'border-box', padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13.5, color: TX, resize: 'vertical', outline: 'none', background: CARD }}
+                onFocus={e => e.target.style.borderColor = TEAL}
+                onBlur={e => e.target.style.borderColor = BD}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={logOutcome}
+                disabled={!selectedOutcome || savingOutcome}
+                style={{
+                  flex: 1, padding: '11px 0', borderRadius: 9, border: 'none',
+                  background: selectedOutcome && !savingOutcome ? TEAL : BD,
+                  color: selectedOutcome && !savingOutcome ? NAVY : TX3,
+                  fontFamily: F, fontSize: 14, fontWeight: 700,
+                  cursor: selectedOutcome && !savingOutcome ? 'pointer' : 'not-allowed',
+                }}
+              >
+                {savingOutcome ? 'Saving…' : existingOutcome ? 'Update outcome' : 'Save outcome'}
+              </button>
+              <button
+                onClick={() => setOutcomeModal(false)}
+                style={{
+                  flex: 1, padding: '11px 0', borderRadius: 9,
+                  border: `1.5px solid ${BD}`, background: 'transparent',
+                  color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── CLIENT REPORT ── */}
       {candidate && results && (
@@ -1519,6 +1961,54 @@ export default function CandidateReportPage({ params }) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── ACCOUNTABILITY RECORD PRINT ── */}
+      {candidate && accountRecord && (
+        <div className="accountability-record-print" style={{ fontFamily: F, color: TX, padding: '40px 48px', maxWidth: 800, margin: '0 auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, paddingBottom: 16, borderBottom: `2px solid ${NAVY}` }}>
+            <div>
+              <div style={{ fontFamily: FM, fontSize: 20, fontWeight: 800, color: NAVY, letterSpacing: '0.06em', marginBottom: 2 }}>PRODICTA</div>
+              <div style={{ fontSize: 11, color: TX3 }}>Accountability Record — Recruitment Agency Documentation</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              {profile?.company_name && <div style={{ fontSize: 13, fontWeight: 700, color: TX, marginBottom: 2 }}>{profile.company_name}</div>}
+              <div style={{ fontSize: 11, color: TX3 }}>Generated: {new Date(accountRecord.generated_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+              {accountRecord.shared_with_client_at && <div style={{ fontSize: 11, color: TX3 }}>Shared with client: {new Date(accountRecord.shared_with_client_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>}
+            </div>
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: NAVY }}>{candidate.name || 'Candidate'}</div>
+            {candidate.assessments?.role_title && <div style={{ fontSize: 13, color: TX2, fontWeight: 600, marginTop: 2 }}>{candidate.assessments.role_title}</div>}
+          </div>
+          {accountRecord.key_findings && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 6, marginBottom: 10 }}>Key Findings</div>
+              {accountRecord.key_findings.split('\n').filter(Boolean).map((line, i) => (
+                <div key={i} style={{ fontFamily: FM, fontSize: 12, color: TX, lineHeight: 1.8 }}>{line}</div>
+              ))}
+            </div>
+          )}
+          {accountRecord.watch_outs && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: `2px solid ${RED}`, paddingBottom: 6, marginBottom: 10 }}>Watch-outs</div>
+              {accountRecord.watch_outs.split('\n').filter(Boolean).map((line, i) => (
+                <div key={i} style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.8 }}>{line}</div>
+              ))}
+            </div>
+          )}
+          {accountRecord.recommended_actions && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: `2px solid ${AMB}`, paddingBottom: 6, marginBottom: 10 }}>Recommended Interview Questions</div>
+              {accountRecord.recommended_actions.split('\n').filter(Boolean).map((line, i) => (
+                <div key={i} style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.8 }}>{line}</div>
+              ))}
+            </div>
+          )}
+          <div style={{ marginTop: 32, paddingTop: 16, borderTop: `1px solid ${BD}`, fontSize: 10.5, color: TX3 }}>
+            This record was generated by Prodicta AI Assessment Platform and should be retained as part of your placement documentation.
+          </div>
         </div>
       )}
     </div>

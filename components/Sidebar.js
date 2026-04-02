@@ -6,7 +6,7 @@ import { Ic } from './Icons'
 import { createClient } from '../lib/supabase'
 import ProdictaLogo from './ProdictaLogo'
 
-const NAV = [
+const BASE_NAV = [
   { key: 'dashboard',     label: 'Dashboard',      icon: 'grid',     href: '/dashboard' },
   { key: 'assessment',    label: 'New assessment',  icon: 'plus',     href: '/assessment/new' },
   { key: 'compare',       label: 'Compare',         icon: 'sliders',  href: '/compare' },
@@ -30,6 +30,7 @@ export default function Sidebar({ active, companyName }) {
   const router = useRouter()
   const [hoveredKey, setHoveredKey] = useState(null)
   const [logoutHover, setLogoutHover] = useState(false)
+  const [accountType, setAccountType] = useState(null)
 
   // ── Notifications ──────────────────────────────────────────────────────────
   const [userId, setUserId] = useState(null)
@@ -52,10 +53,12 @@ export default function Sidebar({ active, companyName }) {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
         setUserId(user.id)
         loadNotifications(user.id)
+        const { data: prof } = await supabase.from('users').select('account_type').eq('id', user.id).maybeSingle()
+        if (prof?.account_type) setAccountType(prof.account_type)
       }
     })
   }, [])
@@ -138,7 +141,10 @@ export default function Sidebar({ active, companyName }) {
         flexDirection: 'column',
         gap: 2,
       }}>
-        {NAV.map(({ key, label, icon, href }) => {
+        {[
+          ...BASE_NAV,
+          ...(accountType === 'employer' ? [{ key: 'outcomes', label: 'Outcomes', icon: 'award', href: '/outcomes' }] : []),
+        ].map(({ key, label, icon, href }) => {
           const isActive = active === key
           const isHovered = hoveredKey === key
           return (
