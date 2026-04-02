@@ -81,8 +81,14 @@ function SkillBenchmarkCard({ skill, candidates, threshold, onThresholdChange })
 
 export default function DemoBenchmarksPage() {
   const [modal, setModal] = useState(false)
+  const PRESET = {
+    'Strategic Communication': 75,
+    'Negotiation & Objection Handling': 65,
+    'Problem Solving': 70,
+    'Delivery Focus': 80,
+  }
   const [thresholds, setThresholds] = useState(
-    Object.fromEntries(DEMO_BENCHMARK_SKILLS.map(s => [s, 70]))
+    Object.fromEntries(DEMO_BENCHMARK_SKILLS.map(s => [s, PRESET[s] ?? 70]))
   )
 
   const setThreshold = (skill, val) => setThresholds(prev => ({ ...prev, [skill]: val }))

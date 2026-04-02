@@ -2,15 +2,18 @@
 import { useState } from 'react'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
 import { Ic } from '@/components/Icons'
-import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, GRN, GRNBG, AMB, AMBBG, RED, F, FM } from '@/lib/constants'
+import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, F, FM } from '@/lib/constants'
 
 const SHADOW = '0 2px 12px rgba(15,33,55,0.08)'
 
 const TABS = [
-  { key: 'company', label: 'Company', icon: 'briefcase' },
-  { key: 'billing', label: 'Billing', icon: 'credit-card' },
-  { key: 'team', label: 'Team', icon: 'users' },
+  { key: 'company',    label: 'Company',          icon: 'briefcase' },
+  { key: 'billing',    label: 'Billing',           icon: 'credit-card' },
+  { key: 'team',       label: 'Team',              icon: 'users' },
+  { key: 'weightings', label: 'Score Weightings',  icon: 'sliders' },
 ]
+
+const DEFAULT_WEIGHTS = { 'Strategic Communication': 30, 'Problem Solving': 25, 'Delivery Focus': 25, 'Negotiation': 20 }
 
 function Field({ label, value, type = 'text', hint }) {
   return (
@@ -140,6 +143,85 @@ function TeamTab({ onInvite }) {
   )
 }
 
+function WeightingsTab({ onSave }) {
+  const [weights, setWeights] = useState(DEFAULT_WEIGHTS)
+  const total = Object.values(weights).reduce((a, b) => a + b, 0)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div>
+        <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX, fontFamily: F }}>Default Score Weightings</h2>
+        <p style={{ margin: '0 0 24px', fontSize: 13, color: TX2, lineHeight: 1.6, fontFamily: F }}>
+          Control how important each skill is when calculating candidate scores. For example, if communication matters most for your roles, increase its weight.
+        </p>
+        {/* Demo banner */}
+        <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, padding: '10px 14px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Ic name="info" size={14} color={AMB} />
+          <span style={{ fontFamily: F, fontSize: 12.5, color: '#92400e' }}>Demo mode. Sign up to set real weightings that apply to your assessments.</span>
+        </div>
+
+        {Object.entries(weights).map(([skill, val]) => (
+          <div key={skill} style={{ marginBottom: 22 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <label style={{ fontFamily: F, fontSize: 14, fontWeight: 600, color: TX }}>{skill}</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="number" min={0} max={100} value={val}
+                  onChange={e => setWeights(prev => ({ ...prev, [skill]: Math.max(0, Math.min(100, Number(e.target.value))) }))}
+                  style={{ width: 60, padding: '5px 8px', borderRadius: 7, border: `1.5px solid ${BD}`, fontFamily: 'IBM Plex Mono, monospace', fontSize: 14, color: TX, textAlign: 'right', outline: 'none' }}
+                />
+                <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 13, color: TX3, width: 16 }}>%</span>
+              </div>
+            </div>
+            <input
+              type="range" min={0} max={100} value={val}
+              onChange={e => setWeights(prev => ({ ...prev, [skill]: Number(e.target.value) }))}
+              style={{ width: '100%', accentColor: TEAL, cursor: 'pointer' }}
+            />
+          </div>
+        ))}
+
+        {/* Total indicator */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, marginBottom: 20, background: total === 100 ? GRNBG : REDBG, border: `1px solid ${total === 100 ? GRNBD : REDBD}` }}>
+          <Ic name={total === 100 ? 'check' : 'alert'} size={14} color={total === 100 ? GRN : RED} />
+          <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 13, fontWeight: 700, color: total === 100 ? GRN : RED }}>
+            Total: {total}%{total !== 100 ? ' (must equal 100%)' : ''}
+          </span>
+        </div>
+
+        {/* Visual preview */}
+        <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
+          <div style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.04em' }}>What this means</div>
+          {Object.entries(weights).sort((a, b) => b[1] - a[1]).map(([skill, w], i) => (
+            <div key={skill} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div style={{ width: `${Math.max(4, w)}%`, height: 6, borderRadius: 99, background: i === 0 ? TEAL : i === 1 ? GRN : i === 2 ? AMB : '#cbd5e1', transition: 'width 0.3s ease', minWidth: 4 }} />
+              <span style={{ fontFamily: F, fontSize: 12.5, color: TX2, whiteSpace: 'nowrap' }}>{skill} <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, color: TX }}>{w}%</span></span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={onSave}
+            style={{ padding: '11px 24px', borderRadius: 8, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <Ic name="check" size={15} color={NAVY} />
+              Save as default
+            </span>
+          </button>
+          <button onClick={() => setWeights(DEFAULT_WEIGHTS)} style={{ padding: '11px 20px', borderRadius: 8, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+            Reset to default
+          </button>
+        </div>
+        <p style={{ margin: '12px 0 0', fontSize: 12, color: TX3, fontFamily: F, lineHeight: 1.6 }}>
+          These defaults apply to all new assessments. You can override them per-assessment when creating an assessment.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function DemoSettingsPage() {
   const [modal, setModal] = useState(false)
   const [tab, setTab] = useState('company')
@@ -177,9 +259,10 @@ export default function DemoSettingsPage() {
 
           {/* Tab content */}
           <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '28px 28px', boxShadow: SHADOW }}>
-            {tab === 'company' && <CompanyTab onSave={() => setModal(true)} />}
-            {tab === 'billing' && <BillingTab onUpgrade={() => setModal(true)} />}
-            {tab === 'team' && <TeamTab onInvite={() => setModal(true)} />}
+            {tab === 'company'    && <CompanyTab onSave={() => setModal(true)} />}
+            {tab === 'billing'    && <BillingTab onUpgrade={() => setModal(true)} />}
+            {tab === 'team'       && <TeamTab onInvite={() => setModal(true)} />}
+            {tab === 'weightings' && <WeightingsTab onSave={() => setModal(true)} />}
           </div>
         </div>
       </main>

@@ -9,7 +9,7 @@ import { DEMO_CANDIDATES, DEMO_RESULTS, DEMO_RESPONSES } from '@/lib/demo-data'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
-  F, FM, riskBg, riskCol, riskBd,
+  F, FM, riskBg, riskCol, riskBd, bs,
 } from '@/lib/constants'
 
 /* ── Score colour helpers ─────────────────────────────────────────────────── */
@@ -327,6 +327,12 @@ function SeniorityBadge({ score }) {
 export default function DemoCandidatePage({ params }) {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState('summary')
+  const [outcomeModal, setOutcomeModal] = useState(false)
+  const [demoOutcome, setDemoOutcome] = useState(() => {
+    const s = DEMO_RESULTS[params.candidateId]?.overall_score ?? 0
+    return s >= 80 ? 'passed_probation' : s >= 70 ? 'still_in_probation' : null
+  })
+  const [signupPrompt, setSignupPrompt] = useState(false)
 
   const candidate = DEMO_CANDIDATES.find(c => c.id === params.candidateId)
   const results = DEMO_RESULTS[params.candidateId] || null
@@ -474,13 +480,27 @@ export default function DemoCandidatePage({ params }) {
                 {/* Actions */}
                 <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <button
+                    onClick={() => setOutcomeModal(true)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: demoOutcome ? GRNBG : TEALLT, border: `1.5px solid ${demoOutcome ? GRNBD : `${TEAL}55`}`, borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: demoOutcome ? GRN : TEALD, padding: '9px 16px' }}
+                  >
+                    <Ic name="check" size={14} color={demoOutcome ? GRN : TEALD} />
+                    {demoOutcome ? 'Update Outcome' : 'Log Outcome'}
+                  </button>
+                  <button
+                    onClick={() => window.print()}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px' }}
+                  >
+                    <Ic name="file" size={14} color={TEAL} />
+                    Export Client Report
+                  </button>
+                  <button
                     onClick={() => window.print()}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: CARD, border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TX2, padding: '9px 16px' }}
                   >
                     <Ic name="download" size={14} color={TX2} />
                     Export PDF
                   </button>
-                  <button onClick={() => router.push('/login')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px' }}>
+                  <button onClick={() => router.push('/login')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'transparent', border: `1.5px solid ${TEAL}55`, borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px' }}>
                     Sign up free →
                   </button>
                 </div>
@@ -917,6 +937,60 @@ export default function DemoCandidatePage({ params }) {
               </button>
             </div>
           </>
+        )}
+
+        {/* ── LOG OUTCOME MODAL ── */}
+        {outcomeModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setOutcomeModal(false)}>
+            <div style={{ background: CARD, borderRadius: 16, padding: '32px 32px 28px', maxWidth: 480, width: '100%', boxShadow: '0 24px 64px rgba(15,33,55,0.22)', position: 'relative' }} onClick={e => e.stopPropagation()}>
+              <button onClick={() => setOutcomeModal(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: TX3, padding: 4, display: 'flex', alignItems: 'center' }}><Ic name="x" size={18} color={TX3} /></button>
+              <h2 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 6px' }}>Log Hire Outcome</h2>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 20px', lineHeight: 1.5 }}>Track what happened after this candidate was hired. Used for ROI reporting and benchmarking.</p>
+              {/* Demo banner */}
+              <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Ic name="info" size={14} color={AMB} />
+                <span style={{ fontFamily: F, fontSize: 12.5, color: '#92400e' }}>Demo data. Sign up to log real outcomes and track hiring ROI.</span>
+              </div>
+              {/* Outcome options */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                {[
+                  { value: 'passed_probation',  label: 'Passed probation',        color: GRN,  bg: GRNBG,  bd: GRNBD },
+                  { value: 'still_in_probation', label: 'Still in probation',      color: TEAL, bg: TEALLT, bd: `${TEAL}55` },
+                  { value: 'failed_probation',   label: 'Failed probation',        color: RED,  bg: REDBG,  bd: REDBD },
+                  { value: 'left_probation',     label: 'Left during probation',   color: AMB,  bg: AMBBG,  bd: AMBBD },
+                ].map(({ value, label, color, bg, bd }) => (
+                  <button
+                    key={value}
+                    onClick={() => setDemoOutcome(value)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, border: `2px solid ${demoOutcome === value ? color : BD}`, background: demoOutcome === value ? bg : CARD, cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s' }}
+                  >
+                    <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${demoOutcome === value ? color : BD}`, background: demoOutcome === value ? color : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {demoOutcome === value && <Ic name="check" size={10} color="#fff" />}
+                    </div>
+                    <span style={{ fontFamily: F, fontSize: 14, fontWeight: demoOutcome === value ? 700 : 500, color: demoOutcome === value ? color : TX }}>{label}</span>
+                  </button>
+                ))}
+              </div>
+              {/* Date */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>Outcome date (optional)</label>
+                <input type="date" defaultValue={new Date().toISOString().slice(0,10)} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: F, fontSize: 14, color: TX, background: BG, outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+              {/* Notes */}
+              <div style={{ marginBottom: 24 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>Notes (optional)</label>
+                <textarea rows={2} placeholder="Any context about this outcome..." style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, background: BG, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => router.push('/login')} style={{ flex: 1, padding: '11px 0', borderRadius: 8, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+                  Sign up to save →
+                </button>
+                <button onClick={() => setOutcomeModal(false)} style={{ padding: '11px 20px', borderRadius: 8, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>
