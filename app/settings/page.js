@@ -726,7 +726,7 @@ export default function SettingsPage() {
             <div style={{ ...cs }}>
               <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX }}>Default Score Weightings</h2>
               <p style={{ margin: '0 0 24px', fontSize: 13, color: TX2, lineHeight: 1.6 }}>
-                Set how each skill is weighted in the overall candidate score. Weights must total 100%. These become the default for all new assessments — you can also adjust per-assessment when creating one.
+                Control how important each skill is when calculating candidate scores. For example, if communication matters most for your roles, increase its weight. These are your default weights for all new assessments.
               </p>
 
               {Object.entries(weights).map(([skill, val]) => {
@@ -778,7 +778,7 @@ export default function SettingsPage() {
                   }}>
                     <Ic name={total === 100 ? 'check' : 'alert'} size={14} color={total === 100 ? GRN : RED} />
                     <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: total === 100 ? GRN : RED }}>
-                      Total: {total}%{total !== 100 ? ' — must equal 100%' : ''}
+                      Total: {total}%{total !== 100 ? ' (must equal 100%)' : ''}
                     </span>
                   </div>
                 )

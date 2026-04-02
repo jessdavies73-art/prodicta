@@ -803,7 +803,7 @@ export default function DemoCandidatePage({ params }) {
                   Ready to assess your own candidates?
                 </h3>
                 <p style={{ fontFamily: F, fontSize: 14, color: 'rgba(255,255,255,0.6)', margin: 0, lineHeight: 1.6 }}>
-                  Create your first assessment in under 5 minutes. No CV filtering — just real-world scenario testing.
+                  Create your first assessment in under 5 minutes. No CV filtering, just real-world scenario testing.
                 </p>
               </div>
               <button

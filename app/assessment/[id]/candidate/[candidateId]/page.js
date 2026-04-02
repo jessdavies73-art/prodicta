@@ -950,7 +950,7 @@ export default function CandidateReportPage({ params }) {
                     ? 'Strong chance of successful placement. Candidate profile aligns well with role demands.'
                     : prs >= 50
                     ? 'Moderate placement risk. Review watch-outs and consider probing questions before placing.'
-                    : 'High placement risk. Significant gaps detected — discuss concerns with client before proceeding.'
+                    : 'High placement risk. Significant gaps detected. Discuss concerns with client before proceeding.'
                   return (
                     <ScrollReveal delay={60}>
                     <Card style={{ marginBottom: 20, border: `1.5px solid ${prsBd}`, background: `linear-gradient(135deg, ${prsBg} 0%, #fff 60%)` }}>
@@ -2023,11 +2023,11 @@ export default function CandidateReportPage({ params }) {
               </p>
               {results.pressure_fit_score != null && (
                 <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px', lineHeight: 1.75 }}>
-                  <strong>Pressure-Fit Score:</strong> Measures how the candidate performs under real workplace pressure — conflicting priorities, difficult conversations, and time constraints. This is often a stronger predictor of long-term performance than technical skills alone.
+                  <strong>Pressure-Fit Score:</strong> Measures how the candidate performs under real workplace pressure: conflicting priorities, difficult conversations, and time constraints. This is often a stronger predictor of long-term performance than technical skills alone.
                 </p>
               )}
               <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.75 }}>
-                Scores are calibrated against a strict benchmark — averages typically sit between 60–72. A score of 80+ places this candidate in the top tier. This data goes beyond what any CV or interview alone can reveal.
+                Scores are calibrated against a strict benchmark. Averages typically sit between 60 and 72. A score of 80+ places this candidate in the top tier. This data goes beyond what any CV or interview can reveal.
               </p>
             </div>
           )}
@@ -2061,7 +2061,7 @@ export default function CandidateReportPage({ params }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: pfColor(results.pressure_fit_score), lineHeight: 1 }}>{results.pressure_fit_score}</div>
                 <div style={{ fontFamily: F, fontSize: 13.5, color: TX2, lineHeight: 1.7 }}>
-                  <strong>{pfLbl(results.pressure_fit_score)}</strong> — measures how this candidate handles workplace pressure, conflict, and competing priorities.
+                  <strong>{pfLbl(results.pressure_fit_score)}</strong>. Measures how this candidate handles workplace pressure, conflict, and competing priorities.
                 </div>
               </div>
             </div>
@@ -2139,7 +2139,7 @@ export default function CandidateReportPage({ params }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, paddingBottom: 16, borderBottom: `2px solid ${NAVY}` }}>
             <div>
               <div style={{ fontFamily: FM, fontSize: 20, fontWeight: 800, color: NAVY, letterSpacing: '0.06em', marginBottom: 2 }}>PRODICTA</div>
-              <div style={{ fontSize: 11, color: TX3 }}>Accountability Record — Recruitment Agency Documentation</div>
+              <div style={{ fontSize: 11, color: TX3 }}>Accountability Record. Recruitment Agency Documentation</div>
             </div>
             <div style={{ textAlign: 'right' }}>
               {profile?.company_name && <div style={{ fontSize: 13, fontWeight: 700, color: TX, marginBottom: 2 }}>{profile.company_name}</div>}

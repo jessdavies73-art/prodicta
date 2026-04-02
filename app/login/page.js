@@ -580,7 +580,7 @@ export default function LoginPage() {
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="#00BFA5" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <circle cx={12} cy={12} r={10}/><polygon points="10 8 16 12 10 16 10 8" fill="#00BFA5" stroke="none"/>
             </svg>
-            Try Demo — no account needed
+            Try Demo, no account needed
           </button>
         </div>
 

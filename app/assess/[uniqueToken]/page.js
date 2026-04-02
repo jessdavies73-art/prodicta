@@ -789,7 +789,7 @@ function CompletePage({ candidateName }) {
           </div>
           <div style={{ opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(10px)', transition: 'opacity 0.45s ease, transform 0.45s ease' }}>
             <h2 style={{ fontFamily: F, color: TX, fontSize: 26, fontWeight: 800, margin: '0 0 12px' }}>
-              All done — thank you!
+              All done. Thank you!
             </h2>
             <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 8px', lineHeight: 1.6 }}>
               Your responses have been submitted successfully.

@@ -46,7 +46,7 @@ function CandidateSelector({ value, onChange, exclude }) {
         cursor: 'pointer', outline: 'none', appearance: 'none',
       }}
     >
-      <option value="">— Select candidate —</option>
+      <option value="">Select candidate</option>
       {completedCandidates.map(c => (
         <option key={c.id} value={c.id} disabled={exclude.includes(c.id) && c.id !== value}>
           {c.name} ({c.assessments.role_title})
