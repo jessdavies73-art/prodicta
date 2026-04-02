@@ -527,6 +527,7 @@ export default function CandidateReportPage({ params }) {
   const [savingRecord, setSavingRecord] = useState(false)
   const [recordSharedDate, setRecordSharedDate] = useState('')
   const [savingSharedDate, setSavingSharedDate] = useState(false)
+  const [recordError, setRecordError] = useState(null)
 
   // Documents (agency only)
   const [documents, setDocuments] = useState({})
@@ -746,39 +747,69 @@ export default function CandidateReportPage({ params }) {
   async function generateAccountabilityRecord() {
     if (!user || !results) return
     setSavingRecord(true)
+    setRecordError(null)
     const supabase = createClient()
-    const keyFindings = [
-      `Overall Score: ${results.overall_score}/100 (${slbl(results.overall_score)})`,
-      results.pressure_fit_score != null ? `Pressure-Fit Score: ${results.pressure_fit_score}/100` : null,
-      `Hiring Decision: ${dL(results.overall_score)}`,
-      results.risk_level ? `Risk Level: ${results.risk_level}` : null,
-      results.trajectory ? `Performance Trajectory: ${results.trajectory}` : null,
-      results.confidence_level ? `Confidence Level: ${results.confidence_level}` : null,
-    ].filter(Boolean).join('\n')
-    const watchOuts = (results.watchouts || []).map(w =>
-      typeof w === 'object' ? `[${w.severity || 'Medium'}] ${w.text || w.title || ''}` : w
-    ).join('\n')
-    const actions = (results.interview_questions || []).slice(0, 3).map((q, i) =>
-      `${i + 1}. ${typeof q === 'object' ? (q.question || q.text || '') : q}`
-    ).join('\n')
-    const payload = {
-      candidate_id: params.candidateId,
-      user_id: user.id,
-      generated_at: new Date().toISOString(),
-      key_findings: keyFindings,
-      watch_outs: watchOuts,
-      recommended_actions: actions,
+    try {
+      const roleTitle = candidate?.assessments?.role_title || ''
+      const assessmentDate = candidate?.completed_at
+        ? new Date(candidate.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+        : new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+
+      const keyFindings = [
+        `Candidate: ${candidate?.name || 'Unknown'}`,
+        roleTitle ? `Role: ${roleTitle}` : null,
+        `Assessment Date: ${assessmentDate}`,
+        '',
+        `Overall Score: ${results.overall_score}/100 (${slbl(results.overall_score)})`,
+        results.pressure_fit_score != null ? `Pressure-Fit Score: ${results.pressure_fit_score}/100` : null,
+        `Hiring Decision: ${dL(results.overall_score)}`,
+        results.risk_level ? `Risk Level: ${results.risk_level}` : null,
+        results.trajectory ? `Performance Trajectory: ${results.trajectory}` : null,
+        results.confidence_level ? `Confidence Level: ${results.confidence_level}` : null,
+      ].filter(v => v !== null).join('\n')
+
+      const watchOuts = (results.watchouts || []).map(w => {
+        if (typeof w !== 'object') return w
+        const sev = w.severity || 'Medium'
+        const title = w.title || w.text || ''
+        const detail = w.text && w.text !== title ? `  Detail: ${w.text}` : null
+        const action = w.action || w.recommended_action || null
+        return [
+          `[${sev}] ${title}`,
+          detail,
+          action ? `  Recommended action: ${action}` : null,
+        ].filter(Boolean).join('\n')
+      }).join('\n\n')
+
+      const questions = (results.interview_questions || []).map((q, i) =>
+        `${i + 1}. ${typeof q === 'object' ? (q.question || q.text || '') : q}`
+      ).join('\n')
+
+      const payload = {
+        candidate_id: params.candidateId,
+        user_id: user.id,
+        generated_at: new Date().toISOString(),
+        key_findings: keyFindings,
+        watch_outs: watchOuts,
+        recommended_actions: questions,
+      }
+
+      let saved
+      if (accountRecord) {
+        const { data, error: err } = await supabase.from('accountability_records').update(payload).eq('id', accountRecord.id).select().single()
+        if (err) throw err
+        saved = data
+      } else {
+        const { data, error: err } = await supabase.from('accountability_records').insert(payload).select().single()
+        if (err) throw err
+        saved = data
+      }
+      if (saved) setAccountRecord(saved)
+    } catch (err) {
+      setRecordError(err.message || 'Failed to generate record')
+    } finally {
+      setSavingRecord(false)
     }
-    let saved
-    if (accountRecord) {
-      const { data } = await supabase.from('accountability_records').update(payload).eq('id', accountRecord.id).select().single()
-      saved = data
-    } else {
-      const { data } = await supabase.from('accountability_records').insert(payload).select().single()
-      saved = data
-    }
-    if (saved) setAccountRecord(saved)
-    setSavingRecord(false)
   }
 
   async function saveSharedDate() {
@@ -2015,6 +2046,12 @@ export default function CandidateReportPage({ params }) {
                           <Ic name="file" size={15} color={results && !savingRecord ? NAVY : TX3} />
                           {savingRecord ? 'Generating…' : 'Generate Accountability Record'}
                         </button>
+                        {recordError && (
+                          <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: REDBG, border: `1px solid ${REDBD}`, fontFamily: F, fontSize: 13, color: RED, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Ic name="alert" size={14} color={RED} />
+                            {recordError}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div>
