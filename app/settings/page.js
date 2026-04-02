@@ -6,9 +6,11 @@ import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
-  GRN, GRNBG, GRNBD, RED, REDBG, REDBD,
+  GRN, GRNBG, GRNBD, AMB, RED, REDBG, REDBD,
   F, FM, cs, bs,
 } from '@/lib/constants'
+
+const DEFAULT_WEIGHTS = { Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 }
 
 function LoadingSpinner() {
   const shimmer = {
@@ -159,7 +161,6 @@ export default function SettingsPage() {
   const [accountTypeFocused, setAccountTypeFocused] = useState(null)
 
   // Weightings tab (employer only)
-  const DEFAULT_WEIGHTS = { Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 }
   const [weights, setWeights] = useState(DEFAULT_WEIGHTS)
   const [savingWeights, setSavingWeights] = useState(false)
   const [weightsToast, setWeightsToast] = useState(null)
@@ -189,7 +190,7 @@ export default function SettingsPage() {
         setIndustry(prof?.industry || '')
         setCompanySize(prof?.company_size || '')
         setAccountType(prof?.account_type || 'employer')
-        if (prof?.default_weightings) setWeights({ ...DEFAULT_WEIGHTS, ...prof.default_weightings })
+        setWeights({ ...DEFAULT_WEIGHTS, ...(prof?.default_weightings || {}) })
       } catch (err) {
         setError(err.message)
       } finally {
