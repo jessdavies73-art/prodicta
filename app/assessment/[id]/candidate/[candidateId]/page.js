@@ -810,7 +810,7 @@ export default function CandidateReportPage({ params }) {
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap' }}>
                 {/* Avatar + meta */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: 1, minWidth: 240 }}>
-                  <Avatar name={candidate.name || 'Candidate'} size={28} />
+                  <Avatar name={candidate.name || 'Candidate'} size={52} />
                   <div>
                     <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: '0 0 3px', letterSpacing: '-0.4px' }}>
                       {candidate.name || 'Unknown Candidate'}
@@ -1802,14 +1802,7 @@ export default function CandidateReportPage({ params }) {
                         <div key={n.id} style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px' }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <div style={{
-                                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                                background: `linear-gradient(135deg, ${TEAL}, ${TEALD})`,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 11, fontWeight: 800, color: '#fff',
-                              }}>
-                                {(n.author_name || '?').slice(0, 1).toUpperCase()}
-                              </div>
+                              <Avatar name={n.author_name || '?'} size={28} />
                               <div>
                                 <div style={{ fontSize: 12.5, fontWeight: 700, color: TX }}>{n.author_name || 'Team member'}</div>
                                 <div style={{ fontSize: 11, color: TX3 }}>{formatNoteDate(n.created_at)}</div>
