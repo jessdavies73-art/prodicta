@@ -34,7 +34,7 @@ export function DemoBanner() {
           onClick={() => router.push('/login')}
           style={{ background: TEAL, color: NAVY, border: 'none', borderRadius: 7, padding: '8px 18px', fontFamily: F, fontSize: 13, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}
         >
-          Sign Up Free →
+          Sign up →
         </button>
       </div>
     </div>
@@ -111,7 +111,7 @@ export function DemoSidebar({ active }) {
           style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 12px', borderRadius: 8, border: `1px solid ${TEAL}40`, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, textAlign: 'left', background: `${TEAL}10`, color: TEAL }}
         >
           <Ic name="award" size={16} color={TEAL} />
-          Sign up free
+          Sign up
         </button>
       </div>
     </aside>
@@ -144,7 +144,7 @@ export function SignUpModal({ onClose }) {
             onClick={() => router.push('/login')}
             style={{ width: '100%', padding: '13px 0', borderRadius: 9, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}
           >
-            Sign up free →
+            Sign up →
           </button>
           <button
             onClick={onClose}

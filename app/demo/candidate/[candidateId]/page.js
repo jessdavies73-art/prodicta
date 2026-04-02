@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import ProdictaLogo from '@/components/ProdictaLogo'
-import { DemoBanner, DemoSidebar } from '@/components/DemoShell'
+import { DemoBanner, DemoSidebar, SignUpModal } from '@/components/DemoShell'
 import { DEMO_CANDIDATES, DEMO_RESULTS, DEMO_RESPONSES } from '@/lib/demo-data'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
@@ -489,7 +489,7 @@ export default function DemoCandidatePage({ params }) {
                     {demoOutcome ? 'Update Outcome' : 'Log Outcome'}
                   </button>
                   <button
-                    onClick={() => window.print()}
+                    onClick={() => setSignupPrompt(true)}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px' }}
                   >
                     <Ic name="file" size={14} color={TEAL} />
@@ -503,14 +503,14 @@ export default function DemoCandidatePage({ params }) {
                     Send to Client
                   </button>
                   <button
-                    onClick={() => window.print()}
+                    onClick={() => setSignupPrompt(true)}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: CARD, border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TX2, padding: '9px 16px' }}
                   >
                     <Ic name="download" size={14} color={TX2} />
                     Export PDF
                   </button>
                   <button onClick={() => router.push('/login')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'transparent', border: `1.5px solid ${TEAL}55`, borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px' }}>
-                    Sign up free →
+                    Sign up →
                   </button>
                 </div>
               </div>
@@ -987,7 +987,7 @@ export default function DemoCandidatePage({ params }) {
                 onClick={() => router.push('/login')}
                 style={{ background: TEAL, color: NAVY, border: 'none', borderRadius: 10, padding: '14px 28px', fontFamily: F, fontSize: 15, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, boxShadow: `0 4px 18px ${TEAL}44` }}
               >
-                Sign up free →
+                Sign up →
               </button>
             </div>
           </>
@@ -1047,6 +1047,8 @@ export default function DemoCandidatePage({ params }) {
           </div>
         )}
       </main>
+
+      {signupPrompt && <SignUpModal onClose={() => setSignupPrompt(false)} />}
 
       {/* ── SEND TO CLIENT MODAL ── */}
       {sendModal && (
