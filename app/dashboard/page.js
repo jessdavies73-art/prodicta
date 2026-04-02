@@ -48,36 +48,35 @@ function initials(name = '') {
 // ── sub-components ────────────────────────────────────────────────────────────
 
 function StatCard({ icon, label, value, sub, accent = TEAL }) {
+  const [hovered, setHovered] = useState(false)
   return (
-    <div style={{
-      ...cs,
-      flex: 1,
-      minWidth: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 14,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: TX2, fontFamily: F }}>{label}</span>
-        <div style={{
-          width: 34, height: 34, borderRadius: 9,
-          background: `${accent}18`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Ic name={icon} size={16} color={accent} />
-        </div>
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        flex: 1,
+        minWidth: 0,
+        background: '#fff',
+        border: `1px solid ${BD}`,
+        borderTop: `3px solid ${accent}`,
+        borderRadius: 12,
+        padding: '20px 24px',
+        boxShadow: hovered
+          ? '0 8px 24px rgba(15,33,55,0.13), 0 2px 8px rgba(15,33,55,0.07)'
+          : '0 2px 8px rgba(15,33,55,0.06), 0 1px 3px rgba(15,33,55,0.04)',
+        transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
+        transition: 'box-shadow 0.18s ease, transform 0.18s ease',
+        cursor: 'default',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14 }}>
+        <Ic name={icon} size={14} color={accent} />
+        <span style={{ fontSize: 11.5, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
       </div>
-      <div>
-        <div style={{
-          fontSize: 34, fontWeight: 800, color: NAVY, fontFamily: FM,
-          lineHeight: 1, letterSpacing: '-1px'
-        }}>
-          {typeof value === 'number' ? <CountUp target={value} /> : value}
-        </div>
-        {sub && (
-          <div style={{ fontSize: 12, color: TX3, marginTop: 6, fontFamily: F }}>{sub}</div>
-        )}
+      <div style={{ fontSize: 38, fontWeight: 800, color: accent, fontFamily: FM, lineHeight: 1, letterSpacing: '-1.5px', marginBottom: 8 }}>
+        {typeof value === 'number' ? <CountUp target={value} /> : value}
       </div>
+      {sub && <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>{sub}</div>}
     </div>
   )
 }
@@ -558,24 +557,28 @@ export default function DashboardPage() {
             label="Completed"
             value={completed.length}
             sub="Completed assessments"
+            accent={TEAL}
           />
           <StatCard
             icon="clock"
             label="Pending"
             value={pendingCandidates.length}
             sub="Awaiting completion"
+            accent={AMB}
           />
           <StatCard
             icon="bar"
             label="Avg score"
-            value={avgScore !== null ? `${avgScore}` : '-'}
+            value={avgScore !== null ? avgScore : '-'}
             sub={avgScore !== null ? slabel(avgScore) : 'No data yet'}
+            accent={avgScore !== null ? (avgScore >= 75 ? GRN : avgScore >= 50 ? AMB : RED) : TX3}
           />
           <StatCard
             icon="award"
             label="Recommended"
             value={recommendedCount}
             sub="Scoring 70 or above"
+            accent={TEAL}
           />
         </div>
 
