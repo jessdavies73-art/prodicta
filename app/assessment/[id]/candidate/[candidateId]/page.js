@@ -258,6 +258,49 @@ function SmallRing({ score, size = 60, strokeWidth = 5 }) {
   )
 }
 
+/* Pressure-Fit score ring — colour: green 75+, amber 50-74, red below 50 */
+function PFRing({ score, size = 110 }) {
+  const [display, setDisplay] = useState(0)
+  const [drawn, setDrawn] = useState(false)
+  const strokeWidth = 9
+  const r = (size - strokeWidth * 2) / 2
+  const circ = 2 * Math.PI * r
+  const color = score >= 75 ? GRN : score >= 50 ? AMB : RED
+  const offset = circ * (1 - display / 100)
+  useEffect(() => {
+    const target = score || 0
+    const duration = 1300
+    const fps = 60
+    const steps = duration / (1000 / fps)
+    let step = 0
+    setDrawn(true)
+    const t = setInterval(() => {
+      step++
+      const progress = Math.min(step / steps, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setDisplay(Math.round(target * eased))
+      if (progress >= 1) clearInterval(t)
+    }, 1000 / fps)
+    return () => clearInterval(t)
+  }, [score])
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0, filter: `drop-shadow(0 0 ${Math.round(size * 0.07)}px ${color}55)` }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={`${color}18`} strokeWidth={strokeWidth} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={strokeWidth}
+          strokeLinecap="round" strokeDasharray={circ}
+          strokeDashoffset={drawn ? offset : circ}
+          style={{ transition: 'stroke-dashoffset 0.016s linear' }}
+        />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontFamily: FM, fontSize: size * 0.26, fontWeight: 800, color, lineHeight: 1, letterSpacing: '-1px' }}>{display}</span>
+        <span style={{ fontFamily: F, fontSize: size * 0.09, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>/100</span>
+      </div>
+    </div>
+  )
+}
+
 /* Animated bar (fills when mounted) */
 function AnimBar({ pct, color, height = 6, delay = 0 }) {
   const [w, setW] = useState(0)
@@ -1170,141 +1213,134 @@ export default function CandidateReportPage({ params }) {
                 </ScrollReveal>
 
                 {/* ══════════════════════════════════════════════════
-                    PRESSURE-FIT — dark navy, animated bars
+                    PRESSURE-FIT — dark navy, 2×2 grid
                 ══════════════════════════════════════════════════ */}
                 <ScrollReveal id="pressure-fit" delay={60}>
                 {(results.pressure_fit_score != null || results.pressure_fit) && (() => {
                   const pf = results.pressure_fit_score ?? null
                   const dims = results.pressure_fit ?? {}
+                  const pfRingColor = pf == null ? TX3 : pf >= 75 ? GRN : pf >= 50 ? AMB : RED
 
                   const DIMENSIONS = [
                     { key: 'decision_speed_quality',    label: 'Decision Speed & Quality',   icon: 'zap',     desc: 'Decisiveness and commitment when no perfect answer exists' },
-                    { key: 'composure_under_conflict',   label: 'Composure Under Conflict',   icon: 'alert',   desc: 'Emotional regulation when facing difficult conversations' },
-                    { key: 'prioritisation_under_load',  label: 'Prioritisation Under Load',  icon: 'sliders', desc: 'Framework and trade-off awareness when demands compete' },
-                    { key: 'ownership_accountability',   label: 'Ownership & Accountability', icon: 'award',   desc: 'Personal responsibility, active language, and specific commitments' },
+                    { key: 'composure_under_conflict',  label: 'Composure Under Conflict',   icon: 'alert',   desc: 'Emotional regulation when facing difficult conversations' },
+                    { key: 'prioritisation_under_load', label: 'Prioritisation Under Load',  icon: 'sliders', desc: 'Framework and trade-off awareness when demands compete' },
+                    { key: 'ownership_accountability',  label: 'Ownership & Accountability', icon: 'award',   desc: 'Personal responsibility, active language, and specific commitments' },
                   ]
 
                   function vStyle(v) {
                     if (v === 'Strength') return { bg: GRNBG, color: GRN, bd: GRNBD }
                     if (v === 'Concern')  return { bg: REDBG,  color: RED, bd: REDBD }
-                    return { bg: TEALLT, color: TEALD, bd: `${TEAL}55` }
+                    return { bg: AMBBG, color: AMB, bd: AMBBD }
                   }
 
                   return (
                     <div style={{
                       marginBottom: 20,
-                      background: `linear-gradient(135deg, #0a1929 0%, #0f2137 60%, #0d2b45 100%)`,
-                      border: `1px solid rgba(255,255,255,0.1)`,
-                      borderRadius: 12,
+                      background: 'linear-gradient(135deg, #0a1929 0%, #0f2137 60%, #0d2b45 100%)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 14,
                       overflow: 'hidden',
                       boxShadow: SHADOW_LG,
                     }}>
                       {/* Header */}
                       <div style={{
-                        padding: '22px 28px 18px',
+                        padding: '28px 32px 26px',
                         borderBottom: '1px solid rgba(255,255,255,0.07)',
-                        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14,
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24,
                       }}>
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                            <div style={{ width: 28, height: 28, borderRadius: 8, background: `${TEAL}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Ic name="sliders" size={14} color={TEAL} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                            <div style={{ width: 32, height: 32, borderRadius: 9, background: `${TEAL}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Ic name="sliders" size={15} color={TEAL} />
                             </div>
-                            <div>
-                              <h2 style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.2 }}>
-                                Pressure-Fit Assessment
-                              </h2>
-                              <div style={{ height: 3, width: 40, borderRadius: 99, background: TEAL, marginTop: 5 }} />
-                            </div>
+                            <span style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                              Pressure-Fit Assessment
+                            </span>
                             <InfoTooltip text="How this candidate handles pressure, conflict, and competing priorities" light />
                           </div>
-                          <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.45)', margin: 0, paddingLeft: 36 }}>
-                            How this candidate performs when it matters most.
-                          </p>
+                          <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 12px', lineHeight: 1.25 }}>
+                            How this candidate performs<br />when it matters most
+                          </h2>
+                          <div style={{ height: 3, width: 48, borderRadius: 99, background: TEAL }} />
                         </div>
                         {pf != null && (
-                          <div style={{
-                            display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px',
-                            borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                            flexShrink: 0,
-                          }}>
-                            <div style={{ fontFamily: FM, fontSize: 42, fontWeight: 800, color: pfColor(pf), lineHeight: 1, letterSpacing: '-2px' }}>{pf}</div>
-                            <div>
-                              <div style={{ fontSize: 13, fontWeight: 800, color: pfColor(pf) }}>{pfLbl(pf)}</div>
-                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>/ 100</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                            <PFRing score={pf} size={110} />
+                            <div style={{ fontSize: 12.5, fontWeight: 700, color: pfRingColor, textAlign: 'center', fontFamily: F }}>
+                              {pfLbl(pf)}
                             </div>
                           </div>
                         )}
                       </div>
 
-                      {/* Dimensions */}
-                      <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      {/* 2×2 Dimension grid */}
+                      <div style={{ padding: '24px 28px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                         {DIMENSIONS.map(({ key, label, icon, desc }, idx) => {
                           const dim = dims[key] ?? {}
                           const s = dim.score ?? null
                           const v = dim.verdict ?? null
                           const n = dim.narrative ?? null
                           const vs = vStyle(v)
-                          const barColor = s == null ? TX3 : s >= 80 ? GRN : s >= 55 ? TEAL : RED
+                          const barColor = v === 'Strength' ? GRN : v === 'Concern' ? RED : AMB
 
                           return (
                             <div key={key} style={{
                               background: 'rgba(255,255,255,0.04)',
                               border: '1px solid rgba(255,255,255,0.08)',
-                              borderRadius: 10,
-                              padding: '16px 18px',
+                              borderRadius: 12,
+                              padding: '20px 20px',
+                              display: 'flex', flexDirection: 'column', gap: 14,
                             }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+                              {/* Label row */}
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                                 <div style={{
-                                  width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                                  width: 36, height: 36, borderRadius: 9, flexShrink: 0,
                                   background: `${TEAL}18`, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 }}>
-                                  <Ic name={icon} size={15} color={TEAL} />
+                                  <Ic name={icon} size={16} color={TEAL} />
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{label}</div>
-                                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.38)', marginTop: 2 }}>{desc}</div>
+                                  <div style={{ fontSize: 14.5, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: 4 }}>{label}</div>
+                                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.38)', lineHeight: 1.4 }}>{desc}</div>
                                 </div>
-                                {v && (
+                                {s != null && (
+                                  <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: barColor, flexShrink: 0, lineHeight: 1 }}>{s}</div>
+                                )}
+                              </div>
+
+                              {/* Verdict badge */}
+                              {v && (
+                                <div>
                                   <span style={{
                                     display: 'inline-flex', alignItems: 'center',
                                     padding: '4px 12px', borderRadius: 50,
                                     fontSize: 11.5, fontWeight: 700,
                                     background: vs.bg, color: vs.color, border: `1px solid ${vs.bd}`,
-                                    flexShrink: 0,
                                   }}>
                                     {v}
                                   </span>
-                                )}
-                                {s != null && (
-                                  <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: barColor, flexShrink: 0, minWidth: 36, textAlign: 'right' }}>
-                                    {s}
-                                  </span>
-                                )}
-                              </div>
-
-                              {s != null && (
-                                <div style={{ marginBottom: n ? 12 : 0 }}>
-                                  <AnimBar pct={s} color={barColor} height={5} delay={idx * 80} />
                                 </div>
                               )}
 
-                              {n && (
-                                <p style={{
-                                  fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.6)',
-                                  margin: 0, lineHeight: 1.7,
-                                  borderLeft: `3px solid ${barColor}55`,
-                                  paddingLeft: 12,
-                                }}>
-                                  {n}
-                                </p>
+                              {/* Progress bar */}
+                              {s != null && (
+                                <AnimBar pct={s} color={barColor} height={6} delay={idx * 80} />
                               )}
 
-                              {s == null && !n && (
-                                <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.25)', margin: 0, fontStyle: 'italic' }}>
-                                  Data available for newly scored assessments.
+                              {/* Narrative — always shown */}
+                              <div style={{
+                                borderLeft: `3px solid ${n ? barColor : 'rgba(255,255,255,0.15)'}`,
+                                paddingLeft: 14,
+                              }}>
+                                <p style={{
+                                  fontFamily: F, fontSize: 13, lineHeight: 1.75, margin: 0,
+                                  color: n ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.25)',
+                                  fontStyle: n ? 'normal' : 'italic',
+                                }}>
+                                  {n || 'Detailed narrative available for newly scored assessments.'}
                                 </p>
-                              )}
+                              </div>
                             </div>
                           )
                         })}
