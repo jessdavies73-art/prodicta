@@ -220,7 +220,7 @@ export default function DemoDashboard() {
                       >
                         <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Avatar name={c.name} size={28} />
+                            <Avatar name={c.name} size={40} />
                             <div style={{ minWidth: 0, flex: 1 }}>
                               <div style={{ fontSize: 12.5, fontWeight: 600, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
                               <div style={{ fontSize: 11, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div>

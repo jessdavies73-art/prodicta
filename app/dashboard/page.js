@@ -694,7 +694,7 @@ export default function DashboardPage() {
                             {/* Candidate name + email */}
                             <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <Avatar name={c.name} size={28} />
+                                <Avatar name={c.name} size={40} />
                                 <div style={{ minWidth: 0, flex: 1 }}>
                                   <div style={{
                                     fontSize: 12.5, fontWeight: 600, color: TX,

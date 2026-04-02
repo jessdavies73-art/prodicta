@@ -100,7 +100,7 @@ function CandidateSelector({ candidates, selected, onChange, placeholder, usedId
       >
         {selectedCand ? (
           <>
-            <Avatar name={selectedCand.name} size={26} />
+            <Avatar name={selectedCand.name} size={44} />
             <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {selectedCand.name}
             </span>
@@ -175,7 +175,7 @@ function CandidateSelector({ candidates, selected, onChange, placeholder, usedId
                   opacity: isUsed ? 0.5 : 1,
                 }}
               >
-                <Avatar name={c.name} size={26} />
+                <Avatar name={c.name} size={44} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {c.name}
@@ -273,7 +273,7 @@ function CandidateColumn({ candidate, allScores, skillOrder, assessmentId }) {
         alignItems: 'center',
         gap: 10,
       }}>
-        <Avatar name={candidate.name} size={48} />
+        <Avatar name={candidate.name} size={44} />
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 3 }}>
             {candidate.name}

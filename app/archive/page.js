@@ -222,7 +222,7 @@ export default function ArchivePage() {
                         {/* Candidate */}
                         <td style={{ padding: '13px 16px', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                            <Avatar name={c.name} size={34} />
+                            <Avatar name={c.name} size={40} />
                             <div>
                               <div style={{
                                 fontSize: 13.5,

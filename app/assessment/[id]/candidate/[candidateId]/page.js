@@ -810,7 +810,7 @@ export default function CandidateReportPage({ params }) {
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap' }}>
                 {/* Avatar + meta */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: 1, minWidth: 240 }}>
-                  <Avatar name={candidate.name || 'Candidate'} size={56} />
+                  <Avatar name={candidate.name || 'Candidate'} size={48} />
                   <div>
                     <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: '0 0 3px', letterSpacing: '-0.4px' }}>
                       {candidate.name || 'Unknown Candidate'}

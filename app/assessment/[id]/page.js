@@ -667,7 +667,7 @@ export default function AssessmentPage({ params }) {
                   background: i % 2 === 0 ? '#fff' : '#f7f9fb'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Avatar name={inv.name} size={28} />
+                    <Avatar name={inv.name} size={40} />
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{inv.name}</div>
                       <div style={{ fontSize: 12, color: '#5e6b7f' }}>{inv.email}</div>
@@ -855,7 +855,7 @@ export default function AssessmentPage({ params }) {
                 >
                   {/* Name / Email */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Avatar name={candidate.name} size={32} />
+                    <Avatar name={candidate.name} size={40} />
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                         <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{candidate.name}</div>

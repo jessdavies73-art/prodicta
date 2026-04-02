@@ -71,7 +71,7 @@ export default function DemoArchivePage() {
                   >
                     {/* Candidate */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Avatar name={c.name} size={32} />
+                      <Avatar name={c.name} size={40} />
                       <div>
                         <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 2px' }}>{c.name}</p>
                         <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: 0 }}>{c.email}</p>
