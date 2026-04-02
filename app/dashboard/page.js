@@ -1321,13 +1321,14 @@ function PlacementRiskCard({ completed = [] }) {
 }
 
 function RiskCalculator({ profile, completed = [] }) {
-  if (profile?.account_type === 'agency') {
-    return <PlacementRiskCard completed={completed} />
-  }
   const [salary, setSalary] = useState('30000')
   const [hires, setHires] = useState('5')
   const [salFocused, setSalFocused] = useState(false)
   const [hiresFocused, setHiresFocused] = useState(false)
+
+  if (profile?.account_type === 'agency') {
+    return <PlacementRiskCard completed={completed} />
+  }
 
   const sal = Math.max(0, parseInt(salary.replace(/[^0-9]/g, '')) || 0)
   const h   = Math.max(1, parseInt(hires.replace(/[^0-9]/g, '')) || 1)
