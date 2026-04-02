@@ -1,33 +1,34 @@
+'use client'
 const F = "'Outfit', system-ui, sans-serif"
 
-const GRADIENTS = [
-  ['#00BFA5', '#009688'], // Jade
-  ['#4F46E5', '#3730A3'], // Indigo
-  ['#7C3AED', '#6D28D9'], // Purple
-  ['#F97316', '#EA580C'], // Coral
-  ['#F43F5E', '#E11D48'], // Rose
-  ['#F59E0B', '#D97706'], // Amber
-  ['#3B82F6', '#2563EB'], // Blue
-  ['#10B981', '#059669'], // Emerald
+// A-C: jade | D-F: indigo | G-I: purple | J-L: coral
+// M-O: rose | P-R: amber  | S-U: blue   | V-Z: emerald
+const RANGE_GRADIENTS = [
+  ['#00BFA5', '#009688'], // A-C jade
+  ['#4F46E5', '#3730A3'], // D-F indigo
+  ['#7C3AED', '#6D28D9'], // G-I purple
+  ['#F97316', '#EA580C'], // J-L coral
+  ['#F43F5E', '#E11D48'], // M-O rose
+  ['#F59E0B', '#D97706'], // P-R amber
+  ['#3B82F6', '#2563EB'], // S-U blue
+  ['#10B981', '#059669'], // V-Z emerald
 ]
 
 function nameToGradient(name = '') {
-  const char = name.trim()[0]?.toUpperCase() || '?'
+  const char = (name.trim()[0] || '?').toUpperCase()
   const code = char.charCodeAt(0)
-  return GRADIENTS[code % GRADIENTS.length]
+  // A=65 … Z=90  →  bucket 0–7 via 3-letter ranges
+  if (code < 65 || code > 90) return RANGE_GRADIENTS[0]
+  return RANGE_GRADIENTS[Math.floor((code - 65) / 3)]
 }
 
 function initials(name = '') {
   return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'
 }
 
-let _id = 0
-function uid() { return `ag-${++_id}` }
-
 export default function Avatar({ name = '', size = 36 }) {
   const [from, to] = nameToGradient(name)
   const fontSize = Math.round(size * 0.38)
-  const gradId = uid()
 
   return (
     <div style={{
