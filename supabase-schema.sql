@@ -136,6 +136,38 @@ create policy "Service role can insert results" on public.results
 create policy "Employers can manage own benchmarks" on public.benchmarks
   for all using (auth.uid() = user_id);
 
+-- Candidate Outcomes table
+create table if not exists public.candidate_outcomes (
+  id uuid default gen_random_uuid() primary key,
+  candidate_id uuid not null references public.candidates(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
+  outcome text,
+  outcome_date date,
+  notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique(candidate_id, user_id)
+);
+alter table public.candidate_outcomes enable row level security;
+create policy "Users can manage own candidate outcomes"
+  on public.candidate_outcomes for all using (user_id = auth.uid());
+
+-- Accountability Records table
+create table if not exists public.accountability_records (
+  id uuid default gen_random_uuid() primary key,
+  candidate_id uuid not null references public.candidates(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
+  generated_at timestamptz not null default now(),
+  key_findings text,
+  watch_outs text,
+  recommended_actions text,
+  shared_with_client_at timestamptz,
+  created_at timestamptz default now()
+);
+alter table public.accountability_records enable row level security;
+create policy "Users can manage own accountability records"
+  on public.accountability_records for all using (user_id = auth.uid());
+
 -- =====================
 -- Indexes
 -- =====================
@@ -146,3 +178,7 @@ create index if not exists idx_candidates_unique_link on public.candidates(uniqu
 create index if not exists idx_responses_candidate_id on public.responses(candidate_id);
 create index if not exists idx_results_candidate_id on public.results(candidate_id);
 create index if not exists idx_benchmarks_user_id on public.benchmarks(user_id);
+create index if not exists idx_candidate_outcomes_candidate_id on public.candidate_outcomes(candidate_id);
+create index if not exists idx_candidate_outcomes_user_id on public.candidate_outcomes(user_id);
+create index if not exists idx_accountability_records_candidate_id on public.accountability_records(candidate_id);
+create index if not exists idx_accountability_records_user_id on public.accountability_records(user_id);
