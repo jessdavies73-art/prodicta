@@ -301,70 +301,126 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           HOW IT WORKS
       ════════════════════════════════════════════════════════════════════ */}
-      <section id="how-it-works" style={{ background: '#fff', padding: '96px 24px' }}>
+      <section id="how-it-works" style={{ background: '#F8FAFB', padding: '96px 24px' }}>
+        <style>{`
+          .hiw-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            position: relative;
+          }
+          .hiw-connector {
+            position: absolute;
+            top: 28px;
+            left: 12.5%;
+            right: 12.5%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, ${TEAL}55 20%, ${TEAL}55 80%, transparent);
+            z-index: 0;
+          }
+          .hiw-step {
+            text-align: center;
+            padding: 0 28px;
+            position: relative;
+            z-index: 1;
+          }
+          .hiw-step-circle {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: ${TEAL};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 28px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            box-shadow: 0 4px 24px ${TEAL}44;
+            position: relative;
+            z-index: 1;
+          }
+          @media (max-width: 720px) {
+            .hiw-steps {
+              grid-template-columns: 1fr;
+              gap: 0;
+            }
+            .hiw-connector { display: none; }
+            .hiw-step {
+              display: flex;
+              align-items: flex-start;
+              text-align: left;
+              gap: 20px;
+              padding: 0 0 40px 0;
+              position: relative;
+            }
+            .hiw-step:last-child { padding-bottom: 0; }
+            .hiw-step-circle {
+              margin: 0;
+              flex-shrink: 0;
+            }
+            .hiw-step::after {
+              content: '';
+              position: absolute;
+              top: 56px;
+              left: 27px;
+              width: 2px;
+              bottom: 0;
+              background: linear-gradient(to bottom, ${TEAL}55, transparent);
+            }
+            .hiw-step:last-child::after { display: none; }
+          }
+        `}</style>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <Reveal>
-            <div style={{ textAlign: 'center', marginBottom: 72 }}>
-              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>How it works</div>
-              <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.2vw, 40px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 16 }}>
+            <div style={{ textAlign: 'center', marginBottom: 80 }}>
+              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>How it works</div>
+              <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.2vw, 42px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 18 }}>
                 From job description to hiring decision in minutes
               </h2>
-              <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7, maxWidth: 560, margin: '0 auto' }}>
+              <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7, maxWidth: 520, margin: '0 auto' }}>
                 No personality tests. No guesswork. Real work simulations that show you exactly who will succeed.
               </p>
             </div>
           </Reveal>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2px', background: '#e8edf4' }}>
-            {[
-              {
-                n: 1,
-                title: 'Paste your job description',
-                body: 'Our AI reads every detail. The company, the targets, the team, the challenges. It builds 4 realistic scenarios this candidate would face in their first 90 days. Every assessment is unique to the role.',
-              },
-              {
-                n: 2,
-                title: 'Send to your candidates',
-                body: 'One click sends a professional branded email. Candidates complete 4 timed scenarios in about 45 minutes. No login, no download. They just click and start.',
-              },
-              {
-                n: 3,
-                title: 'AI analyses every response',
-                body: 'Two AI passes score each candidate across skills, pressure handling, integrity, and commercial awareness. Every score backed by specific evidence from what they wrote.',
-              },
-              {
-                n: 4,
-                title: 'Get a report worth paying for',
-                body: 'Overall score, Pressure-Fit Assessment, risk level, hiring recommendation, strengths with evidence, concerns with actions, a 6-week onboarding plan, and interview questions targeting each candidate\'s gaps.',
-              },
-            ].map((s, i) => (
-              <Reveal key={s.n} delay={i * 80}>
-                <div style={{
-                  background: '#fff',
-                  padding: '48px 48px',
-                  display: 'flex',
-                  gap: 28,
-                  alignItems: 'flex-start',
-                }}>
-                  {/* Number circle */}
-                  <div style={{
-                    width: 52, height: 52, borderRadius: '50%',
-                    background: TEAL,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: FM, fontSize: 19, fontWeight: 700, color: NAVY,
-                    flexShrink: 0,
-                    boxShadow: `0 4px 20px ${TEAL}44`,
-                    marginTop: 2,
-                  }}>
-                    {s.n}
+          <div style={{ position: 'relative' }}>
+            <div className="hiw-connector" />
+            <div className="hiw-steps">
+              {[
+                {
+                  n: 1,
+                  title: 'Paste your job description',
+                  body: 'Our AI reads every detail. The company, the targets, the team, the challenges. It builds 4 realistic scenarios this candidate would face in their first 90 days. Every assessment is unique to the role.',
+                },
+                {
+                  n: 2,
+                  title: 'Send to your candidates',
+                  body: 'One click sends a professional branded email. Candidates complete 4 timed scenarios in about 45 minutes. No login, no download. They just click and start.',
+                },
+                {
+                  n: 3,
+                  title: 'AI analyses every response',
+                  body: 'Two AI passes score each candidate across skills, pressure handling, integrity, and commercial awareness. Every score backed by specific evidence from what they wrote.',
+                },
+                {
+                  n: 4,
+                  title: 'Get a report worth paying for',
+                  body: 'Overall score, Pressure-Fit Assessment, risk level, hiring recommendation, strengths with evidence, concerns with actions, a 6-week onboarding plan, and interview questions targeting each candidate\'s gaps.',
+                },
+              ].map((s, i) => (
+                <Reveal key={s.n} delay={i * 80}>
+                  <div className="hiw-step">
+                    <div className="hiw-step-circle">{s.n}</div>
+                    <div>
+                      <h3 style={{ fontFamily: F, fontSize: 15.5, fontWeight: 700, color: NAVY, marginBottom: 10, letterSpacing: '-0.2px' }}>{s.title}</h3>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: '#6b7a90', lineHeight: 1.75, margin: 0 }}>{s.body}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 style={{ fontFamily: F, fontSize: 17, fontWeight: 700, color: NAVY, marginBottom: 10, letterSpacing: '-0.2px' }}>{s.title}</h3>
-                    <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', lineHeight: 1.75, margin: 0 }}>{s.body}</p>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
+                </Reveal>
+              ))}
+            </div>
           </div>
         </div>
       </section>
