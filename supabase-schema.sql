@@ -148,6 +148,11 @@ create table if not exists public.candidate_outcomes (
   outcome_date date,
   notes text,
   client_name text,
+  placement_date date,
+  rebate_weeks integer,
+  probation_months integer,
+  rebate_reminder_sent jsonb default '{}'::jsonb,
+  probation_reminder_sent jsonb default '{}'::jsonb,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
   unique(candidate_id, user_id)

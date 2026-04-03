@@ -267,6 +267,44 @@ export default function OutcomesPage() {
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 600, color: TX, fontFamily: F }}>{cand?.name || '-'}</div>
                     <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>{cand?.email || ''}</div>
+                    {/* Probation mini-tracker (employer) */}
+                    {profile?.account_type === 'employer' && o.placement_date && o.probation_months && (() => {
+                      const elapsed = Math.max(0, Math.floor((Date.now() - new Date(o.placement_date)) / 86400000))
+                      const total   = Math.round(o.probation_months * 30.44)
+                      const pct     = Math.min(100, (elapsed / total) * 100)
+                      const done    = elapsed >= total
+                      const danger  = elapsed >= 152
+                      const color   = done ? GRN : danger ? RED : TEAL
+                      const monthsIn = Math.floor(elapsed / 30.44)
+                      return (
+                        <div style={{ marginTop: 6 }}>
+                          <div style={{ fontFamily: F, fontSize: 10.5, color: danger && !done ? RED : TX3, fontWeight: danger ? 700 : 400, marginBottom: 3 }}>
+                            {done ? 'Probation complete' : `Month ${monthsIn} of ${o.probation_months}${danger ? ' · ERA zone' : ''}`}
+                          </div>
+                          <div style={{ height: 4, background: BD, borderRadius: 2, overflow: 'hidden', width: 120 }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 2 }} />
+                          </div>
+                        </div>
+                      )
+                    })()}
+                    {/* Rebate mini-tracker (agency) */}
+                    {profile?.account_type === 'agency' && o.placement_date && o.rebate_weeks && (() => {
+                      const elapsed  = Math.max(0, Math.floor((Date.now() - new Date(o.placement_date)) / 86400000))
+                      const total    = o.rebate_weeks * 7
+                      const pct      = Math.min(100, (elapsed / total) * 100)
+                      const done     = elapsed >= total
+                      const rebatePct = done ? 0 : Math.max(0, Math.round(100 - (elapsed / total) * 100))
+                      return (
+                        <div style={{ marginTop: 6 }}>
+                          <div style={{ fontFamily: F, fontSize: 10.5, color: TX3, marginBottom: 3 }}>
+                            {done ? 'Fee secured' : `${rebatePct}% rebate · ${Math.max(0, o.rebate_weeks - Math.ceil(elapsed / 7))}w left`}
+                          </div>
+                          <div style={{ height: 4, background: BD, borderRadius: 2, overflow: 'hidden', width: 120 }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: done ? GRN : AMB, borderRadius: 2 }} />
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
                   <div style={{ fontSize: 13, color: TX2, fontFamily: F }}>
                     {cand?.assessments?.role_title || '-'}

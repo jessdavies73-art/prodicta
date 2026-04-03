@@ -488,6 +488,247 @@ function StickyNav({ active }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Rebate Period Timeline (agency)
+───────────────────────────────────────────────────────────── */
+function RebateTimeline({ outcome, candidateName }) {
+  const { placement_date, rebate_weeks } = outcome || {}
+  if (!placement_date || !rebate_weeks) return null
+
+  const start      = new Date(placement_date)
+  const totalDays  = rebate_weeks * 7
+  const now        = new Date()
+  const elapsed    = Math.max(0, Math.floor((now - start) / 86400000))
+  const progress   = Math.min(100, (elapsed / totalDays) * 100)
+  const ended      = elapsed >= totalDays
+  const fmtDate    = d => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+
+  const milestones = Array.from({ length: rebate_weeks }, (_, i) => {
+    const w        = i + 1
+    const isLast   = w === rebate_weeks
+    const pct      = isLast ? 0 : Math.round(100 - (i / Math.max(1, rebate_weeks - 1)) * 100)
+    const dayOff   = w * 7
+    const passed   = elapsed >= dayOff
+    const date     = fmtDate(new Date(start.getTime() + dayOff * 86400000))
+    return { w, pct, dayOff, passed, date, isLast }
+  })
+
+  const currentPct = ended ? 0
+    : milestones[Math.min(Math.floor(elapsed / 7), rebate_weeks - 1)]?.pct ?? 100
+  const weeksLeft  = Math.max(0, rebate_weeks - Math.ceil(elapsed / 7))
+
+  return (
+    <div style={{
+      background: CARD, border: `1px solid ${BD}`, borderRadius: 12,
+      padding: '24px 28px', boxShadow: '0 2px 12px rgba(15,33,55,0.08)', marginBottom: 20,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+        <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Ic name="clock" size={16} color={ended ? GRN : AMB} />
+          Rebate Period Tracker
+        </h2>
+        <span style={{
+          fontFamily: F, fontSize: 13, fontWeight: 700, padding: '5px 14px', borderRadius: 20,
+          background: ended ? GRNBG : AMBBG,
+          color: ended ? GRN : AMB,
+          border: `1px solid ${ended ? GRNBD : AMBBD}`,
+        }}>
+          {ended ? 'Fee Secured' : `${currentPct}% rebate available`}
+        </span>
+      </div>
+
+      <div style={{ fontFamily: F, fontSize: 13, color: TX2, marginBottom: 20 }}>
+        Placed on <strong>{fmtDate(start)}</strong> &middot; {rebate_weeks}-week rebate
+        {!ended && <> &middot; <strong style={{ color: AMB }}>{weeksLeft} week{weeksLeft !== 1 ? 's' : ''} remaining</strong></>}
+        {ended && <> &middot; <strong style={{ color: GRN }}>Rebate period complete</strong></>}
+      </div>
+
+      {/* Track */}
+      <div style={{ position: 'relative', marginBottom: 52 }}>
+        <div style={{ height: 6, background: BD, borderRadius: 3 }} />
+        <div style={{
+          position: 'absolute', top: 0, left: 0,
+          width: `${progress}%`, height: 6,
+          background: ended ? GRN : TEAL, borderRadius: 3, transition: 'width 0.4s',
+        }} />
+
+        {/* Milestone dots */}
+        {milestones.map(m => {
+          const pos = (m.dayOff / totalDays) * 100
+          const dotColor = m.passed ? (m.isLast ? GRN : TEAL) : BD
+          return (
+            <div key={m.w} style={{ position: 'absolute', left: `${pos}%`, top: -5, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{
+                width: 16, height: 16, borderRadius: '50%', border: `2px solid ${dotColor}`,
+                background: m.passed ? dotColor : CARD, zIndex: 1, position: 'relative',
+                boxShadow: m.isLast && m.passed ? `0 0 0 3px ${GRN}22` : 'none',
+              }}>
+                {m.isLast && m.passed && (
+                  <div style={{ position: 'absolute', inset: -1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ic name="check" size={8} color="#fff" />
+                  </div>
+                )}
+              </div>
+              <div style={{ position: 'absolute', top: 22, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                <div style={{ fontFamily: FM, fontSize: 10, fontWeight: 700, color: m.passed ? (m.isLast ? GRN : TEALD) : TX3 }}>
+                  {m.isLast ? 'Fee Secured' : `W${m.w}: ${m.pct}%`}
+                </div>
+                <div style={{ fontFamily: F, fontSize: 9, color: TX3 }}>{m.date}</div>
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Current position cursor */}
+        {!ended && elapsed > 0 && (
+          <div style={{
+            position: 'absolute', left: `${progress}%`, top: -7, transform: 'translateX(-50%)',
+            width: 20, height: 20, borderRadius: '50%',
+            background: TEAL, border: `3px solid #fff`,
+            boxShadow: `0 2px 8px ${TEAL}66`, zIndex: 2,
+          }} />
+        )}
+      </div>
+
+      {/* Reminder note */}
+      {!ended && weeksLeft <= 2 && (
+        <div style={{ background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, padding: '10px 14px', fontFamily: F, fontSize: 13, color: RED, fontWeight: 600 }}>
+          Rebate period ends {weeksLeft === 0 ? 'this week' : `in ${weeksLeft} week${weeksLeft > 1 ? 's' : ''}`}. Log the final outcome now.
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Probation Timeline (employer)
+───────────────────────────────────────────────────────────── */
+function ProbationTimeline({ outcome }) {
+  const { placement_date, probation_months = 6 } = outcome || {}
+  if (!placement_date) return null
+
+  const start     = new Date(placement_date)
+  const now       = new Date()
+  const elapsed   = Math.max(0, Math.floor((now - start) / 86400000))
+  const totalDays = Math.round(probation_months * 30.44)
+  const eraDays   = 183 // 6 months
+  const progress  = Math.min(100, (elapsed / totalDays) * 100)
+  const ended     = elapsed >= totalDays
+  const fmtDate   = d => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+
+  // Fixed check-in milestones (months 1, 3, 5 and the ERA line)
+  const checkIns = [
+    { month: 1, day: 30,  label: 'Month 1', sub: 'Check-in' },
+    { month: 3, day: 91,  label: 'Month 3', sub: 'Mid-point review' },
+    { month: 5, day: 152, label: 'Month 5', sub: 'Final review' },
+  ].filter(m => m.day < totalDays)
+
+  const eraShown  = eraDays <= totalDays || probation_months >= 6
+  const eraPos    = Math.min(100, (eraDays / totalDays) * 100)
+  const monthsLeft = Math.max(0, probation_months - Math.floor(elapsed / 30.44))
+
+  return (
+    <div style={{
+      background: CARD, border: `1px solid ${BD}`, borderRadius: 12,
+      padding: '24px 28px', boxShadow: '0 2px 12px rgba(15,33,55,0.08)', marginBottom: 20,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+        <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Ic name="clock" size={16} color={ended ? GRN : elapsed >= 152 ? RED : TEAL} />
+          Probation Timeline
+        </h2>
+        <span style={{
+          fontFamily: F, fontSize: 13, fontWeight: 700, padding: '5px 14px', borderRadius: 20,
+          background: ended ? GRNBG : elapsed >= 152 ? REDBG : TEALLT,
+          color: ended ? GRN : elapsed >= 152 ? RED : TEALD,
+          border: `1px solid ${ended ? GRNBD : elapsed >= 152 ? REDBD : `${TEAL}55`}`,
+        }}>
+          {ended ? 'Probation complete' : elapsed >= 152 ? 'ERA danger zone' : `${Math.round(monthsLeft)} months remaining`}
+        </span>
+      </div>
+
+      <div style={{ fontFamily: F, fontSize: 13, color: TX2, marginBottom: 20 }}>
+        Hired on <strong>{fmtDate(start)}</strong> &middot; {probation_months}-month probation
+        {elapsed >= 152 && !ended && (
+          <strong style={{ color: RED }}> &middot; Unfair dismissal rights apply at 6 months</strong>
+        )}
+      </div>
+
+      {/* Track */}
+      <div style={{ position: 'relative', marginBottom: 52 }}>
+        <div style={{ height: 6, background: BD, borderRadius: 3 }} />
+        <div style={{
+          position: 'absolute', top: 0, left: 0,
+          width: `${progress}%`, height: 6,
+          background: ended ? GRN : elapsed >= 152 ? RED : TEAL,
+          borderRadius: 3, transition: 'width 0.4s',
+        }} />
+
+        {/* ERA 2025 danger line */}
+        {eraShown && (
+          <div style={{ position: 'absolute', left: `${eraPos}%`, top: -14, transform: 'translateX(-50%)', zIndex: 3 }}>
+            <div style={{ width: 2, height: 34, background: RED, margin: '0 auto' }} />
+            <div style={{ position: 'absolute', top: 36, left: '50%', transform: 'translateX(-50%)', textAlign: 'center', whiteSpace: 'nowrap' }}>
+              <div style={{ fontFamily: FM, fontSize: 9.5, fontWeight: 800, color: RED, background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 4, padding: '1px 5px' }}>ERA LINE</div>
+              <div style={{ fontFamily: F, fontSize: 8.5, color: RED, marginTop: 2 }}>{fmtDate(new Date(start.getTime() + eraDays * 86400000))}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Check-in milestones */}
+        {checkIns.map(m => {
+          const pos    = (m.day / totalDays) * 100
+          const passed = elapsed >= m.day
+          return (
+            <div key={m.month} style={{ position: 'absolute', left: `${pos}%`, top: -5, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{
+                width: 16, height: 16, borderRadius: '50%', border: `2px solid ${passed ? TEAL : BD}`,
+                background: passed ? TEAL : CARD, zIndex: 1, position: 'relative',
+              }} />
+              <div style={{ position: 'absolute', top: 22, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                <div style={{ fontFamily: FM, fontSize: 10, fontWeight: 700, color: passed ? TEALD : TX3 }}>{m.label}</div>
+                <div style={{ fontFamily: F, fontSize: 9, color: TX3 }}>{m.sub}</div>
+              </div>
+            </div>
+          )
+        })}
+
+        {/* End dot */}
+        <div style={{ position: 'absolute', right: -8, top: -5, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{
+            width: 16, height: 16, borderRadius: '50%',
+            border: `2px solid ${ended ? GRN : BD}`,
+            background: ended ? GRN : CARD,
+          }} />
+          <div style={{ position: 'absolute', top: 22, right: 0, textAlign: 'right', whiteSpace: 'nowrap' }}>
+            <div style={{ fontFamily: FM, fontSize: 10, fontWeight: 700, color: ended ? GRN : TX3 }}>End</div>
+            <div style={{ fontFamily: F, fontSize: 9, color: TX3 }}>
+              {fmtDate(new Date(start.getTime() + totalDays * 86400000))}
+            </div>
+          </div>
+        </div>
+
+        {/* Current position cursor */}
+        {!ended && elapsed > 0 && (
+          <div style={{
+            position: 'absolute', left: `${progress}%`, top: -7, transform: 'translateX(-50%)',
+            width: 20, height: 20, borderRadius: '50%',
+            background: elapsed >= 152 ? RED : TEAL, border: `3px solid #fff`,
+            boxShadow: `0 2px 8px ${elapsed >= 152 ? RED : TEAL}66`, zIndex: 2,
+          }} />
+        )}
+      </div>
+
+      {/* ERA warning */}
+      {elapsed >= 152 && !ended && (
+        <div style={{ background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, padding: '10px 14px', fontFamily: F, fontSize: 13, color: RED, fontWeight: 600 }}>
+          One month until unfair dismissal rights apply under ERA 2025. Log the probation outcome now.
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────
    Severity helpers
 ───────────────────────────────────────────────────────────── */
 function sevStyle(severity) {
@@ -520,6 +761,11 @@ export default function CandidateReportPage({ params }) {
   const [outcomeDate, setOutcomeDate] = useState('')
   const [outcomeNoteText, setOutcomeNoteText] = useState('')
   const [outcomeClientName, setOutcomeClientName] = useState('')
+  const [placementDate, setPlacementDate] = useState('')
+  const [rebateWeeks, setRebateWeeks] = useState(6)
+  const [useCustomRebate, setUseCustomRebate] = useState(false)
+  const [customRebateInput, setCustomRebateInput] = useState('')
+  const [probationMonths, setProbationMonths] = useState(6)
   const [savingOutcome, setSavingOutcome] = useState(false)
   const [existingOutcome, setExistingOutcome] = useState(null)
 
@@ -585,7 +831,15 @@ export default function CandidateReportPage({ params }) {
           supabase.from('accountability_records').select('*').eq('candidate_id', params.candidateId).eq('user_id', u.id).maybeSingle(),
         ])
         setExistingOutcome(outcome || null)
-        if (outcome) { setSelectedOutcome(outcome.outcome); setOutcomeDate(outcome.outcome_date || ''); setOutcomeNoteText(outcome.notes || ''); setOutcomeClientName(outcome.client_name || '') }
+        if (outcome) {
+          setSelectedOutcome(outcome.outcome)
+          setOutcomeDate(outcome.outcome_date || '')
+          setOutcomeNoteText(outcome.notes || '')
+          setOutcomeClientName(outcome.client_name || '')
+          setPlacementDate(outcome.placement_date || '')
+          if (outcome.rebate_weeks) setRebateWeeks(outcome.rebate_weeks)
+          if (outcome.probation_months) setProbationMonths(outcome.probation_months)
+        }
         setAccountRecord(acRec || null)
         if (acRec?.shared_with_client_at) setRecordSharedDate(acRec.shared_with_client_at)
       } catch (e) {
@@ -733,6 +987,11 @@ export default function CandidateReportPage({ params }) {
       outcome_date: outcomeDate || null,
       notes: outcomeNoteText.trim() || null,
       client_name: profile?.account_type === 'agency' ? (outcomeClientName.trim() || null) : null,
+      placement_date: placementDate || null,
+      rebate_weeks: profile?.account_type === 'agency' && placementDate
+        ? (useCustomRebate ? (parseInt(customRebateInput) || null) : rebateWeeks)
+        : null,
+      probation_months: profile?.account_type === 'employer' && placementDate ? probationMonths : null,
     }
     let saved
     if (existingOutcome) {
@@ -1016,6 +1275,14 @@ export default function CandidateReportPage({ params }) {
                 </div>
               </div>
             </Card>
+
+            {/* Timeline trackers */}
+            {existingOutcome?.placement_date && profile?.account_type === 'agency' && (
+              <RebateTimeline outcome={existingOutcome} candidateName={candidate?.name} />
+            )}
+            {existingOutcome?.placement_date && profile?.account_type === 'employer' && (
+              <ProbationTimeline outcome={existingOutcome} />
+            )}
 
             {!results && <PendingState candidate={candidate} />}
 
@@ -2393,6 +2660,89 @@ export default function CandidateReportPage({ params }) {
                   onFocus={e => e.target.style.borderColor = TEAL}
                   onBlur={e => e.target.style.borderColor = BD}
                 />
+              </div>
+            )}
+
+            {/* Placement / hire date */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>
+                {profile?.account_type === 'agency' ? 'Placement date (optional)' : 'Hire start date (optional)'}
+              </label>
+              <input
+                type="date"
+                value={placementDate}
+                onChange={e => setPlacementDate(e.target.value)}
+                style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+                onFocus={e => e.target.style.borderColor = TEAL}
+                onBlur={e => e.target.style.borderColor = BD}
+              />
+            </div>
+
+            {/* Agency: rebate period */}
+            {profile?.account_type === 'agency' && placementDate && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 8 }}>Rebate period</label>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: useCustomRebate ? 8 : 0 }}>
+                  {[4, 6, 8].map(w => (
+                    <button key={w} type="button"
+                      onClick={() => { setRebateWeeks(w); setUseCustomRebate(false) }}
+                      style={{
+                        padding: '7px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 600,
+                        border: `1.5px solid ${!useCustomRebate && rebateWeeks === w ? TEAL : BD}`,
+                        background: !useCustomRebate && rebateWeeks === w ? TEALLT : BG,
+                        color: !useCustomRebate && rebateWeeks === w ? TEALD : TX2,
+                        transition: 'all 0.1s',
+                      }}>
+                      {w} weeks
+                    </button>
+                  ))}
+                  <button type="button"
+                    onClick={() => setUseCustomRebate(true)}
+                    style={{
+                      padding: '7px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 600,
+                      border: `1.5px solid ${useCustomRebate ? TEAL : BD}`,
+                      background: useCustomRebate ? TEALLT : BG,
+                      color: useCustomRebate ? TEALD : TX2,
+                      transition: 'all 0.1s',
+                    }}>
+                    Custom
+                  </button>
+                </div>
+                {useCustomRebate && (
+                  <input
+                    type="number"
+                    min="1"
+                    max="52"
+                    value={customRebateInput}
+                    onChange={e => setCustomRebateInput(e.target.value)}
+                    placeholder="Enter weeks (e.g. 10)"
+                    style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+                    onFocus={e => e.target.style.borderColor = TEAL}
+                    onBlur={e => e.target.style.borderColor = BD}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Employer: probation length */}
+            {profile?.account_type === 'employer' && placementDate && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 8 }}>Probation length</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {[3, 6, 12].map(m => (
+                    <button key={m} type="button"
+                      onClick={() => setProbationMonths(m)}
+                      style={{
+                        padding: '7px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 600,
+                        border: `1.5px solid ${probationMonths === m ? TEAL : BD}`,
+                        background: probationMonths === m ? TEALLT : BG,
+                        color: probationMonths === m ? TEALD : TX2,
+                        transition: 'all 0.1s',
+                      }}>
+                      {m} months
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 

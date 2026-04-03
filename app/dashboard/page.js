@@ -241,6 +241,7 @@ export default function DashboardPage() {
   const [monthlyCount, setMonthlyCount] = useState(0)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [activePlacements, setActivePlacements] = useState([])
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -295,6 +296,24 @@ export default function DashboardPage() {
           .eq('user_id', user.id)
           .gte('created_at', startOfMonth)
         setMonthlyCount(count || 0)
+
+        // Load active placements for agency accounts
+        if (prof?.account_type === 'agency') {
+          const { data: placements } = await supabase
+            .from('candidate_outcomes')
+            .select('*, candidates(id, name, assessments(role_title))')
+            .eq('user_id', user.id)
+            .not('placement_date', 'is', null)
+            .not('rebate_weeks', 'is', null)
+            .order('placement_date', { ascending: false })
+          const now = new Date()
+          const active = (placements || []).filter(p => {
+            const end = new Date(p.placement_date)
+            end.setDate(end.getDate() + p.rebate_weeks * 7)
+            return end > now
+          })
+          setActivePlacements(active)
+        }
 
         // Show onboarding wizard for new users
         if (prof && !prof.onboarding_complete) setShowOnboarding(true)
@@ -696,6 +715,11 @@ export default function DashboardPage() {
           />
         </div>
 
+        {/* ── Active Placements (agency only) ── */}
+        {profile?.account_type === 'agency' && (
+          <ActivePlacements placements={activePlacements} router={router} />
+        )}
+
         {/* ── Hiring Risk Overview ── */}
         <HiringRiskOverview completed={completed} />
 
@@ -1021,6 +1045,79 @@ export default function DashboardPage() {
 
         </div>
       </main>
+    </div>
+  )
+}
+
+function ActivePlacements({ placements, router }) {
+  if (!placements || placements.length === 0) return null
+  const now = new Date()
+
+  return (
+    <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, marginBottom: 24, overflow: 'hidden' }}>
+      <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: AMB, boxShadow: `0 0 0 3px ${AMBBG}` }} />
+          <span style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX }}>Active Placements</span>
+          <span style={{ fontFamily: F, fontSize: 12, fontWeight: 600, padding: '2px 9px', borderRadius: 20, background: AMBBG, color: AMB, border: `1px solid ${AMBBD}` }}>
+            {placements.length} in rebate
+          </span>
+        </div>
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', padding: '9px 24px', background: BG, borderBottom: `1px solid ${BD}` }}>
+          {['Candidate', 'Client', 'Placed', 'Rebate period', 'Status'].map(h => (
+            <div key={h} style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</div>
+          ))}
+        </div>
+
+        {placements.map((p, i) => {
+          const start    = new Date(p.placement_date)
+          const endDate  = new Date(start.getTime() + p.rebate_weeks * 7 * 86400000)
+          const daysLeft = Math.max(0, Math.ceil((endDate - now) / 86400000))
+          const weeksLeft = Math.ceil(daysLeft / 7)
+          const elapsed  = Math.max(0, Math.floor((now - start) / 86400000))
+          const pct      = Math.max(0, Math.round(100 - (elapsed / (p.rebate_weeks * 7)) * 100))
+          const urgent   = weeksLeft <= 1
+          const cand     = p.candidates
+
+          return (
+            <div
+              key={p.id}
+              onClick={() => cand?.id && router.push(`/assessment/${cand.assessment_id || ''}/candidate/${cand.id}`)}
+              style={{
+                display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+                padding: '13px 24px',
+                borderBottom: i < placements.length - 1 ? `1px solid ${BD}` : 'none',
+                alignItems: 'center', cursor: cand?.id ? 'pointer' : 'default',
+                transition: 'background 0.1s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = BG }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            >
+              <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX }}>{cand?.name || '-'}</div>
+              <div style={{ fontFamily: F, fontSize: 13, color: TX2 }}>{p.client_name || '-'}</div>
+              <div style={{ fontFamily: FM, fontSize: 12, color: TX3 }}>
+                {start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+              </div>
+              <div style={{ fontFamily: F, fontSize: 12.5, color: TX2 }}>{p.rebate_weeks} weeks</div>
+              <div>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  fontFamily: F, fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 6,
+                  background: urgent ? REDBG : AMBBG,
+                  color: urgent ? RED : AMB,
+                  border: `1px solid ${urgent ? REDBD : AMBBD}`,
+                }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: urgent ? RED : AMB }} />
+                  {weeksLeft}w left &middot; {pct}% rebate
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
