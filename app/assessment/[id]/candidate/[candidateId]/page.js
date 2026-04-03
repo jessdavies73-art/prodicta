@@ -681,23 +681,30 @@ function ProbationTimeline({ outcome }) {
           </div>
 
           {/* Check-in milestones */}
-          {checkIns.map(m => {
-            const pos    = (m.day / totalDays) * 100
-            const passed = elapsed >= m.day
-            return (
-              <div key={m.month} style={{ position: 'absolute', left: `${pos}%`, top: -5, transform: 'translateX(-50%)' }}>
-                <div style={{
-                  width: 16, height: 16, borderRadius: '50%',
-                  border: `2px solid ${passed ? TEAL : BD}`,
-                  background: passed ? TEAL : CARD, zIndex: 1,
-                }} />
-                <div style={{ position: 'absolute', top: 22, left: '50%', transform: 'translateX(-50%)', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                  <div style={{ fontFamily: FM, fontSize: 10, fontWeight: 700, color: passed ? TEALD : TX3 }}>{m.label}</div>
-                  <div style={{ fontFamily: F, fontSize: 9, color: TX3 }}>{m.sub}</div>
+          {(() => {
+            const currentIdx = checkIns.findIndex(m => elapsed < m.day)
+            return checkIns.map((m, i) => {
+              const pos     = (m.day / totalDays) * 100
+              const passed  = elapsed >= m.day
+              const current = !passed && i === currentIdx
+              const dotBorder = passed ? TEAL : current ? AMB : BD
+              const dotFill   = passed ? TEAL : current ? AMB : CARD
+              const lblColor  = passed ? TEALD : current ? AMB : TX3
+              return (
+                <div key={m.month} style={{ position: 'absolute', left: `${pos}%`, top: -5, transform: 'translateX(-50%)' }}>
+                  <div style={{
+                    width: 16, height: 16, borderRadius: '50%',
+                    border: `2px solid ${dotBorder}`,
+                    background: dotFill, zIndex: 1,
+                  }} />
+                  <div style={{ position: 'absolute', top: 22, left: '50%', transform: 'translateX(-50%)', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontFamily: FM, fontSize: 10, fontWeight: 700, color: lblColor }}>{m.label}</div>
+                    <div style={{ fontFamily: F, fontSize: 9, color: current ? AMB : TX3 }}>{m.sub}</div>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })
+          })()}
 
           {/* ERA 2025 danger line — right-aligned label so it never clips */}
           {eraShown && (
