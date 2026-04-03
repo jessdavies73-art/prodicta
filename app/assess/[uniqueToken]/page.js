@@ -576,10 +576,48 @@ function SubmittingPage({ candidateName }) {
               <path d="M24 4 a20 20 0 0 1 20 20" fill="none" stroke={TEAL} strokeWidth={4} strokeLinecap="round" />
             </svg>
           </div>
-          <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: 0 }}>
+          <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 8px' }}>
             Submitting your responses…
           </p>
+          <p style={{ fontFamily: F, color: TX3, fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+            Your responses are being saved and scored. This can take up to 90 seconds.
+          </p>
           <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        </Card>
+      </CentredCard>
+    </>
+  )
+}
+
+// ─── State: Saved (scoring timed out client-side) ────────────────────────────
+function SavedPage({ candidateName, onContinue }) {
+  return (
+    <>
+      <NavBar candidateName={candidateName} />
+      <CentredCard>
+        <Card style={{ textAlign: 'center', padding: '64px 36px' }}>
+          <div style={{ marginBottom: 20 }}>
+            <svg width={48} height={48} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <polyline points="9 12 11 14 15 10"/>
+            </svg>
+          </div>
+          <h2 style={{ fontFamily: F, color: TX, fontSize: 20, fontWeight: 800, margin: '0 0 12px' }}>
+            Your responses have been saved
+          </h2>
+          <p style={{ fontFamily: F, color: TX2, fontSize: 14, margin: '0 0 28px', lineHeight: 1.7 }}>
+            Scoring is taking longer than expected. Your responses have been saved and will be scored shortly. You do not need to wait or resubmit.
+          </p>
+          <button
+            onClick={onContinue}
+            style={{
+              background: TEAL, color: '#fff', fontFamily: F,
+              fontWeight: 700, fontSize: 15, border: 'none',
+              borderRadius: 10, padding: '12px 32px', cursor: 'pointer',
+            }}
+          >
+            Continue
+          </button>
         </Card>
       </CentredCard>
     </>
@@ -854,12 +892,19 @@ export default function AssessPage({ params }) {
 
   async function handleSubmit(responses) {
     setUiState('submitting')
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => {
+      controller.abort()
+      setUiState('saved')
+    }, 120000)
     try {
       const res = await fetch(`/api/assess/${uniqueToken}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ responses }),
+        signal: controller.signal,
       })
+      clearTimeout(timeoutId)
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         setErrorMessage(data.error || 'Submission failed. Please try again.')
@@ -867,7 +912,9 @@ export default function AssessPage({ params }) {
         return
       }
       setUiState('rating')
-    } catch {
+    } catch (err) {
+      clearTimeout(timeoutId)
+      if (err.name === 'AbortError') return // timeout already set uiState to 'saved'
       setErrorMessage('Submission failed. Please check your connection and try again.')
       setUiState('error')
     }
@@ -920,6 +967,7 @@ export default function AssessPage({ params }) {
     />
   )
   if (uiState === 'submitting') return <SubmittingPage candidateName={candidate?.name} />
+  if (uiState === 'saved') return <SavedPage candidateName={candidate?.name} onContinue={() => setUiState('rating')} />
   if (uiState === 'rating') return (
     <RatingPage
       candidateName={candidate?.name}
