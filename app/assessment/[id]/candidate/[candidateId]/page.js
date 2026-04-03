@@ -2176,6 +2176,53 @@ export default function CandidateReportPage({ params }) {
                     <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
                       Tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.
                     </p>
+
+                    {profile?.account_type === 'employer' && (
+                      <div style={{
+                        background: AMBBG,
+                        border: `1.5px solid ${AMBBD}`,
+                        borderRadius: 12,
+                        padding: '16px 20px',
+                        marginBottom: 20,
+                        display: 'flex',
+                        gap: 14,
+                        alignItems: 'flex-start',
+                      }}>
+                        <div style={{ flexShrink: 0, marginTop: 1 }}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={AMB} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                          </svg>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: AMB, marginBottom: 6 }}>ERA 2025 Day-One Rights Reminder</div>
+                          <p style={{ fontFamily: F, fontSize: 13, color: AMB, margin: '0 0 10px', lineHeight: 1.6, opacity: 0.9 }}>
+                            From April 2026, the following rights apply from the employee's first day:
+                          </p>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
+                            {[
+                              'Statutory Sick Pay from day one (no 3-day waiting period)',
+                              'Paternity leave from day one (no 26-week qualifying period)',
+                              'Unpaid parental leave from day one (no 1-year qualifying period)',
+                              'Bereaved Partner\'s Paternity Leave from day one',
+                            ].map((right, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                <svg style={{ flexShrink: 0, marginTop: 3 }} width="12" height="12" viewBox="0 0 24 24" fill={AMB}>
+                                  <circle cx="12" cy="12" r="12"/>
+                                  <polyline points="17 8 10 16 7 13" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                <span style={{ fontFamily: F, fontSize: 13, color: AMB, lineHeight: 1.55, opacity: 0.9 }}>{right}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <p style={{ fontFamily: F, fontSize: 12.5, color: AMB, margin: 0, lineHeight: 1.6, opacity: 0.8 }}>
+                            Ensure your onboarding process includes confirmation of these entitlements and that your HR policies are updated accordingly.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                       {results.onboarding_plan.map((item, i) => {
                         // Support both new structured objects and legacy plain strings
