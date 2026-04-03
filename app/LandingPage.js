@@ -255,13 +255,12 @@ export default function LandingPage() {
         </div>
 
         {/* Report mockup */}
-        <div style={{ position: 'relative', width: '100%', maxWidth: 946, marginBottom: 64, zIndex: 1 }}>
+        <div style={{ position: 'relative', width: '100%', maxWidth: 946, marginBottom: 64, zIndex: 1, overflow: 'hidden', borderRadius: 20 }}>
           {/* Jade glow behind mockup */}
           <div style={{ position: 'absolute', inset: '-48px -32px', borderRadius: 48, background: 'radial-gradient(ellipse at 50% 60%, rgba(0,191,165,0.15) 0%, transparent 68%)', pointerEvents: 'none' }} />
           <div style={{
-            transform: 'rotate(2deg)',
             borderRadius: 20, overflow: 'hidden',
-            boxShadow: '0 25px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,191,165,0.15)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.3), 0 30px 60px rgba(0,0,0,0.2)',
             textAlign: 'left',
           }}>
             {/* Browser chrome */}
@@ -298,7 +297,7 @@ export default function LandingPage() {
               </div>
             </div>
             {/* Score strips */}
-            <div style={{ background: '#fff', padding: '20px 28px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+            <div style={{ background: '#fff', padding: '20px 28px', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 16 }}>
               {[
                 { label: 'Communication', score: 88 },
                 { label: 'Problem Solving', score: 79 },
@@ -748,7 +747,7 @@ export default function LandingPage() {
 
           {/* Report preview mockup */}
           <Reveal delay={100}>
-            <div style={{ transform: 'rotate(2deg)', borderRadius: 20, overflow: 'hidden', boxShadow: '0 25px 60px rgba(0,0,0,0.18), 0 0 40px rgba(0,191,165,0.07)', textAlign: 'left' }}>
+            <div style={{ borderRadius: 20, overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.3), 0 30px 60px rgba(0,0,0,0.2)', textAlign: 'left' }}>
               {/* Browser chrome */}
               <div style={{ background: '#1e293b', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
                 {['#EF4444', '#F59E0B', '#22C55E'].map(c => (
@@ -790,7 +789,7 @@ export default function LandingPage() {
                       { title: 'Clear stakeholder communication', body: 'Consistently structured responses around audience needs. Adapted tone for different scenarios.' },
                       { title: 'Commercial awareness', body: 'Strong grasp of revenue impact and client retention priorities.' },
                     ].map(s => (
-                      <div key={s.title} style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 10, padding: '14px 16px' }}>
+                      <div key={s.title} style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.5)', borderLeft: '3px solid #22C55E', borderRadius: 10, padding: '14px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                           <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E', flexShrink: 0 }} />
                           <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: '#fff' }}>{s.title}</span>
@@ -806,10 +805,10 @@ export default function LandingPage() {
                   <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 12 }}>Watch-outs</div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
                     {[
-                      { title: 'Delegation hesitancy', body: 'Showed reluctance to distribute tasks. May become a bottleneck in senior roles.', color: '#EF4444', bg: 'rgba(239,68,68,0.06)' },
-                      { title: 'Time pressure response', body: 'Quality dropped noticeably under tight deadlines. Responses became less structured.', color: '#F59E0B', bg: 'rgba(245,158,11,0.06)' },
+                      { title: 'Delegation hesitancy', body: 'Showed reluctance to distribute tasks. May become a bottleneck in senior roles.', color: '#EF4444', borderRgba: 'rgba(239,68,68,0.5)', bg: 'rgba(239,68,68,0.07)' },
+                      { title: 'Time pressure response', body: 'Quality dropped noticeably under tight deadlines. Responses became less structured.', color: '#F59E0B', borderRgba: 'rgba(245,158,11,0.5)', bg: 'rgba(245,158,11,0.07)' },
                     ].map(w => (
-                      <div key={w.title} style={{ background: w.bg, border: `1px solid ${w.color}44`, borderRadius: 10, padding: '14px 16px' }}>
+                      <div key={w.title} style={{ background: w.bg, border: `1px solid ${w.borderRgba}`, borderLeft: `3px solid ${w.color}`, borderRadius: 10, padding: '14px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                           <div style={{ width: 6, height: 6, borderRadius: '50%', background: w.color, flexShrink: 0 }} />
                           <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: '#fff' }}>{w.title}</span>
