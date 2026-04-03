@@ -795,10 +795,6 @@ export default function CandidateReportPage({ params }) {
   const [sending, setSending] = useState(false)
   const [sendSuccess, setSendSuccess] = useState(false)
 
-  // Re-score
-  const [rescoring, setRescoring] = useState(false)
-  const [rescoreError, setRescoreError] = useState(null)
-
   // Report section prefs (agency , Feature 6)
   const DEFAULT_SECTIONS = { overall_score: true, pressure_fit: true, ai_summary: true, skills: true, strengths: true, watchouts: true, interview_questions: true }
   const [reportSections, setReportSections] = useState(DEFAULT_SECTIONS)
@@ -1126,34 +1122,6 @@ export default function CandidateReportPage({ params }) {
     )))
   }
 
-  async function handleRescore() {
-    if (!confirm('Re-score this candidate? The current results will be replaced.')) return
-    setRescoring(true)
-    setRescoreError(null)
-    try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 150000)
-      const res = await fetch(`/api/rescore/${params.candidateId}`, {
-        method: 'POST',
-        signal: controller.signal,
-      })
-      clearTimeout(timeoutId)
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.error || `HTTP ${res.status}`)
-      }
-      // Refresh page to load new results
-      window.location.reload()
-    } catch (err) {
-      if (err.name === 'AbortError') {
-        setRescoreError('Scoring is taking longer than expected. Refresh the page in a minute to see if results have updated.')
-      } else {
-        setRescoreError(err.message)
-      }
-      setRescoring(false)
-    }
-  }
-
   function formatNoteDate(str) {
     if (!str) return ''
     return new Date(str).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -1318,31 +1286,6 @@ export default function CandidateReportPage({ params }) {
                       <Ic name="download" size={15} color={TX2} />
                       Export PDF
                     </button>
-                    {results && (
-                      <button
-                        onClick={handleRescore}
-                        disabled={rescoring}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: rescoring ? AMBBG : 'transparent',
-                          border: `1.5px solid ${rescoring ? AMBBD : AMBBD}`,
-                          borderRadius: 8, cursor: rescoring ? 'default' : 'pointer',
-                          fontFamily: F, fontSize: 13, fontWeight: 700,
-                          color: AMB, padding: '9px 16px', opacity: rescoring ? 0.7 : 1,
-                        }}
-                      >
-                        <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={AMB} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="23 4 23 10 17 10" />
-                          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                        </svg>
-                        {rescoring ? 'Re-scoring…' : 'Re-score'}
-                      </button>
-                    )}
-                    {rescoreError && (
-                      <p style={{ fontFamily: F, fontSize: 12, color: RED, margin: '4px 0 0', maxWidth: 180, lineHeight: 1.4 }}>
-                        {rescoreError}
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>
