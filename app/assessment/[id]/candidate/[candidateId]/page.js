@@ -88,11 +88,11 @@ const Badge = ({ label, bg, color, border }) => (
   </span>
 )
 
-const EvidenceBox = ({ children }) => (
+const EvidenceBox = ({ children, color = TEAL }) => (
   <div style={{
     background: '#f8fafc',
     border: `1px solid ${BD}`,
-    borderLeft: `3px solid ${TEAL}`,
+    borderLeft: `3px solid ${color}`,
     borderRadius: '0 8px 8px 0',
     padding: '10px 14px',
     marginTop: 10,
@@ -2164,7 +2164,7 @@ export default function CandidateReportPage({ params }) {
                                 {explanation}
                               </p>
                             )}
-                            {evidence && <EvidenceBox>{evidence}</EvidenceBox>}
+                            {evidence && <EvidenceBox color={sev.color}>{evidence}</EvidenceBox>}
                             {action && <ActionBox>{action}</ActionBox>}
                           </div>
                         )
