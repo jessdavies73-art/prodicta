@@ -837,11 +837,11 @@ export default function LandingPage() {
               borderRadius: 16, padding: '24px 32px', marginBottom: 32,
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               flexWrap: 'wrap', gap: 20,
-              border: `1.5px solid ${TEAL}44`,
-              boxShadow: `0 8px 32px ${TEAL}18`,
+              border: `1.5px solid ${GOLD}66`,
+              boxShadow: `0 8px 32px ${GOLD}22`,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ background: `${TEAL}22`, border: `1px solid ${TEAL}44`, borderRadius: 10, padding: '8px 14px', fontFamily: FM, fontSize: 13, fontWeight: 700, color: TEAL, whiteSpace: 'nowrap' }}>OFFER</div>
+                <div style={{ background: `${GOLD}22`, border: `1px solid ${GOLD}66`, borderRadius: 10, padding: '8px 14px', fontFamily: FM, fontSize: 13, fontWeight: 700, color: GOLD, whiteSpace: 'nowrap' }}>OFFER</div>
                 <div>
                   <div style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Founding Member: £79/month</div>
                   <div style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.55)' }}>Limited time offer: unlimited assessments, all features, for 12 months. Lock in before it's gone.</div>
@@ -849,7 +849,7 @@ export default function LandingPage() {
               </div>
               <a href="/login" style={{
                 fontFamily: F, fontSize: 14, fontWeight: 700, color: NAVY,
-                background: TEAL, textDecoration: 'none',
+                background: GOLD, textDecoration: 'none',
                 padding: '11px 24px', borderRadius: 9, whiteSpace: 'nowrap',
                 flexShrink: 0,
               }}>

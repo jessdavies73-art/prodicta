@@ -1,3 +1,5 @@
+html { scroll-behavior: smooth; }
+
 /* ── Avatar gradients ──────────────────────────────────────────────────────── */
 .avatar-jade    { background: linear-gradient(135deg, #00BFA5, #009688) !important; }
 .avatar-indigo  { background: linear-gradient(135deg, #4F46E5, #3730A3) !important; }
