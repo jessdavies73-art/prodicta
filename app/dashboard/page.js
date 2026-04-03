@@ -1751,9 +1751,31 @@ function RiskCalculator({ profile, completed = [] }) {
   )
 }
 
+const ROLE_PALETTE = ['#00BFA5', '#0f2137', '#E8B84B', '#E87461', '#7C5CFC', '#4FC3F7']
+function roleColor(id = '') {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return ROLE_PALETTE[h % ROLE_PALETTE.length]
+}
+
+function BriefcaseIcon({ color }) {
+  return (
+    <div style={{
+      width: 34, height: 34, borderRadius: 9, background: color, flexShrink: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+      </svg>
+    </div>
+  )
+}
+
 function AssessmentCard({ assessment, completed, total, onClick }) {
   const [hovered, setHovered] = useState(false)
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0
+  const iconColor = roleColor(assessment.id)
 
   return (
     <div
@@ -1769,12 +1791,14 @@ function AssessmentCard({ assessment, completed, total, onClick }) {
         transition: 'border-color 0.15s, background 0.15s',
       }}
     >
-      <div style={{
-        fontSize: 13, fontWeight: 700, color: TX,
-        marginBottom: 4,
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-      }}>
-        {assessment.role_title}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+        <BriefcaseIcon color={iconColor} />
+        <div style={{
+          fontSize: 13, fontWeight: 700, color: TX,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {assessment.role_title}
+        </div>
       </div>
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',

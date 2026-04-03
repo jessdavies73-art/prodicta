@@ -16,6 +16,13 @@ const slabel = s => s >= 85 ? 'Excellent' : s >= 75 ? 'Strong' : s >= 60 ? 'Mode
 const riskCol = r => (r === 'Very Low' || r === 'Low') ? '#16a34a' : r === 'Medium' ? '#d97706' : '#dc2626'
 const riskBg = r => (r === 'Very Low' || r === 'Low') ? '#ecfdf5' : r === 'Medium' ? '#fffbeb' : '#fef2f2'
 
+const ROLE_PALETTE = ['#00BFA5', '#0f2137', '#E8B84B', '#E87461', '#7C5CFC', '#4FC3F7']
+function roleColor(id = '') {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return ROLE_PALETTE[h % ROLE_PALETTE.length]
+}
+
 const scenarioTypeBadge = type => {
   const map = {
     'Email Response':      { bg: '#e0f2f0', color: '#009688' },
@@ -501,6 +508,16 @@ export default function AssessmentPage({ params }) {
             >
               <Ic name="arrow-left" size={18} />
             </button>
+            <div style={{
+              width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+              background: roleColor(assessment.id),
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+              </svg>
+            </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#0f172a', fontFamily: F }}>
