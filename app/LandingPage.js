@@ -705,10 +705,10 @@ export default function LandingPage() {
               boxShadow: `0 8px 32px ${TEAL}18`,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ background: `${TEAL}22`, border: `1px solid ${TEAL}44`, borderRadius: 10, padding: '8px 14px', fontFamily: FM, fontSize: 13, fontWeight: 700, color: TEAL, whiteSpace: 'nowrap' }}>LIMITED</div>
+                <div style={{ background: `${TEAL}22`, border: `1px solid ${TEAL}44`, borderRadius: 10, padding: '8px 14px', fontFamily: FM, fontSize: 13, fontWeight: 700, color: TEAL, whiteSpace: 'nowrap' }}>OFFER</div>
                 <div>
                   <div style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Founding Member: £79/month</div>
-                  <div style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.55)' }}>First 6 customers only: unlimited assessments, all features, for 12 months. Lock in before it's gone.</div>
+                  <div style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.55)' }}>Limited time offer: unlimited assessments, all features, for 12 months. Lock in before it's gone.</div>
                 </div>
               </div>
               <a href="/login" style={{
