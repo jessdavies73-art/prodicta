@@ -681,30 +681,26 @@ function ProbationTimeline({ outcome }) {
           </div>
 
           {/* Check-in milestones */}
-          {(() => {
-            const currentIdx = checkIns.findIndex(m => elapsed < m.day)
-            return checkIns.map((m, i) => {
-              const pos     = (m.day / totalDays) * 100
-              const passed  = elapsed >= m.day
-              const current = !passed && i === currentIdx
-              const dotBorder = passed ? TEAL : current ? AMB : BD
-              const dotFill   = passed ? TEAL : current ? AMB : CARD
-              const lblColor  = passed ? TEALD : current ? AMB : TX3
-              return (
-                <div key={m.month} style={{ position: 'absolute', left: `${pos}%`, top: -5, transform: 'translateX(-50%)' }}>
-                  <div style={{
-                    width: 16, height: 16, borderRadius: '50%',
-                    border: `2px solid ${dotBorder}`,
-                    background: dotFill, zIndex: 1,
-                  }} />
-                  <div style={{ position: 'absolute', top: 22, left: '50%', transform: 'translateX(-50%)', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                    <div style={{ fontFamily: FM, fontSize: 10, fontWeight: 700, color: lblColor }}>{m.label}</div>
-                    <div style={{ fontFamily: F, fontSize: 9, color: current ? AMB : TX3 }}>{m.sub}</div>
-                  </div>
+          {checkIns.map((m) => {
+            const pos       = (m.day / totalDays) * 100
+            const passed    = elapsed >= m.day
+            const dotBorder = passed ? TEAL : BD
+            const dotFill   = passed ? TEAL : CARD
+            const lblColor  = passed ? TEALD : TX3
+            return (
+              <div key={m.month} style={{ position: 'absolute', left: `${pos}%`, top: -5, transform: 'translateX(-50%)' }}>
+                <div style={{
+                  width: 16, height: 16, borderRadius: '50%',
+                  border: `2px solid ${dotBorder}`,
+                  background: dotFill, zIndex: 1,
+                }} />
+                <div style={{ position: 'absolute', top: 22, left: '50%', transform: 'translateX(-50%)', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontFamily: FM, fontSize: 10, fontWeight: 700, color: lblColor }}>{m.label}</div>
+                  <div style={{ fontFamily: F, fontSize: 9, color: TX3 }}>{m.sub}</div>
                 </div>
-              )
-            })
-          })()}
+              </div>
+            )
+          })}
 
           {/* ERA 2025 danger line — right-aligned label so it never clips */}
           {eraShown && (
@@ -798,6 +794,10 @@ export default function CandidateReportPage({ params }) {
   const [sendMessage, setSendMessage] = useState('')
   const [sending, setSending] = useState(false)
   const [sendSuccess, setSendSuccess] = useState(false)
+
+  // Re-score
+  const [rescoring, setRescoring] = useState(false)
+  const [rescoreError, setRescoreError] = useState(null)
 
   // Report section prefs (agency , Feature 6)
   const DEFAULT_SECTIONS = { overall_score: true, pressure_fit: true, ai_summary: true, skills: true, strengths: true, watchouts: true, interview_questions: true }
@@ -1126,6 +1126,34 @@ export default function CandidateReportPage({ params }) {
     )))
   }
 
+  async function handleRescore() {
+    if (!confirm('Re-score this candidate? The current results will be replaced.')) return
+    setRescoring(true)
+    setRescoreError(null)
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 150000)
+      const res = await fetch(`/api/rescore/${params.candidateId}`, {
+        method: 'POST',
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || `HTTP ${res.status}`)
+      }
+      // Refresh page to load new results
+      window.location.reload()
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        setRescoreError('Scoring is taking longer than expected. Refresh the page in a minute to see if results have updated.')
+      } else {
+        setRescoreError(err.message)
+      }
+      setRescoring(false)
+    }
+  }
+
   function formatNoteDate(str) {
     if (!str) return ''
     return new Date(str).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -1290,6 +1318,31 @@ export default function CandidateReportPage({ params }) {
                       <Ic name="download" size={15} color={TX2} />
                       Export PDF
                     </button>
+                    {results && (
+                      <button
+                        onClick={handleRescore}
+                        disabled={rescoring}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: rescoring ? AMBBG : 'transparent',
+                          border: `1.5px solid ${rescoring ? AMBBD : AMBBD}`,
+                          borderRadius: 8, cursor: rescoring ? 'default' : 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700,
+                          color: AMB, padding: '9px 16px', opacity: rescoring ? 0.7 : 1,
+                        }}
+                      >
+                        <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={AMB} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="23 4 23 10 17 10" />
+                          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                        </svg>
+                        {rescoring ? 'Re-scoring…' : 'Re-score'}
+                      </button>
+                    )}
+                    {rescoreError && (
+                      <p style={{ fontFamily: F, fontSize: 12, color: RED, margin: '4px 0 0', maxWidth: 180, lineHeight: 1.4 }}>
+                        {rescoreError}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
