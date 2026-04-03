@@ -2648,7 +2648,8 @@ export default function CandidateReportPage({ params }) {
               ))}
             </div>
 
-            {profile?.account_type === 'agency' && (
+            {/* Agency fields */}
+            {profile?.account_type === 'agency' && (<>
               <div style={{ marginBottom: 14 }}>
                 <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Client name (optional)</label>
                 <input
@@ -2661,26 +2662,18 @@ export default function CandidateReportPage({ params }) {
                   onBlur={e => e.target.style.borderColor = BD}
                 />
               </div>
-            )}
-
-            {/* Placement / hire date */}
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>
-                {profile?.account_type === 'agency' ? 'Placement date (optional)' : 'Hire start date (optional)'}
-              </label>
-              <input
-                type="date"
-                value={placementDate}
-                onChange={e => setPlacementDate(e.target.value)}
-                style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
-                onFocus={e => e.target.style.borderColor = TEAL}
-                onBlur={e => e.target.style.borderColor = BD}
-              />
-            </div>
-
-            {/* Agency: rebate period */}
-            {profile?.account_type === 'agency' && placementDate && (
               <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Placement date</label>
+                <input
+                  type="date"
+                  value={placementDate}
+                  onChange={e => setPlacementDate(e.target.value)}
+                  style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+                  onFocus={e => e.target.style.borderColor = TEAL}
+                  onBlur={e => e.target.style.borderColor = BD}
+                />
+              </div>
+              <div style={{ marginBottom: 18 }}>
                 <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 8 }}>Rebate period</label>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: useCustomRebate ? 8 : 0 }}>
                   {[4, 6, 8].map(w => (
@@ -2710,9 +2703,7 @@ export default function CandidateReportPage({ params }) {
                 </div>
                 {useCustomRebate && (
                   <input
-                    type="number"
-                    min="1"
-                    max="52"
+                    type="number" min="1" max="52"
                     value={customRebateInput}
                     onChange={e => setCustomRebateInput(e.target.value)}
                     placeholder="Enter weeks (e.g. 10)"
@@ -2722,11 +2713,22 @@ export default function CandidateReportPage({ params }) {
                   />
                 )}
               </div>
-            )}
+            </>)}
 
-            {/* Employer: probation length */}
-            {profile?.account_type === 'employer' && placementDate && (
+            {/* Employer fields */}
+            {profile?.account_type === 'employer' && (<>
               <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Hire start date</label>
+                <input
+                  type="date"
+                  value={placementDate}
+                  onChange={e => setPlacementDate(e.target.value)}
+                  style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+                  onFocus={e => e.target.style.borderColor = TEAL}
+                  onBlur={e => e.target.style.borderColor = BD}
+                />
+              </div>
+              <div style={{ marginBottom: 18 }}>
                 <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 8 }}>Probation length</label>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {[3, 6, 12].map(m => (
@@ -2744,19 +2746,7 @@ export default function CandidateReportPage({ params }) {
                   ))}
                 </div>
               </div>
-            )}
-
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Date (optional)</label>
-              <input
-                type="date"
-                value={outcomeDate}
-                onChange={e => setOutcomeDate(e.target.value)}
-                style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
-                onFocus={e => e.target.style.borderColor = TEAL}
-                onBlur={e => e.target.style.borderColor = BD}
-              />
-            </div>
+            </>)}
 
             <div style={{ marginBottom: 22 }}>
               <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Notes (optional)</label>
