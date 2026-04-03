@@ -498,16 +498,6 @@ export default function AssessmentPage({ params }) {
         {/* Header row */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32, gap: 16, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <button
-              onClick={() => router.push('/dashboard')}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: 36, height: 36, borderRadius: 8, border: '1px solid #e4e9f0',
-                background: '#fff', cursor: 'pointer', color: '#5e6b7f', flexShrink: 0
-              }}
-            >
-              <Ic name="arrow-left" size={18} />
-            </button>
             <div style={{
               width: 40, height: 40, borderRadius: 10, flexShrink: 0,
               background: roleColor(assessment.id),

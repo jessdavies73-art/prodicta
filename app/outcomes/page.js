@@ -318,9 +318,9 @@ export default function OutcomesPage() {
                     <OutcomeBadge outcome={o.outcome} />
                   </div>
                   <div>
-                    {o.outcome_date ? (
+                    {(o.placement_date || o.outcome_date) ? (
                       <span style={{ fontFamily: FM, fontSize: 12.5, color: TX3 }}>
-                        {new Date(o.outcome_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {new Date(o.placement_date || o.outcome_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
                     ) : (
                       <span style={{ fontSize: 12, color: TX3 }}>-</span>
