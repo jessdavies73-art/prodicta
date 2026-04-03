@@ -2,8 +2,40 @@ import { NextResponse } from 'next/server'
 import { getStripeClient, PLANS, getOrCreatePriceId } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase-server'
 
+async function createSupabaseUser({ adminClient, email, password, companyName, accountType, plan, customerId, subscriptionId }) {
+  const { data: userData, error: createError } = await adminClient.auth.admin.createUser({
+    email: email.trim(),
+    password,
+    email_confirm: false,
+    user_metadata: {
+      company_name: companyName.trim(),
+      account_type: accountType,
+      plan,
+    },
+    app_metadata: {
+      subscription_status: 'active',
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscriptionId,
+    },
+  })
+
+  if (createError) throw createError
+
+  await adminClient.from('users').insert({
+    id: userData.user.id,
+    email: email.trim(),
+    company_name: companyName.trim(),
+    account_type: accountType,
+    plan,
+    onboarding_complete: true,
+    subscription_status: 'active',
+    stripe_customer_id: customerId,
+    stripe_subscription_id: subscriptionId,
+  })
+}
+
 export async function POST(request) {
-  let stripeCustomerId = null
+  let stripeCustomerId    = null
   let stripeSubscriptionId = null
 
   try {
@@ -19,28 +51,27 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Password must be at least 8 characters.' }, { status: 400 })
     }
 
-    const stripe = getStripeClient()
+    const stripe  = getStripeClient()
     const priceId = await getOrCreatePriceId(plan)
 
-    // Create Stripe customer
     const customer = await stripe.customers.create({
       email: email.trim(),
-      name: companyName.trim(),
+      name:  companyName.trim(),
       metadata: { plan, accountType },
     })
     stripeCustomerId = customer.id
 
-    // Attach payment method and set as default
     await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id })
     await stripe.customers.update(customer.id, {
       invoice_settings: { default_payment_method: paymentMethodId },
     })
 
-    // Create subscription — charges immediately, fails fast if card declines
+    // default_incomplete: subscription is created immediately but payment may
+    // still require SCA. The payment intent status tells us what to do next.
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
       items: [{ price: priceId }],
-      payment_behavior: 'error_if_incomplete',
+      payment_behavior: 'default_incomplete',
       payment_settings: {
         payment_method_types: ['card'],
         save_default_payment_method: 'on_subscription',
@@ -49,37 +80,52 @@ export async function POST(request) {
     })
     stripeSubscriptionId = subscription.id
 
-    if (subscription.status !== 'active') {
-      await stripe.subscriptions.cancel(subscription.id)
-      await stripe.customers.del(customer.id)
-      return NextResponse.json(
-        { error: 'Payment failed. Please check your card details and try again.' },
-        { status: 402 }
-      )
+    const paymentIntent = subscription.latest_invoice?.payment_intent
+
+    // SCA / 3D Secure required — return the client secret so the browser can
+    // open the authentication popup via stripe.confirmCardPayment.
+    // Account creation is deferred to /api/billing/confirm-subscription.
+    if (paymentIntent?.status === 'requires_action') {
+      stripeCustomerId     = null  // prevent catch-block rollback; resources are intentionally held
+      stripeSubscriptionId = null
+      return NextResponse.json({
+        requiresAction: true,
+        clientSecret:   paymentIntent.client_secret,
+        subscriptionId: subscription.id,
+      })
     }
 
-    // Payment succeeded — create Supabase user (sends verification email)
-    const adminClient = createServiceClient()
-    const { data: userData, error: createError } = await adminClient.auth.admin.createUser({
-      email: email.trim(),
-      password,
-      email_confirm: false,
-      user_metadata: {
-        company_name: companyName.trim(),
-        account_type: accountType,
-        plan,
-      },
-      app_metadata: {
-        subscription_status: 'active',
-        stripe_customer_id: customer.id,
-        stripe_subscription_id: subscription.id,
-      },
-    })
-
-    if (createError) {
-      // Roll back Stripe resources if user creation fails
+    // Card declined
+    if (paymentIntent?.status === 'requires_payment_method') {
+      const msg = paymentIntent.last_payment_error?.message
+        || 'Your card was declined. Please try a different card.'
       await stripe.subscriptions.cancel(subscription.id)
       await stripe.customers.del(customer.id)
+      stripeCustomerId = stripeSubscriptionId = null
+      return NextResponse.json({ error: msg }, { status: 402 })
+    }
+
+    // Any other non-succeeded status
+    if (paymentIntent?.status !== 'succeeded') {
+      await stripe.subscriptions.cancel(subscription.id)
+      await stripe.customers.del(customer.id)
+      stripeCustomerId = stripeSubscriptionId = null
+      return NextResponse.json({ error: 'Payment could not be completed. Please try again.' }, { status: 402 })
+    }
+
+    // Payment succeeded without SCA — create Supabase user immediately
+    const adminClient = createServiceClient()
+    try {
+      await createSupabaseUser({
+        adminClient,
+        email, password, companyName, accountType, plan,
+        customerId: customer.id,
+        subscriptionId: subscription.id,
+      })
+    } catch (createError) {
+      await stripe.subscriptions.cancel(subscription.id)
+      await stripe.customers.del(customer.id)
+      stripeCustomerId = stripeSubscriptionId = null
 
       const msg = createError.message || ''
       if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('registered')) {
@@ -91,28 +137,14 @@ export async function POST(request) {
       throw createError
     }
 
-    // Insert profile row into public.users
-    await adminClient.from('users').insert({
-      id: userData.user.id,
-      email: email.trim(),
-      company_name: companyName.trim(),
-      account_type: accountType,
-      plan,
-      onboarding_complete: true,
-      subscription_status: 'active',
-      stripe_customer_id: customer.id,
-      stripe_subscription_id: subscription.id,
-    })
-
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('create-subscription error:', err)
 
-    // Roll back Stripe resources on unexpected errors
     try {
       const stripe = getStripeClient()
       if (stripeSubscriptionId) await stripe.subscriptions.cancel(stripeSubscriptionId)
-      if (stripeCustomerId) await stripe.customers.del(stripeCustomerId)
+      if (stripeCustomerId)     await stripe.customers.del(stripeCustomerId)
     } catch (rollbackErr) {
       console.error('Stripe rollback error:', rollbackErr)
     }

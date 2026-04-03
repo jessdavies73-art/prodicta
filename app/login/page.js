@@ -244,8 +244,8 @@ function SignUpForm() {
     e.preventDefault()
     setError('')
 
-    if (!company.trim())    { setError('Please enter your company name.'); return }
-    if (!email.trim())      { setError('Please enter your email address.'); return }
+    if (!company.trim())     { setError('Please enter your company name.'); return }
+    if (!email.trim())       { setError('Please enter your email address.'); return }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
     if (!stripe || !elements) { setError('Payment form is loading. Please wait a moment.'); return }
 
@@ -264,7 +264,8 @@ function SignUpForm() {
         return
       }
 
-      const res = await fetch('/api/billing/create-subscription', {
+      // Step 1: Create the Stripe subscription
+      const res  = await fetch('/api/billing/create-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -284,6 +285,48 @@ function SignUpForm() {
         return
       }
 
+      // Step 2: If 3D Secure / SCA is required, open the authentication popup
+      if (data.requiresAction) {
+        const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret)
+
+        if (confirmError) {
+          setError(confirmError.message || 'Card authentication failed. Please try again.')
+          setLoading(false)
+          return
+        }
+
+        if (paymentIntent?.status !== 'succeeded') {
+          setError('Card authentication was not completed. Please try again.')
+          setLoading(false)
+          return
+        }
+
+        // Step 3: Authentication passed — complete account creation on the server
+        const confirmRes  = await fetch('/api/billing/confirm-subscription', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subscriptionId: data.subscriptionId,
+            email:          email.trim(),
+            password,
+            companyName:    company.trim(),
+            accountType,
+            plan,
+          }),
+        })
+        const confirmData = await confirmRes.json()
+
+        if (confirmData.error) {
+          setError(confirmData.error)
+          setLoading(false)
+          return
+        }
+
+        setDone(true)
+        return
+      }
+
+      // Payment succeeded without SCA
       setDone(true)
     } catch (err) {
       setError('An unexpected error occurred. Please try again.')
