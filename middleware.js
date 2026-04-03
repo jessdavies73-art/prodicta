@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
-const PUBLIC_PATHS = ['/', '/login', '/forgot-password', '/reset-password', '/how-it-works', '/pricing', '/terms', '/privacy', '/assess', '/api/assess', '/sample-report', '/api/cron', '/demo', '/api/billing/webhook']
+const PUBLIC_PATHS = ['/', '/login', '/forgot-password', '/reset-password', '/how-it-works', '/pricing', '/terms', '/privacy', '/assess', '/api/assess', '/sample-report', '/api/cron', '/demo', '/api/billing/']
 
 function isPublic(pathname) {
   return PUBLIC_PATHS.some(p => pathname.startsWith(p))
@@ -55,23 +55,6 @@ export async function middleware(request) {
         return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
       }
       return NextResponse.redirect(new URL('/login', request.url))
-    }
-
-    // Subscription gate: users whose app_metadata.subscription_status is 'pending'
-    // must complete payment before accessing the platform.
-    // app_metadata is admin-only (users cannot set it themselves).
-    // Exempt: /setup-payment itself, and /api/billing/* and /api/auth/* routes.
-    const subStatus = user.app_metadata?.subscription_status
-    if (subStatus === 'pending') {
-      const isSetupPayment = pathname === '/setup-payment'
-      const isBillingRoute = pathname.startsWith('/api/billing')
-      const isAuthRoute    = pathname.startsWith('/api/auth')
-      if (!isSetupPayment && !isBillingRoute && !isAuthRoute) {
-        if (pathname.startsWith('/api/')) {
-          return NextResponse.json({ error: 'Subscription required' }, { status: 402 })
-        }
-        return NextResponse.redirect(new URL('/setup-payment', request.url))
-      }
     }
 
     return response

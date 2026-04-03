@@ -1,92 +1,90 @@
 import { NextResponse } from 'next/server'
+import { getStripeClient } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase-server'
 
-// GoCardless sends webhooks with a Webhook-Signature header.
-// We verify using HMAC-SHA256 before processing any events.
-// The webhook secret is set in the GoCardless dashboard when
-// you register the webhook endpoint URL.
-
-async function verifySignature(rawBody, secret, signature) {
-  const { createHmac, timingSafeEqual } = await import('node:crypto')
-  const computed = createHmac('sha256', secret).update(rawBody, 'utf8').digest('hex')
-  try {
-    return timingSafeEqual(Buffer.from(computed, 'hex'), Buffer.from(signature, 'hex'))
-  } catch {
-    return false
-  }
-}
-
 export async function POST(request) {
+  const rawBody = await request.text()
+  const sig = request.headers.get('stripe-signature')
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+  if (!webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET is not set')
+    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
+  }
+
+  const stripe = getStripeClient()
+
+  let event
   try {
-    const rawBody = await request.text()
-    const signature = request.headers.get('webhook-signature') || ''
-    const webhookSecret = process.env.GOCARDLESS_WEBHOOK_SECRET
+    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret)
+  } catch (err) {
+    console.warn('Stripe webhook signature verification failed:', err.message)
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+  }
 
-    if (!webhookSecret) {
-      console.error('GOCARDLESS_WEBHOOK_SECRET is not set')
-      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
-    }
+  const adminClient = createServiceClient()
 
-    const valid = await verifySignature(rawBody, webhookSecret, signature)
-    if (!valid) {
-      console.warn('GoCardless webhook: invalid signature')
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 498 })
-    }
-
-    const { events } = JSON.parse(rawBody)
-    const adminClient = createServiceClient()
-
-    for (const event of events || []) {
-      const { resource_type: type, action } = event
-
-      // Subscription cancelled
-      if (type === 'subscriptions' && action === 'cancelled') {
-        const subscriptionId = event.links?.subscription
-        if (subscriptionId) {
-          await adminClient.from('users')
-            .update({ subscription_status: 'cancelled' })
-            .eq('gocardless_subscription_id', subscriptionId)
-          console.log('[webhook] subscription cancelled:', subscriptionId)
-        }
+  try {
+    switch (event.type) {
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object
+        await updateSubscriptionStatus(adminClient, sub.id, 'cancelled')
+        console.log('[webhook] subscription deleted:', sub.id)
+        break
       }
 
-      // Mandate cancelled (Direct Debit cancelled by customer's bank)
-      if (type === 'mandates' && action === 'cancelled') {
-        const mandateId = event.links?.mandate
-        if (mandateId) {
-          await adminClient.from('users')
-            .update({ subscription_status: 'cancelled' })
-            .eq('gocardless_mandate_id', mandateId)
-          console.log('[webhook] mandate cancelled:', mandateId)
-        }
+      case 'customer.subscription.updated': {
+        const sub = event.data.object
+        const status =
+          sub.status === 'active'   ? 'active'   :
+          sub.status === 'past_due' ? 'past_due' : 'cancelled'
+        await updateSubscriptionStatus(adminClient, sub.id, status)
+        console.log('[webhook] subscription updated:', sub.id, status)
+        break
       }
 
-      // Payment failed
-      if (type === 'payments' && action === 'failed') {
-        const mandateId = event.links?.mandate
-        if (mandateId) {
-          await adminClient.from('users')
-            .update({ subscription_status: 'past_due' })
-            .eq('gocardless_mandate_id', mandateId)
-          console.log('[webhook] payment failed for mandate:', mandateId)
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object
+        if (invoice.subscription) {
+          await updateSubscriptionStatus(adminClient, invoice.subscription, 'past_due')
+          console.log('[webhook] payment failed for subscription:', invoice.subscription)
         }
+        break
       }
 
-      // Subscription reactivated or payment confirmed — restore active
-      if (type === 'subscriptions' && action === 'resumed') {
-        const subscriptionId = event.links?.subscription
-        if (subscriptionId) {
-          await adminClient.from('users')
-            .update({ subscription_status: 'active' })
-            .eq('gocardless_subscription_id', subscriptionId)
-          console.log('[webhook] subscription resumed:', subscriptionId)
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object
+        if (invoice.subscription && invoice.billing_reason !== 'subscription_create') {
+          // subscription_create is handled at sign-up; only process renewals here
+          await updateSubscriptionStatus(adminClient, invoice.subscription, 'active')
+          console.log('[webhook] payment succeeded for subscription:', invoice.subscription)
         }
+        break
       }
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ received: true })
   } catch (err) {
     console.error('Webhook processing error:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}
+
+async function updateSubscriptionStatus(adminClient, subscriptionId, status) {
+  await adminClient
+    .from('users')
+    .update({ subscription_status: status })
+    .eq('stripe_subscription_id', subscriptionId)
+
+  const { data: users } = await adminClient
+    .from('users')
+    .select('id')
+    .eq('stripe_subscription_id', subscriptionId)
+    .limit(1)
+
+  if (users?.[0]) {
+    await adminClient.auth.admin.updateUserById(users[0].id, {
+      app_metadata: { subscription_status: status },
+    })
   }
 }
