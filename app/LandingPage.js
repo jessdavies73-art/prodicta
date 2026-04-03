@@ -354,7 +354,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           PROBLEM — The cost of getting hiring wrong
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#f7f9fb', padding: '96px 24px' }}>
+      <section style={{ background: '#f7f9fb', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 56 }}>
@@ -368,7 +368,7 @@ export default function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
             {[
               {
-                stat: '£12,000–30,000+',
+                stat: '£12,000\u201330,000+',
                 label: 'Cost of a bad hire',
                 body: 'Recruitment fees, onboarding, lost productivity, and management time. Before you even consider the cost of starting over.',
                 accent: '#EF4444',
@@ -387,13 +387,24 @@ export default function LandingPage() {
               },
             ].map((card, i) => (
               <Reveal key={card.stat} delay={i * 100}>
-                <div style={{
-                  background: '#fff', borderRadius: 16, padding: '32px 28px',
-                  border: '1px solid #e4e9f0',
-                  borderTop: `3px solid ${card.accent}`,
-                  height: '100%',
-                }}>
-                  <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 700, color: card.accent, letterSpacing: '-0.5px', marginBottom: 8, lineHeight: 1.1 }}>{card.stat}</div>
+                <div
+                  style={{
+                    background: '#fff', borderRadius: 16, padding: '32px 28px',
+                    border: '1px solid #e4e9f0',
+                    borderLeft: `2px solid ${card.accent}`,
+                    height: '100%',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-4px)'
+                    e.currentTarget.style.boxShadow = '0 12px 32px rgba(15,33,55,0.1)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = 'none'
+                  }}
+                >
+                  <div style={{ fontFamily: FM, fontSize: 32, fontWeight: 700, color: card.accent, letterSpacing: '-0.5px', marginBottom: 8, lineHeight: 1.1 }}>{card.stat}</div>
                   <div style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: NAVY, marginBottom: 12 }}>{card.label}</div>
                   <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', lineHeight: 1.7 }}>{card.body}</p>
                 </div>
