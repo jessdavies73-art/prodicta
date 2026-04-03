@@ -19,7 +19,7 @@ export async function GET(request, { params }) {
     if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     const { data: signedUrl } = await adminClient.storage
-      .from('candidate-documents')
+      .from('Candidates prodicta')
       .createSignedUrl(doc.file_path, 3600)
 
     if (!signedUrl?.signedUrl) {
@@ -50,7 +50,7 @@ export async function DELETE(request, { params }) {
 
     if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    await adminClient.storage.from('candidate-documents').remove([doc.file_path])
+    await adminClient.storage.from('Candidates prodicta').remove([doc.file_path])
     await adminClient.from('candidate_documents').delete().eq('id', doc.id)
 
     return NextResponse.json({ success: true })

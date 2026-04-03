@@ -177,6 +177,21 @@ alter table public.accountability_records enable row level security;
 create policy "Users can manage own accountability records"
   on public.accountability_records for all using (user_id = auth.uid());
 
+-- Candidate Documents table
+create table if not exists public.candidate_documents (
+  id uuid default gen_random_uuid() primary key,
+  candidate_id uuid not null references public.candidates(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
+  doc_type text not null check (doc_type in ('cv', 'cover_letter')),
+  file_name text not null,
+  file_path text not null,
+  file_size integer,
+  created_at timestamptz default now()
+);
+alter table public.candidate_documents enable row level security;
+create policy "Users can manage own candidate documents"
+  on public.candidate_documents for all using (user_id = auth.uid());
+
 -- =====================
 -- Indexes
 -- =====================
@@ -191,3 +206,5 @@ create index if not exists idx_candidate_outcomes_candidate_id on public.candida
 create index if not exists idx_candidate_outcomes_user_id on public.candidate_outcomes(user_id);
 create index if not exists idx_accountability_records_candidate_id on public.accountability_records(candidate_id);
 create index if not exists idx_accountability_records_user_id on public.accountability_records(user_id);
+create index if not exists idx_candidate_documents_candidate_id on public.candidate_documents(candidate_id);
+create index if not exists idx_candidate_documents_user_id on public.candidate_documents(user_id);

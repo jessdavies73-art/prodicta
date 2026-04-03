@@ -1492,7 +1492,7 @@ export default function CandidateReportPage({ params }) {
                               </>
                             ) : (
                               <>
-                                <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 14 }}>PDF only, max 10MB</div>
+                                <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 14 }}>PDF, DOC or DOCX, max 5MB</div>
                                 <label style={{
                                   display: 'inline-flex', alignItems: 'center', gap: 6,
                                   padding: '8px 18px', borderRadius: 7,
@@ -1501,10 +1501,10 @@ export default function CandidateReportPage({ params }) {
                                   cursor: isUploading ? 'not-allowed' : 'pointer',
                                 }}>
                                   <Ic name="upload" size={13} color={isUploading ? TX3 : TEAL} />
-                                  {isUploading ? 'Uploading…' : 'Upload PDF'}
+                                  {isUploading ? 'Uploading...' : 'Upload File'}
                                   <input
                                     type="file"
-                                    accept=".pdf,application/pdf"
+                                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                                     style={{ display: 'none' }}
                                     disabled={isUploading}
                                     onChange={e => {

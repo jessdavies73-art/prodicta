@@ -2,22 +2,8 @@ import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 
 // Supabase setup required:
-// 1. Create a storage bucket named "candidate-documents" (private, 10MB limit)
-// 2. Run this SQL in Supabase SQL editor:
-//
-// CREATE TABLE IF NOT EXISTS candidate_documents (
-//   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-//   candidate_id UUID NOT NULL,
-//   user_id UUID NOT NULL,
-//   doc_type TEXT NOT NULL CHECK (doc_type IN ('cv', 'cover_letter')),
-//   file_name TEXT NOT NULL,
-//   file_path TEXT NOT NULL,
-//   file_size INTEGER,
-//   created_at TIMESTAMPTZ DEFAULT NOW()
-// );
-// ALTER TABLE candidate_documents ENABLE ROW LEVEL SECURITY;
-// CREATE POLICY "Users can manage own documents" ON candidate_documents
-//   FOR ALL USING (user_id = auth.uid());
+// 1. Storage bucket named "Candidates prodicta" must exist (private, 5MB limit, PDF/DOC/DOCX)
+// 2. Run the SQL in supabase-schema.sql to create the candidate_documents table
 
 export async function POST(request) {
   try {
@@ -36,16 +22,16 @@ export async function POST(request) {
     if (!['cv', 'cover_letter'].includes(docType)) {
       return NextResponse.json({ error: 'Invalid doc type' }, { status: 400 })
     }
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large (max 10MB)' }, { status: 400 })
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large (max 5MB)' }, { status: 400 })
     }
 
     const adminClient = createServiceClient()
 
-    // Verify candidate belongs to this user
+    // Verify candidate belongs to this user and get assessment_id for storage path
     const { data: candidate } = await adminClient
       .from('candidates')
-      .select('id')
+      .select('id, assessment_id')
       .eq('id', candidateId)
       .eq('user_id', user.id)
       .single()
@@ -61,19 +47,19 @@ export async function POST(request) {
       .maybeSingle()
 
     if (existing) {
-      await adminClient.storage.from('candidate-documents').remove([existing.file_path])
+      await adminClient.storage.from('Candidates prodicta').remove([existing.file_path])
       await adminClient.from('candidate_documents').delete().eq('id', existing.id)
     }
 
-    // Upload new file
+    // Upload new file — organised by assessment_id/candidate_id/
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
     const ext = file.name.split('.').pop() || 'pdf'
-    const filePath = `${user.id}/${candidateId}/${docType}_${Date.now()}.${ext}`
+    const filePath = `${candidate.assessment_id}/${candidateId}/${docType}_${Date.now()}.${ext}`
 
     const { error: uploadError } = await adminClient.storage
-      .from('candidate-documents')
-      .upload(filePath, buffer, { contentType: file.type || 'application/pdf', upsert: false })
+      .from('Candidates prodicta')
+      .upload(filePath, buffer, { contentType: file.type || 'application/octet-stream', upsert: false })
 
     if (uploadError) throw uploadError
 
@@ -92,7 +78,7 @@ export async function POST(request) {
       .single()
 
     if (dbError) {
-      await adminClient.storage.from('candidate-documents').remove([filePath])
+      await adminClient.storage.from('Candidates prodicta').remove([filePath])
       throw dbError
     }
 
