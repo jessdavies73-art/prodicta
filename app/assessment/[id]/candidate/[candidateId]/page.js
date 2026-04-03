@@ -2216,8 +2216,11 @@ export default function CandidateReportPage({ params }) {
                               </div>
                             ))}
                           </div>
-                          <p style={{ fontFamily: F, fontSize: 12.5, color: AMB, margin: 0, lineHeight: 1.6, opacity: 0.8 }}>
+                          <p style={{ fontFamily: F, fontSize: 12.5, color: AMB, margin: '0 0 8px', lineHeight: 1.6, opacity: 0.8 }}>
                             Ensure your onboarding process includes confirmation of these entitlements and that your HR policies are updated accordingly.
+                          </p>
+                          <p style={{ fontFamily: F, fontSize: 12.5, color: AMB, margin: 0, lineHeight: 1.6, opacity: 0.8 }}>
+                            From January 2027, unfair dismissal protection applies from day one. PRODICTA's Probation Timeline Tracker helps you monitor every hire.
                           </p>
                         </div>
                       </div>
