@@ -2456,38 +2456,64 @@ export default function CandidateReportPage({ params }) {
                     COMPLIANCE STATEMENT
                 ══════════════════════════════════════════════════ */}
                 <ScrollReveal delay={40}>
-                <div style={{
-                  border: `1.5px solid ${TEAL}55`,
-                  borderRadius: 14,
-                  background: TEALLT,
-                  padding: '22px 28px',
-                  marginBottom: 40,
-                  display: 'flex',
-                  gap: 18,
-                  alignItems: 'flex-start',
-                }}>
-                  <div style={{
-                    flexShrink: 0,
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    background: `${TEAL}18`,
-                    border: `1.5px solid ${TEAL}44`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TEALD, marginBottom: 6, letterSpacing: '0.01em' }}>Fair Work Agency Ready</div>
-                    <p style={{ fontFamily: F, fontSize: 13, color: TEALD, margin: 0, lineHeight: 1.7, opacity: 0.85 }}>
-                      This assessment was conducted using objective, role-specific work simulations. No decisions were based on protected characteristics. Scoring excludes spelling and grammar in compliance with the Equality Act 2010. All findings are traceable to the candidate's own written responses.
-                    </p>
-                  </div>
-                </div>
+                {(() => {
+                  const reportDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+                  const compliancePoints = [
+                    'Scoring is based on decisions, actions, and reasoning only.',
+                    'No candidate was penalised for spelling, grammar, or writing style (Equality Act 2010).',
+                    'All scenarios were generated from the specific job description provided.',
+                    'Response timing and integrity were independently verified.',
+                    `Assessment date: ${completedDate || 'Not recorded'}.`,
+                    `Report generated: ${reportDate}.`,
+                  ]
+                  return (
+                    <div style={{
+                      border: `1.5px solid ${TEAL}55`,
+                      borderRadius: 14,
+                      background: TEALLT,
+                      padding: '22px 28px',
+                      marginBottom: 40,
+                      display: 'flex',
+                      gap: 18,
+                      alignItems: 'flex-start',
+                    }}>
+                      <div style={{
+                        flexShrink: 0,
+                        width: 40,
+                        height: 40,
+                        borderRadius: 10,
+                        background: `${TEAL}18`,
+                        border: `1.5px solid ${TEAL}44`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TEALD, marginBottom: 6, letterSpacing: '0.01em' }}>Fair Work Agency Ready</div>
+                        <p style={{ fontFamily: F, fontSize: 13, color: TEALD, margin: '0 0 12px', lineHeight: 1.7, opacity: 0.9 }}>
+                          This assessment was conducted using PRODICTA, an AI-powered pre-employment assessment platform. The following compliance standards were applied:
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                          {compliancePoints.map((point, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                              <svg style={{ flexShrink: 0, marginTop: 2 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                              <span style={{ fontFamily: F, fontSize: 13, color: TEALD, lineHeight: 1.6, opacity: 0.9 }}>{point}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <p style={{ fontFamily: F, fontSize: 12.5, color: TEALD, margin: 0, lineHeight: 1.6, opacity: 0.75, borderTop: `1px solid ${TEAL}33`, paddingTop: 12 }}>
+                          This record may be used as evidence of a fair and objective assessment process.
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })()}
                 </ScrollReveal>
 
               </>
