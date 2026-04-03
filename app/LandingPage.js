@@ -7,6 +7,7 @@ const NAVY2   = '#0d1e30'
 const TEAL    = '#00BFA5'
 const TEALD   = '#009688'
 const TEALLT  = '#e0f2f0'
+const GOLD    = '#E8B84B'
 const F       = "'Outfit', system-ui, sans-serif"
 const FM      = "'IBM Plex Mono', monospace"
 
@@ -117,6 +118,36 @@ function Div({ style = {} }) {
   return <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', ...style }} />
 }
 
+// ── Count-up number for stats bar ─────────────────────────────────────────────
+function StatNumber({ to, suffix = '', display }) {
+  const ref = useRef(null)
+  const [val, setVal] = useState(to == null ? display : 0)
+  const started = useRef(false)
+  useEffect(() => {
+    if (to == null) return
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true
+        obs.disconnect()
+        const dur = 1400
+        const start = performance.now()
+        const tick = (now) => {
+          const p = Math.min((now - start) / dur, 1)
+          const eased = 1 - Math.pow(1 - p, 3)
+          setVal(Math.round(eased * to))
+          if (p < 1) requestAnimationFrame(tick)
+        }
+        requestAnimationFrame(tick)
+      }
+    }, { threshold: 0.1 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [to])
+  return <span ref={ref}>{to == null ? display : val}{to != null ? suffix : ''}</span>
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function LandingPage() {
   return (
@@ -137,6 +168,11 @@ export default function LandingPage() {
           100% { background-position: 0% 50%; }
         }
         @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.7} }
+        @keyframes ctaPulse {
+          0%,100% { box-shadow: 0 8px 32px rgba(0,191,165,0.34); }
+          50% { box-shadow: 0 8px 48px rgba(0,191,165,0.6), 0 0 0 10px rgba(0,191,165,0.1); }
+        }
+        @keyframes goldPulse { 0%,100%{opacity:.5} 50%{opacity:1} }
       `}</style>
 
       <Nav />
@@ -146,11 +182,11 @@ export default function LandingPage() {
       ════════════════════════════════════════════════════════════════════ */}
       <section style={{
         position: 'relative', minHeight: '100vh', overflow: 'hidden',
-        background: `linear-gradient(160deg, #071524 0%, ${NAVY} 35%, #0c2135 65%, #071828 100%)`,
-        backgroundSize: '300% 300%', animation: 'gradShift 20s ease infinite',
+        background: `linear-gradient(160deg, #0f2137 0%, #132d4a 35%, #0f2137 65%, #132d4a 100%)`,
+        backgroundSize: '300% 300%', animation: 'gradShift 8s ease infinite',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         justifyContent: 'center', textAlign: 'center',
-        padding: '120px 24px 80px',
+        padding: '120px 24px 100px',
       }}>
         <FloatingDots />
 
@@ -180,12 +216,12 @@ export default function LandingPage() {
           maxWidth: 820, marginBottom: 24,
         }}>
           Understand likely probation{' '}
-          <span style={{
-            background: `linear-gradient(135deg, ${TEAL}, #4dd9c7)`,
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>
-            outcomes before you hire.
+          <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>
+            outcomes
+          </span>
+          {' '}
+          <span style={{ color: GOLD, textShadow: '0 0 40px rgba(232,184,75,0.35)' }}>
+            before you hire.
           </span>
         </h1>
 
@@ -199,16 +235,17 @@ export default function LandingPage() {
         </p>
 
         {/* CTA buttons */}
-        <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 64, position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 56, position: 'relative', zIndex: 1 }}>
           <a href="/login" style={{
             fontFamily: F, fontSize: 16, fontWeight: 800, color: NAVY,
             background: TEAL, textDecoration: 'none',
             padding: '16px 40px', borderRadius: 12, display: 'inline-block',
-            boxShadow: `0 8px 32px ${TEAL}55`, transition: 'transform 0.15s, box-shadow 0.15s',
+            animation: 'ctaPulse 3s ease infinite',
+            transition: 'transform 0.15s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow=`0 12px 40px ${TEAL}77` }}
-          onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow=`0 8px 32px ${TEAL}55` }}>
-            Start Free Trial →
+          onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.animation='none'; e.currentTarget.style.boxShadow=`0 12px 40px rgba(0,191,165,0.5)` }}
+          onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.animation='ctaPulse 3s ease infinite'; e.currentTarget.style.boxShadow='' }}>
+            Start Free Trial
           </a>
           <a href="/demo" style={{
             fontFamily: F, fontSize: 16, fontWeight: 600, color: '#fff',
@@ -222,19 +259,92 @@ export default function LandingPage() {
           </a>
         </div>
 
-        {/* Social proof bar */}
+        {/* Report mockup */}
+        <div style={{ position: 'relative', width: '100%', maxWidth: 860, marginBottom: 64, zIndex: 1 }}>
+          {/* Jade glow behind mockup */}
+          <div style={{ position: 'absolute', inset: '-48px -32px', borderRadius: 48, background: 'radial-gradient(ellipse at 50% 60%, rgba(0,191,165,0.1) 0%, transparent 68%)', pointerEvents: 'none' }} />
+          <div style={{
+            transform: 'rotate(-2deg)',
+            borderRadius: 20, overflow: 'hidden',
+            boxShadow: '0 40px 100px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.07)',
+            textAlign: 'left',
+          }}>
+            {/* Browser chrome */}
+            <div style={{ background: '#1e293b', padding: '11px 18px', display: 'flex', alignItems: 'center', gap: 7 }}>
+              {['#EF4444', '#F59E0B', '#22C55E'].map(c => (
+                <div key={c} style={{ width: 11, height: 11, borderRadius: '50%', background: c }} />
+              ))}
+              <div style={{ flex: 1, background: '#334155', borderRadius: 5, padding: '4px 12px', marginLeft: 8, maxWidth: 280 }}>
+                <span style={{ fontFamily: FM, fontSize: 10.5, color: '#94a3b8' }}>prodicta.co.uk/assessment/...</span>
+              </div>
+            </div>
+            {/* Report header */}
+            <div style={{ background: NAVY, padding: '22px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Assessment Report</div>
+                <div style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px', marginBottom: 3 }}>Alex Johnson</div>
+                <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.48)' }}>Senior Account Manager &middot; Completed 12 Mar 2025</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ width: 68, height: 68, borderRadius: '50%', background: `conic-gradient(${TEAL} 0% 82%, rgba(255,255,255,0.1) 82%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 52, height: 52, borderRadius: '50%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color: TEAL }}>82</span>
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: F, fontSize: 11, color: TEAL, fontWeight: 700, marginTop: 5 }}>Strong Hire</div>
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontFamily: F, fontSize: 11, color: 'rgba(255,255,255,0.38)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Risk Level</div>
+                  <div style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: TEAL }}>Low</div>
+                  <div style={{ fontFamily: F, fontSize: 11, color: 'rgba(255,255,255,0.38)', marginTop: 10, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Percentile</div>
+                  <div style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: TEAL }}>Top 18%</div>
+                </div>
+              </div>
+            </div>
+            {/* Score strips */}
+            <div style={{ background: '#fff', padding: '20px 28px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+              {[
+                { label: 'Communication', score: 88 },
+                { label: 'Problem Solving', score: 79 },
+                { label: 'Prioritisation', score: 75 },
+                { label: 'Leadership', score: 84 },
+              ].map(s => (
+                <div key={s.label}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <span style={{ fontFamily: F, fontSize: 11.5, color: '#5e6b7f', fontWeight: 600 }}>{s.label}</span>
+                    <span style={{ fontFamily: FM, fontSize: 11.5, color: TEAL, fontWeight: 700 }}>{s.score}</span>
+                  </div>
+                  <div style={{ height: 4, background: '#f1f5f9', borderRadius: 50 }}>
+                    <div style={{ height: '100%', width: `${s.score}%`, background: TEAL, borderRadius: 50 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Stats bar */}
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 40, flexWrap: 'wrap', justifyContent: 'center', padding: '20px 32px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14 }}>
           {[
-            { stat: '500+', label: 'Candidates assessed' },
-            { stat: '4', label: 'Scenario types' },
-            { stat: '45 min', label: 'Assessment time' },
-            { stat: 'UK-built', label: 'For ERA 2025 compliance' },
-          ].map(({ stat, label }) => (
-            <div key={stat} style={{ textAlign: 'center', minWidth: 90 }}>
-              <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 700, color: TEAL, letterSpacing: '-0.5px' }}>{stat}</div>
-              <div style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.42)', marginTop: 3, whiteSpace: 'nowrap' }}>{label}</div>
+            { to: 500, suffix: '+', label: 'Candidates assessed' },
+            { to: 4,   suffix: '',  label: 'Scenario types' },
+            { to: 45,  suffix: ' min', label: 'Assessment time' },
+            { to: null, display: 'UK-built', label: 'For ERA 2025 compliance' },
+          ].map((item) => (
+            <div key={item.label} style={{ textAlign: 'center', minWidth: 90 }}>
+              <div style={{ fontFamily: FM, fontSize: 26, fontWeight: 700, color: TEAL, letterSpacing: '-0.5px', lineHeight: 1 }}>
+                <StatNumber to={item.to} suffix={item.suffix} display={item.display} />
+              </div>
+              <div style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.42)', marginTop: 5, whiteSpace: 'nowrap' }}>{item.label}</div>
             </div>
           ))}
+        </div>
+
+        {/* Founding member urgency */}
+        <div style={{ marginTop: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, position: 'relative', zIndex: 1 }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0, animation: 'goldPulse 2s ease infinite' }} />
+          <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: GOLD }}>Currently onboarding founding members</span>
         </div>
 
         {/* Scroll indicator */}
