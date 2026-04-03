@@ -2196,30 +2196,8 @@ export default function CandidateReportPage({ params }) {
                           </svg>
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: AMB, marginBottom: 6 }}>ERA 2025 Day-One Rights Reminder</div>
-                          <p style={{ fontFamily: F, fontSize: 13, color: AMB, margin: '0 0 10px', lineHeight: 1.6, opacity: 0.9 }}>
-                            From April 2026, the following rights apply from the employee's first day:
-                          </p>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
-                            {[
-                              'Statutory Sick Pay from day one (no 3-day waiting period)',
-                              'Paternity leave from day one (no 26-week qualifying period)',
-                              'Unpaid parental leave from day one (no 1-year qualifying period)',
-                              'Bereaved Partner\'s Paternity Leave from day one',
-                            ].map((right, i) => (
-                              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                                <svg style={{ flexShrink: 0, marginTop: 3 }} width="12" height="12" viewBox="0 0 24 24" fill={AMB}>
-                                  <circle cx="12" cy="12" r="12"/>
-                                  <polyline points="17 8 10 16 7 13" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <span style={{ fontFamily: F, fontSize: 13, color: AMB, lineHeight: 1.55, opacity: 0.9 }}>{right}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <p style={{ fontFamily: F, fontSize: 12.5, color: AMB, margin: '0 0 8px', lineHeight: 1.6, opacity: 0.8 }}>
-                            Ensure your onboarding process includes confirmation of these entitlements and that your HR policies are updated accordingly.
-                          </p>
-                          <p style={{ fontFamily: F, fontSize: 12.5, color: AMB, margin: 0, lineHeight: 1.6, opacity: 0.8 }}>
+                          <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: AMB, marginBottom: 6 }}>Day-One Rights Reminder</div>
+                          <p style={{ fontFamily: F, fontSize: 13, color: AMB, margin: 0, lineHeight: 1.6, opacity: 0.9 }}>
                             From January 2027, unfair dismissal protection applies from day one. PRODICTA's Probation Timeline Tracker helps you monitor every hire.
                           </p>
                         </div>
