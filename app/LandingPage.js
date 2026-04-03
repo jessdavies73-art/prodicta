@@ -216,13 +216,8 @@ export default function LandingPage() {
           maxWidth: 820, marginBottom: 24,
         }}>
           Understand likely probation{' '}
-          <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>
-            outcomes
-          </span>
-          {' '}
-          <span style={{ color: GOLD, textShadow: '0 0 40px rgba(232,184,75,0.35)' }}>
-            before you hire.
-          </span>
+          <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>outcomes</span>{' '}
+          <span style={{ color: GOLD, textShadow: '0 0 40px rgba(232,184,75,0.35)' }}>before you hire.</span>
         </h1>
 
         {/* Subheadline */}
@@ -260,13 +255,13 @@ export default function LandingPage() {
         </div>
 
         {/* Report mockup */}
-        <div style={{ position: 'relative', width: '100%', maxWidth: 860, marginBottom: 64, zIndex: 1 }}>
+        <div style={{ position: 'relative', width: '100%', maxWidth: 946, marginBottom: 64, zIndex: 1 }}>
           {/* Jade glow behind mockup */}
-          <div style={{ position: 'absolute', inset: '-48px -32px', borderRadius: 48, background: 'radial-gradient(ellipse at 50% 60%, rgba(0,191,165,0.1) 0%, transparent 68%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', inset: '-48px -32px', borderRadius: 48, background: 'radial-gradient(ellipse at 50% 60%, rgba(0,191,165,0.15) 0%, transparent 68%)', pointerEvents: 'none' }} />
           <div style={{
-            transform: 'rotate(-2deg)',
+            transform: 'rotate(2deg)',
             borderRadius: 20, overflow: 'hidden',
-            boxShadow: '0 40px 100px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.07)',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,191,165,0.15)',
             textAlign: 'left',
           }}>
             {/* Browser chrome */}
@@ -333,7 +328,7 @@ export default function LandingPage() {
             { to: null, display: 'UK-built', label: 'For ERA 2025 compliance' },
           ].map((item) => (
             <div key={item.label} style={{ textAlign: 'center', minWidth: 90 }}>
-              <div style={{ fontFamily: FM, fontSize: 26, fontWeight: 700, color: TEAL, letterSpacing: '-0.5px', lineHeight: 1 }}>
+              <div style={{ fontFamily: FM, fontSize: 31, fontWeight: 700, color: TEAL, letterSpacing: '-0.5px', lineHeight: 1 }}>
                 <StatNumber to={item.to} suffix={item.suffix} display={item.display} />
               </div>
               <div style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.42)', marginTop: 5, whiteSpace: 'nowrap' }}>{item.label}</div>
