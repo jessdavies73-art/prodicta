@@ -519,6 +519,7 @@ export default function CandidateReportPage({ params }) {
   const [selectedOutcome, setSelectedOutcome] = useState('')
   const [outcomeDate, setOutcomeDate] = useState('')
   const [outcomeNoteText, setOutcomeNoteText] = useState('')
+  const [outcomeClientName, setOutcomeClientName] = useState('')
   const [savingOutcome, setSavingOutcome] = useState(false)
   const [existingOutcome, setExistingOutcome] = useState(null)
 
@@ -584,7 +585,7 @@ export default function CandidateReportPage({ params }) {
           supabase.from('accountability_records').select('*').eq('candidate_id', params.candidateId).eq('user_id', u.id).maybeSingle(),
         ])
         setExistingOutcome(outcome || null)
-        if (outcome) { setSelectedOutcome(outcome.outcome); setOutcomeDate(outcome.outcome_date || ''); setOutcomeNoteText(outcome.notes || '') }
+        if (outcome) { setSelectedOutcome(outcome.outcome); setOutcomeDate(outcome.outcome_date || ''); setOutcomeNoteText(outcome.notes || ''); setOutcomeClientName(outcome.client_name || '') }
         setAccountRecord(acRec || null)
         if (acRec?.shared_with_client_at) setRecordSharedDate(acRec.shared_with_client_at)
       } catch (e) {
@@ -731,6 +732,7 @@ export default function CandidateReportPage({ params }) {
       outcome: selectedOutcome,
       outcome_date: outcomeDate || null,
       notes: outcomeNoteText.trim() || null,
+      client_name: profile?.account_type === 'agency' ? (outcomeClientName.trim() || null) : null,
     }
     let saved
     if (existingOutcome) {
@@ -969,7 +971,7 @@ export default function CandidateReportPage({ params }) {
                   )}
 
                   <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {results && profile?.account_type === 'employer' && (
+                    {results && (profile?.account_type === 'employer' || profile?.account_type === 'agency') && (
                       <button onClick={() => setOutcomeModal(true)} style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
                         background: existingOutcome ? GRNBG : TEALLT,
@@ -2378,6 +2380,21 @@ export default function CandidateReportPage({ params }) {
                 </button>
               ))}
             </div>
+
+            {profile?.account_type === 'agency' && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Client name (optional)</label>
+                <input
+                  type="text"
+                  value={outcomeClientName}
+                  onChange={e => setOutcomeClientName(e.target.value)}
+                  placeholder="e.g. Acme Ltd"
+                  style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+                  onFocus={e => e.target.style.borderColor = TEAL}
+                  onBlur={e => e.target.style.borderColor = BD}
+                />
+              </div>
+            )}
 
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Date (optional)</label>

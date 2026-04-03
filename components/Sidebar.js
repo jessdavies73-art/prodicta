@@ -143,7 +143,7 @@ export default function Sidebar({ active, companyName }) {
       }}>
         {[
           ...BASE_NAV,
-          ...(accountType === 'employer' ? [{ key: 'outcomes', label: 'Outcomes', icon: 'award', href: '/outcomes' }] : []),
+          ...(accountType === 'employer' || accountType === 'agency' ? [{ key: 'outcomes', label: 'Outcomes', icon: 'award', href: '/outcomes' }] : []),
         ].map(({ key, label, icon, href }) => {
           const isActive = active === key
           const isHovered = hoveredKey === key

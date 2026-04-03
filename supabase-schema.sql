@@ -147,6 +147,7 @@ create table if not exists public.candidate_outcomes (
   outcome text,
   outcome_date date,
   notes text,
+  client_name text,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
   unique(candidate_id, user_id)

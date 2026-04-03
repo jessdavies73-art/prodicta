@@ -88,12 +88,6 @@ export default function OutcomesPage() {
         const { data: prof } = await supabase.from('users').select('*').eq('id', user.id).single()
         setProfile(prof)
 
-        // Redirect non-employer accounts
-        if (prof?.account_type && prof.account_type !== 'employer') {
-          router.push('/dashboard')
-          return
-        }
-
         const { data: oc, error: ocErr } = await supabase
           .from('candidate_outcomes')
           .select('*, candidates(name, email, assessments(role_title))')
@@ -244,10 +238,10 @@ export default function OutcomesPage() {
 
             {/* Table header */}
             <div style={{
-              display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr',
+              display: 'grid', gridTemplateColumns: profile?.account_type === 'agency' ? '2fr 1fr 1fr 1fr 1fr' : '2fr 1fr 1fr 1fr',
               padding: '10px 24px', background: BG, borderBottom: `1px solid ${BD}`,
             }}>
-              {['Candidate', 'Role', 'Outcome', 'Date'].map(col => (
+              {['Candidate', 'Role', ...(profile?.account_type === 'agency' ? ['Client'] : []), 'Outcome', 'Date'].map(col => (
                 <div key={col} style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: F }}>
                   {col}
                 </div>
@@ -260,7 +254,7 @@ export default function OutcomesPage() {
                 <div
                   key={o.id}
                   style={{
-                    display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                    display: 'grid', gridTemplateColumns: profile?.account_type === 'agency' ? '2fr 1fr 1fr 1fr 1fr' : '2fr 1fr 1fr 1fr',
                     padding: '14px 24px',
                     borderBottom: i < outcomes.length - 1 ? `1px solid ${BD}` : 'none',
                     alignItems: 'center',
@@ -271,12 +265,17 @@ export default function OutcomesPage() {
                   onMouseLeave={e => { e.currentTarget.style.background = CARD }}
                 >
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: TX, fontFamily: F }}>{cand?.name || ','}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: TX, fontFamily: F }}>{cand?.name || '-'}</div>
                     <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>{cand?.email || ''}</div>
                   </div>
                   <div style={{ fontSize: 13, color: TX2, fontFamily: F }}>
-                    {cand?.assessments?.role_title || ','}
+                    {cand?.assessments?.role_title || '-'}
                   </div>
+                  {profile?.account_type === 'agency' && (
+                    <div style={{ fontSize: 13, color: TX2, fontFamily: F }}>
+                      {o.client_name || <span style={{ color: TX3 }}>-</span>}
+                    </div>
+                  )}
                   <div>
                     <OutcomeBadge outcome={o.outcome} />
                   </div>
@@ -286,7 +285,7 @@ export default function OutcomesPage() {
                         {new Date(o.outcome_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
                     ) : (
-                      <span style={{ fontSize: 12, color: TX3 }}>,</span>
+                      <span style={{ fontSize: 12, color: TX3 }}>-</span>
                     )}
                     {o.notes && (
                       <div style={{ fontSize: 11.5, color: TX3, marginTop: 2, fontStyle: 'italic', fontFamily: F }}>{o.notes}</div>
