@@ -2452,6 +2452,43 @@ export default function CandidateReportPage({ params }) {
                   )}
                 </Card>
 
+                {/* ══════════════════════════════════════════════════
+                    COMPLIANCE STATEMENT
+                ══════════════════════════════════════════════════ */}
+                <ScrollReveal delay={40}>
+                <div style={{
+                  border: `1.5px solid ${TEAL}55`,
+                  borderRadius: 14,
+                  background: TEALLT,
+                  padding: '22px 28px',
+                  marginBottom: 40,
+                  display: 'flex',
+                  gap: 18,
+                  alignItems: 'flex-start',
+                }}>
+                  <div style={{
+                    flexShrink: 0,
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    background: `${TEAL}18`,
+                    border: `1.5px solid ${TEAL}44`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TEALD, marginBottom: 6, letterSpacing: '0.01em' }}>Fair Work Agency Ready</div>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TEALD, margin: 0, lineHeight: 1.7, opacity: 0.85 }}>
+                      This assessment was conducted using objective, role-specific work simulations. No decisions were based on protected characteristics. Scoring excludes spelling and grammar in compliance with the Equality Act 2010. All findings are traceable to the candidate's own written responses.
+                    </p>
+                  </div>
+                </div>
+                </ScrollReveal>
 
               </>
             )}
