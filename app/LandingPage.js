@@ -304,70 +304,64 @@ export default function LandingPage() {
       <section id="how-it-works" style={{ background: '#fff', padding: '96px 24px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <Reveal>
-            <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <div style={{ textAlign: 'center', marginBottom: 72 }}>
               <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>How it works</div>
-              <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 14 }}>
-                Four steps to better hiring
+              <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.2vw, 40px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 16 }}>
+                From job description to hiring decision in minutes
               </h2>
-              <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7, maxWidth: 500, margin: '0 auto' }}>
-                No psychometric tests. No CV sifting. Just work simulations that reveal how candidates actually think.
+              <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7, maxWidth: 560, margin: '0 auto' }}>
+                No personality tests. No guesswork. Real work simulations that show you exactly who will succeed.
               </p>
             </div>
           </Reveal>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2px', background: '#e8edf4' }}>
             {[
               {
                 n: 1,
                 title: 'Paste your job description',
-                body: 'The AI analyses the role and generates 4 realistic work scenarios tailored to that specific position.',
+                body: 'Our AI reads every detail. The company, the targets, the team, the challenges. It builds 4 realistic scenarios this candidate would face in their first 90 days. Every assessment is unique to the role.',
               },
               {
                 n: 2,
-                title: 'Invite candidates',
-                body: 'Each candidate receives a branded email with a unique link. 45 minutes to complete. No login needed.',
+                title: 'Send to your candidates',
+                body: 'One click sends a professional branded email. Candidates complete 4 timed scenarios in about 45 minutes. No login, no download. They just click and start.',
               },
               {
                 n: 3,
-                title: 'AI scores responses',
-                body: 'Two-pass AI analysis scores every response across skills, pressure handling, integrity, and commercial awareness.',
+                title: 'AI analyses every response',
+                body: 'Two AI passes score each candidate across skills, pressure handling, integrity, and commercial awareness. Every score backed by specific evidence from what they wrote.',
               },
               {
                 n: 4,
-                title: 'Receive your report',
-                body: 'A detailed hiring report with scores, risk levels, evidence-backed insights, and a personalised onboarding plan.',
+                title: 'Get a report worth paying for',
+                body: 'Overall score, Pressure-Fit Assessment, risk level, hiring recommendation, strengths with evidence, concerns with actions, a 6-week onboarding plan, and interview questions targeting each candidate\'s gaps.',
               },
             ].map((s, i) => (
               <Reveal key={s.n} delay={i * 80}>
                 <div style={{
-                  padding: '40px 32px',
-                  borderRight: i < 3 ? '1px solid #e8edf4' : 'none',
-                  height: '100%',
-                  position: 'relative',
+                  background: '#fff',
+                  padding: '48px 48px',
+                  display: 'flex',
+                  gap: 28,
+                  alignItems: 'flex-start',
                 }}>
-                  {/* Connector line */}
-                  {i < 3 && (
-                    <div style={{
-                      position: 'absolute', top: 56, right: -1,
-                      width: 0, height: 0,
-                      borderTop: '8px solid transparent',
-                      borderBottom: '8px solid transparent',
-                      borderLeft: `8px solid ${TEAL}55`,
-                    }} />
-                  )}
                   {/* Number circle */}
                   <div style={{
-                    width: 48, height: 48, borderRadius: '50%',
+                    width: 52, height: 52, borderRadius: '50%',
                     background: TEAL,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: FM, fontSize: 18, fontWeight: 700, color: NAVY,
-                    marginBottom: 24, flexShrink: 0,
-                    boxShadow: `0 4px 16px ${TEAL}44`,
+                    fontFamily: FM, fontSize: 19, fontWeight: 700, color: NAVY,
+                    flexShrink: 0,
+                    boxShadow: `0 4px 20px ${TEAL}44`,
+                    marginTop: 2,
                   }}>
                     {s.n}
                   </div>
-                  <h3 style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: NAVY, marginBottom: 10, letterSpacing: '-0.1px' }}>{s.title}</h3>
-                  <p style={{ fontFamily: F, fontSize: 13.5, color: '#5e6b7f', lineHeight: 1.75 }}>{s.body}</p>
+                  <div>
+                    <h3 style={{ fontFamily: F, fontSize: 17, fontWeight: 700, color: NAVY, marginBottom: 10, letterSpacing: '-0.2px' }}>{s.title}</h3>
+                    <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', lineHeight: 1.75, margin: 0 }}>{s.body}</p>
+                  </div>
                 </div>
               </Reveal>
             ))}
