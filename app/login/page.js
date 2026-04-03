@@ -73,13 +73,14 @@ const styles = {
 
   // ── Card ──
   card: {
-    background: 'rgba(255,255,255,0.97)',
-    backdropFilter: 'blur(24px)',
-    WebkitBackdropFilter: 'blur(24px)',
+    background: 'rgba(255,255,255,0.08)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
     borderRadius: '16px',
     width: '100%',
     maxWidth: '420px',
-    boxShadow: '0 24px 72px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.1)',
+    border: '1px solid rgba(255,255,255,0.15)',
+    boxShadow: '0 24px 72px rgba(0,0,0,0.45)',
     overflow: 'hidden',
     animation: 'fadeInUp 0.45s ease-out',
   },
@@ -87,18 +88,18 @@ const styles = {
   // ── Tabs ──
   tabBar: {
     display: 'flex',
-    borderBottom: '1px solid #e8edf2',
+    borderBottom: '1px solid rgba(255,255,255,0.1)',
   },
   tab: (active) => ({
     flex: 1,
     padding: '16px 0',
-    background: active ? '#ffffff' : '#f7f9fb',
+    background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
     border: 'none',
     borderBottom: active ? `2px solid ${TEAL}` : '2px solid transparent',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: active ? '600' : '400',
-    color: active ? NAVY : '#6b7280',
+    color: active ? '#fff' : 'rgba(255,255,255,0.45)',
     fontFamily: "'Outfit', system-ui, sans-serif",
     letterSpacing: '0.01em',
     transition: 'color 0.15s, border-color 0.15s, background 0.15s',
@@ -113,12 +114,12 @@ const styles = {
   heading: {
     fontSize: '20px',
     fontWeight: '700',
-    color: NAVY,
+    color: '#fff',
     margin: '0 0 4px',
   },
   subheading: {
     fontSize: '13px',
-    color: '#6b7280',
+    color: 'rgba(255,255,255,0.5)',
     margin: '0 0 24px',
   },
 
@@ -133,22 +134,22 @@ const styles = {
     display: 'block',
     fontSize: '13px',
     fontWeight: '500',
-    color: '#374151',
+    color: 'rgba(255,255,255,0.7)',
     marginBottom: '5px',
   },
   input: (focused) => ({
     width: '100%',
     boxSizing: 'border-box',
     padding: '10px 13px',
-    border: `1.5px solid ${focused ? TEAL : '#d1d5db'}`,
+    border: `1.5px solid ${focused ? TEAL : 'rgba(255,255,255,0.18)'}`,
     borderRadius: '8px',
     fontSize: '14px',
     color: NAVY,
-    background: '#ffffff',
+    background: 'rgba(255,255,255,0.92)',
     outline: 'none',
     fontFamily: "'Outfit', system-ui, sans-serif",
     transition: 'border-color 0.15s, box-shadow 0.15s',
-    boxShadow: focused ? `0 0 0 3px ${LIGHT_T}` : 'none',
+    boxShadow: focused ? `0 0 0 3px rgba(0,191,165,0.2)` : 'none',
   }),
 
   // ── Submit ──
@@ -171,9 +172,9 @@ const styles = {
 
   // ── Error / success banners ──
   error: {
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-    color: '#b91c1c',
+    background: 'rgba(239,68,68,0.15)',
+    border: '1px solid rgba(239,68,68,0.4)',
+    color: '#fca5a5',
     borderRadius: '8px',
     padding: '10px 13px',
     fontSize: '13px',
@@ -181,9 +182,9 @@ const styles = {
     lineHeight: '1.4',
   },
   success: {
-    background: LIGHT_T,
-    border: `1px solid ${TEAL}`,
-    color: DARK_T,
+    background: 'rgba(0,191,165,0.15)',
+    border: `1px solid rgba(0,191,165,0.4)`,
+    color: TEAL,
     borderRadius: '8px',
     padding: '10px 13px',
     fontSize: '13px',
@@ -196,7 +197,7 @@ const styles = {
   footerNote: {
     textAlign: 'center',
     fontSize: '12px',
-    color: '#9ca3af',
+    color: 'rgba(255,255,255,0.3)',
     marginTop: '20px',
     padding: '0 32px 20px',
   },
@@ -409,6 +410,23 @@ export default function LoginPage() {
 
   return (
     <div style={styles.page}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+        @keyframes gradientShift {
+          0%   { background-position: 0% 50%; }
+          50%  { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes floatDot {
+          0%   { transform: translateY(0) scale(1);      opacity: var(--op, 0.1); }
+          50%  { transform: translateY(-55vh) scale(1.1); opacity: calc(var(--op, 0.1) * 0.5); }
+          100% { transform: translateY(-110vh) scale(0.8); opacity: 0; }
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
       <FloatingDots />
       <Logo />
 
@@ -466,7 +484,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => router.push('/forgot-password')}
-                  style={{ background: 'none', border: 'none', color: DARK_T, fontFamily: "'Outfit', system-ui, sans-serif", fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                  style={{ background: 'none', border: 'none', color: TEAL, fontFamily: "'Outfit', system-ui, sans-serif", fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0 }}
                 >
                   Forgot password?
                 </button>
@@ -517,9 +535,9 @@ export default function LoginPage() {
                             flex: 1,
                             padding: '10px 12px',
                             borderRadius: 8,
-                            border: `1.5px solid ${active ? TEAL : '#d1d5db'}`,
-                            background: active ? LIGHT_T : '#f9fafb',
-                            color: active ? DARK_T : '#6b7280',
+                            border: `1.5px solid ${active ? TEAL : 'rgba(255,255,255,0.18)'}`,
+                            background: active ? 'rgba(0,191,165,0.15)' : 'rgba(255,255,255,0.06)',
+                            color: active ? TEAL : 'rgba(255,255,255,0.55)',
                             fontFamily: "'Outfit', system-ui, sans-serif",
                             fontSize: 13.5,
                             fontWeight: active ? 700 : 500,
