@@ -748,12 +748,7 @@ export default function LandingPage() {
 
           {/* Report preview mockup */}
           <Reveal delay={100}>
-            <div style={{
-              background: '#fff', borderRadius: 20, overflow: 'hidden',
-              border: '1px solid #e4e9f0',
-              boxShadow: '0 24px 80px rgba(15,33,55,0.13)',
-              textAlign: 'left',
-            }}>
+            <div style={{ transform: 'rotate(2deg)', borderRadius: 20, overflow: 'hidden', boxShadow: '0 25px 60px rgba(0,0,0,0.18), 0 0 40px rgba(0,191,165,0.07)', textAlign: 'left' }}>
               {/* Browser chrome */}
               <div style={{ background: '#1e293b', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
                 {['#EF4444', '#F59E0B', '#22C55E'].map(c => (
@@ -764,54 +759,67 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Report header */}
-              <div style={{ background: NAVY, padding: '28px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
-                <div>
-                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Assessment Report</div>
-                  <div style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px', marginBottom: 4 }}>Alex Johnson</div>
-                  <div style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Senior Account Manager · Completed 12 Mar 2025</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ width: 72, height: 72, borderRadius: '50%', background: `conic-gradient(${TEAL} 0% 82%, rgba(255,255,255,0.1) 82%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: TEAL }}>82</span>
-                    </div>
-                  </div>
-                  <div style={{ fontFamily: F, fontSize: 11.5, color: TEAL, fontWeight: 700, marginTop: 6 }}>Strong Hire</div>
-                </div>
-              </div>
+              {/* Report body */}
+              <div style={{ background: NAVY, padding: '28px 32px' }}>
 
-              {/* Score strips */}
-              <div style={{ padding: '24px 32px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
-                {[
-                  { label: 'Communication', score: 88, color: '#22C55E' },
-                  { label: 'Problem Solving', score: 79, color: TEAL },
-                  { label: 'Prioritisation', score: 75, color: '#F59E0B' },
-                  { label: 'Leadership', score: 84, color: TEAL },
-                ].map(s => (
-                  <div key={s.label}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ fontFamily: F, fontSize: 12, color: '#5e6b7f', fontWeight: 600 }}>{s.label}</span>
-                      <span style={{ fontFamily: FM, fontSize: 12, color: s.color, fontWeight: 700 }}>{s.score}</span>
-                    </div>
-                    <div style={{ height: 5, background: '#f1f5f9', borderRadius: 50 }}>
-                      <div style={{ height: '100%', width: `${s.score}%`, background: s.color, borderRadius: 50 }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Watch-outs preview */}
-              <div style={{ padding: '0 32px 28px' }}>
-                <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '14px 18px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1={12} y1={9} x2={12} y2={13}/><line x1={12} y1={17} x2="12.01" y2={17}/>
-                  </svg>
+                {/* Candidate header strip */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
                   <div>
-                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: '#92400e', marginBottom: 3 }}>Watch-out: Delegation hesitancy</div>
-                    <div style={{ fontFamily: F, fontSize: 12.5, color: '#b45309', lineHeight: 1.5 }}>Candidate shows reluctance to delegate. May become a bottleneck in a senior role. Probe with: "Tell me about a time you handed off a responsibility you weren't comfortable letting go of."</div>
+                    <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Assessment Report</div>
+                    <div style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px', marginBottom: 3 }}>Alex Johnson</div>
+                    <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.45)' }}>Senior Account Manager &middot; Completed 12 Mar 2025</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 60, height: 60, borderRadius: '50%', background: `conic-gradient(${TEAL} 0% 82%, rgba(255,255,255,0.1) 82%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: 46, height: 46, borderRadius: '50%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontFamily: FM, fontSize: 15, fontWeight: 800, color: TEAL }}>82</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: F, fontSize: 11, color: TEAL, fontWeight: 700 }}>Strong Hire</div>
+                      <div style={{ fontFamily: F, fontSize: 10, color: 'rgba(255,255,255,0.38)', marginTop: 2 }}>Top 18%</div>
+                    </div>
                   </div>
                 </div>
+
+                {/* Strengths */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 12 }}>Strengths</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+                    {[
+                      { title: 'Clear stakeholder communication', body: 'Consistently structured responses around audience needs. Adapted tone for different scenarios.' },
+                      { title: 'Commercial awareness', body: 'Strong grasp of revenue impact and client retention priorities.' },
+                    ].map(s => (
+                      <div key={s.title} style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 10, padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E', flexShrink: 0 }} />
+                          <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: '#fff' }}>{s.title}</span>
+                        </div>
+                        <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.55, margin: 0 }}>{s.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Watch-outs */}
+                <div>
+                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 12 }}>Watch-outs</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+                    {[
+                      { title: 'Delegation hesitancy', body: 'Showed reluctance to distribute tasks. May become a bottleneck in senior roles.', color: '#EF4444', bg: 'rgba(239,68,68,0.06)' },
+                      { title: 'Time pressure response', body: 'Quality dropped noticeably under tight deadlines. Responses became less structured.', color: '#F59E0B', bg: 'rgba(245,158,11,0.06)' },
+                    ].map(w => (
+                      <div key={w.title} style={{ background: w.bg, border: `1px solid ${w.color}44`, borderRadius: 10, padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <div style={{ width: 6, height: 6, borderRadius: '50%', background: w.color, flexShrink: 0 }} />
+                          <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: '#fff' }}>{w.title}</span>
+                        </div>
+                        <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.55, margin: 0 }}>{w.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
               </div>
             </div>
           </Reveal>
