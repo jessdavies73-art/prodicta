@@ -8,7 +8,7 @@ import { Ic } from '@/components/Icons'
 import { useToast } from '@/components/ToastProvider'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
-  GRN, GRNBG, GRNBD, AMB, AMBBG, RED, REDBG,
+  GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
   F, FM, scolor, sbg, slabel, dL, dC, riskCol, riskBg, riskBd, cs, ps, bs
 } from '@/lib/constants'
 import OnboardingWizard from '@/components/OnboardingWizard'
@@ -299,20 +299,24 @@ export default function DashboardPage() {
 
         // Load active placements for agency accounts
         if (prof?.account_type === 'agency') {
-          const { data: placements } = await supabase
-            .from('candidate_outcomes')
-            .select('*, candidates(id, name, assessment_id, assessments(role_title))')
-            .eq('user_id', user.id)
-            .not('placement_date', 'is', null)
-            .not('rebate_weeks', 'is', null)
-            .order('placement_date', { ascending: false })
-          const now = new Date()
-          const active = (placements || []).filter(p => {
-            const end = new Date(p.placement_date)
-            end.setDate(end.getDate() + p.rebate_weeks * 7)
-            return end > now
-          })
-          setActivePlacements(active)
+          try {
+            const { data: placements } = await supabase
+              .from('candidate_outcomes')
+              .select('*, candidates(id, name, assessment_id, assessments(role_title))')
+              .eq('user_id', user.id)
+              .not('placement_date', 'is', null)
+              .not('rebate_weeks', 'is', null)
+              .order('placement_date', { ascending: false })
+            const nowMs = Date.now()
+            const active = (placements || []).filter(p => {
+              if (!p.placement_date || !p.rebate_weeks) return false
+              const end = new Date(p.placement_date).getTime() + p.rebate_weeks * 7 * 86400000
+              return end > nowMs
+            })
+            setActivePlacements(active)
+          } catch (_) {
+            // Columns may not exist yet; skip silently
+          }
         }
 
         // Show onboarding wizard for new users
@@ -1073,14 +1077,16 @@ function ActivePlacements({ placements, router }) {
         </div>
 
         {placements.map((p, i) => {
+          if (!p.placement_date || !p.rebate_weeks) return null
           const start    = new Date(p.placement_date)
-          const endDate  = new Date(start.getTime() + p.rebate_weeks * 7 * 86400000)
+          const totalMs  = p.rebate_weeks * 7 * 86400000
+          const endDate  = new Date(start.getTime() + totalMs)
           const daysLeft = Math.max(0, Math.ceil((endDate - now) / 86400000))
           const weeksLeft = Math.ceil(daysLeft / 7)
           const elapsed  = Math.max(0, Math.floor((now - start) / 86400000))
           const pct      = Math.max(0, Math.round(100 - (elapsed / (p.rebate_weeks * 7)) * 100))
           const urgent   = weeksLeft <= 1
-          const cand     = p.candidates
+          const cand     = p.candidates || {}
 
           return (
             <div
