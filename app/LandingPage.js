@@ -195,7 +195,7 @@ export default function LandingPage() {
           color: 'rgba(255,255,255,0.6)', lineHeight: 1.75,
           maxWidth: 620, marginBottom: 44, position: 'relative', zIndex: 1,
         }}>
-          AI-powered work simulations that predict whether candidates will succeed in the role. Built for UK businesses preparing for the Employment Rights Act 2025.
+          Turn hiring uncertainty into conviction. Work simulations tailored to the role, the company, and the challenges that matter. Predict probation outcomes, reduce hiring risk, and add a layer of protection to every hiring decision.
         </p>
 
         {/* CTA buttons */}
