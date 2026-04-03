@@ -186,7 +186,7 @@ export default function LandingPage() {
         backgroundSize: '300% 300%', animation: 'gradShift 8s ease infinite',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         justifyContent: 'center', textAlign: 'center',
-        padding: '120px 24px 100px',
+        padding: '90px 24px 75px',
       }}>
         <FloatingDots />
 
@@ -417,7 +417,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           HOW IT WORKS
       ════════════════════════════════════════════════════════════════════ */}
-      <section id="how-it-works" style={{ background: '#F8FAFB', padding: '96px 24px' }}>
+      <section id="how-it-works" style={{ background: '#F8FAFB', padding: '72px 24px' }}>
         <style>{`
           .hiw-steps {
             display: grid;
@@ -427,11 +427,11 @@ export default function LandingPage() {
           }
           .hiw-connector {
             position: absolute;
-            top: 28px;
+            top: 31px;
             left: 12.5%;
             right: 12.5%;
-            height: 1px;
-            background: linear-gradient(to right, transparent, ${TEAL}55 20%, ${TEAL}55 80%, transparent);
+            height: 0;
+            border-top: 2px dashed rgba(0,191,165,0.35);
             z-index: 0;
           }
           .hiw-step {
@@ -439,10 +439,14 @@ export default function LandingPage() {
             padding: 0 28px;
             position: relative;
             z-index: 1;
+            transition: transform 0.3s ease;
+          }
+          .hiw-step:hover {
+            transform: translateY(-3px);
           }
           .hiw-step-circle {
-            width: 56px;
-            height: 56px;
+            width: 62px;
+            height: 62px;
             border-radius: 50%;
             background: ${TEAL};
             display: flex;
@@ -450,7 +454,7 @@ export default function LandingPage() {
             justify-content: center;
             margin: 0 auto 28px;
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
             color: #fff;
             box-shadow: 0 4px 24px ${TEAL}44;
@@ -479,8 +483,8 @@ export default function LandingPage() {
             .hiw-step::after {
               content: '';
               position: absolute;
-              top: 56px;
-              left: 27px;
+              top: 62px;
+              left: 30px;
               width: 2px;
               bottom: 0;
               background: linear-gradient(to bottom, ${TEAL}55, transparent);
@@ -544,7 +548,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           FEATURES — 2×3 grid
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: NAVY, padding: '96px 24px', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ background: NAVY, padding: '72px 24px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)', width: 800, height: 800, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}0a 0%, transparent 65%)`, pointerEvents: 'none' }} />
         <div style={{ maxWidth: 1080, margin: '0 auto', position: 'relative' }}>
           <Reveal>
@@ -595,16 +599,23 @@ export default function LandingPage() {
               <Reveal key={f.title} delay={i * 60}>
                 <div style={{
                   padding: '32px 30px', borderRadius: 0,
-                  border: '1px solid rgba(255,255,255,0.07)',
+                  border: '1px solid rgba(0,191,165,0.15)',
                   background: 'rgba(255,255,255,0.03)',
-                  transition: 'background 0.2s',
-                  borderRadius: 0,
+                  transition: 'background 0.3s, border-color 0.3s, box-shadow 0.3s',
                 }}
-                onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.055)'}
-                onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.03)'}>
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.055)'
+                  e.currentTarget.style.borderColor = 'rgba(0,191,165,0.4)'
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(0,191,165,0.1)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
+                  e.currentTarget.style.borderColor = 'rgba(0,191,165,0.15)'
+                  e.currentTarget.style.boxShadow = 'none'
+                }}>
                   <div style={{
                     width: 44, height: 44, borderRadius: 11, marginBottom: 20,
-                    background: `${TEAL}18`, border: `1px solid ${TEAL}30`,
+                    background: `${TEAL}28`, border: `1px solid ${TEAL}50`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {f.icon}
@@ -621,7 +632,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           FOR AGENCIES / FOR EMPLOYERS
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#fff', padding: '96px 24px' }}>
+      <section style={{ background: '#fff', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 60 }}>
@@ -670,6 +681,15 @@ export default function LandingPage() {
                 <div style={{
                   background: col.bg, borderRadius: 20, padding: '44px 40px',
                   height: '100%', border: col.dark ? 'none' : `1px solid ${TEAL}30`,
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-3px)'
+                  e.currentTarget.style.boxShadow = '0 16px 40px rgba(15,33,55,0.12)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = 'none'
                 }}>
                   <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 18 }}>{col.tag}</div>
                   <h3 style={{ fontFamily: F, fontSize: 'clamp(20px, 2vw, 26px)', fontWeight: 800, color: col.dark ? '#fff' : NAVY, letterSpacing: '-0.5px', lineHeight: 1.25, marginBottom: 18 }}>{col.headline}</h3>
@@ -702,7 +722,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           SAMPLE REPORT PREVIEW
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#f7f9fb', padding: '96px 24px' }}>
+      <section style={{ background: '#f7f9fb', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto', textAlign: 'center' }}>
           <Reveal>
             <div style={{ marginBottom: 48 }}>
@@ -798,7 +818,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           PRICING
       ════════════════════════════════════════════════════════════════════ */}
-      <section id="pricing" style={{ background: '#fff', padding: '96px 24px' }}>
+      <section id="pricing" style={{ background: '#fff', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 56 }}>
@@ -915,7 +935,7 @@ export default function LandingPage() {
       <section style={{
         position: 'relative', overflow: 'hidden',
         background: `linear-gradient(135deg, ${NAVY} 0%, #0a1f34 50%, #071a2b 100%)`,
-        padding: '96px 24px',
+        padding: '72px 24px',
       }}>
         <div style={{ position: 'absolute', top: '50%', left: '30%', transform: 'translate(-50%,-50%)', width: 600, height: 600, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}10 0%, transparent 65%)`, pointerEvents: 'none' }} />
         <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative', textAlign: 'center' }}>
@@ -965,7 +985,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           FINAL CTA
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#f7f9fb', padding: '96px 24px' }}>
+      <section style={{ background: '#f7f9fb', padding: '72px 24px' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
           <Reveal>
             <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>Get started</div>
