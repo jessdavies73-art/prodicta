@@ -9,7 +9,12 @@ create table if not exists public.users (
   account_type text default 'employer' check (account_type in ('employer', 'agency')),
   plan text default 'starter' check (plan in ('starter', 'growth', 'scale', 'founding')),
   onboarding_complete boolean default true,
-  created_at timestamp with time zone default now()
+  created_at timestamp with time zone default now(),
+  -- Billing columns (added for GoCardless integration)
+  subscription_status text default null check (subscription_status in ('pending', 'active', 'cancelled', 'past_due')),
+  gocardless_customer_id text,
+  gocardless_mandate_id text,
+  gocardless_subscription_id text
 );
 
 -- Assessments table

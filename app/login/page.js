@@ -283,6 +283,7 @@ export default function LoginPage() {
   const [suEmail, setSuEmail]       = useState('')
   const [suPassword, setSuPassword] = useState('')
   const [suAccountType, setSuAccountType] = useState('employer')
+  const [suPlan, setSuPlan]         = useState('growth')
 
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState('')
@@ -381,14 +382,20 @@ export default function LoginPage() {
             email: data.user.email,
             company_name: suCompany.trim(),
             account_type: suAccountType,
+            plan: suPlan,
             onboarding_complete: false,
+            subscription_status: 'pending',
           },
           { onConflict: 'id', ignoreDuplicates: false }
         )
 
-        // If a session was returned, email confirmation is off , go straight to dashboard
+        // If a session was returned, email confirmation is off
         if (data.session) {
-          router.push('/dashboard')
+          // Mark subscription as pending in auth app_metadata (admin-only, prevents client forgery)
+          await fetch('/api/auth/init-subscription', { method: 'POST' })
+          // Refresh session to embed updated app_metadata in JWT
+          await supabase.auth.refreshSession()
+          router.push('/setup-payment')
           return
         }
       }
@@ -546,6 +553,42 @@ export default function LoginPage() {
                           }}
                         >
                           {opt.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Plan selection */}
+                <div>
+                  <label style={styles.label}>Choose your plan</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    {[
+                      { value: 'starter',  label: 'Starter',  price: '£49/mo'  },
+                      { value: 'growth',   label: 'Growth',   price: '£99/mo'  },
+                      { value: 'scale',    label: 'Scale',    price: '£120/mo' },
+                      { value: 'founding', label: 'Founding', price: '£79/mo'  },
+                    ].map(opt => {
+                      const active = suPlan === opt.value
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setSuPlan(opt.value)}
+                          style={{
+                            padding: '9px 10px',
+                            borderRadius: 8,
+                            border: `1.5px solid ${active ? TEAL : 'rgba(255,255,255,0.18)'}`,
+                            background: active ? 'rgba(0,191,165,0.15)' : 'rgba(255,255,255,0.06)',
+                            color: active ? TEAL : 'rgba(255,255,255,0.55)',
+                            fontFamily: "'Outfit', system-ui, sans-serif",
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          <div style={{ fontSize: 13, fontWeight: active ? 700 : 500 }}>{opt.label}</div>
+                          <div style={{ fontSize: 11.5, opacity: 0.75, marginTop: 1 }}>{opt.price}</div>
                         </button>
                       )
                     })}
