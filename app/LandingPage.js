@@ -563,7 +563,7 @@ export default function LandingPage() {
             </div>
           </Reveal>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 2 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
             {[
               {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
@@ -598,20 +598,23 @@ export default function LandingPage() {
             ].map((f, i) => (
               <Reveal key={f.title} delay={i * 60}>
                 <div style={{
-                  padding: '32px 30px', borderRadius: 0,
+                  padding: '32px 30px', borderRadius: 12,
                   border: '1px solid rgba(0,191,165,0.15)',
                   background: 'rgba(255,255,255,0.03)',
-                  transition: 'background 0.3s, border-color 0.3s, box-shadow 0.3s',
+                  transition: 'background 0.3s, border-color 0.3s, box-shadow 0.3s, transform 0.3s',
+                  height: '100%',
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.055)'
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
                   e.currentTarget.style.borderColor = 'rgba(0,191,165,0.4)'
-                  e.currentTarget.style.boxShadow = '0 0 20px rgba(0,191,165,0.1)'
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(0,191,165,0.08)'
+                  e.currentTarget.style.transform = 'translateY(-3px)'
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
                   e.currentTarget.style.borderColor = 'rgba(0,191,165,0.15)'
                   e.currentTarget.style.boxShadow = 'none'
+                  e.currentTarget.style.transform = 'translateY(0)'
                 }}>
                   <div style={{
                     width: 44, height: 44, borderRadius: 11, marginBottom: 20,
