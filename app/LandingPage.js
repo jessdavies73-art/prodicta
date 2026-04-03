@@ -1000,7 +1000,7 @@ export default function LandingPage() {
           <Reveal>
             <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>Get started</div>
             <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 20 }}>
-              Start making better hires today
+              Know before you place. Know before you hire.
             </h2>
             <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.75, marginBottom: 40 }}>
               Join employers and recruitment agencies across the UK using PRODICTA to hire with confidence.
