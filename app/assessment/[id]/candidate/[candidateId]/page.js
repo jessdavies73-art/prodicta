@@ -767,6 +767,7 @@ export default function CandidateReportPage({ params }) {
   const [customRebateInput, setCustomRebateInput] = useState('')
   const [probationMonths, setProbationMonths] = useState(6)
   const [savingOutcome, setSavingOutcome] = useState(false)
+  const [outcomeError, setOutcomeError] = useState(null)
   const [existingOutcome, setExistingOutcome] = useState(null)
 
   // Accountability Trail (agency only)
@@ -979,6 +980,7 @@ export default function CandidateReportPage({ params }) {
   async function logOutcome() {
     if (!selectedOutcome || !user) return
     setSavingOutcome(true)
+    setOutcomeError(null)
     const supabase = createClient()
     const payload = {
       candidate_id: params.candidateId,
@@ -993,15 +995,20 @@ export default function CandidateReportPage({ params }) {
         : null,
       probation_months: profile?.account_type === 'employer' && placementDate ? probationMonths : null,
     }
-    let saved
+    let saved, dbError
     if (existingOutcome) {
-      const { data } = await supabase.from('candidate_outcomes').update(payload).eq('id', existingOutcome.id).select().single()
-      saved = data
+      const { data, error } = await supabase.from('candidate_outcomes').update(payload).eq('id', existingOutcome.id).select().single()
+      saved = data; dbError = error
     } else {
-      const { data } = await supabase.from('candidate_outcomes').insert(payload).select().single()
-      saved = data
+      const { data, error } = await supabase.from('candidate_outcomes').insert(payload).select().single()
+      saved = data; dbError = error
     }
-    if (saved) { setExistingOutcome(saved); setOutcomeModal(false) }
+    if (dbError) {
+      setOutcomeError(dbError.message || 'Failed to save outcome. Please check the database schema.')
+    } else if (saved) {
+      setExistingOutcome(saved)
+      setOutcomeModal(false)
+    }
     setSavingOutcome(false)
   }
 
@@ -2761,6 +2768,9 @@ export default function CandidateReportPage({ params }) {
               />
             </div>
 
+            {outcomeError && (
+              <p style={{ fontSize: 13, color: RED, margin: '0 0 12px', lineHeight: 1.5 }}>{outcomeError}</p>
+            )}
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={logOutcome}

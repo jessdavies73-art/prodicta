@@ -301,7 +301,7 @@ export default function DashboardPage() {
         if (prof?.account_type === 'agency') {
           const { data: placements } = await supabase
             .from('candidate_outcomes')
-            .select('*, candidates(id, name, assessments(role_title))')
+            .select('*, candidates(id, name, assessment_id, assessments(role_title))')
             .eq('user_id', user.id)
             .not('placement_date', 'is', null)
             .not('rebate_weeks', 'is', null)
