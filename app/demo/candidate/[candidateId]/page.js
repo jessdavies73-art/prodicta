@@ -62,9 +62,9 @@ const Badge = ({ label, bg, color, border }) => (
   </span>
 )
 
-const EvidenceBox = ({ children }) => (
+const EvidenceBox = ({ children, color = TEAL }) => (
   <div style={{
-    background: '#f8fafc', border: `1px solid ${BD}`, borderLeft: `3px solid ${TEAL}`,
+    background: '#f8fafc', border: `1px solid ${BD}`, borderLeft: `3px solid ${color}`,
     borderRadius: '0 8px 8px 0', padding: '10px 14px', marginTop: 10,
   }}>
     <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.7, fontStyle: 'italic' }}>
@@ -790,7 +790,7 @@ export default function DemoCandidatePage({ params }) {
                           {severity && <div style={{ marginBottom: 10 }}><Badge label={`${severity} severity`} bg={sev.bg} color={sev.color} border={sev.border} /></div>}
                           <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 8px' }}>{title}</p>
                           {explanation && <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 6px', lineHeight: 1.7 }}>{explanation}</p>}
-                          {evidence && <EvidenceBox>{evidence}</EvidenceBox>}
+                          {evidence && <EvidenceBox color={sev.color}>{evidence}</EvidenceBox>}
                           {action && <ActionBox>{action}</ActionBox>}
                         </div>
                       )
