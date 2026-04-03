@@ -653,69 +653,74 @@ function ProbationTimeline({ outcome }) {
         )}
       </div>
 
-      {/* Track */}
-      <div style={{ position: 'relative', marginBottom: 52 }}>
-        <div style={{ height: 6, background: BD, borderRadius: 3 }} />
-        <div style={{
-          position: 'absolute', top: 0, left: 0,
-          width: `${progress}%`, height: 6,
-          background: ended ? GRN : elapsed >= 152 ? RED : TEAL,
-          borderRadius: 3, transition: 'width 0.4s',
-        }} />
+      {/* Track — padded so labels at 0 % and 100 % never clip */}
+      <div style={{ padding: '0 20px', marginBottom: 64 }}>
+        <div style={{ position: 'relative' }}>
 
-        {/* ERA 2025 danger line */}
-        {eraShown && (
-          <div style={{ position: 'absolute', left: `${eraPos}%`, top: -14, transform: 'translateX(-50%)', zIndex: 3 }}>
-            <div style={{ width: 2, height: 34, background: RED, margin: '0 auto' }} />
-            <div style={{ position: 'absolute', top: 36, left: '50%', transform: 'translateX(-50%)', textAlign: 'center', whiteSpace: 'nowrap' }}>
-              <div style={{ fontFamily: FM, fontSize: 9.5, fontWeight: 800, color: RED, background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 4, padding: '1px 5px' }}>ERA LINE</div>
-              <div style={{ fontFamily: F, fontSize: 8.5, color: RED, marginTop: 2 }}>{fmtDate(new Date(start.getTime() + eraDays * 86400000))}</div>
+          {/* Bar background */}
+          <div style={{ height: 6, background: BD, borderRadius: 3 }} />
+
+          {/* Progress fill */}
+          <div style={{
+            position: 'absolute', top: 0, left: 0,
+            width: `${progress}%`, height: 6,
+            background: ended ? GRN : elapsed >= 152 ? RED : TEAL,
+            borderRadius: 3, transition: 'width 0.4s',
+          }} />
+
+          {/* Start milestone — left-aligned label */}
+          <div style={{ position: 'absolute', left: 0, top: -5 }}>
+            <div style={{
+              width: 16, height: 16, borderRadius: '50%',
+              border: `2px solid ${TEAL}`, background: TEAL, zIndex: 1,
+            }} />
+            <div style={{ position: 'absolute', top: 22, left: 0, whiteSpace: 'nowrap' }}>
+              <div style={{ fontFamily: FM, fontSize: 10, fontWeight: 700, color: TEALD }}>Start</div>
+              <div style={{ fontFamily: F, fontSize: 9, color: TX3 }}>{fmtDate(start)}</div>
             </div>
           </div>
-        )}
 
-        {/* Check-in milestones */}
-        {checkIns.map(m => {
-          const pos    = (m.day / totalDays) * 100
-          const passed = elapsed >= m.day
-          return (
-            <div key={m.month} style={{ position: 'absolute', left: `${pos}%`, top: -5, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{
-                width: 16, height: 16, borderRadius: '50%', border: `2px solid ${passed ? TEAL : BD}`,
-                background: passed ? TEAL : CARD, zIndex: 1, position: 'relative',
-              }} />
-              <div style={{ position: 'absolute', top: 22, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                <div style={{ fontFamily: FM, fontSize: 10, fontWeight: 700, color: passed ? TEALD : TX3 }}>{m.label}</div>
-                <div style={{ fontFamily: F, fontSize: 9, color: TX3 }}>{m.sub}</div>
+          {/* Check-in milestones */}
+          {checkIns.map(m => {
+            const pos    = (m.day / totalDays) * 100
+            const passed = elapsed >= m.day
+            return (
+              <div key={m.month} style={{ position: 'absolute', left: `${pos}%`, top: -5, transform: 'translateX(-50%)' }}>
+                <div style={{
+                  width: 16, height: 16, borderRadius: '50%',
+                  border: `2px solid ${passed ? TEAL : BD}`,
+                  background: passed ? TEAL : CARD, zIndex: 1,
+                }} />
+                <div style={{ position: 'absolute', top: 22, left: '50%', transform: 'translateX(-50%)', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontFamily: FM, fontSize: 10, fontWeight: 700, color: passed ? TEALD : TX3 }}>{m.label}</div>
+                  <div style={{ fontFamily: F, fontSize: 9, color: TX3 }}>{m.sub}</div>
+                </div>
+              </div>
+            )
+          })}
+
+          {/* ERA 2025 danger line — right-aligned label so it never clips */}
+          {eraShown && (
+            <div style={{ position: 'absolute', left: `${eraPos}%`, top: -14, transform: 'translateX(-50%)', zIndex: 3 }}>
+              <div style={{ width: 2, height: 34, background: RED, margin: '0 auto' }} />
+              <div style={{ position: 'absolute', top: 36, right: 0, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                <div style={{ fontFamily: FM, fontSize: 9.5, fontWeight: 800, color: RED, background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 4, padding: '1px 5px', display: 'inline-block' }}>ERA LINE</div>
+                <div style={{ fontFamily: F, fontSize: 8.5, color: RED, marginTop: 2 }}>{fmtDate(new Date(start.getTime() + eraDays * 86400000))}</div>
               </div>
             </div>
-          )
-        })}
+          )}
 
-        {/* End dot */}
-        <div style={{ position: 'absolute', right: -8, top: -5, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{
-            width: 16, height: 16, borderRadius: '50%',
-            border: `2px solid ${ended ? GRN : BD}`,
-            background: ended ? GRN : CARD,
-          }} />
-          <div style={{ position: 'absolute', top: 22, right: 0, textAlign: 'right', whiteSpace: 'nowrap' }}>
-            <div style={{ fontFamily: FM, fontSize: 10, fontWeight: 700, color: ended ? GRN : TX3 }}>End</div>
-            <div style={{ fontFamily: F, fontSize: 9, color: TX3 }}>
-              {fmtDate(new Date(start.getTime() + totalDays * 86400000))}
-            </div>
-          </div>
+          {/* Current position cursor */}
+          {!ended && elapsed > 0 && (
+            <div style={{
+              position: 'absolute', left: `${progress}%`, top: -7, transform: 'translateX(-50%)',
+              width: 20, height: 20, borderRadius: '50%',
+              background: elapsed >= 152 ? RED : TEAL, border: `3px solid #fff`,
+              boxShadow: `0 2px 8px ${elapsed >= 152 ? RED : TEAL}66`, zIndex: 2,
+            }} />
+          )}
+
         </div>
-
-        {/* Current position cursor */}
-        {!ended && elapsed > 0 && (
-          <div style={{
-            position: 'absolute', left: `${progress}%`, top: -7, transform: 'translateX(-50%)',
-            width: 20, height: 20, borderRadius: '50%',
-            background: elapsed >= 152 ? RED : TEAL, border: `3px solid #fff`,
-            boxShadow: `0 2px 8px ${elapsed >= 152 ? RED : TEAL}66`, zIndex: 2,
-          }} />
-        )}
       </div>
 
       {/* ERA warning */}
