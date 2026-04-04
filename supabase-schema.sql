@@ -67,6 +67,10 @@ create table if not exists public.results (
   onboarding_plan jsonb,
   interview_questions jsonb,
   percentile text,
+  candidate_type text,
+  predictions jsonb,
+  reality_timeline jsonb,
+  decision_alerts jsonb,
   created_at timestamp with time zone default now()
 );
 

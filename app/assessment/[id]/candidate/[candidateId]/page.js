@@ -1403,6 +1403,85 @@ export default function CandidateReportPage({ params }) {
                 </ScrollReveal>
 
                 {/* ══════════════════════════════════════════════════
+                    CANDIDATE TYPE SNAPSHOT
+                ══════════════════════════════════════════════════ */}
+                {results.candidate_type && (() => {
+                  const withIdx = results.candidate_type.indexOf(' with ')
+                  const primary  = withIdx > -1 ? results.candidate_type.slice(0, withIdx) : results.candidate_type
+                  const modifier = withIdx > -1 ? results.candidate_type.slice(withIdx + 6) : null
+                  return (
+                    <ScrollReveal delay={60}>
+                    <div style={{
+                      marginBottom: 20,
+                      background: 'linear-gradient(135deg, #0a1929 0%, #0f2137 100%)',
+                      border: '1px solid rgba(0,191,165,0.22)',
+                      borderRadius: 12, padding: '22px 28px', boxShadow: SHADOW_LG,
+                    }}>
+                      <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+                        Candidate Type Snapshot
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                        <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: '#00BFA5', lineHeight: 1.2 }}>{primary}</span>
+                        {modifier && <>
+                          <span style={{ fontFamily: F, fontSize: 15, fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>with</span>
+                          <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.85)', lineHeight: 1.2 }}>{modifier}</span>
+                        </>}
+                      </div>
+                      <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: '10px 0 0', lineHeight: 1.5 }}>
+                        AI-generated profile label based on observed response patterns across all scenarios.
+                      </p>
+                    </div>
+                    </ScrollReveal>
+                  )
+                })()}
+
+                {/* ══════════════════════════════════════════════════
+                    PREDICTED OUTCOME PANEL
+                ══════════════════════════════════════════════════ */}
+                {results.predictions && (() => {
+                  const p = results.predictions
+                  const panels = [
+                    { label: 'Pass probation',        key: 'pass_probation',        color: '#00BFA5', bg: 'rgba(0,191,165,0.07)', bd: 'rgba(0,191,165,0.22)' },
+                    { label: 'Become top performer',  key: 'top_performer',          color: '#00BFA5', bg: 'rgba(0,191,165,0.07)', bd: 'rgba(0,191,165,0.22)' },
+                    { label: 'Churn within 6 months', key: 'churn_risk',             color: AMB,       bg: AMBBG,                  bd: AMBBD                  },
+                    { label: 'Underperformance risk', key: 'underperformance_risk',  color: '#EF4444', bg: '#fef2f2',              bd: '#fecaca'               },
+                  ]
+                  return (
+                    <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <SectionHeading tooltip="AI probability estimates based on assessment score, pressure-fit score, and response patterns">
+                        Predicted Outcome Panel
+                      </SectionHeading>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                        {panels.map(({ label, key, color, bg, bd }) => {
+                          const val = p[key] ?? 0
+                          const r = 22
+                          const circ = 2 * Math.PI * r
+                          const dash = (val / 100) * circ
+                          return (
+                            <div key={key} style={{ background: bg, border: `1px solid ${bd}`, borderRadius: 10, padding: '18px 12px', textAlign: 'center' }}>
+                              <div style={{ position: 'relative', width: 60, height: 60, margin: '0 auto 12px' }}>
+                                <svg width={60} height={60} viewBox="0 0 60 60">
+                                  <circle cx={30} cy={30} r={r} fill="none" stroke={`${color}22`} strokeWidth={5} />
+                                  <circle cx={30} cy={30} r={r} fill="none" stroke={color} strokeWidth={5}
+                                    strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+                                    transform="rotate(-90 30 30)" />
+                                </svg>
+                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 800, color }}>{val}%</span>
+                                </div>
+                              </div>
+                              <div style={{ fontFamily: F, fontSize: 11.5, color: TX2, lineHeight: 1.4 }}>{label}</div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </Card>
+                    </ScrollReveal>
+                  )
+                })()}
+
+                {/* ══════════════════════════════════════════════════
                     PLACEMENT RISK SCORE , agency only
                 ══════════════════════════════════════════════════ */}
                 {profile?.account_type === 'agency' && (() => {
@@ -2032,6 +2111,54 @@ export default function CandidateReportPage({ params }) {
                 )}
 
                 {/* ══════════════════════════════════════════════════
+                    REALITY TIMELINE
+                ══════════════════════════════════════════════════ */}
+                {results.reality_timeline && (() => {
+                  const { week1, month1, month3 } = results.reality_timeline
+                  const phases = [
+                    { label: 'Week 1-2', sub: 'Onboarding', text: week1 },
+                    { label: 'Month 1',  sub: 'Settling in', text: month1 },
+                    { label: 'Month 2-3', sub: 'Consolidation', text: month3 },
+                  ].filter(ph => ph.text)
+                  if (!phases.length) return null
+                  return (
+                    <ScrollReveal delay={60}>
+                    <div style={{
+                      marginBottom: 20,
+                      background: 'linear-gradient(135deg, #0a1929 0%, #0f2137 60%, #0d2b45 100%)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 12, padding: '24px 28px', boxShadow: SHADOW_LG,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 22 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(0,191,165,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Ic name="clock" size={14} color="#00BFA5" />
+                        </div>
+                        <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: '#fff', margin: 0 }}>Reality Timeline</h2>
+                        <span style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>First 90 days prediction</span>
+                      </div>
+                      <div style={{ position: 'relative', paddingLeft: 32 }}>
+                        <div style={{ position: 'absolute', left: 6, top: 6, bottom: 6, width: 2, background: 'rgba(0,191,165,0.2)', borderRadius: 1 }} />
+                        {phases.map((ph, i) => (
+                          <div key={i} style={{ position: 'relative', marginBottom: i < phases.length - 1 ? 28 : 0 }}>
+                            <div style={{
+                              position: 'absolute', left: -32, top: 4,
+                              width: 14, height: 14, borderRadius: '50%',
+                              background: '#00BFA5', boxShadow: '0 0 0 3px rgba(0,191,165,0.18)', zIndex: 1,
+                            }} />
+                            <div style={{ marginBottom: 6 }}>
+                              <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 800, color: '#00BFA5' }}>{ph.label}</span>
+                              <span style={{ fontFamily: F, fontSize: 11.5, color: 'rgba(255,255,255,0.32)', marginLeft: 8 }}>{ph.sub}</span>
+                            </div>
+                            <p style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.70)', margin: 0, lineHeight: 1.75 }}>{ph.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    </ScrollReveal>
+                  )
+                })()}
+
+                {/* ══════════════════════════════════════════════════
                     SKILLS BREAKDOWN , 2×2 grid with small rings
                 ══════════════════════════════════════════════════ */}
                 {results.scores && Object.keys(results.scores).length > 0 && (
@@ -2162,7 +2289,13 @@ export default function CandidateReportPage({ params }) {
                         const explanation = typeof w === 'object' ? w.explanation : null
                         const evidence = typeof w === 'object' ? w.evidence : null
                         const action = typeof w === 'object' ? w.action : null
+                        const ifIgnored = typeof w === 'object' ? w.if_ignored : null
+                        const alertFromStore = results.decision_alerts?.[i] || null
+                        const alertText = ifIgnored || alertFromStore
                         const sev = sevStyle(severity)
+                        const alertColor = severity === 'High' ? RED : AMB
+                        const alertBg    = severity === 'High' ? REDBG : AMBBG
+                        const alertBd    = severity === 'High' ? REDBD : AMBBD
                         return (
                           <div key={i} style={{
                             background: sev.bg,
@@ -2186,6 +2319,19 @@ export default function CandidateReportPage({ params }) {
                             )}
                             {evidence && <EvidenceBox color={sev.color}>{evidence}</EvidenceBox>}
                             {action && <ActionBox>{action}</ActionBox>}
+                            {alertText && (
+                              <div style={{
+                                background: alertBg, border: `1px solid ${alertBd}`,
+                                borderLeft: `3px solid ${alertColor}`,
+                                borderRadius: '0 8px 8px 0', padding: '10px 14px', marginTop: 10,
+                                display: 'flex', gap: 8, alignItems: 'flex-start',
+                              }}>
+                                <Ic name="alert" size={13} color={alertColor} />
+                                <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0, lineHeight: 1.55 }}>
+                                  <strong style={{ color: alertColor }}>If ignored:</strong> {alertText}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         )
                       })}
