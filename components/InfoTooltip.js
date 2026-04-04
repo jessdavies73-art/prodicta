@@ -1,25 +1,35 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Ic } from '@/components/Icons'
 import { NAVY, TX3, F } from '@/lib/constants'
 
 export default function InfoTooltip({ text, light = false }) {
-  const [visible, setVisible] = useState(false)
+  const [pos, setPos] = useState(null)
+  const ref = useRef(null)
   const tooltipBg = light ? '#1e3a52' : NAVY
+
+  function handleEnter() {
+    if (ref.current) {
+      const r = ref.current.getBoundingClientRect()
+      setPos({ top: r.top, left: r.left + r.width / 2 })
+    }
+  }
+
   return (
     <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
       <span
-        onMouseEnter={() => setVisible(true)}
-        onMouseLeave={() => setVisible(false)}
+        ref={ref}
+        onMouseEnter={handleEnter}
+        onMouseLeave={() => setPos(null)}
         style={{ cursor: 'help', display: 'inline-flex', alignItems: 'center' }}
       >
         <Ic name="info" size={14} color={light ? 'rgba(255,255,255,0.45)' : TX3} />
       </span>
-      {visible && (
+      {pos && (
         <span style={{
-          position: 'absolute',
-          bottom: 'calc(100% + 8px)',
-          left: '50%',
+          position: 'fixed',
+          bottom: `calc(100vh - ${pos.top}px + 8px)`,
+          left: pos.left,
           transform: 'translateX(-50%)',
           background: tooltipBg,
           color: '#fff',
@@ -30,7 +40,7 @@ export default function InfoTooltip({ text, light = false }) {
           padding: '9px 13px',
           borderRadius: 8,
           width: 240,
-          zIndex: 200,
+          zIndex: 9999,
           boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
           pointerEvents: 'none',
           textAlign: 'left',
