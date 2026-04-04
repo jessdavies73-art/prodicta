@@ -4,7 +4,7 @@ import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-
 
 export async function POST(request) {
   try {
-    const { role_title, job_description, skill_weights, save_as_template, template_name } = await request.json()
+    const { role_title, job_description, skill_weights, save_as_template, template_name, context_answers } = await request.json()
 
     // Auth check
     const supabase = createServerSupabaseClient()
@@ -24,7 +24,12 @@ ROLE: ${role_title}
 
 JOB DESCRIPTION:
 ${job_description}
+${context_answers && Object.values(context_answers).some(v => v?.trim()) ? `
+ADDITIONAL CONTEXT PROVIDED BY THE EMPLOYER:
+${Object.entries(context_answers).map(([, v]) => v?.trim()).filter(Boolean).map(v => `- ${v}`).join('\n')}
 
+Use this additional context to make the scenarios more accurate and specific. Treat these answers as ground truth about the role.
+` : ''}
 ---
 
 STEP 1 , EXTRACT ROLE INTELLIGENCE (do this before writing scenarios)
@@ -137,6 +142,9 @@ Write in UK English throughout. No Americanisms. No generic scenarios.`
         scenarios,
         skill_weights: skill_weights || { Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 },
         status: 'active',
+        ...(context_answers && Object.values(context_answers).some(v => v?.trim()) && {
+          context_answers,
+        }),
         ...(save_as_template && {
           is_template: true,
           template_name: template_name?.trim() || role_title,

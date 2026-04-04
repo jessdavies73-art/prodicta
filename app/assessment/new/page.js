@@ -99,6 +99,12 @@ export default function NewAssessmentPage() {
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
   const [templateName, setTemplateName] = useState('')
 
+  // Context questions
+  const [contextQuestions, setContextQuestions] = useState([])
+  const [contextAnswers, setContextAnswers] = useState({})
+  const [generatingContext, setGeneratingContext] = useState(false)
+  const [contextError, setContextError] = useState('')
+
   useEffect(() => {
     const PLAN_LIMITS = { starter: 10, growth: 30, scale: null, founding: null }
     const init = async () => {
@@ -156,6 +162,27 @@ export default function NewAssessmentPage() {
 
   const resetEqual = () => setWeights({ Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 })
 
+  const handleGenerateContextQs = async () => {
+    setContextError('')
+    setGeneratingContext(true)
+    setContextQuestions([])
+    setContextAnswers({})
+    try {
+      const res = await fetch('/api/assessment/context-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role_title: roleTitle, job_description: jd }),
+      })
+      const data = await res.json()
+      if (data.questions) setContextQuestions(data.questions)
+      else setContextError(data.error || 'Failed to generate questions.')
+    } catch {
+      setContextError('Something went wrong. Please try again.')
+    } finally {
+      setGeneratingContext(false)
+    }
+  }
+
   const handleGenerate = async () => {
     setError('')
     setLoading(true)
@@ -169,6 +196,7 @@ export default function NewAssessmentPage() {
           skill_weights: weights,
           save_as_template: saveAsTemplate,
           template_name: saveAsTemplate ? (templateName.trim() || roleTitle.trim()) : undefined,
+          context_answers: Object.keys(contextAnswers).length > 0 ? contextAnswers : undefined,
         })
       })
       const data = await res.json()
@@ -367,6 +395,98 @@ export default function NewAssessmentPage() {
               </p>
             )}
           </div>
+
+          {/* Context questions */}
+          {jd.length >= 50 && roleTitle.trim().length > 0 && (
+            <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #f1f5f9' }}>
+              {contextQuestions.length === 0 ? (
+                <div>
+                  <button
+                    onClick={handleGenerateContextQs}
+                    disabled={generatingContext}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 8,
+                      padding: '9px 18px', borderRadius: 8,
+                      border: '1.5px solid #00BFA5', background: '#f0fdf8',
+                      color: '#009688', fontSize: 13.5, fontWeight: 700,
+                      fontFamily: F, cursor: generatingContext ? 'not-allowed' : 'pointer',
+                      opacity: generatingContext ? 0.65 : 1,
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    {generatingContext ? (
+                      <>
+                        <div style={{
+                          width: 14, height: 14,
+                          border: '2px solid #a7f3d0',
+                          borderTopColor: '#009688',
+                          borderRadius: '50%',
+                          animation: 'spin 0.8s linear infinite',
+                          flexShrink: 0,
+                        }} />
+                        Generating questions...
+                      </>
+                    ) : (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#009688" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        Generate context questions
+                      </>
+                    )}
+                  </button>
+                  <p style={{ margin: '8px 0 0', fontSize: 12, color: '#94a1b3', fontFamily: F }}>
+                    Optional. Let the AI ask 3-5 short follow-up questions to help build more accurate scenarios.
+                  </p>
+                  {contextError && (
+                    <p style={{ margin: '6px 0 0', fontSize: 12.5, color: '#dc2626', fontFamily: F }}>{contextError}</p>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#009688" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                      </svg>
+                      <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', fontFamily: F }}>Help us understand the role better</span>
+                      <span style={{ fontSize: 12, color: '#94a1b3', fontFamily: F }}>(all optional)</span>
+                    </div>
+                    <button
+                      onClick={() => { setContextQuestions([]); setContextAnswers({}) }}
+                      style={{ fontSize: 12, color: '#94a1b3', background: 'none', border: 'none', cursor: 'pointer', fontFamily: F, padding: '4px 8px' }}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {contextQuestions.map((q, i) => (
+                      <div key={i}>
+                        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#0f2137', marginBottom: 6, fontFamily: F }}>
+                          {q}
+                        </label>
+                        <input
+                          type="text"
+                          value={contextAnswers[i] || ''}
+                          onChange={e => setContextAnswers(prev => ({ ...prev, [i]: e.target.value }))}
+                          placeholder="Your answer (optional)..."
+                          style={{
+                            width: '100%', boxSizing: 'border-box',
+                            padding: '9px 13px', borderRadius: 8,
+                            border: '1px solid #e4e9f0', fontSize: 13.5,
+                            color: '#0f172a', fontFamily: F, background: '#fff',
+                            outline: 'none', transition: 'border-color 0.15s',
+                          }}
+                          onFocus={e => e.target.style.borderColor = '#00BFA5'}
+                          onBlur={e => e.target.style.borderColor = '#e4e9f0'}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Card 2: Skill weights */}

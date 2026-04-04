@@ -1350,6 +1350,64 @@ export default function CandidateReportPage({ params }) {
                 <StickyNav active={activeSection} />
 
                 {/* ══════════════════════════════════════════════════
+                    HIRING CONFIDENCE BANNER
+                ══════════════════════════════════════════════════ */}
+                {results.hiring_confidence && (() => {
+                  const hc = results.hiring_confidence
+                  const hcScore = hc.score ?? hc
+                  const hcExplanation = hc.explanation || null
+                  const hcColor = hcScore >= 70 ? TEAL : hcScore >= 55 ? AMB : RED
+                  const hcBg    = hcScore >= 70 ? TEALLT : hcScore >= 55 ? AMBBG : REDBG
+                  const hcBd    = hcScore >= 70 ? `${TEAL}55` : hcScore >= 55 ? AMBBD : REDBD
+                  const hcLabel = hcScore >= 85 ? 'Strong confidence' : hcScore >= 70 ? 'Good confidence' : hcScore >= 55 ? 'Moderate confidence' : hcScore >= 40 ? 'Low confidence' : 'Very low confidence'
+                  return (
+                    <ScrollReveal delay={0}>
+                    <div style={{
+                      marginBottom: 20,
+                      background: CARD,
+                      border: `1.5px solid ${hcBd}`,
+                      borderLeft: `5px solid ${hcColor}`,
+                      borderRadius: '0 12px 12px 0',
+                      padding: '20px 28px',
+                      boxShadow: SHADOW,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 28,
+                      flexWrap: 'wrap',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexShrink: 0 }}>
+                        <span style={{ fontFamily: FM, fontSize: 48, fontWeight: 800, color: hcColor, lineHeight: 1 }}>
+                          {hcScore}%
+                        </span>
+                        <div>
+                          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>
+                            Hiring Confidence
+                          </div>
+                          <div style={{
+                            display: 'inline-flex', alignItems: 'center',
+                            padding: '3px 10px', borderRadius: 20,
+                            background: hcBg, border: `1px solid ${hcBd}`,
+                          }}>
+                            <span style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: hcColor }}>{hcLabel}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {hcExplanation && (
+                        <div style={{ flex: 1, minWidth: 200, borderLeft: `1px solid ${BD}`, paddingLeft: 24 }}>
+                          <p style={{ fontFamily: F, fontSize: 14.5, fontWeight: 600, color: TX, margin: 0, lineHeight: 1.5 }}>
+                            {hcExplanation}
+                          </p>
+                          <p style={{ fontFamily: F, fontSize: 11.5, color: TX3, margin: '4px 0 0', lineHeight: 1.4 }}>
+                            Composite of assessment score, pressure-fit, integrity, seniority, and watch-out severity.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    </ScrollReveal>
+                  )
+                })()}
+
+                {/* ══════════════════════════════════════════════════
                     TOP SUMMARY ROW , Pass Probability · Hiring Decision · Risk Level
                 ══════════════════════════════════════════════════ */}
                 <ScrollReveal id="summary">
