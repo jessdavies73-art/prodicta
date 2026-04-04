@@ -2242,6 +2242,136 @@ export default function CandidateReportPage({ params }) {
                 )}
 
                 {/* ══════════════════════════════════════════════════
+                    WHAT THE ASSESSMENT REVEALED
+                ══════════════════════════════════════════════════ */}
+                {(() => {
+                  const cvItems = Array.isArray(results.cv_comparison) ? results.cv_comparison : []
+
+                  // Assemble PRODICTA findings from existing data
+                  const findings = []
+                  if (results.scores) {
+                    const entries = Object.entries(results.scores).sort((a, b) => b[1] - a[1])
+                    if (entries.length > 0) {
+                      const [topSkill, topScore] = entries[0]
+                      findings.push({ text: `${topSkill} scored ${topScore} (${slbl(topScore)})`, type: 'score', score: topScore })
+                    }
+                    if (entries.length > 1) {
+                      const [lowSkill, lowScore] = entries[entries.length - 1]
+                      findings.push({ text: `${lowSkill} scored ${lowScore} (${slbl(lowScore)})`, type: 'score', score: lowScore })
+                    }
+                  }
+                  const highWo = (results.watchouts || []).filter(w => typeof w === 'object' && w.severity === 'High').slice(0, 2)
+                  highWo.forEach(w => findings.push({ text: `High severity watch-out: ${w.text || w.title || ''}`, type: 'watchout_high' }))
+                  if (findings.length < 4) {
+                    const medWo = (results.watchouts || []).filter(w => typeof w === 'object' && w.severity === 'Medium').slice(0, 1)
+                    medWo.forEach(w => findings.push({ text: `Watch-out: ${w.text || w.title || ''}`, type: 'watchout_medium' }))
+                  }
+                  if (findings.length < 4 && results.strengths?.length > 0) {
+                    const s = results.strengths[0]
+                    const title = typeof s === 'object' ? (s.text || s.strength || s.title) : s
+                    findings.push({ text: `Strength: ${title}`, type: 'strength' })
+                  }
+                  const displayFindings = findings.slice(0, 4)
+
+                  if (cvItems.length === 0 && displayFindings.length === 0) return null
+                  return (
+                    <ScrollReveal id="cv-comparison" delay={60}>
+                    <div style={{
+                      background: '#f8fafc',
+                      border: `1.5px solid ${BD}`,
+                      borderRadius: 12,
+                      padding: '24px 28px',
+                      marginBottom: 20,
+                    }}>
+                      <h2 style={{
+                        fontFamily: F, fontSize: 15, fontWeight: 800, color: TX,
+                        margin: '0 0 6px', paddingBottom: 10,
+                        borderBottom: `2px solid ${TEAL}`,
+                        letterSpacing: '-0.2px',
+                      }}>
+                        What the assessment revealed
+                      </h2>
+                      <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 20px', lineHeight: 1.55 }}>
+                        A side-by-side view of typical CV claims versus what this candidate actually demonstrated.
+                      </p>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+                        {/* Left: CV column */}
+                        <div style={{
+                          background: CARD,
+                          border: '1.5px solid #e2e8f0',
+                          borderRadius: 10,
+                          padding: '18px 20px',
+                        }}>
+                          <div style={{
+                            fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TX3,
+                            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14,
+                            display: 'flex', alignItems: 'center', gap: 6,
+                          }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                            What a CV would tell you
+                          </div>
+                          {cvItems.length > 0 ? cvItems.map((item, i) => (
+                            <div key={i} style={{
+                              display: 'flex', alignItems: 'flex-start', gap: 9,
+                              paddingBottom: i < cvItems.length - 1 ? 11 : 0,
+                              marginBottom: i < cvItems.length - 1 ? 11 : 0,
+                              borderBottom: i < cvItems.length - 1 ? '1px solid #f1f5f9' : 'none',
+                            }}>
+                              <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#cbd5e1', marginTop: 7, flexShrink: 0 }} />
+                              <span style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>{item}</span>
+                            </div>
+                          )) : (
+                            <span style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic' }}>Not available for this assessment.</span>
+                          )}
+                        </div>
+
+                        {/* Right: PRODICTA findings */}
+                        <div style={{
+                          background: CARD,
+                          border: `1.5px solid ${TEAL}`,
+                          borderRadius: 10,
+                          padding: '18px 20px',
+                        }}>
+                          <div style={{
+                            fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEALD,
+                            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14,
+                            display: 'flex', alignItems: 'center', gap: 6,
+                          }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            What PRODICTA found
+                          </div>
+                          {displayFindings.map((item, i) => {
+                            const dotColor = item.type === 'watchout_high' ? RED
+                              : item.type === 'watchout_medium' ? AMB
+                              : item.type === 'strength' ? GRN
+                              : item.score != null ? sc(item.score)
+                              : TEAL
+                            return (
+                              <div key={i} style={{
+                                display: 'flex', alignItems: 'flex-start', gap: 9,
+                                paddingBottom: i < displayFindings.length - 1 ? 11 : 0,
+                                marginBottom: i < displayFindings.length - 1 ? 11 : 0,
+                                borderBottom: i < displayFindings.length - 1 ? `1px solid ${TEALLT}` : 'none',
+                              }}>
+                                <div style={{ width: 5, height: 5, borderRadius: '50%', background: dotColor, marginTop: 7, flexShrink: 0 }} />
+                                <span style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>{item.text}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+
+                      </div>
+                    </div>
+                    </ScrollReveal>
+                  )
+                })()}
+
+                {/* ══════════════════════════════════════════════════
                     STRENGTHS
                 ══════════════════════════════════════════════════ */}
                 {results.strengths?.length > 0 && (

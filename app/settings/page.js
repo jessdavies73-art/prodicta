@@ -162,6 +162,12 @@ export default function SettingsPage() {
   const [savingWeights, setSavingWeights] = useState(false)
   const [weightsToast, setWeightsToast] = useState(null)
 
+  // Alerts tab
+  const [alertThreshold, setAlertThreshold] = useState(50)
+  const [savingAlerts, setSavingAlerts] = useState(false)
+  const [alertsToast, setAlertsToast] = useState(null)
+  const [alertThresholdFocused, setAlertThresholdFocused] = useState(false)
+
   // Password state
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -188,6 +194,7 @@ export default function SettingsPage() {
         setIndustry(prof?.industry || '')
         setCompanySize(prof?.company_size || '')
         setWeights({ ...DEFAULT_WEIGHTS, ...(prof?.default_weightings || {}) })
+        setAlertThreshold(prof?.alert_threshold ?? 50)
 
         // Monthly assessment count for billing tab
         const now = new Date()
@@ -270,12 +277,29 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleSaveAlerts() {
+    setSavingAlerts(true)
+    setAlertsToast(null)
+    try {
+      const supabase = createClient()
+      const { error: e } = await supabase.from('users').update({ alert_threshold: alertThreshold }).eq('id', profile.id)
+      if (e) throw e
+      setAlertsToast({ type: 'success', message: 'Alert settings saved.' })
+      setTimeout(() => setAlertsToast(null), 3500)
+    } catch (err) {
+      setAlertsToast({ type: 'error', message: err.message })
+    } finally {
+      setSavingAlerts(false)
+    }
+  }
+
   if (loading) return <LoadingSpinner />
 
   const TABS = [
     { key: 'company',    label: 'Company' },
     { key: 'billing',    label: 'Billing' },
     { key: 'team',       label: 'Team' },
+    { key: 'alerts',     label: 'Alerts' },
     ...(profile?.account_type === 'employer' ? [{ key: 'weightings', label: 'Score Weightings' }] : []),
   ]
 
@@ -785,6 +809,98 @@ export default function SettingsPage() {
               </button>
               <p style={{ margin: '10px 0 0', fontSize: 12, color: TX3, fontFamily: F }}>
                 Team management coming soon
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Alerts tab */}
+        {activeTab === 'alerts' && (
+          <div style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ ...cs }}>
+              <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX }}>Red Flag Alerts</h2>
+              <p style={{ margin: '0 0 24px', fontSize: 13, color: TX2, lineHeight: 1.65 }}>
+                PRODICTA will automatically send you an email alert when a candidate is scored and meets any of the following criteria: their overall score falls below your threshold, they have a high severity watch-out, or their response integrity raises a concern.
+              </p>
+
+              <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '16px 18px', marginBottom: 24 }}>
+                <div style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Trigger conditions
+                </div>
+                {[
+                  `Overall score is below your threshold (currently ${alertThreshold})`,
+                  'Any high severity watch-out is identified',
+                  'Response integrity flags a concern (Possibly AI-Assisted or Suspicious)',
+                ].map((condition, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: i < 2 ? 10 : 0 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: RED, marginTop: 6, flexShrink: 0 }} />
+                    <span style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>{condition}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginBottom: 24 }}>
+                <FieldLabel>Alert threshold score (0-100)</FieldLabel>
+                <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 10px', lineHeight: 1.55 }}>
+                  You will receive an alert whenever a candidate scores below this number. Default is 50.
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={alertThreshold}
+                    onChange={e => setAlertThreshold(Math.max(0, Math.min(100, Number(e.target.value))))}
+                    onFocus={() => setAlertThresholdFocused(true)}
+                    onBlur={() => setAlertThresholdFocused(false)}
+                    style={{
+                      fontFamily: FM,
+                      fontSize: 15,
+                      width: 80,
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      border: `1.5px solid ${alertThresholdFocused ? TEAL : BD}`,
+                      background: CARD,
+                      color: TX,
+                      outline: 'none',
+                      transition: 'border-color 0.15s',
+                      boxSizing: 'border-box',
+                      textAlign: 'center',
+                    }}
+                  />
+                  <span style={{ fontFamily: F, fontSize: 13, color: TX3 }}>out of 100</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={alertThreshold}
+                  onChange={e => setAlertThreshold(Number(e.target.value))}
+                  style={{ width: '100%', accentColor: RED, cursor: 'pointer', marginTop: 12 }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                  <span style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>0 (alert on all)</span>
+                  <span style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>100 (alert on none)</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <button
+                  onClick={handleSaveAlerts}
+                  disabled={savingAlerts}
+                  style={{
+                    ...bs('primary', 'md'),
+                    opacity: savingAlerts ? 0.55 : 1,
+                    cursor: savingAlerts ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <Ic name="check" size={15} color={NAVY} />
+                  {savingAlerts ? 'Saving...' : 'Save alert settings'}
+                </button>
+                {alertsToast && <Toast message={alertsToast.message} type={alertsToast.type} />}
+              </div>
+              <p style={{ margin: '12px 0 0', fontSize: 12, color: TX3, fontFamily: F, lineHeight: 1.6 }}>
+                Alert emails are sent to your account email address immediately after scoring completes.
               </p>
             </div>
           </div>
