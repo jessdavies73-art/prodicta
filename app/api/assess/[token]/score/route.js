@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase-server'
 import { scoreCandidate } from '@/lib/score-candidate'
 
-export const maxDuration = 180
+export const maxDuration = 300
 
 export async function POST(request, { params }) {
+  const routeStart = Date.now()
+  console.log('[score] START token:', params.token)
   try {
     const adminClient = createServiceClient()
 
@@ -19,6 +21,7 @@ export async function POST(request, { params }) {
     }
 
     const result = await scoreCandidate(candidate.id)
+    console.log('[score] scoreCandidate returned in', Date.now() - routeStart, 'ms')
     return NextResponse.json(result)
   } catch (err) {
     console.error('Score route error:', err)
