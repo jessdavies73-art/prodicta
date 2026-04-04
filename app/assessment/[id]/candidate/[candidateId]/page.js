@@ -1553,11 +1553,51 @@ export default function CandidateReportPage({ params }) {
                 {results.predictions && (() => {
                   const p = results.predictions
                   const panels = [
-                    { label: 'Pass probation',        key: 'pass_probation',        color: '#00BFA5', bg: 'rgba(0,191,165,0.07)', bd: 'rgba(0,191,165,0.22)' },
-                    { label: 'Become top performer',  key: 'top_performer',          color: '#00BFA5', bg: 'rgba(0,191,165,0.07)', bd: 'rgba(0,191,165,0.22)' },
-                    { label: 'Churn within 6 months', key: 'churn_risk',             color: AMB,       bg: AMBBG,                  bd: AMBBD                  },
-                    { label: 'Underperformance risk', key: 'underperformance_risk',  color: '#EF4444', bg: '#fef2f2',              bd: '#fecaca'               },
+                    { label: 'Pass probation',        key: 'pass_probation',       type: 'positive' },
+                    { label: 'Become top performer',  key: 'top_performer',         type: 'positive' },
+                    { label: 'Leave within 6 months', key: 'churn_risk',            type: 'risk'     },
+                    { label: 'Underperformance risk', key: 'underperformance_risk', type: 'risk'     },
                   ]
+                  function panelColor(type, val) {
+                    if (type === 'positive') return val >= 70 ? '#00BFA5' : val >= 50 ? '#F59E0B' : '#EF4444'
+                    return val <= 25 ? '#00BFA5' : val <= 50 ? '#F59E0B' : '#EF4444'
+                  }
+                  function panelBg(type, val) {
+                    const c = panelColor(type, val)
+                    if (c === '#00BFA5') return 'rgba(0,191,165,0.07)'
+                    if (c === '#F59E0B') return 'rgba(245,158,11,0.07)'
+                    return 'rgba(239,68,68,0.07)'
+                  }
+                  function panelBd(type, val) {
+                    const c = panelColor(type, val)
+                    if (c === '#00BFA5') return 'rgba(0,191,165,0.22)'
+                    if (c === '#F59E0B') return 'rgba(245,158,11,0.22)'
+                    return 'rgba(239,68,68,0.22)'
+                  }
+                  function panelContext(key, val) {
+                    if (key === 'pass_probation') {
+                      if (val >= 80) return 'Strong likelihood of success'
+                      if (val >= 65) return 'Likely to pass with structured onboarding'
+                      if (val >= 50) return 'Could go either way - monitor closely'
+                      return 'Significant risk of probation failure'
+                    }
+                    if (key === 'top_performer') {
+                      if (val >= 50) return 'Shows signs of exceeding expectations'
+                      if (val >= 25) return 'Likely to meet but not exceed expectations'
+                      return 'Expected to perform at baseline level'
+                    }
+                    if (key === 'churn_risk') {
+                      if (val <= 20) return 'Low flight risk - likely to stay'
+                      if (val <= 40) return 'Some flight risk - address in onboarding'
+                      return 'High flight risk - investigate motivations'
+                    }
+                    if (key === 'underperformance_risk') {
+                      if (val <= 20) return 'Low risk - expected to deliver'
+                      if (val <= 40) return 'Some areas may need support'
+                      return 'Significant gaps likely to surface'
+                    }
+                    return ''
+                  }
                   return (
                     <ScrollReveal delay={60}>
                     <Card style={{ marginBottom: 20 }}>
@@ -1565,8 +1605,12 @@ export default function CandidateReportPage({ params }) {
                         Predicted Outcome Panel
                       </SectionHeading>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-                        {panels.map(({ label, key, color, bg, bd }) => {
+                        {panels.map(({ label, key, type }) => {
                           const val = p[key] ?? 0
+                          const color = panelColor(type, val)
+                          const bg = panelBg(type, val)
+                          const bd = panelBd(type, val)
+                          const context = panelContext(key, val)
                           const r = 22
                           const circ = 2 * Math.PI * r
                           const dash = (val / 100) * circ
@@ -1584,6 +1628,7 @@ export default function CandidateReportPage({ params }) {
                                 </div>
                               </div>
                               <div style={{ fontFamily: F, fontSize: 11.5, color: TX2, lineHeight: 1.4 }}>{label}</div>
+                              <div style={{ fontFamily: F, fontSize: 10, color: TX3, lineHeight: 1.4, marginTop: 4 }}>{context}</div>
                             </div>
                           )
                         })}
