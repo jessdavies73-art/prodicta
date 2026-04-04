@@ -89,8 +89,7 @@ export function DemoSidebar({ active }) {
               >
                 <Ic name={icon} size={17} color="rgba(255,255,255,0.18)" />
                 {label}
-                <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>sign up</span>
-              </button>
+                      </button>
             )
           }
           return (
@@ -130,7 +129,6 @@ export function DemoSidebar({ active }) {
         >
           <Ic name="bell" size={16} color="rgba(255,255,255,0.2)" />
           Notifications
-          <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>sign up</span>
         </button>
 
         <div style={{ padding: '8px 12px', borderRadius: 8, background: `${TEAL}18`, border: `1px solid ${TEAL}30`, display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -170,7 +168,7 @@ export function SignUpModal({ onClose }) {
           This feature is available when you sign up
         </h3>
         <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: '0 0 26px', lineHeight: 1.65 }}>
-          Create your free account to start assessing your own candidates, create assessments, and access all features.
+          Create your account to start assessing your own candidates, create assessments, and access all features.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <button

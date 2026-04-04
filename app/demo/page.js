@@ -43,7 +43,8 @@ function StatCard({ icon, label, value, sub, accent = TEAL }) {
         flex: 1,
         minWidth: 0,
         background: '#fff',
-        border: `1px solid ${BD}`,
+        border: `1.5px solid ${BD}`,
+        borderStyle: 'solid',
         borderTop: `3px solid ${accent}`,
         borderRadius: 12,
         padding: '20px 24px',
@@ -249,7 +250,7 @@ export default function DemoDashboard() {
               <p style={{ margin: 0, fontSize: 12.5, color: TX3 }}>Quality snapshot across all active assessments.</p>
             </div>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, background: TEALLT, border: `1px solid ${TEAL}55`, fontSize: 12, fontWeight: 700, color: TEALD }}>
-              <Ic name="calendar" size={12} color={TEALD} />March 2024
+              <Ic name="calendar" size={12} color={TEALD} />April 2026
             </span>
           </div>
           <div style={{ padding: '20px 24px', display: 'flex', gap: 14, flexWrap: 'wrap' }}>

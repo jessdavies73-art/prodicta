@@ -286,9 +286,9 @@ function StickyNav({ active }) {
 }
 
 function sevStyle(severity) {
-  if (severity === 'High')   return { bg: REDBG,  color: RED,   border: REDBD,  tint: `${RED}08` }
-  if (severity === 'Medium') return { bg: AMBBG,  color: AMB,   border: AMBBD,  tint: `${AMB}08` }
-  return                            { bg: '#f1f5f9', color: TX3, border: BD,     tint: '#f8fafc' }
+  if (severity === 'High')   return { bg: REDBG,      color: '#EF4444', border: REDBD,   tint: `#EF444408` }
+  if (severity === 'Medium') return { bg: AMBBG,      color: '#F59E0B', border: AMBBD,   tint: `#F59E0B08` }
+  return                            { bg: '#f1f5f9',  color: '#9CA3AF', border: '#e5e7eb', tint: '#f8fafc' }
 }
 
 function ConfidenceBadge({ level }) {
@@ -565,6 +565,37 @@ export default function DemoCandidatePage({ params }) {
                 </Card>
               </div>
             </ScrollReveal>
+
+            {/* ── CANDIDATE TYPE SNAPSHOT ── */}
+            {results.candidate_type && (() => {
+              const withIdx = results.candidate_type.indexOf(' with ')
+              const primary  = withIdx > -1 ? results.candidate_type.slice(0, withIdx) : results.candidate_type
+              const modifier = withIdx > -1 ? results.candidate_type.slice(withIdx + 6) : null
+              return (
+                <ScrollReveal delay={60}>
+                <div style={{
+                  marginBottom: 20,
+                  background: 'linear-gradient(135deg, #0a1929 0%, #0f2137 100%)',
+                  border: '1px solid rgba(0,191,165,0.22)',
+                  borderRadius: 12, padding: '22px 28px', boxShadow: SHADOW_LG,
+                }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+                    Candidate Type Snapshot
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: '#00BFA5', lineHeight: 1.2 }}>{primary}</span>
+                    {modifier && <>
+                      <span style={{ fontFamily: F, fontSize: 15, fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>with</span>
+                      <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.85)', lineHeight: 1.2 }}>{modifier}</span>
+                    </>}
+                  </div>
+                  <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: '10px 0 0', lineHeight: 1.5 }}>
+                    AI-generated profile label based on observed response patterns across all scenarios.
+                  </p>
+                </div>
+                </ScrollReveal>
+              )
+            })()}
 
             {/* ── INTEGRITY ── */}
             <ScrollReveal id="integrity" delay={60}>
@@ -944,7 +975,7 @@ export default function DemoCandidatePage({ params }) {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 {/* CV — shown as pre-uploaded to demo the filled state */}
-                <div style={{ border: `2px dashed ${TEAL}`, borderRadius: 12, padding: '20px 20px', textAlign: 'center', background: TEALLT }}>
+                <div style={{ border: `2px solid ${TEAL}`, borderRadius: 12, padding: '20px 20px', textAlign: 'center', background: TEALLT }}>
                   <Ic name="file" size={28} color={TEAL} />
                   <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '10px 0 4px' }}>CV / Résumé</div>
                   <div style={{ fontFamily: F, fontSize: 12, color: TX2, marginBottom: 14 }}>
@@ -961,13 +992,13 @@ export default function DemoCandidatePage({ params }) {
                   </div>
                 </div>
                 {/* Cover Letter — shown as empty to demo the upload state */}
-                <div style={{ border: `2px dashed ${BD}`, borderRadius: 12, padding: '20px 20px', textAlign: 'center', background: BG }}>
+                <div style={{ border: `2px solid ${BD}`, borderRadius: 12, padding: '20px 20px', textAlign: 'center', background: BG }}>
                   <Ic name="file" size={28} color={TX3} />
                   <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '10px 0 4px' }}>Cover Letter</div>
-                  <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 14 }}>PDF only, max 10MB</div>
+                  <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 14 }}>PDF, DOC or DOCX, max 5MB</div>
                   <button onClick={() => router.push('/login')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 7, background: NAVY, color: '#fff', fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none' }}>
                     <Ic name="upload" size={13} color={TEAL} />
-                    Upload PDF
+                    Upload document
                   </button>
                 </div>
               </div>
