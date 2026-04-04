@@ -1569,8 +1569,8 @@ export default function CandidateReportPage({ params }) {
                 {/* ══════════════════════════════════════════════════
                     PREDICTED OUTCOME PANEL
                 ══════════════════════════════════════════════════ */}
-                {results.predictions && (() => {
-                  const p = results.predictions
+                {(() => {
+                  const p = results.predictions || {}
                   const panels = [
                     { label: 'Pass probation',        key: 'pass_probation',       type: 'positive' },
                     { label: 'Become top performer',  key: 'top_performer',         type: 'positive' },
