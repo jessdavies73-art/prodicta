@@ -748,12 +748,22 @@ function ProbationTimeline({ outcome }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Role colour helpers
+───────────────────────────────────────────────────────────── */
+const ROLE_PALETTE = ['#00BFA5', '#0f2137', '#E8B84B', '#E87461', '#7C5CFC', '#4FC3F7']
+function roleColor(id = '') {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return ROLE_PALETTE[h % ROLE_PALETTE.length]
+}
+
+/* ─────────────────────────────────────────────────────────────
    Severity helpers
 ───────────────────────────────────────────────────────────── */
 function sevStyle(severity) {
   if (severity === 'High')   return { bg: REDBG,  color: RED,   border: REDBD,  tint: `${RED}08` }
   if (severity === 'Medium') return { bg: AMBBG,  color: AMB,   border: AMBBD,  tint: `${AMB}08` }
-  return                            { bg: '#f1f5f9', color: TX3, border: BD,     tint: '#f8fafc'   }
+  return                            { bg: '#f1f5f9', color: '#9CA3AF', border: '#e5e7eb', tint: '#f8fafc' }
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1217,7 +1227,20 @@ export default function CandidateReportPage({ params }) {
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       {candidate.assessments?.role_title && (
-                        <Badge label={candidate.assessments.role_title} bg={TEALLT} color={TEALD} border={`${TEAL}55`} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                          <div style={{
+                            width: 24, height: 24, borderRadius: 6,
+                            background: roleColor(candidate.assessments?.id || ''),
+                            flexShrink: 0,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                            </svg>
+                          </div>
+                          <span style={{ fontSize: 12.5, fontWeight: 600, color: TX2, fontFamily: F }}>{candidate.assessments.role_title}</span>
+                        </div>
                       )}
                       {completedDate && (
                         <span style={{ fontSize: 12, color: TX3, fontFamily: F }}>Completed {completedDate}</span>

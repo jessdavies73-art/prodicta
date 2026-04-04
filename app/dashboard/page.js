@@ -859,13 +859,28 @@ export default function DashboardPage() {
 
                             {/* Role */}
                             <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
-                              <span style={{
-                                fontSize: 12, color: TX2, fontWeight: 500,
-                                overflow: 'hidden', textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap', display: 'block',
-                              }}>
-                                {c.assessments?.role_title || '-'}
-                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+                                {c.assessments?.id && (
+                                  <div style={{
+                                    width: 22, height: 22, borderRadius: 5,
+                                    background: roleColor(c.assessments.id),
+                                    flexShrink: 0,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  }}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                                      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                                    </svg>
+                                  </div>
+                                )}
+                                <span style={{
+                                  fontSize: 12, color: TX2, fontWeight: 500,
+                                  overflow: 'hidden', textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}>
+                                  {c.assessments?.role_title || '-'}
+                                </span>
+                              </div>
                             </td>
 
                             {/* Status */}
