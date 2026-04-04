@@ -487,11 +487,18 @@ function StickyNav({ active }) {
   )
 }
 
+/* Generate a default sliding-scale rebate schedule for N weeks */
+function defaultRebateSchedule(weeks) {
+  return Array.from({ length: weeks }, (_, i) =>
+    i === weeks - 1 ? 0 : Math.round(100 - (i / Math.max(1, weeks - 1)) * 100)
+  )
+}
+
 /* ─────────────────────────────────────────────────────────────
    Rebate Period Timeline (agency)
 ───────────────────────────────────────────────────────────── */
 function RebateTimeline({ outcome, candidateName }) {
-  const { placement_date, rebate_weeks } = outcome || {}
+  const { placement_date, rebate_weeks, rebate_schedule } = outcome || {}
   if (!placement_date || !rebate_weeks) return null
 
   const start      = new Date(placement_date)
@@ -502,10 +509,14 @@ function RebateTimeline({ outcome, candidateName }) {
   const ended      = elapsed >= totalDays
   const fmtDate    = d => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 
+  const schedule   = (rebate_schedule && rebate_schedule.length === rebate_weeks)
+    ? rebate_schedule
+    : defaultRebateSchedule(rebate_weeks)
+
   const milestones = Array.from({ length: rebate_weeks }, (_, i) => {
     const w        = i + 1
     const isLast   = w === rebate_weeks
-    const pct      = isLast ? 0 : Math.round(100 - (i / Math.max(1, rebate_weeks - 1)) * 100)
+    const pct      = schedule[i] ?? 0
     const dayOff   = w * 7
     const passed   = elapsed >= dayOff
     const date     = fmtDate(new Date(start.getTime() + dayOff * 86400000))
@@ -771,6 +782,7 @@ export default function CandidateReportPage({ params }) {
   const [outcomeClientName, setOutcomeClientName] = useState('')
   const [placementDate, setPlacementDate] = useState('')
   const [rebateWeeks, setRebateWeeks] = useState(6)
+  const [rebateSchedule, setRebateSchedule] = useState(() => defaultRebateSchedule(6))
   const [useCustomRebate, setUseCustomRebate] = useState(false)
   const [customRebateInput, setCustomRebateInput] = useState('')
   const [probationMonths, setProbationMonths] = useState(6)
@@ -846,7 +858,12 @@ export default function CandidateReportPage({ params }) {
           setOutcomeNoteText(outcome.notes || '')
           setOutcomeClientName(outcome.client_name || '')
           setPlacementDate(outcome.placement_date || '')
-          if (outcome.rebate_weeks) setRebateWeeks(outcome.rebate_weeks)
+          if (outcome.rebate_weeks) {
+            setRebateWeeks(outcome.rebate_weeks)
+            setRebateSchedule(outcome.rebate_schedule?.length === outcome.rebate_weeks
+              ? outcome.rebate_schedule
+              : defaultRebateSchedule(outcome.rebate_weeks))
+          }
           if (outcome.probation_months) setProbationMonths(outcome.probation_months)
         }
         setAccountRecord(acRec || null)
@@ -1000,6 +1017,9 @@ export default function CandidateReportPage({ params }) {
       placement_date: placementDate || null,
       rebate_weeks: profile?.account_type === 'agency' && placementDate
         ? (useCustomRebate ? (parseInt(customRebateInput) || null) : rebateWeeks)
+        : null,
+      rebate_schedule: profile?.account_type === 'agency' && placementDate && rebateSchedule.length > 0
+        ? rebateSchedule
         : null,
       probation_months: profile?.account_type === 'employer' && placementDate ? probationMonths : null,
     }
@@ -2720,7 +2740,7 @@ export default function CandidateReportPage({ params }) {
         >
           <div onClick={e => e.stopPropagation()} style={{
             background: CARD, borderRadius: 16, padding: '28px 32px',
-            maxWidth: 460, width: '100%', boxShadow: '0 16px 48px rgba(15,33,55,0.22)',
+            maxWidth: 520, width: '100%', boxShadow: '0 16px 48px rgba(15,33,55,0.22)',
           }}>
             <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 6px' }}>
               Log Hire Outcome
@@ -2784,7 +2804,7 @@ export default function CandidateReportPage({ params }) {
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: useCustomRebate ? 8 : 0 }}>
                   {[4, 6, 8].map(w => (
                     <button key={w} type="button"
-                      onClick={() => { setRebateWeeks(w); setUseCustomRebate(false) }}
+                      onClick={() => { setRebateWeeks(w); setUseCustomRebate(false); setRebateSchedule(defaultRebateSchedule(w)) }}
                       style={{
                         padding: '7px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 600,
                         border: `1.5px solid ${!useCustomRebate && rebateWeeks === w ? TEAL : BD}`,
@@ -2811,7 +2831,11 @@ export default function CandidateReportPage({ params }) {
                   <input
                     type="number" min="1" max="52"
                     value={customRebateInput}
-                    onChange={e => setCustomRebateInput(e.target.value)}
+                    onChange={e => {
+                      setCustomRebateInput(e.target.value)
+                      const n = parseInt(e.target.value)
+                      if (n > 0 && n <= 52) setRebateSchedule(defaultRebateSchedule(n))
+                    }}
                     placeholder="Enter weeks (e.g. 10)"
                     style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
                     onFocus={e => e.target.style.borderColor = TEAL}
@@ -2819,6 +2843,35 @@ export default function CandidateReportPage({ params }) {
                   />
                 )}
               </div>
+
+              {/* Rebate schedule table */}
+              {rebateSchedule.length > 0 && (
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 8 }}>
+                    Rebate % per week
+                    <span style={{ fontWeight: 400, marginLeft: 6, color: TX3 }}>Edit to match your contract</span>
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                    {rebateSchedule.map((pct, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, background: BG, border: `1px solid ${BD}`, borderRadius: 7, padding: '6px 10px' }}>
+                        <span style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX3, minWidth: 46 }}>Week {i + 1}</span>
+                        <input
+                          type="number" min="0" max="100"
+                          value={pct}
+                          onChange={e => {
+                            const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0))
+                            setRebateSchedule(prev => { const next = [...prev]; next[i] = val; return next })
+                          }}
+                          style={{ width: '100%', padding: '4px 6px', borderRadius: 5, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, textAlign: 'right' }}
+                          onFocus={e => e.target.style.borderColor = TEAL}
+                          onBlur={e => e.target.style.borderColor = BD}
+                        />
+                        <span style={{ fontFamily: F, fontSize: 12, color: TX3 }}>%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>)}
 
             {/* Employer fields */}

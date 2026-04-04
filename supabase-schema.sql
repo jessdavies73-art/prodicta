@@ -154,6 +154,7 @@ create table if not exists public.candidate_outcomes (
   client_name text,
   placement_date date,
   rebate_weeks integer,
+  rebate_schedule jsonb,
   probation_months integer,
   rebate_reminder_sent jsonb default '{}'::jsonb,
   probation_reminder_sent jsonb default '{}'::jsonb,
