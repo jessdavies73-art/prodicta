@@ -1170,18 +1170,15 @@ export default function CandidateReportPage({ params }) {
 
   function calcPlacementRisk(res, roleTitle) {
     if (!res) return null
-    const assessmentScore = res.overall_score ?? 0
-    const pressureFit = res.pressure_fit_score ?? 50
-    const seniorityFit = res.seniority_fit_score ?? 50
-    const integrityMap = { 'Genuine': 95, 'Likely Genuine': 80, 'Adequate': 65, 'Possibly AI-Assisted': 40, 'Suspect': 20 }
-    const integrityScore = integrityMap[res.integrity?.response_quality] ?? 65
+    const hcScore = res.hiring_confidence?.score ?? null
+    if (hcScore === null) return null
+    // Derive directly from Hiring Confidence so the two scores never contradict.
+    // A small industry adjustment reflects sector-specific churn norms for agencies.
     const rt = (roleTitle || '').toLowerCase()
-    let industrySafety = 65
-    if (/finance|legal|engineer|software|tech|consult|analy|account/.test(rt)) industrySafety = 80
-    if (/sales|retail|hospitality|customer|support|call centre/.test(rt)) industrySafety = 45
-    return Math.min(100, Math.max(0, Math.round(
-      assessmentScore * 0.40 + pressureFit * 0.25 + seniorityFit * 0.15 + industrySafety * 0.10 + integrityScore * 0.10
-    )))
+    let industryAdj = 0
+    if (/finance|legal|engineer|software|tech|consult|analy|account/.test(rt)) industryAdj = 5
+    if (/sales|retail|hospitality|customer|support|call centre/.test(rt)) industryAdj = -8
+    return Math.min(100, Math.max(0, Math.round(hcScore + industryAdj)))
   }
 
   function formatNoteDate(str) {
@@ -1393,7 +1390,8 @@ export default function CandidateReportPage({ params }) {
                   const hcColor = hcScore >= 70 ? TEAL : hcScore >= 55 ? AMB : RED
                   const hcBg    = hcScore >= 70 ? TEALLT : hcScore >= 55 ? AMBBG : REDBG
                   const hcBd    = hcScore >= 70 ? `${TEAL}55` : hcScore >= 55 ? AMBBD : REDBD
-                  const hcLabel = hcScore >= 85 ? 'Strong confidence' : hcScore >= 70 ? 'Good confidence' : hcScore >= 55 ? 'Moderate confidence' : hcScore >= 40 ? 'Low confidence' : 'Very low confidence'
+                  const hcLabel = hcScore >= 80 ? 'High confidence' : hcScore >= 65 ? 'Good confidence' : hcScore >= 50 ? 'Mixed signals' : 'Low confidence'
+                  const hcContext = hcScore >= 80 ? 'High confidence - proceed with offer' : hcScore >= 65 ? 'Good confidence - proceed with targeted onboarding' : hcScore >= 50 ? 'Mixed signals - re-interview or consider alternatives' : 'Low confidence - do not proceed without further evidence'
                   return (
                     <ScrollReveal delay={0}>
                     <div style={{
@@ -1426,16 +1424,16 @@ export default function CandidateReportPage({ params }) {
                           </div>
                         </div>
                       </div>
-                      {hcExplanation && (
-                        <div style={{ flex: 1, minWidth: 200, borderLeft: `1px solid ${BD}`, paddingLeft: 24 }}>
-                          <p style={{ fontFamily: F, fontSize: 14.5, fontWeight: 600, color: TX, margin: 0, lineHeight: 1.5 }}>
+                      <div style={{ flex: 1, minWidth: 200, borderLeft: `1px solid ${BD}`, paddingLeft: 24 }}>
+                        {hcExplanation && (
+                          <p style={{ fontFamily: F, fontSize: 14.5, fontWeight: 600, color: TX, margin: '0 0 6px', lineHeight: 1.5 }}>
                             {hcExplanation}
                           </p>
-                          <p style={{ fontFamily: F, fontSize: 11.5, color: TX3, margin: '4px 0 0', lineHeight: 1.4 }}>
-                            Composite of assessment score, pressure-fit, integrity, seniority, and watch-out severity.
-                          </p>
-                        </div>
-                      )}
+                        )}
+                        <p style={{ fontFamily: F, fontSize: 11.5, color: TX3, margin: 0, lineHeight: 1.4 }}>
+                          {hcContext}
+                        </p>
+                      </div>
                     </div>
                     </ScrollReveal>
                   )
@@ -1664,20 +1662,9 @@ export default function CandidateReportPage({ params }) {
                             </span>
                             <InfoTooltip text="Combines assessment score (40%), pressure-fit (25%), seniority fit (15%), industry turnover risk (10%), and response integrity (10%) to estimate placement success likelihood." />
                           </div>
-                          <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 14px', lineHeight: 1.65 }}>
+                          <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.65 }}>
                             {prsDesc}
                           </p>
-                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 11.5, fontWeight: 600, color: TX3, fontFamily: F }}>
-                            <span>Assessment score ×0.40</span>
-                            <span>·</span>
-                            <span>Pressure-fit ×0.25</span>
-                            <span>·</span>
-                            <span>Seniority fit ×0.15</span>
-                            <span>·</span>
-                            <span>Industry risk ×0.10</span>
-                            <span>·</span>
-                            <span>Integrity ×0.10</span>
-                          </div>
                         </div>
                         <div style={{ textAlign: 'center', flexShrink: 0 }}>
                           <SmallRing score={prs} size={80} strokeWidth={7} />
