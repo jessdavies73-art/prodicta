@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
+import InfoTooltip from '@/components/InfoTooltip'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -328,6 +329,10 @@ export default function OutcomesPage() {
                       const monthsIn = Math.floor(elapsed / 30.44)
                       return (
                         <div style={{ marginTop: 6 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                            <span style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Probation Timeline</span>
+                            <InfoTooltip text="Visual tracker from hire date to the 6-month ERA 2025 unfair dismissal threshold. Colour-coded milestones with automated review reminders." />
+                          </div>
                           <div style={{ fontFamily: F, fontSize: 10.5, color: danger && !done ? RED : TX3, fontWeight: danger ? 700 : 400, marginBottom: 3 }}>
                             {done ? 'Probation complete' : `Month ${monthsIn} of ${o.probation_months}${danger ? ' · ERA zone' : ''}`}
                           </div>
@@ -346,6 +351,10 @@ export default function OutcomesPage() {
                       const rebatePct = done ? 0 : Math.max(0, Math.round(100 - (elapsed / total) * 100))
                       return (
                         <div style={{ marginTop: 6 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                            <span style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Rebate Period Tracker</span>
+                            <InfoTooltip text="Tracks each placement through your rebate window with automated check-in reminders. Dots change colour as each milestone passes." />
+                          </div>
                           <div style={{ fontFamily: F, fontSize: 10.5, color: TX3, marginBottom: 3 }}>
                             {done ? 'Fee secured' : `${rebatePct}% rebate · ${Math.max(0, o.rebate_weeks - Math.ceil(elapsed / 7))}w left`}
                           </div>

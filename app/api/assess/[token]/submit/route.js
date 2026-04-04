@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase-server'
 import { scoreCandidate } from '@/lib/score-candidate'
 
-export const maxDuration = 180
+export const maxDuration = 300
 
 export async function POST(request, { params }) {
   try {

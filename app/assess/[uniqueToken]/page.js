@@ -29,9 +29,13 @@ function wordCount(text) {
 }
 
 const TYPE_COLOURS = {
+  'Core Task':          { bg: '#eff6ff', tx: '#2563eb' },
+  'Pressure Test':      { bg: '#fff7ed', tx: '#9a3412' },
+  'Judgment Call':      { bg: '#fdf4ff', tx: '#7e22ce' },
+  'Staying Power':      { bg: '#f0fdf4', tx: '#166534' },
+  // Legacy types for existing assessments
   'Email Response':     { bg: '#eff6ff', tx: '#2563eb' },
   'Prioritisation':     { bg: '#fef9c3', tx: '#854d0e' },
-  'Judgment Call':      { bg: '#fdf4ff', tx: '#7e22ce' },
   'Strategic Thinking': { bg: '#f0fdf4', tx: '#166534' },
 }
 function typeBadgeStyle(type) {

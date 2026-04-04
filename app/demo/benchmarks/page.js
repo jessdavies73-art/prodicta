@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
 import { Ic } from '@/components/Icons'
+import InfoTooltip from '@/components/InfoTooltip'
 import { DEMO_BENCHMARK_SKILLS, getDemoBenchmarkData } from '@/lib/demo-data'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, F, FM } from '@/lib/constants'
 
@@ -103,7 +104,7 @@ export default function DemoBenchmarksPage() {
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h1 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: '0 0 4px', letterSpacing: '-0.3px' }}>Skill Benchmarks</h1>
+              <h1 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: '0 0 4px', letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: 8 }}>Skill Benchmarks <InfoTooltip text="Set minimum score thresholds per skill. Candidates scoring below are flagged in their report." /></h1>
               <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: 0 }}>Set minimum thresholds per skill and see which candidates qualify</p>
             </div>
             <button

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
+import InfoTooltip from '@/components/InfoTooltip'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, RED, REDBG, REDBD,
@@ -818,7 +819,7 @@ export default function SettingsPage() {
         {activeTab === 'alerts' && (
           <div style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div style={{ ...cs }}>
-              <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX }}>Red Flag Alerts</h2>
+              <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX, display: 'flex', alignItems: 'center', gap: 8 }}>Red Flag Alerts <InfoTooltip text="Configure the score threshold that triggers automatic email alerts when candidates are flagged." /></h2>
               <p style={{ margin: '0 0 24px', fontSize: 13, color: TX2, lineHeight: 1.65 }}>
                 PRODICTA will automatically send you an email alert when a candidate is scored and meets any of the following criteria: their overall score falls below your threshold, they have a high severity watch-out, or their response integrity raises a concern.
               </p>

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
 import { Ic } from '@/components/Icons'
+import InfoTooltip from '@/components/InfoTooltip'
 import Avatar from '@/components/Avatar'
 import { DEMO_ASSESSMENTS, DEMO_CANDIDATES, getDemoCandidatesFull } from '@/lib/demo-data'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, F, FM, riskBg, riskCol, riskBd } from '@/lib/constants'
@@ -190,7 +191,7 @@ export default function DemoComparePage() {
           {/* Page header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h1 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: '0 0 4px', letterSpacing: '-0.3px' }}>Compare Candidates</h1>
+              <h1 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: '0 0 4px', letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: 8 }}>Compare Candidates <InfoTooltip text="Side-by-side comparison of up to 3 candidates across all metrics." /></h1>
               <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: 0 }}>Select up to 3 completed candidates to compare side by side</p>
             </div>
             <button

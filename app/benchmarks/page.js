@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
+import InfoTooltip from '@/components/InfoTooltip'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -450,8 +451,8 @@ export default function BenchmarksPage() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 10, flexWrap: 'wrap' }}>
           <div>
-            <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px' }}>
-              Benchmarks
+            <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              Benchmarks <InfoTooltip text="Set minimum score thresholds per skill. Candidates scoring below are flagged in their report." />
             </h1>
             <p style={{ margin: 0, fontSize: 14, color: TX2, lineHeight: 1.6, maxWidth: 580 }}>
               Set minimum score thresholds per skill. Any candidate scoring below a threshold will be flagged with a red warning in their results report.

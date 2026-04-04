@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
+import InfoTooltip from '@/components/InfoTooltip'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -620,8 +621,8 @@ function ComparePageInner() {
 
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px' }}>
-            Compare Candidates
+          <h1 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            Compare Candidates <InfoTooltip text="Side-by-side comparison of up to 3 candidates across all metrics." />
           </h1>
           <p style={{ margin: 0, fontSize: 14, color: TX2 }}>
             Select up to 3 completed candidates to compare side by side.

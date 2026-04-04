@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
+import InfoTooltip from '@/components/InfoTooltip'
 import { useToast } from '@/components/ToastProvider'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
@@ -1217,8 +1218,8 @@ function HiringRiskOverview({ completed }) {
         flexWrap: 'wrap',
       }}>
         <div>
-          <h2 style={{ margin: '0 0 2px', fontSize: 15.5, fontWeight: 700, color: TX }}>
-            Hiring Pipeline Health
+          <h2 style={{ margin: '0 0 2px', fontSize: 15.5, fontWeight: 700, color: TX, display: 'flex', alignItems: 'center', gap: 6 }}>
+            Hiring Pipeline Health <InfoTooltip text="Monthly snapshot of assessment quality across all your active roles." />
           </h2>
           <p style={{ margin: 0, fontSize: 12.5, color: TX3, fontFamily: F }}>
             Quality snapshot across all active assessments, useful for employers and recruitment agencies alike.
@@ -1637,8 +1638,8 @@ function RiskCalculator({ profile, completed = [] }) {
               RISK CALCULATOR
             </div>
           </div>
-          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>
-            What does a bad hire actually cost you?
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            What does a bad hire actually cost you? <InfoTooltip text="Estimate the financial cost of a failed hire based on salary, recruitment fees, and ERA 2025 tribunal risk." light />
           </h2>
         </div>
         <Ic name="shield" size={28} color={`${TEAL}88`} />
