@@ -470,7 +470,7 @@ export default function DemoCandidatePage({ params }) {
             {results && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 28, flexShrink: 0, flexWrap: 'wrap' }}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>Overall Score</div>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>Overall Score <InfoTooltip text="Comprehensive performance score across all 4 scenarios. 50 is average, 75+ is strong. Calibrated to role seniority." /></div>
                   <ScoreRing score={score} size={130} strokeWidth={9} />
                   <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: sc(score), marginTop: 8 }}>{slbl(score)}</div>
                   {results.percentile && (
@@ -526,7 +526,7 @@ export default function DemoCandidatePage({ params }) {
             <ScrollReveal id="summary">
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
                 <Card topColor={sc(passProbability ?? score)} style={{ textAlign: 'center', padding: '24px 20px', background: `linear-gradient(180deg, ${sbg(passProbability ?? score)} 0%, #fff 60%)` }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14 }}>Pass Probability</div>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>Pass Probability <InfoTooltip text="The likelihood this candidate will successfully complete probation, based on scores, pressure-fit, and response quality." /></div>
                   <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 12px' }}>
                     <SmallRing score={passProbability ?? score} size={80} strokeWidth={7} />
                   </div>
@@ -579,8 +579,8 @@ export default function DemoCandidatePage({ params }) {
                   border: '1px solid rgba(0,191,165,0.22)',
                   borderRadius: 12, padding: '22px 28px', boxShadow: SHADOW_LG,
                 }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-                    Candidate Type Snapshot
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    Candidate Type Snapshot <InfoTooltip text="A memorable label capturing this candidate's working style, based on their response patterns across all scenarios." light />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
                     <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: '#00BFA5', lineHeight: 1.2 }}>{primary}</span>
@@ -589,9 +589,6 @@ export default function DemoCandidatePage({ params }) {
                       <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.85)', lineHeight: 1.2 }}>{modifier}</span>
                     </>}
                   </div>
-                  <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: '10px 0 0', lineHeight: 1.5 }}>
-                    AI-generated profile label based on observed response patterns across all scenarios.
-                  </p>
                 </div>
                 </ScrollReveal>
               )
@@ -607,7 +604,7 @@ export default function DemoCandidatePage({ params }) {
                         <Ic name="eye" size={14} color={TEAL} />
                       </div>
                       <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: '#fff', margin: 0 }}>Response Integrity</h2>
-                      <InfoTooltip text="Analysis of response timing, authenticity, and consistency across scenarios" light />
+                      <InfoTooltip text="AI analysis of response authenticity, timing patterns, and consistency across scenarios." light />
                     </div>
                     <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.45)', margin: 0, paddingLeft: 36 }}>AI analysis of authenticity, timing, and engagement signals.</p>
                   </div>
@@ -679,7 +676,7 @@ export default function DemoCandidatePage({ params }) {
                           <Ic name="sliders" size={15} color={TEAL} />
                         </div>
                         <span style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Pressure-Fit Assessment</span>
-                        <InfoTooltip text="How this candidate handles pressure, conflict, and competing priorities" light />
+                        <InfoTooltip text="How this candidate performs under realistic workplace pressure across four dimensions." light />
                       </div>
                       <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 12px', lineHeight: 1.25 }}>How this candidate performs<br />when it matters most</h2>
                       <div style={{ height: 3, width: 48, borderRadius: 99, background: TEAL }} />
@@ -731,7 +728,7 @@ export default function DemoCandidatePage({ params }) {
             {results.ai_summary && (
               <ScrollReveal id="ai-assessment" delay={60}>
                 <Card style={{ marginBottom: 20, borderLeft: `4px solid ${TEAL}`, boxShadow: SHADOW_LG }}>
-                  <SectionHeading>AI Hiring Summary</SectionHeading>
+                  <SectionHeading tooltip="AI-generated narrative summarising the candidate's overall performance with specific evidence.">AI Hiring Summary</SectionHeading>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                     {results.ai_summary.split('\n\n').filter(p => p.trim()).map((para, i) => (
                       <p key={i} style={{ fontFamily: F, fontSize: 14.5, color: i === 0 ? TX : TX2, lineHeight: 1.8, margin: 0, fontWeight: i === 0 ? 500 : 400 }}>
@@ -747,7 +744,7 @@ export default function DemoCandidatePage({ params }) {
             {results.scores && Object.keys(results.scores).length > 0 && (
               <ScrollReveal id="skills" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
-                  <SectionHeading tooltip="Individual scores for core workplace skills based on scenario responses">Skills Breakdown</SectionHeading>
+                  <SectionHeading tooltip="Individual skill scores with detailed narratives referencing specific scenario responses.">Skills Breakdown</SectionHeading>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
                     {Object.entries(results.scores).map(([skill, skillScore]) => {
                       const narrative = results.score_narratives?.[skill]
@@ -776,7 +773,7 @@ export default function DemoCandidatePage({ params }) {
             {results.strengths?.length > 0 && (
               <ScrollReveal id="strengths" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
-                  <SectionHeading tooltip="Specific behaviours the candidate demonstrated well, with direct evidence">Strengths</SectionHeading>
+                  <SectionHeading tooltip="Key strengths identified with direct quotes from the candidate's responses as evidence.">Strengths</SectionHeading>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {results.strengths.map((s, i) => {
                       const title = typeof s === 'object' ? (s.strength || s.title || s.text) : s
@@ -807,7 +804,7 @@ export default function DemoCandidatePage({ params }) {
             {results.watchouts?.length > 0 && (
               <ScrollReveal id="watchouts" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
-                  <SectionHeading tooltip="Areas of concern with severity rating and recommended management actions">Watch-outs</SectionHeading>
+                  <SectionHeading tooltip="Concerns flagged by severity with evidence, recommended actions, and consequence predictions if ignored.">Watch-outs</SectionHeading>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {results.watchouts.map((w, i) => {
                       const title = typeof w === 'object' ? (w.watchout || w.title || w.text) : w
@@ -835,7 +832,7 @@ export default function DemoCandidatePage({ params }) {
             {results.onboarding_plan?.length > 0 && (
               <ScrollReveal id="onboarding" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
-                  <SectionHeading>Personalised Onboarding Plan</SectionHeading>
+                  <SectionHeading tooltip="A structured 6-week plan tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.">Personalised Onboarding Plan</SectionHeading>
                   <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
                     Tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.
                   </p>
@@ -926,7 +923,7 @@ export default function DemoCandidatePage({ params }) {
             {results.interview_questions?.length > 0 && (
               <ScrollReveal id="questions" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
-                  <SectionHeading>Suggested Interview Questions</SectionHeading>
+                  <SectionHeading tooltip="Targeted questions designed to probe the specific gaps identified in this assessment. Each includes a follow-up probe.">Suggested Interview Questions</SectionHeading>
                   <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
                     Designed to probe the specific gaps identified in this assessment. Each includes a follow-up probe.
                   </p>

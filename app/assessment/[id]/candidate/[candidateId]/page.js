@@ -826,7 +826,7 @@ export default function CandidateReportPage({ params }) {
   const [sendSuccess, setSendSuccess] = useState(false)
 
   // Report section prefs (agency , Feature 6)
-  const DEFAULT_SECTIONS = { overall_score: true, pressure_fit: true, ai_summary: true, skills: true, strengths: true, watchouts: true, interview_questions: true }
+  const DEFAULT_SECTIONS = { overall_score: true, pressure_fit: true, ai_summary: true, skills: true, strengths: true, watchouts: true, interview_questions: true, candidate_type: true, predicted_outcomes: true, reality_timeline: true, hiring_confidence: true, cv_comparison: true }
   const [reportSections, setReportSections] = useState(DEFAULT_SECTIONS)
   const [reportSectionsModal, setReportSectionsModal] = useState(false)
   const [savingReportPrefs, setSavingReportPrefs] = useState(false)
@@ -997,7 +997,31 @@ export default function CandidateReportPage({ params }) {
     }
     setSavingReportPrefs(false)
     setReportSectionsModal(false)
-    doClientPrint()
+
+    const el = document.querySelector('.client-report-container')
+    if (!el) return
+
+    // Make the hidden container renderable off-screen
+    const prev = el.style.cssText
+    el.style.cssText = 'display:block!important;position:fixed;left:-9999px;top:0;width:800px;background:#fff;'
+
+    try {
+      const { default: html2pdf } = await import('html2pdf.js')
+      const safeName = s => (s || '').replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+      const filename = `PRODICTA-Report-${safeName(candidate?.name)}-${safeName(candidate?.assessments?.role_title)}.pdf`
+      await html2pdf().set({
+        margin:      [12, 12],
+        filename,
+        image:       { type: 'jpeg', quality: 0.96 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:   { mode: ['css', 'legacy'] },
+      }).from(el).save()
+    } catch (err) {
+      console.error('[pdf] Generation failed:', err)
+    } finally {
+      el.style.cssText = prev
+    }
   }
 
   async function addNote() {
@@ -1276,8 +1300,8 @@ export default function CandidateReportPage({ params }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 28, flexShrink: 0, flexWrap: 'wrap' }}>
                   {results && (
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
-                        Overall Score
+                      <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
+                        Overall Score <InfoTooltip text="Comprehensive performance score across all 4 scenarios. 50 is average, 75+ is strong. Calibrated to role seniority." />
                       </div>
                       <ScoreRing score={score} size={130} strokeWidth={9} />
                       <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: sc(score), marginTop: 8 }}>
@@ -1329,14 +1353,16 @@ export default function CandidateReportPage({ params }) {
                         Send to Client
                       </button>
                     )}
-                    <button onClick={handlePrint} style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      background: 'transparent', border: `1.5px solid ${BD}`, borderRadius: 8,
-                      cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TX2, padding: '9px 16px',
-                    }}>
-                      <Ic name="download" size={15} color={TX2} />
-                      Export PDF
-                    </button>
+                    {profile?.account_type !== 'agency' && (
+                      <button onClick={handlePrint} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: 'transparent', border: `1.5px solid ${BD}`, borderRadius: 8,
+                        cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TX2, padding: '9px 16px',
+                      }}>
+                        <Ic name="download" size={15} color={TX2} />
+                        Export PDF
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1388,8 +1414,8 @@ export default function CandidateReportPage({ params }) {
                           {hcScore}%
                         </span>
                         <div>
-                          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>
-                            Hiring Confidence
+                          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 5 }}>
+                            Hiring Confidence <InfoTooltip text="A single decision-ready percentage combining all assessment data. Use this as your go/stop indicator for hiring decisions." />
                           </div>
                           <div style={{
                             display: 'inline-flex', alignItems: 'center',
@@ -1423,8 +1449,8 @@ export default function CandidateReportPage({ params }) {
 
                   {/* Pass Probability */}
                   <Card topColor={sc(passProbability ?? score)} style={{ textAlign: 'center', padding: '24px 20px', background: `linear-gradient(180deg, ${sbg(passProbability ?? score)} 0%, #fff 60%)` }}>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14 }}>
-                      Pass Probability
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
+                      Pass Probability <InfoTooltip text="The likelihood this candidate will successfully complete probation, based on scores, pressure-fit, and response quality." />
                     </div>
                     <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 12px' }}>
                       <SmallRing score={passProbability ?? score} size={80} strokeWidth={7} />
@@ -1506,8 +1532,8 @@ export default function CandidateReportPage({ params }) {
                       border: '1px solid rgba(0,191,165,0.22)',
                       borderRadius: 12, padding: '22px 28px', boxShadow: SHADOW_LG,
                     }}>
-                      <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-                        Candidate Type Snapshot
+                      <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        Candidate Type Snapshot <InfoTooltip text="A memorable label capturing this candidate's working style, based on their response patterns across all scenarios." light />
                       </div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
                         <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: '#00BFA5', lineHeight: 1.2 }}>{primary}</span>
@@ -1516,9 +1542,6 @@ export default function CandidateReportPage({ params }) {
                           <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.85)', lineHeight: 1.2 }}>{modifier}</span>
                         </>}
                       </div>
-                      <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: '10px 0 0', lineHeight: 1.5 }}>
-                        AI-generated profile label based on observed response patterns across all scenarios.
-                      </p>
                     </div>
                     </ScrollReveal>
                   )
@@ -1538,7 +1561,7 @@ export default function CandidateReportPage({ params }) {
                   return (
                     <ScrollReveal delay={60}>
                     <Card style={{ marginBottom: 20 }}>
-                      <SectionHeading tooltip="AI probability estimates based on assessment score, pressure-fit score, and response patterns">
+                      <SectionHeading tooltip="Probability predictions for this candidate's first 6 months, calibrated to the role and seniority level.">
                         Predicted Outcome Panel
                       </SectionHeading>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
@@ -1716,7 +1739,7 @@ export default function CandidateReportPage({ params }) {
                 ══════════════════════════════════════════════════ */}
                 {profile?.account_type === 'agency' && (
                   <Card style={{ marginBottom: 20 }} className="no-print">
-                    <SectionHeading tooltip="Create a timestamped accountability record of this assessment for client-facing documentation.">
+                    <SectionHeading tooltip="Documentation that this assessment was conducted using objective, evidence-based methods in compliance with the Equality Act 2010.">
                       Document This Assessment
                     </SectionHeading>
                     {!accountRecord ? (
@@ -1920,7 +1943,7 @@ export default function CandidateReportPage({ params }) {
                             <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.2px' }}>
                               Response Integrity
                             </h2>
-                            <InfoTooltip text="Analysis of response timing, authenticity, and consistency across scenarios" light />
+                            <InfoTooltip text="AI analysis of response authenticity, timing patterns, and consistency across scenarios." light />
                           </div>
                           <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.45)', margin: 0, paddingLeft: 36 }}>
                             AI analysis of authenticity, timing, and engagement signals.
@@ -2081,7 +2104,7 @@ export default function CandidateReportPage({ params }) {
                             <span style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                               Pressure-Fit Assessment
                             </span>
-                            <InfoTooltip text="How this candidate handles pressure, conflict, and competing priorities" light />
+                            <InfoTooltip text="How this candidate performs under realistic workplace pressure across four dimensions." light />
                           </div>
                           <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 12px', lineHeight: 1.25 }}>
                             How this candidate performs<br />when it matters most
@@ -2180,7 +2203,7 @@ export default function CandidateReportPage({ params }) {
                 {results.ai_summary && (
                   <ScrollReveal id="ai-assessment" delay={60}>
                   <Card style={{ marginBottom: 20, borderLeft: `4px solid ${TEAL}`, boxShadow: SHADOW_LG }}>
-                    <SectionHeading>AI Hiring Summary</SectionHeading>
+                    <SectionHeading tooltip="AI-generated narrative summarising the candidate's overall performance with specific evidence.">AI Hiring Summary</SectionHeading>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                       {results.ai_summary.split('\n\n').filter(p => p.trim()).map((para, i) => (
                         <p key={i} style={{
@@ -2222,7 +2245,7 @@ export default function CandidateReportPage({ params }) {
                         <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(0,191,165,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <Ic name="clock" size={14} color="#00BFA5" />
                         </div>
-                        <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: '#fff', margin: 0 }}>Reality Timeline</h2>
+                        <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>Reality Timeline <InfoTooltip text="A prediction of how this candidate's first 90 days will unfold, based on what they showed in their assessment responses." light /></h2>
                         <span style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>First 90 days prediction</span>
                       </div>
                       <div style={{ position: 'relative', paddingLeft: 32 }}>
@@ -2253,7 +2276,7 @@ export default function CandidateReportPage({ params }) {
                 {results.scores && Object.keys(results.scores).length > 0 && (
                   <ScrollReveal id="skills" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading tooltip="Individual scores for core workplace skills based on scenario responses">
+                    <SectionHeading tooltip="Individual skill scores with detailed narratives referencing specific scenario responses.">
                       Skills Breakdown
                     </SectionHeading>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
@@ -2354,8 +2377,9 @@ export default function CandidateReportPage({ params }) {
                         margin: '0 0 6px', paddingBottom: 10,
                         borderBottom: `2px solid ${TEAL}`,
                         letterSpacing: '-0.2px',
+                        display: 'flex', alignItems: 'center', gap: 6,
                       }}>
-                        What the assessment revealed
+                        What the Assessment Revealed <InfoTooltip text="Side-by-side comparison of what a CV would show versus what PRODICTA's assessment actually found." />
                       </h2>
                       <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 20px', lineHeight: 1.55 }}>
                         A side-by-side view of typical CV claims versus what this candidate actually demonstrated.
@@ -2443,7 +2467,7 @@ export default function CandidateReportPage({ params }) {
                 {results.strengths?.length > 0 && (
                   <ScrollReveal id="strengths" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading tooltip="Specific behaviours the candidate demonstrated well, with direct evidence">
+                    <SectionHeading tooltip="Key strengths identified with direct quotes from the candidate's responses as evidence.">
                       Strengths
                     </SectionHeading>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -2498,7 +2522,7 @@ export default function CandidateReportPage({ params }) {
                 {results.watchouts?.length > 0 && (
                   <ScrollReveal id="watchouts" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading tooltip="Areas of concern with severity rating and recommended management actions">
+                    <SectionHeading tooltip="Concerns flagged by severity with evidence, recommended actions, and consequence predictions if ignored.">
                       Watch-outs
                     </SectionHeading>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -2565,7 +2589,7 @@ export default function CandidateReportPage({ params }) {
                 {results.onboarding_plan?.length > 0 && (
                   <ScrollReveal id="onboarding" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading>Personalised Onboarding Plan</SectionHeading>
+                    <SectionHeading tooltip="A structured 6-week plan tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.">Personalised Onboarding Plan</SectionHeading>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
                       Tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.
                     </p>
@@ -2748,7 +2772,7 @@ export default function CandidateReportPage({ params }) {
                 {results.interview_questions?.length > 0 && (
                   <ScrollReveal id="questions" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading>Suggested Interview Questions</SectionHeading>
+                    <SectionHeading tooltip="Targeted questions designed to probe the specific gaps identified in this assessment. Each includes a follow-up probe.">Suggested Interview Questions</SectionHeading>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
                       Designed to probe the specific gaps identified in this assessment. Each includes a follow-up probe.
                     </p>
@@ -3055,13 +3079,18 @@ export default function CandidateReportPage({ params }) {
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
               {[
-                { key: 'overall_score',      label: 'Overall Score & Recommendation' },
-                { key: 'pressure_fit',       label: 'Pressure-Fit Assessment' },
-                { key: 'ai_summary',         label: 'AI Hiring Summary' },
-                { key: 'skills',             label: 'Skills Breakdown' },
-                { key: 'strengths',          label: 'Strengths' },
-                { key: 'watchouts',          label: 'Watch-outs' },
-                { key: 'interview_questions',label: 'Interview Questions' },
+                { key: 'overall_score',       label: 'Overall Score & Recommendation' },
+                { key: 'hiring_confidence',   label: 'Hiring Confidence Score' },
+                { key: 'pressure_fit',        label: 'Pressure-Fit Assessment' },
+                { key: 'ai_summary',          label: 'AI Hiring Summary' },
+                { key: 'candidate_type',      label: 'Candidate Type' },
+                { key: 'predicted_outcomes',  label: 'Predicted Outcomes' },
+                { key: 'reality_timeline',    label: 'Reality Timeline' },
+                { key: 'skills',              label: 'Skills Breakdown' },
+                { key: 'cv_comparison',       label: 'What the Assessment Revealed' },
+                { key: 'strengths',           label: 'Strengths' },
+                { key: 'watchouts',           label: 'Watch-outs' },
+                { key: 'interview_questions', label: 'Interview Questions' },
               ].map(({ key, label }) => (
                 <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 12px', borderRadius: 8, border: `1px solid ${reportSections[key] ? `${TEAL}55` : BD}`, background: reportSections[key] ? TEALLT : BG, transition: 'all 0.12s' }}>
                   <input
@@ -3104,9 +3133,11 @@ export default function CandidateReportPage({ params }) {
           onClick={() => setOutcomeModal(false)}
         >
           <div onClick={e => e.stopPropagation()} style={{
-            background: CARD, borderRadius: 16, padding: '28px 32px',
+            background: CARD, borderRadius: 16,
             maxWidth: 520, width: '100%', boxShadow: '0 16px 48px rgba(15,33,55,0.22)',
+            display: 'flex', flexDirection: 'column', maxHeight: '85vh',
           }}>
+            <div style={{ padding: '28px 32px 0', overflowY: 'auto', flex: 1 }}>
             <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 6px' }}>
               Log Hire Outcome
             </h3>
@@ -3288,7 +3319,8 @@ export default function CandidateReportPage({ params }) {
             {outcomeError && (
               <p style={{ fontSize: 13, color: RED, margin: '0 0 12px', lineHeight: 1.5 }}>{outcomeError}</p>
             )}
-            <div style={{ display: 'flex', gap: 10 }}>
+            </div>
+            <div style={{ padding: '16px 32px 24px', borderTop: `1px solid ${BD}`, flexShrink: 0, display: 'flex', gap: 10 }}>
               <button
                 onClick={logOutcome}
                 disabled={!selectedOutcome || savingOutcome}
@@ -3468,6 +3500,87 @@ export default function CandidateReportPage({ params }) {
             </div>
           )}
 
+          {reportSections.hiring_confidence && results.hiring_confidence && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 8, marginBottom: 14 }}>Hiring Confidence</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: results.hiring_confidence.score >= 70 ? TEAL : results.hiring_confidence.score >= 55 ? AMB : RED, lineHeight: 1 }}>{results.hiring_confidence.score}%</div>
+                {results.hiring_confidence.explanation && (
+                  <div style={{ fontFamily: F, fontSize: 13.5, color: TX2, lineHeight: 1.65 }}>{results.hiring_confidence.explanation}</div>
+                )}
+              </div>
+            </div>
+          )}
+          {reportSections.candidate_type && results.candidate_type && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 8, marginBottom: 14 }}>Candidate Type</div>
+              <div style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: NAVY }}>{results.candidate_type}</div>
+            </div>
+          )}
+          {reportSections.predicted_outcomes && results.predictions && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 8, marginBottom: 14 }}>Predicted Outcomes</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
+                {[
+                  { key: 'pass_probation',       label: 'Pass probation' },
+                  { key: 'top_performer',         label: 'Become top performer' },
+                  { key: 'churn_risk',            label: 'Churn within 6 months' },
+                  { key: 'underperformance_risk', label: 'Underperformance risk' },
+                ].map(({ key, label }) => results.predictions[key] != null && (
+                  <div key={key} style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontFamily: F, fontSize: 12.5, color: TX2 }}>{label}</div>
+                    <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: NAVY }}>{results.predictions[key]}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {reportSections.reality_timeline && results.reality_timeline && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 8, marginBottom: 14 }}>Reality Timeline</div>
+              {[
+                { key: 'week1',  label: 'Weeks 1-2' },
+                { key: 'month1', label: 'Month 1' },
+                { key: 'month3', label: 'Months 2-3' },
+              ].map(({ key, label }) => results.reality_timeline[key] && (
+                <div key={key} style={{ marginBottom: 10, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: TEALD, minWidth: 56, paddingTop: 2 }}>{label}</div>
+                  <div style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.65 }}>{results.reality_timeline[key]}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {reportSections.cv_comparison && Array.isArray(results.cv_comparison) && results.cv_comparison.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 8, marginBottom: 14 }}>What the Assessment Revealed</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ padding: '12px 14px', borderRadius: 8, border: '1.5px solid #e2e8f0' }}>
+                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>What a CV would tell you</div>
+                  {results.cv_comparison.map((item, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 7, alignItems: 'flex-start' }}>
+                      <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#cbd5e1', marginTop: 6, flexShrink: 0 }} />
+                      <div style={{ fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.55 }}>{item}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ padding: '12px 14px', borderRadius: 8, border: `1.5px solid ${TEAL}` }}>
+                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>What PRODICTA found</div>
+                  {results.scores && Object.entries(results.scores).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([skill, s]) => (
+                    <div key={skill} style={{ display: 'flex', gap: 8, marginBottom: 7, alignItems: 'flex-start' }}>
+                      <div style={{ width: 4, height: 4, borderRadius: '50%', background: TEAL, marginTop: 6, flexShrink: 0 }} />
+                      <div style={{ fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.55 }}>{skill} scored {s} ({slbl(s)})</div>
+                    </div>
+                  ))}
+                  {(results.watchouts || []).filter(w => typeof w === 'object' && w.severity === 'High').slice(0, 2).map((w, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 7, alignItems: 'flex-start' }}>
+                      <div style={{ width: 4, height: 4, borderRadius: '50%', background: RED, marginTop: 6, flexShrink: 0 }} />
+                      <div style={{ fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.55 }}>High severity watch-out: {w.text || w.title}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           {reportSections.interview_questions && results.interview_questions?.length > 0 && (
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${AMB}`, paddingBottom: 8, marginBottom: 14 }}>Suggested Interview Questions</div>
