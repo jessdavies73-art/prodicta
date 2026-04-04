@@ -130,22 +130,32 @@ const ActionBox = ({ children }) => (
 )
 
 function InfoTooltip({ text, light = false }) {
-  const [visible, setVisible] = useState(false)
+  const [pos, setPos] = useState(null)
+  const ref = useRef(null)
   const tooltipBg = light ? '#1e3a52' : NAVY
+
+  function handleEnter() {
+    if (ref.current) {
+      const r = ref.current.getBoundingClientRect()
+      setPos({ top: r.top, left: r.left + r.width / 2 })
+    }
+  }
+
   return (
     <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
       <span
-        onMouseEnter={() => setVisible(true)}
-        onMouseLeave={() => setVisible(false)}
+        ref={ref}
+        onMouseEnter={handleEnter}
+        onMouseLeave={() => setPos(null)}
         style={{ cursor: 'help', display: 'inline-flex', alignItems: 'center' }}
       >
         <Ic name="info" size={14} color={light ? 'rgba(255,255,255,0.45)' : TX3} />
       </span>
-      {visible && (
+      {pos && (
         <span style={{
-          position: 'absolute',
-          bottom: 'calc(100% + 8px)',
-          left: '50%',
+          position: 'fixed',
+          bottom: `calc(100vh - ${pos.top}px + 8px)`,
+          left: pos.left,
           transform: 'translateX(-50%)',
           background: tooltipBg,
           color: '#fff',
@@ -156,7 +166,7 @@ function InfoTooltip({ text, light = false }) {
           padding: '9px 13px',
           borderRadius: 8,
           width: 240,
-          zIndex: 200,
+          zIndex: 9999,
           boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
           pointerEvents: 'none',
           textAlign: 'left',
@@ -1519,9 +1529,15 @@ export default function CandidateReportPage({ params }) {
                     CANDIDATE TYPE SNAPSHOT
                 ══════════════════════════════════════════════════ */}
                 {results.candidate_type && (() => {
-                  const withIdx = results.candidate_type.indexOf(' with ')
-                  const primary  = withIdx > -1 ? results.candidate_type.slice(0, withIdx) : results.candidate_type
-                  const modifier = withIdx > -1 ? results.candidate_type.slice(withIdx + 6) : null
+                  const pipeIdx = results.candidate_type.indexOf('|')
+                  const typeLabel = pipeIdx > -1 ? results.candidate_type.slice(0, pipeIdx).trim() : results.candidate_type
+                  const typeExplanation = pipeIdx > -1 ? results.candidate_type.slice(pipeIdx + 1).trim() : null
+                  const withIdx = typeLabel.indexOf(' with ')
+                  const whoIdx = typeLabel.search(/ who /i)
+                  const splitIdx = withIdx > -1 ? withIdx : whoIdx > -1 ? whoIdx : -1
+                  const splitWord = withIdx > -1 ? 'with' : whoIdx > -1 ? 'who' : null
+                  const primary  = splitIdx > -1 ? typeLabel.slice(0, splitIdx) : typeLabel
+                  const modifier = splitIdx > -1 ? typeLabel.slice(splitIdx + splitWord.length + 2) : null
                   return (
                     <ScrollReveal delay={60}>
                     <div style={{
@@ -1536,10 +1552,15 @@ export default function CandidateReportPage({ params }) {
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
                         <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: '#00BFA5', lineHeight: 1.2 }}>{primary}</span>
                         {modifier && <>
-                          <span style={{ fontFamily: F, fontSize: 15, fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>with</span>
+                          <span style={{ fontFamily: F, fontSize: 15, fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>{splitWord}</span>
                           <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.85)', lineHeight: 1.2 }}>{modifier}</span>
                         </>}
                       </div>
+                      {typeExplanation && (
+                        <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.42)', margin: '10px 0 0', lineHeight: 1.55 }}>
+                          {typeExplanation}
+                        </p>
+                      )}
                     </div>
                     </ScrollReveal>
                   )
