@@ -553,51 +553,59 @@ function RebateTimeline({ outcome, candidateName }) {
         {ended && <> &middot; <strong style={{ color: GRN }}>Rebate period complete</strong></>}
       </div>
 
-      {/* Track */}
-      <div style={{ position: 'relative', marginBottom: 52 }}>
-        <div style={{ height: 6, background: BD, borderRadius: 3 }} />
-        <div style={{
-          position: 'absolute', top: 0, left: 0,
-          width: `${progress}%`, height: 6,
-          background: ended ? GRN : TEAL, borderRadius: 3, transition: 'width 0.4s',
-        }} />
-
-        {/* Milestone dots */}
-        {milestones.map(m => {
-          const pos = (m.dayOff / totalDays) * 100
-          const dotColor = m.passed ? (m.isLast ? GRN : TEAL) : BD
-          return (
-            <div key={m.w} style={{ position: 'absolute', left: `${pos}%`, top: -5, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{
-                width: 16, height: 16, borderRadius: '50%', border: `2px solid ${dotColor}`,
-                background: m.passed ? dotColor : CARD, zIndex: 1, position: 'relative',
-                boxShadow: m.isLast && m.passed ? `0 0 0 3px ${GRN}22` : 'none',
-              }}>
-                {m.isLast && m.passed && (
-                  <div style={{ position: 'absolute', inset: -1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ic name="check" size={8} color="#fff" />
-                  </div>
-                )}
-              </div>
-              <div style={{ position: 'absolute', top: 22, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                <div style={{ fontFamily: FM, fontSize: 10, fontWeight: 700, color: m.passed ? (m.isLast ? GRN : TEALD) : TX3 }}>
-                  {m.isLast ? 'Fee Secured' : `W${m.w}: ${m.pct}%`}
-                </div>
-                <div style={{ fontFamily: F, fontSize: 9, color: TX3 }}>{m.date}</div>
-              </div>
-            </div>
-          )
-        })}
-
-        {/* Current position cursor */}
-        {!ended && elapsed > 0 && (
+      {/* Track — padded so labels at 0% and 100% never clip */}
+      <div style={{ padding: '0 20px', marginBottom: 52 }}>
+        <div style={{ position: 'relative' }}>
+          <div style={{ height: 6, background: BD, borderRadius: 3 }} />
           <div style={{
-            position: 'absolute', left: `${progress}%`, top: -7, transform: 'translateX(-50%)',
-            width: 20, height: 20, borderRadius: '50%',
-            background: TEAL, border: `3px solid #fff`,
-            boxShadow: `0 2px 8px ${TEAL}66`, zIndex: 2,
+            position: 'absolute', top: 0, left: 0,
+            width: `${progress}%`, height: 6,
+            background: ended ? GRN : TEAL, borderRadius: 3, transition: 'width 0.4s',
           }} />
-        )}
+
+          {/* Milestone dots */}
+          {milestones.map(m => {
+            const pos       = (m.dayOff / totalDays) * 100
+            const dotBorder = m.passed ? TEAL : BD
+            const dotFill   = m.passed ? TEAL : CARD
+            const lblColor  = m.passed ? TEALD : TX3
+            return (
+              <div key={m.w} style={{ position: 'absolute', left: `${pos}%`, top: -5, transform: 'translateX(-50%)' }}>
+                <div style={{
+                  width: 16, height: 16, borderRadius: '50%',
+                  border: `2px solid ${dotBorder}`,
+                  background: dotFill, zIndex: 1, position: 'relative',
+                  boxShadow: m.isLast && m.passed ? `0 0 0 3px ${TEAL}22` : 'none',
+                }}>
+                  {m.isLast && m.passed && (
+                    <div style={{ position: 'absolute', inset: -1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ic name="check" size={8} color="#fff" />
+                    </div>
+                  )}
+                </div>
+                <div style={{ position: 'absolute', top: 22, left: '50%', transform: 'translateX(-50%)', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontFamily: FM, fontSize: 10, fontWeight: 700, color: lblColor }}>
+                    {m.isLast ? 'Fee secured' : `Week ${m.w}`}
+                  </div>
+                  {!m.isLast && (
+                    <div style={{ fontFamily: FM, fontSize: 9, fontWeight: 600, color: m.passed ? TEAL : TX3 }}>{m.pct}%</div>
+                  )}
+                  <div style={{ fontFamily: F, fontSize: 9, color: TX3 }}>{m.date}</div>
+                </div>
+              </div>
+            )
+          })}
+
+          {/* Current position cursor */}
+          {!ended && elapsed > 0 && (
+            <div style={{
+              position: 'absolute', left: `${progress}%`, top: -7, transform: 'translateX(-50%)',
+              width: 20, height: 20, borderRadius: '50%',
+              background: TEAL, border: `3px solid #fff`,
+              boxShadow: `0 2px 8px ${TEAL}66`, zIndex: 2,
+            }} />
+          )}
+        </div>
       </div>
 
       {/* Reminder note */}

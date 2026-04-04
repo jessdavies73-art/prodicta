@@ -114,6 +114,22 @@ export default function OutcomesPage() {
   const concluded = outcomes.filter(o => o.outcome === 'passed_probation' || o.outcome === 'failed_probation')
   const passRate = concluded.length > 0 ? Math.round((passed.length / concluded.length) * 100) : null
 
+  // Agency-specific stats
+  const now = Date.now()
+  const feesSecured = outcomes.filter(o =>
+    o.placement_date && o.rebate_weeks &&
+    now >= new Date(o.placement_date).getTime() + o.rebate_weeks * 7 * 86400000
+  )
+  const inRebate = outcomes.filter(o =>
+    o.placement_date && o.rebate_weeks &&
+    now < new Date(o.placement_date).getTime() + o.rebate_weeks * 7 * 86400000
+  )
+  const atRisk = inRebate.filter(o => {
+    const elapsed = Math.floor((now - new Date(o.placement_date).getTime()) / 86400000)
+    const weeksLeft = Math.max(0, o.rebate_weeks - Math.ceil(elapsed / 7))
+    return weeksLeft <= 2
+  })
+
   // Score buckets for insight: find score threshold where pass rate is highest
   const withScores = outcomes.filter(o => o.score != null)
   const thresholds = [80, 75, 70, 65, 60]
@@ -138,7 +154,7 @@ export default function OutcomesPage() {
             Hire Outcomes
           </h1>
           <p style={{ margin: '6px 0 0', fontSize: 13.5, color: TX2 }}>
-            Track how candidates perform after hiring to measure Prodicta's predictive accuracy.
+            Track how candidates perform after hiring to measure PRODICTA's predictive accuracy.
           </p>
         </div>
 
@@ -150,28 +166,62 @@ export default function OutcomesPage() {
 
         {/* Stats row */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
-          <StatCard icon="check" label="Total hires tracked" value={total} sub="Outcomes logged" />
-          <StatCard
-            icon="award"
-            label="Pass rate"
-            value={passRate !== null ? `${passRate}%` : ','}
-            sub={concluded.length > 0 ? `${concluded.length} concluded hires` : 'No concluded outcomes yet'}
-            accent={passRate !== null ? (passRate >= 70 ? GRN : passRate >= 50 ? AMB : RED) : TEAL}
-          />
-          <StatCard
-            icon="bar"
-            label="Passed probation"
-            value={passed.length}
-            sub={`${failed.length} failed probation`}
-            accent={GRN}
-          />
-          <StatCard
-            icon="clock"
-            label="In probation"
-            value={outcomes.filter(o => o.outcome === 'still_probation').length}
-            sub="Outcome pending"
-            accent={AMB}
-          />
+          {profile?.account_type === 'agency' ? (
+            <>
+              <StatCard
+                icon="check"
+                label="Total placements tracked"
+                value={total}
+                sub="Outcomes logged"
+              />
+              <StatCard
+                icon="award"
+                label="Fees secured"
+                value={feesSecured.length}
+                sub={feesSecured.length > 0 ? 'Rebate period ended' : 'None yet'}
+                accent={GRN}
+              />
+              <StatCard
+                icon="clock"
+                label="In rebate period"
+                value={inRebate.length}
+                sub={inRebate.length > 0 ? `${inRebate.length} active placement${inRebate.length !== 1 ? 's' : ''}` : 'None active'}
+                accent={AMB}
+              />
+              <StatCard
+                icon="alert"
+                label="Fee at risk"
+                value={atRisk.length}
+                sub={atRisk.length > 0 ? 'Rebate ends within 2 weeks' : 'No imminent rebates'}
+                accent={atRisk.length > 0 ? RED : TEAL}
+              />
+            </>
+          ) : (
+            <>
+              <StatCard icon="check" label="Total hires tracked" value={total} sub="Outcomes logged" />
+              <StatCard
+                icon="award"
+                label="Pass rate"
+                value={passRate !== null ? `${passRate}%` : '-'}
+                sub={concluded.length > 0 ? `${concluded.length} concluded hires` : 'No concluded outcomes yet'}
+                accent={passRate !== null ? (passRate >= 70 ? GRN : passRate >= 50 ? AMB : RED) : TEAL}
+              />
+              <StatCard
+                icon="bar"
+                label="Passed probation"
+                value={passed.length}
+                sub={`${failed.length} failed probation`}
+                accent={GRN}
+              />
+              <StatCard
+                icon="clock"
+                label="In probation"
+                value={outcomes.filter(o => o.outcome === 'still_probation').length}
+                sub="Outcome pending"
+                accent={AMB}
+              />
+            </>
+          )}
         </div>
 
         {/* Insight card */}
@@ -195,7 +245,7 @@ export default function OutcomesPage() {
                   Predictive Insight
                 </div>
                 <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: 0, lineHeight: 1.7 }}>
-                  Candidates hired with a Prodicta score of <strong style={{ color: TEALD }}>{bestInsight.threshold}+</strong> had a{' '}
+                  Candidates hired with a PRODICTA score of <strong style={{ color: TEALD }}>{bestInsight.threshold}+</strong> had a{' '}
                   <strong style={{ color: bestInsight.rate >= 70 ? GRN : bestInsight.rate >= 50 ? AMB : RED }}>
                     {bestInsight.rate}% pass rate
                   </strong>{' '}
