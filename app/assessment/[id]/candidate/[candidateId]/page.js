@@ -943,6 +943,8 @@ export default function CandidateReportPage({ params }) {
   const [useCustomRebate, setUseCustomRebate] = useState(false)
   const [customRebateInput, setCustomRebateInput] = useState('')
   const [probationMonths, setProbationMonths] = useState(6)
+  const [useCustomProbation, setUseCustomProbation] = useState(false)
+  const [customProbationInput, setCustomProbationInput] = useState('')
   const [savingOutcome, setSavingOutcome] = useState(false)
   const [outcomeError, setOutcomeError] = useState(null)
   const [existingOutcome, setExistingOutcome] = useState(null)
@@ -1040,7 +1042,13 @@ export default function CandidateReportPage({ params }) {
               ? outcome.rebate_schedule
               : defaultRebateSchedule(outcome.rebate_weeks))
           }
-          if (outcome.probation_months) setProbationMonths(outcome.probation_months)
+          if (outcome.probation_months) {
+            setProbationMonths(outcome.probation_months)
+            if (![3, 6, 9, 12].includes(outcome.probation_months)) {
+              setUseCustomProbation(true)
+              setCustomProbationInput(String(outcome.probation_months))
+            }
+          }
         }
         setAccountRecord(acRec || null)
         if (acRec?.shared_with_client_at) setRecordSharedDate(acRec.shared_with_client_at)
@@ -3679,21 +3687,50 @@ export default function CandidateReportPage({ params }) {
               </div>
               <div style={{ marginBottom: 18 }}>
                 <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 8 }}>Probation length</label>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {[3, 6, 12].map(m => (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[3, 6, 9, 12].map(m => (
                     <button key={m} type="button"
-                      onClick={() => setProbationMonths(m)}
+                      onClick={() => { setProbationMonths(m); setUseCustomProbation(false) }}
                       style={{
                         padding: '7px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 600,
-                        border: `1.5px solid ${probationMonths === m ? TEAL : BD}`,
-                        background: probationMonths === m ? TEALLT : BG,
-                        color: probationMonths === m ? TEALD : TX2,
+                        border: `1.5px solid ${!useCustomProbation && probationMonths === m ? TEAL : BD}`,
+                        background: !useCustomProbation && probationMonths === m ? TEALLT : BG,
+                        color: !useCustomProbation && probationMonths === m ? TEALD : TX2,
                         transition: 'all 0.1s',
                       }}>
                       {m} months
                     </button>
                   ))}
+                  <button type="button"
+                    onClick={() => setUseCustomProbation(true)}
+                    style={{
+                      padding: '7px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 600,
+                      border: `1.5px solid ${useCustomProbation ? TEAL : BD}`,
+                      background: useCustomProbation ? TEALLT : BG,
+                      color: useCustomProbation ? TEALD : TX2,
+                      transition: 'all 0.1s',
+                    }}>
+                    Custom
+                  </button>
                 </div>
+                {useCustomProbation && (
+                  <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input
+                      type="number"
+                      min={1}
+                      max={24}
+                      value={customProbationInput}
+                      onChange={e => {
+                        setCustomProbationInput(e.target.value)
+                        const v = parseInt(e.target.value)
+                        if (!isNaN(v) && v > 0) setProbationMonths(v)
+                      }}
+                      placeholder="e.g. 18"
+                      style={{ width: 90, padding: '7px 12px', borderRadius: 7, border: `1.5px solid ${TEAL}`, fontFamily: F, fontSize: 13, color: TX, background: BG, outline: 'none' }}
+                    />
+                    <span style={{ fontFamily: F, fontSize: 13, color: TX2 }}>months</span>
+                  </div>
+                )}
               </div>
             </>)}
 
