@@ -324,6 +324,25 @@ const ROLE_BENCHMARKS = {
   general:     { label: 'Similar roles',     avg: 63, strong: 75 },
 }
 
+function SectionToggle({ expanded, onToggle }) {
+  return (
+    <button
+      onClick={onToggle}
+      style={{
+        flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4,
+        background: 'transparent', border: `1px solid ${BD}`,
+        borderRadius: 6, cursor: 'pointer', padding: '3px 10px',
+        fontFamily: F, fontSize: 11.5, fontWeight: 600, color: TX3, marginTop: 2,
+      }}
+    >
+      {expanded ? 'Collapse' : 'Expand'}
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+        <polyline points="6 9 12 15 18 9" />
+      </svg>
+    </button>
+  )
+}
+
 function ScrollReveal({ children, delay = 0, id }) {
   const ref = useRef(null)
   const [visible, setVisible] = useState(false)
@@ -434,6 +453,9 @@ export default function DemoCandidatePage({ params }) {
   const [sendEmail, setSendEmail] = useState('')
   const [wrongHireSalary, setWrongHireSalary] = useState('35000')
   const [ganttView, setGanttView] = useState(false)
+  const [expandedSections, setExpandedSections] = useState({ aiSummary: false, candidateDocs: false })
+  function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
+  const allExpanded = Object.values(expandedSections).every(Boolean)
 
   const candidate = DEMO_CANDIDATES.find(c => c.id === params.candidateId)
   const results = DEMO_RESULTS[params.candidateId] || null
@@ -655,6 +677,17 @@ export default function DemoCandidatePage({ params }) {
 
         {results && (
           <>
+            <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+              <button
+                onClick={() => setExpandedSections(allExpanded
+                  ? { aiSummary: false, candidateDocs: false }
+                  : { aiSummary: true,  candidateDocs: true  }
+                )}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: `1px solid ${BD}`, borderRadius: 7, cursor: 'pointer', padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3 }}
+              >
+                {allExpanded ? 'Collapse all' : 'Expand all'}
+              </button>
+            </div>
             <StickyNav active={activeSection} />
 
             {/* ── CANDIDATE TYPE SNAPSHOT ── */}
@@ -1065,14 +1098,19 @@ export default function DemoCandidatePage({ params }) {
             {results.ai_summary && (
               <ScrollReveal id="ai-assessment" delay={60}>
                 <Card style={{ marginBottom: 20, borderLeft: `4px solid ${TEAL}`, boxShadow: SHADOW_LG }}>
-                  <SectionHeading tooltip="AI-generated narrative summarising the candidate's overall performance with specific evidence.">AI Hiring Summary</SectionHeading>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                    {results.ai_summary.split('\n\n').filter(p => p.trim()).map((para, i) => (
-                      <p key={i} style={{ fontFamily: F, fontSize: 14.5, color: i === 0 ? TX : TX2, lineHeight: 1.8, margin: 0, fontWeight: i === 0 ? 500 : 400 }}>
-                        {para}
-                      </p>
-                    ))}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                    <SectionHeading tooltip="AI-generated narrative summarising the candidate's overall performance with specific evidence.">AI Hiring Summary</SectionHeading>
+                    <SectionToggle expanded={expandedSections.aiSummary} onToggle={() => toggleSection('aiSummary')} />
                   </div>
+                  {expandedSections.aiSummary && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                      {results.ai_summary.split('\n\n').filter(p => p.trim()).map((para, i) => (
+                        <p key={i} style={{ fontFamily: F, fontSize: 14.5, color: i === 0 ? TX : TX2, lineHeight: 1.8, margin: 0, fontWeight: i === 0 ? 500 : 400 }}>
+                          {para}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </Card>
               </ScrollReveal>
             )}
@@ -1476,10 +1514,14 @@ export default function DemoCandidatePage({ params }) {
 
             {/* ── CANDIDATE DOCUMENTS (agency feature demo) ── */}
             <Card style={{ marginBottom: 20 }} className="no-print">
-              <SectionHeading>
-                <Ic name="paperclip" size={15} color={TEAL} />
-                Candidate Documents
-              </SectionHeading>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                <SectionHeading>
+                  <Ic name="paperclip" size={15} color={TEAL} />
+                  Candidate Documents
+                </SectionHeading>
+                <SectionToggle expanded={expandedSections.candidateDocs} onToggle={() => toggleSection('candidateDocs')} />
+              </div>
+              {expandedSections.candidateDocs && <>
               <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 20px', lineHeight: 1.6 }}>
                 Attach the candidate's CV and cover letter. Uploaded files are included when you use <strong>Send to Client</strong>.
               </p>
@@ -1517,6 +1559,7 @@ export default function DemoCandidatePage({ params }) {
                   </button>
                 </div>
               </div>
+              </>}
             </Card>
 
             {/* ── DEMO CTA ── */}

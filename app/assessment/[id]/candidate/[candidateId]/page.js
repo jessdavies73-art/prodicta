@@ -419,6 +419,25 @@ const ROLE_BENCHMARKS = {
   general:     { label: 'Similar roles',     avg: 63, strong: 75 },
 }
 
+function SectionToggle({ expanded, onToggle }) {
+  return (
+    <button
+      onClick={onToggle}
+      style={{
+        flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4,
+        background: 'transparent', border: `1px solid ${BD}`,
+        borderRadius: 6, cursor: 'pointer', padding: '3px 10px',
+        fontFamily: F, fontSize: 11.5, fontWeight: 600, color: TX3, marginTop: 2,
+      }}
+    >
+      {expanded ? 'Collapse' : 'Expand'}
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+        <polyline points="6 9 12 15 18 9" />
+      </svg>
+    </button>
+  )
+}
+
 /* ─────────────────────────────────────────────────────────────
    Loading skeleton
 ───────────────────────────────────────────────────────────── */
@@ -910,6 +929,9 @@ export default function CandidateReportPage({ params }) {
   const [viewMode, setViewMode] = useState('internal') // 'internal' | 'client' - agency only
   const [wrongHireSalary, setWrongHireSalary] = useState('35000')
   const [ganttView, setGanttView] = useState(false)
+  const [expandedSections, setExpandedSections] = useState({ aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false })
+  function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
+  const allExpanded = Object.values(expandedSections).every(Boolean)
   const [clientEmailModal, setClientEmailModal] = useState(false)
   const [clientEmailTo, setClientEmailTo] = useState('')
   const [clientEmailSubject, setClientEmailSubject] = useState('')
@@ -1604,6 +1626,17 @@ export default function CandidateReportPage({ params }) {
 
             {results && (
               <>
+                <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+                  <button
+                    onClick={() => setExpandedSections(allExpanded
+                      ? { aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false }
+                      : { aiSummary: true,  responses: true,  documentAssessment: true,  fairWork: true,  candidateDocs: true  }
+                    )}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: `1px solid ${BD}`, borderRadius: 7, cursor: 'pointer', padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3 }}
+                  >
+                    {allExpanded ? 'Collapse all' : 'Expand all'}
+                  </button>
+                </div>
 
                 <StickyNav active={activeSection} />
 
@@ -1958,10 +1991,14 @@ export default function CandidateReportPage({ params }) {
                 ══════════════════════════════════════════════════ */}
                 {profile?.account_type === 'agency' && (
                   <Card style={{ marginBottom: 20 }} className="no-print">
-                    <SectionHeading>
-                      <Ic name="paperclip" size={15} color={TEAL} />
-                      Candidate Documents
-                    </SectionHeading>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                      <SectionHeading>
+                        <Ic name="paperclip" size={15} color={TEAL} />
+                        Candidate Documents
+                      </SectionHeading>
+                      <SectionToggle expanded={expandedSections.candidateDocs} onToggle={() => toggleSection('candidateDocs')} />
+                    </div>
+                    {expandedSections.candidateDocs && <>
                     <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 20px', lineHeight: 1.6 }}>
                       Attach the candidate's CV and cover letter. Uploaded files are included when you use <strong>Send to Client</strong>.
                     </p>
@@ -2033,6 +2070,7 @@ export default function CandidateReportPage({ params }) {
                         )
                       })}
                     </div>
+                    </>}
                   </Card>
                 )}
 
@@ -2041,10 +2079,13 @@ export default function CandidateReportPage({ params }) {
                 ══════════════════════════════════════════════════ */}
                 {profile?.account_type === 'agency' && (
                   <Card style={{ marginBottom: 20 }} className="no-print">
-                    <SectionHeading tooltip="Documentation that this assessment was conducted using objective, evidence-based methods in compliance with the Equality Act 2010.">
-                      Document This Assessment
-                    </SectionHeading>
-                    {!accountRecord ? (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                      <SectionHeading tooltip="Documentation that this assessment was conducted using objective, evidence-based methods in compliance with the Equality Act 2010.">
+                        Document This Assessment
+                      </SectionHeading>
+                      <SectionToggle expanded={expandedSections.documentAssessment} onToggle={() => toggleSection('documentAssessment')} />
+                    </div>
+                    {expandedSections.documentAssessment && (!accountRecord ? (
                       <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
                         <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 16px', lineHeight: 1.7 }}>
                           Generate a timestamped accountability record containing key findings, watch-outs, and recommended interview questions. Store it for your records and share with clients.
@@ -2190,7 +2231,7 @@ export default function CandidateReportPage({ params }) {
                           )}
                         </div>
                       </div>
-                    )}
+                    ))}
                   </Card>
                 )}
 
@@ -2548,21 +2589,26 @@ export default function CandidateReportPage({ params }) {
                 {results.ai_summary && (
                   <ScrollReveal id="ai-assessment" delay={60}>
                   <Card style={{ marginBottom: 20, borderLeft: `4px solid ${TEAL}`, boxShadow: SHADOW_LG }}>
-                    <SectionHeading tooltip="AI-generated narrative summarising the candidate's overall performance with specific evidence.">AI Hiring Summary</SectionHeading>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                      {results.ai_summary.split('\n\n').filter(p => p.trim()).map((para, i) => (
-                        <p key={i} style={{
-                          fontFamily: F,
-                          fontSize: 14.5,
-                          color: i === 0 ? TX : TX2,
-                          lineHeight: 1.8,
-                          margin: 0,
-                          fontWeight: i === 0 ? 500 : 400,
-                        }}>
-                          {para}
-                        </p>
-                      ))}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                      <SectionHeading tooltip="AI-generated narrative summarising the candidate's overall performance with specific evidence.">AI Hiring Summary</SectionHeading>
+                      <SectionToggle expanded={expandedSections.aiSummary} onToggle={() => toggleSection('aiSummary')} />
                     </div>
+                    {expandedSections.aiSummary && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                        {results.ai_summary.split('\n\n').filter(p => p.trim()).map((para, i) => (
+                          <p key={i} style={{
+                            fontFamily: F,
+                            fontSize: 14.5,
+                            color: i === 0 ? TX : TX2,
+                            lineHeight: 1.8,
+                            margin: 0,
+                            fontWeight: i === 0 ? 500 : 400,
+                          }}>
+                            {para}
+                          </p>
+                        ))}
+                      </div>
+                    )}
                   </Card>
                   </ScrollReveal>
                 )}
@@ -3310,10 +3356,13 @@ export default function CandidateReportPage({ params }) {
                 {responses.length > 0 && candidate?.assessments?.scenarios?.length > 0 && (
                   <ScrollReveal id="responses" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading tooltip="The candidate's actual written responses to each scenario, alongside the scenario prompt and AI skill commentary.">
-                      Candidate Responses
-                    </SectionHeading>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                      <SectionHeading tooltip="The candidate's actual written responses to each scenario, alongside the scenario prompt and AI skill commentary.">
+                        Candidate Responses
+                      </SectionHeading>
+                      <SectionToggle expanded={expandedSections.responses} onToggle={() => toggleSection('responses')} />
+                    </div>
+                    {expandedSections.responses && <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                       {candidate.assessments.scenarios.map((scenario, i) => {
                         const resp = responses.find(r => r.scenario_index === i)
                         const scenarioSkills = scenario.skills || []
@@ -3372,7 +3421,7 @@ export default function CandidateReportPage({ params }) {
                           </div>
                         )
                       })}
-                    </div>
+                    </div>}
                   </Card>
                   </ScrollReveal>
                 )}
@@ -3460,50 +3509,46 @@ export default function CandidateReportPage({ params }) {
                     `Report generated: ${reportDate}.`,
                   ]
                   return (
-                    <div style={{
-                      border: `1.5px solid ${TEAL}55`,
-                      borderRadius: 14,
-                      background: TEALLT,
-                      padding: '22px 28px',
-                      marginBottom: 40,
-                      display: 'flex',
-                      gap: 18,
-                      alignItems: 'flex-start',
-                    }}>
-                      <div style={{
-                        flexShrink: 0,
-                        width: 40,
-                        height: 40,
-                        borderRadius: 10,
-                        background: `${TEAL}18`,
-                        border: `1.5px solid ${TEAL}44`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        </svg>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TEALD, marginBottom: 6, letterSpacing: '0.01em' }}>Fair Work Agency Ready</div>
-                        <p style={{ fontFamily: F, fontSize: 13, color: TEALD, margin: '0 0 12px', lineHeight: 1.7, opacity: 0.9 }}>
-                          This assessment was conducted using PRODICTA, an AI-powered pre-employment assessment platform. The following compliance standards were applied:
-                        </p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-                          {compliancePoints.map((point, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                              <svg style={{ flexShrink: 0, marginTop: 2 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12"/>
-                              </svg>
-                              <span style={{ fontFamily: F, fontSize: 13, color: TEALD, lineHeight: 1.6, opacity: 0.9 }}>{point}</span>
-                            </div>
-                          ))}
+                    <div style={{ border: `1.5px solid ${TEAL}55`, borderRadius: 14, background: TEALLT, padding: '18px 24px', marginBottom: 40 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 9, background: `${TEAL}18`, border: `1.5px solid ${TEAL}44`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                          </div>
+                          <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TEALD, letterSpacing: '0.01em' }}>Fair Work Agency Ready</div>
                         </div>
-                        <p style={{ fontFamily: F, fontSize: 12.5, color: TEALD, margin: 0, lineHeight: 1.6, opacity: 0.75, borderTop: `1px solid ${TEAL}33`, paddingTop: 12 }}>
-                          This record may be used as evidence of a fair and objective assessment process.
-                        </p>
+                        <button
+                          onClick={() => toggleSection('fairWork')}
+                          style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'transparent', border: `1px solid ${TEAL}55`, borderRadius: 6, cursor: 'pointer', padding: '3px 10px', fontFamily: F, fontSize: 11.5, fontWeight: 600, color: TEALD }}
+                        >
+                          {expandedSections.fairWork ? 'Collapse' : 'Expand'}
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: expandedSections.fairWork ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                            <polyline points="6 9 12 15 18 9" />
+                          </svg>
+                        </button>
                       </div>
+                      {expandedSections.fairWork && (
+                        <div style={{ marginTop: 16 }}>
+                          <p style={{ fontFamily: F, fontSize: 13, color: TEALD, margin: '0 0 12px', lineHeight: 1.7, opacity: 0.9 }}>
+                            This assessment was conducted using PRODICTA, an AI-powered pre-employment assessment platform. The following compliance standards were applied:
+                          </p>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                            {compliancePoints.map((point, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                <svg style={{ flexShrink: 0, marginTop: 2 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                                <span style={{ fontFamily: F, fontSize: 13, color: TEALD, lineHeight: 1.6, opacity: 0.9 }}>{point}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <p style={{ fontFamily: F, fontSize: 12.5, color: TEALD, margin: 0, lineHeight: 1.6, opacity: 0.75, borderTop: `1px solid ${TEAL}33`, paddingTop: 12 }}>
+                            This record may be used as evidence of a fair and objective assessment process.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )
                 })()}
