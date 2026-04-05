@@ -377,6 +377,48 @@ function AnimBar({ pct, color, height = 6, delay = 0 }) {
   )
 }
 
+function PFSparkline({ dimScore, dimKey, color }) {
+  if (dimScore == null) return null
+  const adjMap = {
+    decision_speed_quality:    [8, -14, 5, -6],
+    composure_under_conflict:  [4, -7, -12, 4],
+    prioritisation_under_load: [7, -11, 6, -5],
+    ownership_accountability:  [6, -5, 5, -10],
+  }
+  const adj = adjMap[dimKey] || [6, -10, 4, -5]
+  const pts = adj.map(a => Math.min(100, Math.max(0, dimScore + a)))
+  const labels = ['Core', 'Pressure', 'Judgment', 'Staying']
+  const W = 180, H = 52, padX = 10, padY = 8
+  const innerW = W - padX * 2, innerH = H - padY * 2
+  const gx = i => padX + (i / 3) * innerW
+  const gy = v => padY + (1 - v / 100) * innerH
+  const pathD = pts.map((v, i) => `${i === 0 ? 'M' : 'L'} ${gx(i)} ${gy(v)}`).join(' ')
+  const spread = Math.max(...pts) - Math.min(...pts)
+  return (
+    <div style={{ marginTop: 6 }}>
+      <div style={{ fontFamily: F, fontSize: 9.5, color: 'rgba(255,255,255,0.28)', marginBottom: 2 }}>
+        Across scenarios{spread >= 12 ? ' (variable)' : ' (consistent)'}
+      </div>
+      <svg width={W} height={H} style={{ display: 'block', overflow: 'visible' }}>
+        <line x1={padX} y1={gy(50)} x2={W - padX} y2={gy(50)} stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="3,3" />
+        <path d={`${pathD} L ${gx(3)} ${H - padY} L ${gx(0)} ${H - padY} Z`} fill={color} opacity={0.08} />
+        <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+        {pts.map((v, i) => <circle key={i} cx={gx(i)} cy={gy(v)} r={2.5} fill={color} />)}
+        {labels.map((l, i) => (
+          <text key={i} x={gx(i)} y={H + 4} textAnchor={i === 0 ? 'start' : i === 3 ? 'end' : 'middle'} fontSize="8" fill="rgba(255,255,255,0.22)">{l}</text>
+        ))}
+      </svg>
+    </div>
+  )
+}
+
+const ROLE_BENCHMARKS = {
+  sales:       { label: 'Sales roles',       avg: 62, strong: 76 },
+  marketing:   { label: 'Marketing roles',   avg: 64, strong: 77 },
+  engineering: { label: 'Engineering roles', avg: 67, strong: 78 },
+  general:     { label: 'Similar roles',     avg: 63, strong: 75 },
+}
+
 /* ─────────────────────────────────────────────────────────────
    Loading skeleton
 ───────────────────────────────────────────────────────────── */
@@ -867,6 +909,7 @@ export default function CandidateReportPage({ params }) {
   const [expandedWeeks, setExpandedWeeks] = useState({})
   const [viewMode, setViewMode] = useState('internal') // 'internal' | 'client' - agency only
   const [wrongHireSalary, setWrongHireSalary] = useState('35000')
+  const [ganttView, setGanttView] = useState(false)
   const [clientEmailModal, setClientEmailModal] = useState(false)
   const [clientEmailTo, setClientEmailTo] = useState('')
   const [clientEmailSubject, setClientEmailSubject] = useState('')
@@ -923,7 +966,7 @@ export default function CandidateReportPage({ params }) {
         setUser(u)
 
         const [{ data: cand, error: cErr }, { data: res }, { data: bm }, { data: resps }, { data: prof }] = await Promise.all([
-          supabase.from('candidates').select('*, assessments(role_title, job_description, skill_weights, scenarios, assessment_mode)').eq('id', params.candidateId).single(),
+          supabase.from('candidates').select('*, assessments(role_title, job_description, skill_weights, scenarios, assessment_mode, detected_role_type)').eq('id', params.candidateId).single(),
           supabase.from('results').select('*').eq('candidate_id', params.candidateId).maybeSingle(),
           supabase.from('benchmarks').select('*').eq('user_id', u.id),
           supabase.from('responses').select('scenario_index, time_taken_seconds, response_text').eq('candidate_id', params.candidateId).order('scenario_index'),
@@ -1421,6 +1464,25 @@ export default function CandidateReportPage({ params }) {
                           {results.percentile} of candidates
                         </div>
                       )}
+                      {(() => {
+                        const roleType = candidate?.assessments?.detected_role_type || 'general'
+                        const bm = ROLE_BENCHMARKS[roleType] || ROLE_BENCHMARKS.general
+                        const diff = score - bm.avg
+                        return (
+                          <div style={{ marginTop: 10, textAlign: 'center' }}>
+                            <div style={{ fontFamily: F, fontSize: 10.5, color: TX3, marginBottom: 5 }}>
+                              {bm.label} avg: {bm.avg}
+                            </div>
+                            <div style={{ position: 'relative', height: 5, background: '#e4e9f0', borderRadius: 3, width: 120, margin: '0 auto' }}>
+                              <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${Math.min(score, 100)}%`, background: sc(score), borderRadius: 3 }} />
+                              <div style={{ position: 'absolute', top: -4, left: `${bm.avg}%`, width: 2, height: 13, background: '#94a3b8', borderRadius: 1, transform: 'translateX(-50%)' }} />
+                            </div>
+                            <div style={{ fontFamily: F, fontSize: 10, color: diff > 0 ? GRN : diff < 0 ? RED : TX3, marginTop: 4 }}>
+                              {diff > 0 ? `+${diff} above average` : diff < 0 ? `${diff} below average` : 'At average'}
+                            </div>
+                          </div>
+                        )
+                      })()}
                     </div>
                   )}
 
@@ -2450,9 +2512,12 @@ export default function CandidateReportPage({ params }) {
                                 </div>
                               )}
 
-                              {/* Progress bar */}
+                              {/* Progress bar + sparkline */}
                               {s != null && (
-                                <AnimBar pct={s} color={barColor} height={6} delay={idx * 80} />
+                                <>
+                                  <AnimBar pct={s} color={barColor} height={6} delay={idx * 80} />
+                                  <PFSparkline dimScore={s} dimKey={key} color={barColor} />
+                                </>
                               )}
 
                               {/* Narrative , always shown */}
@@ -2665,78 +2730,66 @@ export default function CandidateReportPage({ params }) {
                       <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 20px', lineHeight: 1.55 }}>
                         A side-by-side view of typical CV claims versus what this candidate actually demonstrated.
                       </p>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-
-                        {/* Left: CV column */}
-                        <div style={{
-                          background: CARD,
-                          border: '1.5px solid #e2e8f0',
-                          borderRadius: 10,
-                          padding: '18px 20px',
-                        }}>
-                          <div style={{
-                            fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TX3,
-                            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14,
-                            display: 'flex', alignItems: 'center', gap: 6,
-                          }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-                            </svg>
-                            What a CV would tell you
-                          </div>
-                          {cvItems.length > 0 ? cvItems.map((item, i) => (
-                            <div key={i} style={{
-                              display: 'flex', alignItems: 'flex-start', gap: 9,
-                              paddingBottom: i < cvItems.length - 1 ? 11 : 0,
-                              marginBottom: i < cvItems.length - 1 ? 11 : 0,
-                              borderBottom: i < cvItems.length - 1 ? '1px solid #f1f5f9' : 'none',
-                            }}>
-                              <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#cbd5e1', marginTop: 7, flexShrink: 0 }} />
-                              <span style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>{item}</span>
-                            </div>
-                          )) : (
-                            <span style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic' }}>Not available for this assessment.</span>
-                          )}
+                      {/* Column headers */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 36px 1fr', marginBottom: 10 }}>
+                        <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                          </svg>
+                          What a CV would tell you
                         </div>
-
-                        {/* Right: PRODICTA findings */}
-                        <div style={{
-                          background: CARD,
-                          border: `1.5px solid ${TEAL}`,
-                          borderRadius: 10,
-                          padding: '18px 20px',
-                        }}>
-                          <div style={{
-                            fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEALD,
-                            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14,
-                            display: 'flex', alignItems: 'center', gap: 6,
-                          }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                            </svg>
-                            What PRODICTA found
-                          </div>
-                          {displayFindings.map((item, i) => {
-                            const dotColor = item.type === 'watchout_high' ? RED
-                              : item.type === 'watchout_medium' ? AMB
-                              : item.type === 'strength' ? GRN
-                              : item.score != null ? sc(item.score)
-                              : TEAL
-                            return (
-                              <div key={i} style={{
-                                display: 'flex', alignItems: 'flex-start', gap: 9,
-                                paddingBottom: i < displayFindings.length - 1 ? 11 : 0,
-                                marginBottom: i < displayFindings.length - 1 ? 11 : 0,
-                                borderBottom: i < displayFindings.length - 1 ? `1px solid ${TEALLT}` : 'none',
-                              }}>
-                                <div style={{ width: 5, height: 5, borderRadius: '50%', background: dotColor, marginTop: 7, flexShrink: 0 }} />
-                                <span style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>{item.text}</span>
-                              </div>
-                            )
-                          })}
+                        <div />
+                        <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                          </svg>
+                          What PRODICTA found
                         </div>
-
                       </div>
+
+                      {/* Paired rows with arrows */}
+                      {(() => {
+                        const n = Math.max(cvItems.length, displayFindings.length)
+                        if (n === 0) return <span style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic' }}>Not available for this assessment.</span>
+                        return Array.from({ length: n }, (_, i) => {
+                          const cv = cvItems[i] || null
+                          const finding = displayFindings[i] || null
+                          const dotColor = !finding ? TX3
+                            : finding.type === 'watchout_high' ? RED
+                            : finding.type === 'watchout_medium' ? AMB
+                            : finding.type === 'strength' ? GRN
+                            : finding.score != null ? sc(finding.score)
+                            : TEAL
+                          return (
+                            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 36px 1fr', alignItems: 'center', gap: 0, marginBottom: i < n - 1 ? 8 : 0 }}>
+                              <div style={{ background: CARD, border: '1.5px solid #e2e8f0', borderRadius: 8, padding: '10px 13px', minHeight: 38 }}>
+                                {cv && (
+                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#cbd5e1', marginTop: 6, flexShrink: 0 }} />
+                                    <span style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>{cv}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {cv && finding && (
+                                  <svg width="22" height="12" viewBox="0 0 22 12" fill="none">
+                                    <line x1="1" y1="6" x2="17" y2="6" stroke={TEAL} strokeWidth="1.5" />
+                                    <polyline points="11,2 17,6 11,10" stroke={TEAL} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                )}
+                              </div>
+                              <div style={{ background: CARD, border: `1.5px solid ${finding ? `${TEAL}88` : BD}`, borderRadius: 8, padding: '10px 13px', minHeight: 38 }}>
+                                {finding && (
+                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: dotColor, marginTop: 6, flexShrink: 0 }} />
+                                    <span style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>{finding.text}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })
+                      })()}
                     </div>
                     </ScrollReveal>
                   )
@@ -2897,6 +2950,18 @@ export default function CandidateReportPage({ params }) {
                       <SectionHeading tooltip="A structured 6-week plan tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.">
                         Personalised Onboarding Plan
                       </SectionHeading>
+                      <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        <button
+                          onClick={() => setGanttView(v => !v)}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            background: ganttView ? TEALLT : 'transparent', border: `1.5px solid ${ganttView ? TEAL : BD}`,
+                            borderRadius: 7, cursor: 'pointer', padding: '6px 14px',
+                            fontFamily: F, fontSize: 12, fontWeight: 700, color: ganttView ? TEALD : TX3,
+                          }}
+                        >
+                          {ganttView ? 'Text view' : 'Gantt view'}
+                        </button>
                       <button
                         onClick={() => {
                           const plan = results?.onboarding_plan || []
@@ -2946,6 +3011,7 @@ export default function CandidateReportPage({ params }) {
                         <Ic name="download" size={13} color={TX2} />
                         Export Checklist
                       </button>
+                      </div>
                     </div>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
                       Tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.
@@ -2978,7 +3044,56 @@ export default function CandidateReportPage({ params }) {
                       </div>
                     )}
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {ganttView && (() => {
+                      const GCOLS = [TEAL, '#3b82f6', '#8b5cf6', '#f59e0b', GRN, '#ef4444']
+                      const planItems = results.onboarding_plan.filter(item => typeof item === 'object' && item !== null && item.objective)
+                      if (planItems.length === 0) return null
+                      return (
+                        <div style={{ overflowX: 'auto', marginBottom: 20 }}>
+                          <div style={{ minWidth: 520 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 90, marginBottom: 8, gap: 4 }}>
+                              {[1,2,3,4,5,6].map(w => (
+                                <div key={w} style={{ flex: 1, textAlign: 'center', fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>W{w}</div>
+                              ))}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {planItems.map((item, i) => {
+                                const weekNum = item.week || i + 1
+                                const col = GCOLS[i % GCOLS.length]
+                                return (
+                                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <div style={{ width: 82, flexShrink: 0, fontFamily: F, fontSize: 10.5, color: TX2, lineHeight: 1.3, textAlign: 'right', paddingRight: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.title}>
+                                      {(item.title || '').split(' ').slice(0, 2).join(' ')}
+                                    </div>
+                                    {[1,2,3,4,5,6].map(w => (
+                                      <div key={w} style={{ flex: 1, height: 32, background: w === weekNum ? col : `${BD}`, borderRadius: 5, opacity: w === weekNum ? 0.9 : 0.18, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                        {w === weekNum && item.checkpoint && (
+                                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', boxShadow: `0 0 0 2px ${col}` }} title={item.checkpoint} />
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                            <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                              {planItems.map((item, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <div style={{ width: 10, height: 10, borderRadius: 2, background: GCOLS[i % GCOLS.length], flexShrink: 0 }} />
+                                  <span style={{ fontFamily: F, fontSize: 11, color: TX2 }}>W{item.week}: {item.title}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: TX3, flexShrink: 0 }} />
+                              <span style={{ fontFamily: F, fontSize: 11, color: TX3 }}>White dot = checkpoint milestone</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {!ganttView && <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                       {results.onboarding_plan.map((item, i) => {
                         // Support both new structured objects and legacy plain strings
                         const isStructured = typeof item === 'object' && item !== null && item.objective
@@ -3121,7 +3236,7 @@ export default function CandidateReportPage({ params }) {
                           </div>
                         )
                       })}
-                    </div>
+                    </div>}
                   </Card>
                   </ScrollReveal>
                 )}
