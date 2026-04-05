@@ -715,32 +715,36 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
-              <button
-                onClick={() => atLimit ? setShowUpgrade(true) : router.push('/assessment/new')}
-                style={{
-                  ...bs('primary', 'md'),
-                  background: atLimit ? '#e2e8f0' : undefined,
-                  color: atLimit ? TX3 : undefined,
-                  cursor: atLimit ? 'not-allowed' : 'pointer',
-                }}
-              >
-                <Ic name="plus" size={15} color={atLimit ? TX3 : NAVY} />
-                New assessment
-              </button>
-              {planLimit !== null && (
-                <div style={{
-                  fontFamily: F, fontSize: 11.5, fontWeight: 600,
-                  color: atLimit ? '#b91c1c' : TX3,
-                  background: atLimit ? '#fef2f2' : BG,
-                  border: `1px solid ${atLimit ? '#fecaca' : BD}`,
-                  borderRadius: 6, padding: '2px 9px',
-                }}>
-                  {monthlyCount} of {planLimit} this month
-                  {atLimit && ' · Limit reached'}
-                </div>
-              )}
-            </div>
+            <button
+              onClick={() => atLimit ? setShowUpgrade(true) : router.push('/assessment/new')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                padding: '9px 18px', borderRadius: 8, border: 'none',
+                background: atLimit ? '#e2e8f0' : TEAL,
+                color: atLimit ? TX3 : '#fff',
+                fontFamily: F, fontSize: 13.5, fontWeight: 700,
+                cursor: atLimit ? 'not-allowed' : 'pointer',
+                flexShrink: 0,
+                transition: 'background 0.15s',
+              }}
+            >
+              <Ic name="plus" size={15} color={atLimit ? TX3 : '#fff'} />
+              New assessment
+            </button>
+
+            {planLimit !== null && (
+              <div style={{
+                fontFamily: F, fontSize: 11.5, fontWeight: 600,
+                color: atLimit ? '#b91c1c' : TX3,
+                background: atLimit ? '#fef2f2' : BG,
+                border: `1px solid ${atLimit ? '#fecaca' : BD}`,
+                borderRadius: 6, padding: '4px 10px',
+                flexShrink: 0,
+              }}>
+                {monthlyCount} of {planLimit} this month
+                {atLimit && ' · Limit reached'}
+              </div>
+            )}
           </div>
         </div>
 
