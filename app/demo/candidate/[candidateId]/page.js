@@ -661,6 +661,99 @@ export default function DemoCandidatePage({ params }) {
               </div>
             </ScrollReveal>
 
+            {/* ── PREDICTED OUTCOME PANEL ── */}
+            {results.predictions && (() => {
+              const rawP = results.predictions
+              const ppRaw = parseInt(rawP.pass_probation) || 0
+              const crRaw = parseInt(rawP.churn_risk) || 0
+              const urRaw = parseInt(rawP.underperformance_risk) || 0
+              const p = {
+                ...rawP,
+                pass_probation:        ppRaw,
+                top_performer:         parseInt(rawP.top_performer) || 0,
+                churn_risk:            ppRaw > 70 ? Math.min(crRaw, 19) : ppRaw <= 50 ? Math.max(crRaw, 40) : crRaw,
+                underperformance_risk: ppRaw > 70 ? Math.min(urRaw, 25) : ppRaw <= 50 ? Math.max(urRaw, 45) : urRaw,
+              }
+              const displayPreds = p ? {...p, churn_risk: p.pass_probation > 70 ? Math.min(p.churn_risk, 19) : p.churn_risk} : null
+              const panels = [
+                { label: 'Pass probation',        key: 'pass_probation',        type: 'positive' },
+                { label: 'Become top performer',  key: 'top_performer',          type: 'positive' },
+                { label: 'Leave within 6 months', key: 'churn_risk',             type: 'risk'     },
+                { label: 'Underperformance risk', key: 'underperformance_risk',  type: 'risk'     },
+              ]
+              function panelColor(type, val, key) {
+                if (key === 'top_performer') return val >= 25 ? '#00BFA5' : '#F59E0B'
+                if (type === 'positive') return val >= 70 ? '#00BFA5' : val >= 50 ? '#F59E0B' : '#EF4444'
+                return val <= 25 ? '#00BFA5' : val <= 50 ? '#F59E0B' : '#EF4444'
+              }
+              function panelBg(type, val, key) {
+                const c = panelColor(type, val, key)
+                if (c === '#00BFA5') return 'rgba(0,191,165,0.07)'
+                if (c === '#F59E0B') return 'rgba(245,158,11,0.07)'
+                return 'rgba(239,68,68,0.07)'
+              }
+              function panelBd(type, val, key) {
+                const c = panelColor(type, val, key)
+                if (c === '#00BFA5') return 'rgba(0,191,165,0.22)'
+                if (c === '#F59E0B') return 'rgba(245,158,11,0.22)'
+                return 'rgba(239,68,68,0.22)'
+              }
+              function panelContext(key, val) {
+                if (key === 'pass_probation') {
+                  if (val >= 80) return 'Strong likelihood of success'
+                  if (val >= 65) return 'Likely to pass with structured onboarding'
+                  if (val >= 50) return 'Could go either way - monitor closely'
+                  return 'Significant risk of probation failure'
+                }
+                if (key === 'top_performer') {
+                  if (val >= 50) return 'Shows signs of exceeding expectations'
+                  if (val >= 25) return 'Likely to meet but not exceed expectations'
+                  return 'Expected to perform at baseline level'
+                }
+                if (key === 'churn_risk') {
+                  if (val <= 20) return 'Low flight risk - likely to stay'
+                  if (val <= 40) return 'Some flight risk - address in onboarding'
+                  return 'High flight risk - investigate motivations'
+                }
+                if (key === 'underperformance_risk') {
+                  if (val <= 25) return 'Low risk - expected to deliver'
+                  if (val <= 50) return 'Some areas may need support'
+                  return 'Significant gaps likely to surface'
+                }
+                return ''
+              }
+              return (
+                <ScrollReveal delay={60}>
+                <Card style={{ marginBottom: 20 }}>
+                  <SectionHeading tooltip="Probability predictions for this candidate's first 6 months, calibrated to the role and seniority level.">
+                    Predicted Outcome Panel
+                  </SectionHeading>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {panels.map(({ label, key, type }) => {
+                      const val = (displayPreds || p)[key] ?? 0
+                      const color = panelColor(type, val, key)
+                      const bg = panelBg(type, val, key)
+                      const bd = panelBd(type, val, key)
+                      const context = panelContext(key, val)
+                      return (
+                        <div key={key} style={{ background: bg, border: `1px solid ${bd}`, borderRadius: 10, padding: '14px 18px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                            <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{label}</span>
+                            <span style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color }}>{val}%</span>
+                          </div>
+                          <div style={{ position: 'relative', height: 8, background: `${color}22`, borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
+                            <div style={{ position: 'absolute', inset: 0, width: `${val}%`, background: color, borderRadius: 4 }} />
+                          </div>
+                          <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, lineHeight: 1.4 }}>{context}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </Card>
+                </ScrollReveal>
+              )
+            })()}
+
             {/* ── INTEGRITY ── */}
             <ScrollReveal id="integrity" delay={60}>
               <div style={{ marginBottom: 20, background: `linear-gradient(135deg, #0a1929 0%, #0f2137 60%, #0d2b45 100%)`, border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 12, overflow: 'hidden', boxShadow: SHADOW_LG }}>
