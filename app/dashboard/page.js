@@ -1196,9 +1196,10 @@ function ProbationTracker({ hires = [], router }) {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
       }}>
         <div>
-          <h2 style={{ margin: '0 0 2px', fontSize: 15.5, fontWeight: 700, color: TX, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: 15.5, fontWeight: 700, color: TX, display: 'flex', alignItems: 'center', gap: 6 }}>
             Probation Tracker
           </h2>
+          <div style={{ width: 36, height: 2, background: '#00BFA5', borderRadius: 2, marginBottom: 6 }} />
           <p style={{ margin: 0, fontSize: 12.5, color: TX3, fontFamily: F }}>
             Hired candidates currently in their probation period.
           </p>
@@ -1206,7 +1207,7 @@ function ProbationTracker({ hires = [], router }) {
         <span style={{
           display: 'inline-flex', alignItems: 'center',
           padding: '4px 12px', borderRadius: 20,
-          background: TEALLT, fontSize: 12, fontWeight: 700, color: TEALD,
+          background: '#00BFA5', fontSize: 12, fontWeight: 700, color: '#fff',
           flexShrink: 0,
         }}>
           {hires.length} active
@@ -1215,9 +1216,16 @@ function ProbationTracker({ hires = [], router }) {
 
       <div style={{ padding: '16px 24px' }}>
         {hires.length === 0 ? (
-          <p style={{ margin: 0, fontSize: 13.5, color: TX3, lineHeight: 1.6, fontFamily: F }}>
-            No hires being tracked yet. Log an outcome on a candidate's report to start tracking probation.
-          </p>
+          <div style={{
+            background: 'rgba(0,191,165,0.06)',
+            border: '1px solid rgba(0,191,165,0.18)',
+            borderRadius: 10,
+            padding: '16px 20px',
+          }}>
+            <p style={{ margin: 0, fontSize: 13.5, color: TX3, lineHeight: 1.6, fontFamily: F }}>
+              No hires being tracked yet. Log an outcome on a candidate's report to start tracking probation.
+            </p>
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {hires.map((h, idx) => {
@@ -1411,12 +1419,12 @@ function HiringRiskOverview({ completed }) {
     return rl.toLowerCase().includes('high')
   })
 
-  const passColor = passRate === null ? TX3 : passRate >= 70 ? GRN : passRate >= 50 ? AMB : RED
-  const passBg    = passRate === null ? BG   : passRate >= 70 ? GRNBG : passRate >= 50 ? AMBBG : REDBG
-  const passBd    = passRate === null ? BD   : passRate >= 70 ? GRNBD : passRate >= 50 ? '#fde68a' : '#fecaca'
+  const passColor = passRate === null ? TX3 : passRate >= 70 ? TEAL : passRate >= 50 ? AMB : RED
+  const passBg    = passRate === null ? BG   : passRate >= 70 ? TEALLT : passRate >= 50 ? AMBBG : REDBG
+  const passBd    = passRate === null ? BD   : passRate >= 70 ? `${TEAL}55` : passRate >= 50 ? '#fde68a' : '#fecaca'
 
-  const avgColor  = avgScore === null ? TX3 : avgScore >= 70 ? GRN : avgScore >= 50 ? AMB : RED
-  const avgBg     = avgScore === null ? BG   : avgScore >= 70 ? GRNBG : avgScore >= 50 ? AMBBG : REDBG
+  const avgColor  = avgScore === null ? TX3 : avgScore >= 70 ? TEAL : avgScore >= 50 ? AMB : RED
+  const avgBg     = avgScore === null ? BG   : avgScore >= 70 ? TEALLT : avgScore >= 50 ? AMBBG : REDBG
 
   const METRICS = [
     {
@@ -1455,9 +1463,10 @@ function HiringRiskOverview({ completed }) {
         flexWrap: 'wrap',
       }}>
         <div>
-          <h2 style={{ margin: '0 0 2px', fontSize: 15.5, fontWeight: 700, color: TX, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: 15.5, fontWeight: 700, color: TX, display: 'flex', alignItems: 'center', gap: 6 }}>
             Hiring Pipeline Health <InfoTooltip text="Monthly snapshot of assessment quality across all your active roles." />
           </h2>
+          <div style={{ width: 36, height: 2, background: '#00BFA5', borderRadius: 2, marginBottom: 6 }} />
           <p style={{ margin: 0, fontSize: 12.5, color: TX3, fontFamily: F }}>
             Quality snapshot across all active assessments, useful for employers and recruitment agencies alike.
           </p>
@@ -1508,8 +1517,8 @@ function HiringRiskOverview({ completed }) {
                 flex: '1 1 180px',
                 background: highRisk.length > 0
                   ? `linear-gradient(135deg, ${REDBG}, #fff5f5)`
-                  : GRNBG,
-                border: `1.5px solid ${highRisk.length > 0 ? '#fecaca' : GRNBD}`,
+                  : TEALLT,
+                border: `1.5px solid ${highRisk.length > 0 ? '#fecaca' : `${TEAL}55`}`,
                 borderRadius: 10, padding: '14px 16px',
                 position: 'relative', overflow: 'hidden',
               }}>
@@ -1521,13 +1530,13 @@ function HiringRiskOverview({ completed }) {
                   }} />
                 )}
                 <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6,
-                  color: highRisk.length > 0 ? RED : GRN,
+                  color: highRisk.length > 0 ? RED : TEAL,
                 }}>
                   High risk flagged
                 </div>
                 <div style={{
                   fontFamily: FM, fontSize: 30, fontWeight: 800, lineHeight: 1, marginBottom: 4,
-                  color: highRisk.length > 0 ? RED : GRN,
+                  color: highRisk.length > 0 ? RED : TEAL,
                 }}>
                   {highRisk.length}
                 </div>
@@ -1606,26 +1615,29 @@ function PlacementRiskCard({ completed = [] }) {
 
   return (
     <div style={{
-      background: CARD,
-      border: `1px solid ${BD}`,
+      background: '#0f2137',
+      border: '1px solid rgba(255,255,255,0.1)',
       borderRadius: 14,
       overflow: 'hidden',
       marginBottom: 24,
     }}>
       <div style={{ padding: '20px 24px' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>
-          Cost of a failed placement
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+            Placement risk / cost of failed placement
+          </div>
+          <div style={{ width: 36, height: 2, background: '#00BFA5', borderRadius: 2 }} />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap', marginBottom: 10 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: F }}>
               Average placement fee
             </label>
             <div style={{ position: 'relative', width: 180 }}>
               <span style={{
                 position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
-                fontSize: 14, fontWeight: 700, color: TX3, pointerEvents: 'none',
+                fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.4)', pointerEvents: 'none',
               }}>£</span>
               <input
                 type="text"
@@ -1633,20 +1645,20 @@ function PlacementRiskCard({ completed = [] }) {
                 onChange={e => setFee(e.target.value.replace(/[^0-9]/g, ''))}
                 onFocus={() => setFeeFocused(true)}
                 onBlur={() => setFeeFocused(false)}
-                style={{ ...inputStyle(feeFocused), paddingLeft: 26 }}
+                style={{ ...inputStyle(feeFocused), paddingLeft: 26, background: 'rgba(255,255,255,0.08)', color: '#fff', border: `1.5px solid ${feeFocused ? TEAL : 'rgba(255,255,255,0.18)'}` }}
                 placeholder="5000"
               />
             </div>
           </div>
           <div style={{ paddingBottom: 2 }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Total exposure</div>
-            <div style={{ fontFamily: FM, fontSize: 30, fontWeight: 800, color: RED, lineHeight: 1 }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Total exposure</div>
+            <div style={{ fontFamily: FM, fontSize: 30, fontWeight: 800, color: AMB, lineHeight: 1 }}>
               {gbp(totalLoss)}
             </div>
           </div>
         </div>
 
-        <div style={{ fontSize: 13, color: TX3, marginBottom: 14 }}>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 14 }}>
           Lost fee + replacement search + reputational damage.
         </div>
 
@@ -1668,19 +1680,19 @@ function PlacementRiskCard({ completed = [] }) {
         {showBreakdown && (
           <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
-              { label: 'Lost placement fee',         value: gbp(feeVal),            note: 'Not recovered on failed placement',              color: RED,    bg: REDBG },
-              { label: 'Replacement search cost',    value: gbp(replacementSearch), note: 'Average cost to source a replacement',           color: AMB,    bg: AMBBG },
-              { label: 'Client relationship damage', value: 'Reputational',         note: 'Loss of future instructions, hard to quantify',  color: PURPLE, bg: '#f5f3ff' },
-            ].map(({ label, value, note, color, bg }) => (
+              { label: 'Lost placement fee',         value: gbp(feeVal),            note: 'Not recovered on failed placement',              color: RED  },
+              { label: 'Replacement search cost',    value: gbp(replacementSearch), note: 'Average cost to source a replacement',           color: AMB  },
+              { label: 'Client relationship damage', value: 'Reputational',         note: 'Loss of future instructions, hard to quantify',  color: TEAL },
+            ].map(({ label, value, note, color }) => (
               <div key={label} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '10px 14px', borderRadius: 8,
-                background: bg, border: `1px solid ${color}33`,
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
                 gap: 12,
               }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: TX }}>{label}</div>
-                  <div style={{ fontSize: 11.5, color: TX3, marginTop: 1 }}>{note}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{label}</div>
+                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>{note}</div>
                 </div>
                 <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color, flexShrink: 0 }}>
                   {value}
@@ -1745,26 +1757,29 @@ function RiskCalculator({ profile, completed = [] }) {
 
   return (
     <div style={{
-      background: CARD,
-      border: `1px solid ${BD}`,
+      background: '#0f2137',
+      border: '1px solid rgba(255,255,255,0.1)',
       borderRadius: 14,
       overflow: 'hidden',
       marginBottom: 24,
     }}>
       <div style={{ padding: '20px 24px' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>
-          ERA 2025 risk calculator
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+            ERA 2025 risk calculator
+          </div>
+          <div style={{ width: 36, height: 2, background: '#00BFA5', borderRadius: 2 }} />
         </div>
 
         <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: '0 0 auto' }}>
-            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: F }}>
               Average salary
             </label>
             <div style={{ position: 'relative', width: 160 }}>
               <span style={{
                 position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
-                fontSize: 14, fontWeight: 700, color: TX3, pointerEvents: 'none',
+                fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.4)', pointerEvents: 'none',
               }}>£</span>
               <input
                 type="text"
@@ -1772,13 +1787,13 @@ function RiskCalculator({ profile, completed = [] }) {
                 onChange={e => setSalary(e.target.value.replace(/[^0-9]/g, ''))}
                 onFocus={() => setSalFocused(true)}
                 onBlur={() => setSalFocused(false)}
-                style={{ ...inputStyle(salFocused), paddingLeft: 26 }}
+                style={{ ...inputStyle(salFocused), paddingLeft: 26, background: 'rgba(255,255,255,0.08)', color: '#fff', border: `1.5px solid ${salFocused ? TEAL : 'rgba(255,255,255,0.18)'}` }}
                 placeholder="30000"
               />
             </div>
           </div>
           <div style={{ flex: '0 0 auto' }}>
-            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: F }}>
               Hires this year
             </label>
             <input
@@ -1787,16 +1802,16 @@ function RiskCalculator({ profile, completed = [] }) {
               onChange={e => setHires(e.target.value.replace(/[^0-9]/g, ''))}
               onFocus={() => setHiresFocused(true)}
               onBlur={() => setHiresFocused(false)}
-              style={{ ...inputStyle(hiresFocused), width: 100 }}
+              style={{ ...inputStyle(hiresFocused), width: 100, background: 'rgba(255,255,255,0.08)', color: '#fff', border: `1.5px solid ${hiresFocused ? TEAL : 'rgba(255,255,255,0.18)'}` }}
               placeholder="5"
             />
           </div>
           <div style={{ paddingBottom: 2 }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Total exposure</div>
-            <div style={{ fontFamily: FM, fontSize: 30, fontWeight: 800, color: RED, lineHeight: 1 }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Total exposure</div>
+            <div style={{ fontFamily: FM, fontSize: 30, fontWeight: 800, color: AMB, lineHeight: 1 }}>
               {gbp(totalExposure)}
             </div>
-            <div style={{ fontSize: 11.5, color: TX3, marginTop: 3 }}>
+            <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', marginTop: 3 }}>
               {failCount} of {h} hire{h !== 1 ? 's' : ''} failing · 20% industry average
             </div>
           </div>
@@ -1819,16 +1834,16 @@ function RiskCalculator({ profile, completed = [] }) {
 
         {showBreakdown && (
           <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {BREAK.map(({ label, value, note, color, bg }) => (
+            {BREAK.map(({ label, value, note, color }) => (
               <div key={label} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '10px 14px', borderRadius: 8,
-                background: bg, border: `1px solid ${color}33`,
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
                 gap: 12,
               }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: TX }}>{label}</div>
-                  <div style={{ fontSize: 11.5, color: TX3, marginTop: 1 }}>{note}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{label}</div>
+                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>{note}</div>
                 </div>
                 <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color, flexShrink: 0 }}>
                   {gbp(value)}
