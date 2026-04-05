@@ -414,6 +414,131 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
+          CV VS PRODICTA COMPARISON
+      ════════════════════════════════════════════════════════════════════ */}
+      <section style={{ background: NAVY, padding: '80px 24px' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: 56 }}>
+              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>See the difference</div>
+              <h2 style={{ fontFamily: F, fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1.2, margin: 0 }}>
+                What a CV tells you vs what PRODICTA reveals
+              </h2>
+            </div>
+          </Reveal>
+
+          <Reveal delay={100}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 48px 1fr', gap: '0 16px', alignItems: 'center' }}>
+
+              {/* LEFT — Traditional CV */}
+              <div style={{
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 16, padding: '32px 28px', opacity: 0.6,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                  </div>
+                  <div style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: 'rgba(255,255,255,0.6)' }}>Traditional CV</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+                  {[
+                    '5 years experience in account management',
+                    'Strong communication and leadership skills',
+                    'Proven track record of exceeding targets',
+                    'Excellent team player with attention to detail',
+                  ].map((line, i) => (
+                    <div key={i} style={{ borderLeft: '2px solid rgba(255,255,255,0.12)', paddingLeft: 14, fontFamily: F, fontSize: 14, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>
+                      {line}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>
+                  Generic. Unverified. Every CV says this.
+                </div>
+              </div>
+
+              {/* CENTRE — Arrow */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </div>
+
+              {/* RIGHT — PRODICTA assessment */}
+              <div style={{
+                background: 'rgba(0,191,165,0.06)', border: `1.5px solid ${TEAL}55`,
+                borderRadius: 16, padding: '32px 28px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: `${TEAL}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                  </div>
+                  <div style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: '#fff' }}>PRODICTA assessment</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+                  {/* Card 1 — jade */}
+                  <div style={{ borderLeft: `3px solid ${TEAL}`, background: 'rgba(0,191,165,0.08)', borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
+                    <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>Communication scored 88</div>
+                    <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>but avoids difficult conversations under pressure</div>
+                  </div>
+                  {/* Card 2 — amber watch-out */}
+                  <div style={{ borderLeft: '3px solid #E8B84B', background: 'rgba(232,184,75,0.08)', borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                      <span style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: '#E8B84B', background: 'rgba(232,184,75,0.18)', border: '1px solid rgba(232,184,75,0.4)', borderRadius: 4, padding: '1px 7px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Watch-out · High</span>
+                    </div>
+                    <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>Delegation reluctance: scored 52</div>
+                    <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>Relies on doing everything personally rather than distributing work</div>
+                  </div>
+                  {/* Card 3 — red risk */}
+                  <div style={{ borderLeft: '3px solid #EF4444', background: 'rgba(239,68,68,0.08)', borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                      <span style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: '#EF4444', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 4, padding: '1px 7px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>If ignored</span>
+                    </div>
+                    <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff' }}>Missed deadlines within 60 days</div>
+                  </div>
+                  {/* Card 4 — jade probability */}
+                  <div style={{ borderLeft: `3px solid ${TEAL}`, background: 'rgba(0,191,165,0.08)', borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
+                    <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>72% chance of passing probation</div>
+                    <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>Likely to pass with structured onboarding plan</div>
+                  </div>
+                </div>
+                <div style={{ fontFamily: F, fontSize: 12, color: TEAL, fontWeight: 600 }}>
+                  Specific. Evidence-based. Actionable.
+                </div>
+              </div>
+            </div>
+          </Reveal>
+
+          {/* CTA */}
+          <Reveal delay={150}>
+            <div style={{ textAlign: 'center', marginTop: 56 }}>
+              <a
+                href="/login"
+                style={{
+                  display: 'inline-block', background: TEAL, color: NAVY,
+                  fontFamily: F, fontSize: 16, fontWeight: 800,
+                  padding: '16px 40px', borderRadius: 10, textDecoration: 'none',
+                  boxShadow: `0 4px 20px ${TEAL}55`, transition: 'transform 0.2s, box-shadow 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 28px ${TEAL}66` }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = `0 4px 20px ${TEAL}55` }}
+              >
+                Start assessing candidates
+              </a>
+              <div style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 12 }}>
+                From just £49/month. No long setup. First assessment in 5 minutes.
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
           HOW IT WORKS
       ════════════════════════════════════════════════════════════════════ */}
       <section id="how-it-works" style={{ background: '#F8FAFB', padding: '72px 24px' }}>
