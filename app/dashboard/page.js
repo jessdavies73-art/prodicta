@@ -243,6 +243,7 @@ export default function DashboardPage() {
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [activePlacements, setActivePlacements] = useState([])
+  const [candidateOutcomes, setCandidateOutcomes] = useState([])
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -318,6 +319,17 @@ export default function DashboardPage() {
           } catch (_) {
             // Columns may not exist yet; skip silently
           }
+        }
+
+        // Load candidate outcomes (for cost saved calculator)
+        try {
+          const { data: outcomes } = await supabase
+            .from('candidate_outcomes')
+            .select('candidate_id, outcome')
+            .eq('user_id', user.id)
+          setCandidateOutcomes(outcomes || [])
+        } catch (_) {
+          // Table may not exist for all accounts
         }
 
         // Show onboarding wizard for new users
@@ -399,6 +411,36 @@ export default function DashboardPage() {
     : null
 
   const recommendedCount = completed.filter(c => (c.results?.[0]?.overall_score ?? 0) >= 70).length
+
+  // Time to insight: avg minutes from invited_at to completed_at
+  const timedCandidates = completed.filter(c => c.invited_at && c.completed_at)
+  const avgMinutesToInsight = timedCandidates.length
+    ? Math.round(
+        timedCandidates.reduce((sum, c) => {
+          const ms = new Date(c.completed_at) - new Date(c.invited_at)
+          return sum + ms / 60000
+        }, 0) / timedCandidates.length
+      )
+    : null
+
+  function fmtInsight(mins) {
+    if (mins === null) return '-'
+    if (mins < 60) return `${mins}m`
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    return m > 0 ? `${h}h ${m}m` : `${h}h`
+  }
+
+  // Hiring cost saved: completed candidates scoring below 70 with no positive outcome
+  const POSITIVE_OUTCOMES = new Set(['hired', 'offer_accepted', 'passed_probation', 'still_in_probation', 'placed'])
+  const outcomesById = Object.fromEntries((candidateOutcomes || []).map(o => [o.candidate_id, o.outcome]))
+  const BAD_HIRE_COST = 30000
+  const avoidedBadHires = completed.filter(c => {
+    const score = c.results?.[0]?.overall_score ?? 0
+    const outcome = outcomesById[c.id]
+    return score < 70 && (!outcome || !POSITIVE_OUTCOMES.has(outcome))
+  })
+  const costSaved = avoidedBadHires.length * BAD_HIRE_COST
 
   // ── filtered candidates ─────────────────────────────────────────────────────
 
@@ -687,9 +729,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Stats row ── */}
-        <div style={{
-          display: 'flex', gap: 16, marginBottom: 28,
-        }}>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
           <StatCard
             icon="check"
             label="Completed"
@@ -718,6 +758,55 @@ export default function DashboardPage() {
             sub="Scoring 70 or above"
             accent={TEAL}
           />
+        </div>
+
+        {/* ── Secondary stats row ── */}
+        <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
+          {/* Time to insight */}
+          <div style={{
+            flex: 1, minWidth: 200,
+            background: CARD, border: `1px solid ${BD}`, borderTop: `3px solid ${TEALD}`,
+            borderRadius: 12, padding: '18px 22px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+              <Ic name="clock" size={13} color={TEALD} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Average time to insight
+              </span>
+            </div>
+            <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: TEALD, lineHeight: 1, marginBottom: 6 }}>
+              {avgMinutesToInsight !== null ? fmtInsight(avgMinutesToInsight) : '-'}
+            </div>
+            <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>
+              {timedCandidates.length > 0
+                ? `From invite to scored result, across ${timedCandidates.length} candidate${timedCandidates.length !== 1 ? 's' : ''}`
+                : 'No completed candidates yet'}
+            </div>
+          </div>
+
+          {/* Cost saved */}
+          <div style={{
+            flex: 2, minWidth: 280,
+            background: costSaved > 0 ? GRNBG : CARD,
+            border: `1px solid ${costSaved > 0 ? GRNBD : BD}`,
+            borderTop: `3px solid ${costSaved > 0 ? GRN : BD}`,
+            borderRadius: 12, padding: '18px 22px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+              <Ic name="shield" size={13} color={costSaved > 0 ? GRN : TX3} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Estimated cost of bad hires avoided
+              </span>
+            </div>
+            <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: costSaved > 0 ? GRN : TX3, lineHeight: 1, marginBottom: 6 }}>
+              {costSaved > 0 ? `£${costSaved.toLocaleString('en-GB')}` : '£0'}
+            </div>
+            <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>
+              {avoidedBadHires.length > 0
+                ? `${avoidedBadHires.length} below-threshold candidate${avoidedBadHires.length !== 1 ? 's' : ''} not hired · £30,000 average bad hire cost`
+                : 'PRODICTA will track bad hires avoided as your pipeline grows'}
+            </div>
+          </div>
         </div>
 
         {/* ── Active Placements (agency only) ── */}

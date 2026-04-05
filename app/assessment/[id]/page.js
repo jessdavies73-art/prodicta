@@ -186,6 +186,28 @@ export default function AssessmentPage({ params }) {
   const [shortlisted, setShortlisted] = useState(new Set())
   const [shortlistMode, setShortlistMode] = useState(false)
 
+  // AI Shortlist with justification (agency)
+  const [aiShortlistModal, setAiShortlistModal] = useState(false)
+  const [aiShortlistLoading, setAiShortlistLoading] = useState(false)
+  const [aiShortlistResult, setAiShortlistResult] = useState(null)
+  const [aiShortlistError, setAiShortlistError] = useState('')
+
+  async function handleGenerateAiShortlist() {
+    setAiShortlistLoading(true)
+    setAiShortlistError('')
+    setAiShortlistResult(null)
+    try {
+      const res = await fetch(`/api/assessment/${id}/shortlist`, { method: 'POST' })
+      const data = await res.json()
+      if (data.error) { setAiShortlistError(data.error); return }
+      setAiShortlistResult(data)
+    } catch {
+      setAiShortlistError('Something went wrong. Please try again.')
+    } finally {
+      setAiShortlistLoading(false)
+    }
+  }
+
   // Close assessment state
   const [closing, setClosing] = useState(false)
 
@@ -433,6 +455,117 @@ export default function AssessmentPage({ params }) {
         </div>
       )}
 
+      {/* AI Shortlist modal */}
+      {aiShortlistModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,33,55,0.6)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '32px 24px', overflowY: 'auto' }}
+          onClick={() => setAiShortlistModal(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: CARD, borderRadius: 16, padding: '32px', maxWidth: 640, width: '100%', boxShadow: '0 24px 72px rgba(15,33,55,0.25)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                  <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: 0 }}>AI Shortlist</h3>
+                </div>
+                <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0 }}>{assessment.role_title}</p>
+              </div>
+              <button onClick={() => setAiShortlistModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: TX3, fontSize: 20, lineHeight: 1, padding: '4px 8px' }}>x</button>
+            </div>
+
+            {aiShortlistLoading && (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: TX2 }}>
+                <div style={{ width: 24, height: 24, border: '3px solid #ede9fe', borderTopColor: '#7C3AED', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
+                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 600 }}>Analysing candidate responses and scores...</div>
+                <div style={{ fontFamily: F, fontSize: 12.5, color: TX3, marginTop: 6 }}>This takes 10-15 seconds</div>
+              </div>
+            )}
+
+            {aiShortlistError && (
+              <div style={{ background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, padding: '12px 16px', color: RED, fontFamily: F, fontSize: 13.5 }}>
+                {aiShortlistError}
+              </div>
+            )}
+
+            {aiShortlistResult && !aiShortlistLoading && (
+              <div>
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Shortlisted</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {(aiShortlistResult.shortlist || []).map((item, i) => (
+                      <div key={i} style={{
+                        background: i === 0 ? '#f5f3ff' : BG,
+                        border: `1.5px solid ${i === 0 ? '#c4b5fd' : BD}`,
+                        borderRadius: 10, padding: '16px 18px',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                          <div style={{
+                            width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                            background: i === 0 ? '#7C3AED' : i === 1 ? '#5e6b7f' : '#d97706',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontFamily: FM, fontSize: 12, fontWeight: 800, color: '#fff',
+                          }}>
+                            {item.rank}
+                          </div>
+                          <div>
+                            <div style={{ fontFamily: F, fontSize: 14.5, fontWeight: 800, color: TX }}>{item.candidate_name}</div>
+                          </div>
+                        </div>
+                        <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 10px', lineHeight: 1.65 }}>{item.justification}</p>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                          {item.key_strength && (
+                            <div style={{ flex: 1, minWidth: 180, background: GRNBG, border: `1px solid ${GRNBD}`, borderRadius: 7, padding: '8px 12px' }}>
+                              <div style={{ fontSize: 10.5, fontWeight: 700, color: GRN, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>Key strength</div>
+                              <div style={{ fontSize: 12.5, color: TX2, fontFamily: F }}>{item.key_strength}</div>
+                            </div>
+                          )}
+                          {item.key_risk && (
+                            <div style={{ flex: 1, minWidth: 180, background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 7, padding: '8px 12px' }}>
+                              <div style={{ fontSize: 10.5, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>Key risk</div>
+                              <div style={{ fontSize: 12.5, color: TX2, fontFamily: F }}>{item.key_risk}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {(aiShortlistResult.not_shortlisted || []).length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Not shortlisted</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {aiShortlistResult.not_shortlisted.map((item, i) => (
+                        <div key={i} style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '11px 14px', display: 'flex', gap: 10 }}>
+                          <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX2, flexShrink: 0 }}>{item.candidate_name}</div>
+                          <div style={{ fontFamily: F, fontSize: 13, color: TX3 }}>{item.reason}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => handleGenerateAiShortlist()}
+                  style={{
+                    marginTop: 20, width: '100%', padding: '10px 0', borderRadius: 8,
+                    border: `1.5px solid #c4b5fd`, background: 'transparent',
+                    color: '#7C3AED', fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  Regenerate
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Delete candidate confirmation modal */}
       {confirmDeleteCandidate && (
         <div
@@ -531,6 +664,21 @@ export default function AssessmentPage({ params }) {
           </div>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {accountType === 'agency' && candidates.filter(c => c.status === 'completed').length >= 2 && (
+              <button
+                onClick={() => { setAiShortlistModal(true); if (!aiShortlistResult) handleGenerateAiShortlist() }}
+                style={{
+                  padding: '8px 18px', borderRadius: 8, border: '1px solid #7C3AED',
+                  background: '#f5f3ff', color: '#7C3AED', fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: F, display: 'flex', alignItems: 'center', gap: 7,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+                Generate Shortlist
+              </button>
+            )}
             <button
               onClick={() => router.push(`/compare?assessmentId=${id}`)}
               style={{

@@ -866,6 +866,14 @@ export default function CandidateReportPage({ params }) {
   const [activeSection, setActiveSection] = useState('summary')
   const [expandedWeeks, setExpandedWeeks] = useState({})
   const [viewMode, setViewMode] = useState('internal') // 'internal' | 'client' - agency only
+  const [wrongHireSalary, setWrongHireSalary] = useState('35000')
+  const [clientEmailModal, setClientEmailModal] = useState(false)
+  const [clientEmailTo, setClientEmailTo] = useState('')
+  const [clientEmailSubject, setClientEmailSubject] = useState('')
+  const [clientEmailBody, setClientEmailBody] = useState('')
+  const [clientEmailSending, setClientEmailSending] = useState(false)
+  const [clientEmailSent, setClientEmailSent] = useState(false)
+  const [clientEmailError, setClientEmailError] = useState('')
 
   // Outcome Tracking (employer only)
   const [outcomeModal, setOutcomeModal] = useState(false)
@@ -915,7 +923,7 @@ export default function CandidateReportPage({ params }) {
         setUser(u)
 
         const [{ data: cand, error: cErr }, { data: res }, { data: bm }, { data: resps }, { data: prof }] = await Promise.all([
-          supabase.from('candidates').select('*, assessments(role_title, job_description, skill_weights, scenarios)').eq('id', params.candidateId).single(),
+          supabase.from('candidates').select('*, assessments(role_title, job_description, skill_weights, scenarios, assessment_mode)').eq('id', params.candidateId).single(),
           supabase.from('results').select('*').eq('candidate_id', params.candidateId).maybeSingle(),
           supabase.from('benchmarks').select('*').eq('user_id', u.id),
           supabase.from('responses').select('scenario_index, time_taken_seconds, response_text').eq('candidate_id', params.candidateId).order('scenario_index'),
@@ -1366,6 +1374,11 @@ export default function CandidateReportPage({ params }) {
                           <span style={{ fontSize: 12.5, fontWeight: 600, color: TX2, fontFamily: F }}>{candidate.assessments.role_title}</span>
                         </div>
                       )}
+                      {candidate?.assessments?.assessment_mode === 'rapid' && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 20, background: '#fffbeb', color: '#d97706', border: '1px solid #fcd34d', fontFamily: F }}>
+                          Rapid Assessment
+                        </span>
+                      )}
                       {completedDate && (
                         <span style={{ fontSize: 12, color: TX3, fontFamily: F }}>Completed {completedDate}</span>
                       )}
@@ -1455,6 +1468,63 @@ export default function CandidateReportPage({ params }) {
                         Export PDF
                       </button>
                     )}
+                    {results && (
+                      <button
+                        onClick={() => {
+                          const cName = candidate?.name || 'Candidate'
+                          const role = candidate?.assessments?.role_title || 'Role'
+                          const candType = results.candidate_type ? results.candidate_type.split('|')[0].trim() : 'Not available'
+                          const watchOuts = (results.watchouts || []).slice(0, 4).map((w, i) => {
+                            const title = typeof w === 'object' ? (w.watchout || w.title || w.text || '') : w
+                            const sev = typeof w === 'object' ? w.severity : null
+                            return `<li style="margin-bottom:10px;"><strong>${title}</strong>${sev ? ` <span style="font-size:11px;background:${sev === 'High' ? '#fee2e2' : '#fffbeb'};color:${sev === 'High' ? '#dc2626' : '#d97706'};padding:1px 7px;border-radius:20px;">${sev}</span>` : ''}</li>`
+                          }).join('')
+                          const questions = (results.interview_questions || []).slice(0, 4).map((q, i) => `<li style="margin-bottom:10px;">${q}</li>`).join('')
+                          const strengths = (results.strengths || []).slice(0, 3).map(s => {
+                            const title = typeof s === 'object' ? (s.strength || s.title || '') : s
+                            const exp = typeof s === 'object' ? (s.explanation || '') : ''
+                            return `<li style="margin-bottom:10px;"><strong>${title}</strong>${exp ? `<br><span style="color:#5e6b7f;font-size:12px;">${exp}</span>` : ''}</li>`
+                          }).join('')
+                          const html = `<div style="font-family:'Outfit',system-ui,sans-serif;max-width:700px;margin:0 auto;padding:32px;">
+                            <div style="border-bottom:3px solid #00BFA5;padding-bottom:16px;margin-bottom:24px;">
+                              <div style="font-size:11px;font-weight:700;color:#009688;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">PRODICTA - Interview Brief</div>
+                              <h1 style="font-size:22px;font-weight:800;color:#0f2137;margin:0 0 4px;">${cName}</h1>
+                              <div style="font-size:14px;color:#5e6b7f;">${role}</div>
+                            </div>
+                            <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+                              <tr>
+                                <td style="padding:8px 0;border-bottom:1px solid #e4e9f0;font-size:13px;color:#94a1b3;font-weight:600;width:40%;">Overall Score</td>
+                                <td style="padding:8px 0;border-bottom:1px solid #e4e9f0;font-size:13px;font-weight:700;color:#0f172a;">${results.overall_score}/100</td>
+                              </tr>
+                              <tr>
+                                <td style="padding:8px 0;border-bottom:1px solid #e4e9f0;font-size:13px;color:#94a1b3;font-weight:600;">Candidate Type</td>
+                                <td style="padding:8px 0;border-bottom:1px solid #e4e9f0;font-size:13px;font-weight:700;color:#00BFA5;">${candType}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding:8px 0;font-size:13px;color:#94a1b3;font-weight:600;">Risk Level</td>
+                                <td style="padding:8px 0;font-size:13px;font-weight:700;color:#0f172a;">${results.risk_level || 'N/A'}</td>
+                              </tr>
+                            </table>
+                            ${watchOuts ? `<div style="margin-bottom:24px;"><h2 style="font-size:15px;font-weight:800;color:#0f2137;border-bottom:2px solid #EF4444;padding-bottom:6px;margin-bottom:12px;">Watch-outs to probe</h2><ul style="margin:0;padding-left:18px;">${watchOuts}</ul></div>` : ''}
+                            ${questions ? `<div style="margin-bottom:24px;"><h2 style="font-size:15px;font-weight:800;color:#0f2137;border-bottom:2px solid #00BFA5;padding-bottom:6px;margin-bottom:12px;">Suggested interview questions</h2><ul style="margin:0;padding-left:18px;">${questions}</ul></div>` : ''}
+                            ${strengths ? `<div style="margin-bottom:24px;"><h2 style="font-size:15px;font-weight:800;color:#0f2137;border-bottom:2px solid #22C55E;padding-bottom:6px;margin-bottom:12px;">Strengths to validate</h2><ul style="margin:0;padding-left:18px;">${strengths}</ul></div>` : ''}
+                            <div style="margin-top:32px;padding-top:12px;border-top:1px solid #e4e9f0;font-size:11px;color:#94a1b3;">Generated by PRODICTA - Candidate Assessment Platform</div>
+                          </div>`
+                          const w = window.open('', '_blank')
+                          w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Interview Brief - ${cName}</title><style>@media print{body{margin:0}ul{page-break-inside:avoid}}</style></head><body>${html}<script>window.onload=function(){window.print();}<\/script></body></html>`)
+                          w.document.close()
+                        }}
+                        className="no-print"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: 'transparent', border: `1.5px solid ${BD}`, borderRadius: 8,
+                          cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TX2, padding: '9px 16px',
+                        }}
+                      >
+                        <Ic name="file" size={15} color={TX2} />
+                        Interview Brief
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1475,24 +1545,63 @@ export default function CandidateReportPage({ params }) {
 
                 <StickyNav active={activeSection} />
 
-                {/* Internal / Client view toggle - agency only */}
+                {/* Internal / Client view toggle + Email to Client - agency only */}
                 {profile?.account_type === 'agency' && (
-                  <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 0, background: CARD, border: `1px solid ${BD}`, borderRadius: 8, padding: 3, width: 'fit-content' }}>
-                    {['internal', 'client'].map(mode => (
-                      <button
-                        key={mode}
-                        onClick={() => setViewMode(mode)}
-                        style={{
-                          padding: '6px 18px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                          fontFamily: F, fontSize: 13, fontWeight: 700,
-                          background: viewMode === mode ? NAVY : 'transparent',
-                          color: viewMode === mode ? '#fff' : TX3,
-                          transition: 'background 0.15s, color 0.15s',
-                        }}
-                      >
-                        {mode === 'internal' ? 'Internal View' : 'Client View'}
-                      </button>
-                    ))}
+                  <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: CARD, border: `1px solid ${BD}`, borderRadius: 8, padding: 3 }}>
+                      {['internal', 'client'].map(mode => (
+                        <button
+                          key={mode}
+                          onClick={() => setViewMode(mode)}
+                          style={{
+                            padding: '6px 18px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                            fontFamily: F, fontSize: 13, fontWeight: 700,
+                            background: viewMode === mode ? NAVY : 'transparent',
+                            color: viewMode === mode ? '#fff' : TX3,
+                            transition: 'background 0.15s, color 0.15s',
+                          }}
+                        >
+                          {mode === 'internal' ? 'Internal View' : 'Client View'}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      className="no-print"
+                      onClick={() => {
+                        const cName = candidate?.name || 'the candidate'
+                        const role = candidate?.assessments?.role_title || 'the role'
+                        const sc = results?.overall_score ?? 0
+                        const dec = sc >= 80 ? 'Strong hire' : sc >= 70 ? 'Hire with structured onboarding' : sc >= 55 ? 'Proceed with caution' : 'Not recommended at this stage'
+                        const candType = results?.candidate_type ? results.candidate_type.split('|')[0].trim() : null
+                        const topStrengths = (results?.strengths || []).slice(0, 2).map(s => typeof s === 'object' ? (s.strength || s.title || '') : s).filter(Boolean)
+                        const body = [
+                          `Please find our assessment summary for ${cName} for the ${role} role.`,
+                          '',
+                          `**Overall Score:** ${sc}/100`,
+                          `**Recommendation:** ${dec}`,
+                          candType ? `**Candidate Type:** ${candType}` : null,
+                          results?.risk_level ? `**Risk Level:** ${results.risk_level}` : null,
+                          '',
+                          topStrengths.length > 0 ? `**Key Strengths:**\n${topStrengths.map(s => `- ${s}`).join('\n')}` : null,
+                          '',
+                          `Please let me know if you would like to discuss this candidate further.`,
+                        ].filter(l => l !== null).join('\n')
+                        setClientEmailTo('')
+                        setClientEmailSubject(`Candidate Assessment: ${cName} for ${role}`)
+                        setClientEmailBody(body)
+                        setClientEmailSent(false)
+                        setClientEmailError('')
+                        setClientEmailModal(true)
+                      }}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 7,
+                        padding: '8px 16px', borderRadius: 8, border: `1px solid ${TEAL}`,
+                        background: TEALLT, color: TEALD, fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      <Ic name="send" size={13} color={TEALD} />
+                      Email to Client
+                    </button>
                   </div>
                 )}
 
@@ -1659,6 +1768,76 @@ export default function CandidateReportPage({ params }) {
                             </div>
                           )
                         })}
+                      </div>
+                    </Card>
+                    </ScrollReveal>
+                  )
+                })()}
+
+                {/* ══════════════════════════════════════════════════
+                    COST OF WRONG HIRE CALCULATOR
+                ══════════════════════════════════════════════════ */}
+                {(() => {
+                  const isAgency = profile?.account_type === 'agency'
+                  const sal = Math.max(0, parseInt(wrongHireSalary.replace(/[^0-9]/g, '')) || 0)
+                  function gbp(n) { return '£' + n.toLocaleString('en-GB') }
+                  const recruitment  = isAgency ? Math.round(sal * 0.15) : Math.round(sal * 0.15)
+                  const training     = 3000
+                  const productivity = Math.round(sal * 0.25)
+                  const tribunal     = Math.round(sal * 0.75)
+                  const total        = recruitment + training + productivity + tribunal
+                  return (
+                    <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <SectionHeading tooltip="Estimated financial exposure if this hire fails, including recruitment, training, lost productivity, and ERA 2025 tribunal risk.">
+                        Cost of Wrong Hire
+                      </SectionHeading>
+                      <div style={{ marginBottom: 16 }}>
+                        <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                          {isAgency ? 'Estimated candidate salary' : 'Role salary'}
+                        </label>
+                        <div style={{ position: 'relative', maxWidth: 240 }}>
+                          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontFamily: FM, fontSize: 14, fontWeight: 700, color: TX3, pointerEvents: 'none' }}>£</span>
+                          <input
+                            type="text"
+                            value={wrongHireSalary}
+                            onChange={e => setWrongHireSalary(e.target.value.replace(/[^0-9]/g, ''))}
+                            style={{
+                              width: '100%', boxSizing: 'border-box', paddingLeft: 26, paddingRight: 12, paddingTop: 9, paddingBottom: 9,
+                              borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: FM, fontSize: 14, fontWeight: 700,
+                              color: TX, background: CARD, outline: 'none',
+                            }}
+                            onFocus={e => e.target.style.borderColor = TEAL}
+                            onBlur={e => e.target.style.borderColor = BD}
+                          />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                        {[
+                          isAgency
+                            ? { label: 'Placement fee at risk', value: recruitment, note: '15% of salary, not recovered on failed placement', color: RED, bg: REDBG }
+                            : { label: 'Recruitment cost', value: recruitment, note: '15% of salary to re-hire', color: AMB, bg: AMBBG },
+                          { label: 'Training and onboarding', value: training, note: '£3,000 flat per hire', color: AMB, bg: AMBBG },
+                          { label: 'Lost productivity', value: productivity, note: '3 months salary / 4', color: AMB, bg: AMBBG },
+                          { label: 'ERA 2025 tribunal risk', value: tribunal, note: 'Uncapped from January 2027', color: RED, bg: REDBG },
+                        ].map(({ label, value, note, color, bg }) => (
+                          <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: bg, border: `1px solid ${color}33`, gap: 12 }}>
+                            <div>
+                              <div style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX }}>{label}</div>
+                              <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, marginTop: 1 }}>{note}</div>
+                            </div>
+                            <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color, flexShrink: 0 }}>{gbp(value)}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ background: `linear-gradient(135deg, ${REDBG}, #fff5f5)`, border: `1.5px solid ${RED}66`, borderRadius: 10, padding: '16px 18px' }}>
+                        <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                          Total financial exposure
+                        </div>
+                        <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: RED, lineHeight: 1, marginBottom: 4 }}>{gbp(total)}</div>
+                        <div style={{ fontFamily: F, fontSize: 12, color: TX2 }}>
+                          {isAgency ? 'Placement fee + training + lost productivity + ERA 2025 tribunal' : 'Recruitment + training + lost productivity + ERA 2025 tribunal'}
+                        </div>
                       </div>
                     </Card>
                     </ScrollReveal>
@@ -3220,6 +3399,107 @@ export default function CandidateReportPage({ params }) {
           </>
         )}
       </main>
+
+      {/* ── EMAIL TO CLIENT MODAL (agency only) ── */}
+      {clientEmailModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(15,33,55,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={() => { if (!clientEmailSending) setClientEmailModal(false) }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: CARD, borderRadius: 16, padding: '28px 32px', maxWidth: 560, width: '100%', boxShadow: '0 16px 48px rgba(15,33,55,0.25)' }}>
+            <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 18px' }}>Email to Client</h3>
+            {clientEmailSent ? (
+              <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: GRNBG, border: `1px solid ${GRNBD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                  <Ic name="check" size={22} color={GRN} />
+                </div>
+                <div style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: TX, marginBottom: 6 }}>Email sent</div>
+                <div style={{ fontFamily: F, fontSize: 13.5, color: TX2 }}>Your client will receive the assessment summary shortly.</div>
+                <button onClick={() => setClientEmailModal(false)} style={{ marginTop: 20, padding: '10px 28px', borderRadius: 8, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>Close</button>
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>To</label>
+                    <input
+                      type="email"
+                      value={clientEmailTo}
+                      onChange={e => setClientEmailTo(e.target.value)}
+                      placeholder="client@company.com"
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 14, color: TX, outline: 'none' }}
+                      onFocus={e => e.target.style.borderColor = TEAL}
+                      onBlur={e => e.target.style.borderColor = BD}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>Subject</label>
+                    <input
+                      type="text"
+                      value={clientEmailSubject}
+                      onChange={e => setClientEmailSubject(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 14, color: TX, outline: 'none' }}
+                      onFocus={e => e.target.style.borderColor = TEAL}
+                      onBlur={e => e.target.style.borderColor = BD}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>Message</label>
+                    <textarea
+                      rows={10}
+                      value={clientEmailBody}
+                      onChange={e => setClientEmailBody(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13.5, color: TX, outline: 'none', resize: 'vertical', lineHeight: 1.65 }}
+                      onFocus={e => e.target.style.borderColor = TEAL}
+                      onBlur={e => e.target.style.borderColor = BD}
+                    />
+                  </div>
+                </div>
+                {clientEmailError && (
+                  <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 7, background: REDBG, border: `1px solid ${REDBD}`, color: RED, fontFamily: F, fontSize: 13 }}>
+                    {clientEmailError}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                  <button
+                    disabled={!clientEmailTo.trim() || !clientEmailSubject.trim() || !clientEmailBody.trim() || clientEmailSending}
+                    onClick={async () => {
+                      setClientEmailSending(true)
+                      setClientEmailError('')
+                      try {
+                        const res = await fetch('/api/send-client-email', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ to: clientEmailTo.trim(), subject: clientEmailSubject.trim(), body: clientEmailBody.trim() }),
+                        })
+                        const data = await res.json()
+                        if (data.success) { setClientEmailSent(true) }
+                        else { setClientEmailError(data.error || 'Failed to send email.') }
+                      } catch { setClientEmailError('Something went wrong. Please try again.') }
+                      finally { setClientEmailSending(false) }
+                    }}
+                    style={{
+                      flex: 1, padding: '11px 0', borderRadius: 8, border: 'none',
+                      background: (!clientEmailTo.trim() || !clientEmailSubject.trim() || clientEmailSending) ? BD : TEAL,
+                      color: (!clientEmailTo.trim() || !clientEmailSubject.trim() || clientEmailSending) ? TX3 : NAVY,
+                      fontFamily: F, fontSize: 14, fontWeight: 700,
+                      cursor: (!clientEmailTo.trim() || !clientEmailSubject.trim() || clientEmailSending) ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {clientEmailSending ? 'Sending...' : 'Send Email'}
+                  </button>
+                  <button
+                    onClick={() => setClientEmailModal(false)}
+                    style={{ flex: 1, padding: '11px 0', borderRadius: 8, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── SEND TO CLIENT MODAL (agency only) ── */}
       {sendModal && (

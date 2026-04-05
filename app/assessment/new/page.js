@@ -98,6 +98,7 @@ export default function NewAssessmentPage() {
   const [selectedTemplate, setSelectedTemplate] = useState('')
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
   const [templateName, setTemplateName] = useState('')
+  const [rapidMode, setRapidMode] = useState(false)
 
   // Context questions
   const [contextQuestions, setContextQuestions] = useState([])
@@ -197,6 +198,7 @@ export default function NewAssessmentPage() {
           save_as_template: saveAsTemplate,
           template_name: saveAsTemplate ? (templateName.trim() || roleTitle.trim()) : undefined,
           context_answers: Object.keys(contextAnswers).length > 0 ? contextAnswers : undefined,
+          assessment_mode: rapidMode ? 'rapid' : 'standard',
         })
       })
       const data = await res.json()
@@ -601,6 +603,42 @@ export default function NewAssessmentPage() {
               />
             </div>
           )}
+        </div>
+
+        {/* Rapid Assessment toggle */}
+        <div style={{
+          background: rapidMode ? '#fffbeb' : '#fff',
+          borderRadius: 14,
+          border: `1.5px solid ${rapidMode ? '#fcd34d' : '#e4e9f0'}`,
+          padding: '20px 28px', marginBottom: 20,
+          transition: 'border-color 0.15s, background 0.15s',
+        }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 14, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={rapidMode}
+              onChange={e => setRapidMode(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: '#d97706', cursor: 'pointer', marginTop: 2, flexShrink: 0 }}
+            />
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', fontFamily: F }}>
+                  Rapid Assessment (15 minutes)
+                </span>
+                <span style={{
+                  fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                  background: '#fffbeb', color: '#d97706', border: '1px solid #fcd34d', fontFamily: F
+                }}>
+                  2 scenarios
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, color: '#5e6b7f', lineHeight: 1.55, fontFamily: F }}>
+                Generates 2 focused scenarios instead of 4, targeted at the highest-priority skills in the JD.
+                The report will include overall score, top risk, hiring confidence, candidate type, and the single most important interview question.
+                Flagged clearly as a Rapid Assessment on all reports.
+              </p>
+            </div>
+          </label>
         </div>
 
         {/* Generate button */}

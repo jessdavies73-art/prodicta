@@ -4,7 +4,8 @@ import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-
 
 export async function POST(request) {
   try {
-    const { role_title, job_description, skill_weights, save_as_template, template_name, context_answers } = await request.json()
+    const { role_title, job_description, skill_weights, save_as_template, template_name, context_answers, assessment_mode } = await request.json()
+    const isRapid = assessment_mode === 'rapid'
 
     // Auth check
     const supabase = createServerSupabaseClient()
@@ -14,7 +15,57 @@ export async function POST(request) {
     // Call Claude API
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-    const prompt = `You are a specialist assessment designer for UK businesses. Your job is to create four work simulation scenarios that test whether this specific hire will succeed, last, and fit.
+    const prompt = isRapid ? `You are a specialist assessment designer for UK businesses. Your job is to create TWO rapid work simulation scenarios for this role. These are for a 15-minute rapid assessment - they must be tightly focused on the highest-priority skills from the job description.
+
+These are NOT hypothetical exercises. Each scenario must be built from actual tasks listed in the job description. The candidate should feel like they are already in the role.
+
+---
+
+ROLE: ${role_title}
+
+JOB DESCRIPTION:
+${job_description}
+
+---
+
+STEP 1 - IDENTIFY THE TWO HIGHEST-PRIORITY SKILLS FROM THE JD
+
+Read the job description. Identify the two most critical skills that will determine whether this hire succeeds or fails in the first 90 days. Build one scenario around each.
+
+---
+
+SCENARIO 1 - Core capability test (Type: "Core Task", Time: 7 minutes)
+
+The single most important task this person will do. Test whether they can execute it. Pull a specific task directly from the JD. Give them real content to work with. The output must reveal whether they can actually do the job.
+
+---
+
+SCENARIO 2 - Pressure and judgment (Type: "Pressure Test", Time: 8 minutes)
+
+A realistic pressure situation drawn from the JD. A competing deadline, a difficult stakeholder, or an unexpected problem mid-task. They must do real work under pressure. The output must reveal how they handle the stress of the role.
+
+---
+
+OUTPUT FORMAT
+
+Return ONLY a JSON array with exactly 2 objects. No preamble, no explanation, no markdown.
+
+[
+  {
+    "type": "Core Task",
+    "title": "Concise title describing the situation",
+    "context": "The full situation in present tense. At least 100 words. Named characters, specific numbers. Must feel like a real working day.",
+    "task": "Exactly what the candidate must produce. One specific deliverable.",
+    "timeMinutes": 7,
+    "skills": ["Communication", "Problem solving"]
+  }
+]
+
+The two scenario types must be: "Core Task", "Pressure Test"
+
+Skills must be chosen only from: Communication, Problem solving, Prioritisation, Leadership, Negotiation, Client management, Judgment, Strategy, Analysis, Crisis management, People management, Technical communication, Stakeholder management, Conflict resolution
+
+Write in UK English throughout. No Americanisms.` : `You are a specialist assessment designer for UK businesses. Your job is to create four work simulation scenarios that test whether this specific hire will succeed, last, and fit.
 
 These are NOT hypothetical exercises or personality tests. Each scenario must be built from actual tasks, responsibilities, and requirements listed in the job description. The candidate should feel like they are already in the role on a Tuesday morning, doing real work.
 
@@ -191,6 +242,7 @@ Write in UK English throughout. No Americanisms. No generic scenarios. No abstra
         scenarios,
         skill_weights: skill_weights || { Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 },
         status: 'active',
+        assessment_mode: isRapid ? 'rapid' : 'standard',
         ...(context_answers && Object.values(context_answers).some(v => v?.trim()) && {
           context_answers,
         }),
