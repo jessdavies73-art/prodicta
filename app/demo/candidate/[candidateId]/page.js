@@ -645,28 +645,46 @@ export default function DemoCandidatePage({ params }) {
                     onClick={() => {
                       const cName = candidate.name || 'Candidate'
                       const role = 'Demo Role'
+                      const sc = results?.overall_score || 0
                       const cType = results?.candidate_type ? (results.candidate_type.indexOf('|') > -1 ? results.candidate_type.slice(0, results.candidate_type.indexOf('|')).trim() : results.candidate_type) : 'Not assessed'
-                      const watchoutsList = (results?.watchouts || []).map(w => `<li style="margin-bottom:8px"><strong>${w.title || w.category || 'Watch-out'}</strong>${w.severity ? ` <span style="color:${w.severity==='High'?'#dc2626':w.severity==='Medium'?'#d97706':'#6b7280'}">[${w.severity}]</span>` : ''}: ${w.detail || w.description || ''}</li>`).join('')
-                      const strengthsList = (results?.strengths || []).map(s => `<li style="margin-bottom:6px">${s.title || s.label || s}: ${s.detail || s.description || ''}</li>`).join('')
-                      const questionsList = (results?.suggested_questions || []).map(q => `<li style="margin-bottom:10px">${q.question || q}</li>`).join('')
-                      const w = window.open('', '_blank')
-                      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Interview Brief - ${cName}</title><style>body{font-family:'Segoe UI',Arial,sans-serif;color:#0f2137;margin:0;padding:32px;max-width:800px}h1{font-size:22px;font-weight:800;margin:0 0 4px}h2{font-size:15px;font-weight:700;border-bottom:2px solid #00bfa5;padding-bottom:6px;margin:24px 0 12px}p{margin:0 0 8px;font-size:13px;line-height:1.6}ul{margin:0;padding-left:20px;font-size:13px;line-height:1.6}.header{background:#0f2137;color:#fff;padding:20px 28px;border-radius:8px;margin-bottom:24px}.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-left:8px}@media print{body{padding:16px}}</style></head><body><div class="header"><p style="font-size:10px;font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,.45);margin:0 0 4px">INTERVIEW BRIEF - PRODICTA</p><h1 style="color:#fff;margin:0 0 4px">${cName}</h1><p style="color:rgba(255,255,255,.65);font-size:13px;margin:0">Role: ${role} | Score: ${score}/100 | Generated ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</p></div><h2>Candidate Type</h2><p style="font-size:16px;font-weight:700;color:#00bfa5">${cType}</p><h2>Key Strengths</h2><ul>${strengthsList || '<li>No strengths data available.</li>'}</ul><h2>Watch-outs</h2><ul>${watchoutsList || '<li>No watch-outs flagged.</li>'}</ul><h2>Suggested Interview Questions</h2><ul>${questionsList || '<li>No interview questions available.</li>'}</ul><script>window.onload=function(){window.print();}<\/script></body></html>`)
-                      w.document.close()
+                      const watchOuts = (results?.watchouts || []).slice(0, 4).map(w => {
+                        const title = typeof w === 'object' ? (w.watchout || w.title || w.text || '') : w
+                        const sev = typeof w === 'object' ? w.severity : null
+                        return `<li style="margin-bottom:10px;"><strong>${title}</strong>${sev ? ` <span style="font-size:11px;background:${sev === 'High' ? '#fee2e2' : '#fffbeb'};color:${sev === 'High' ? '#dc2626' : '#d97706'};padding:1px 7px;border-radius:20px;">${sev}</span>` : ''}</li>`
+                      }).join('')
+                      const questions = (results?.interview_questions || results?.suggested_questions || []).slice(0, 4).map(q => {
+                        const text = typeof q === 'object' ? (q.question || q.text || '') : q
+                        return `<li style="margin-bottom:10px;">${text}</li>`
+                      }).join('')
+                      const strengths = (results?.strengths || []).slice(0, 3).map(s => {
+                        const title = typeof s === 'object' ? (s.strength || s.title || '') : s
+                        const exp = typeof s === 'object' ? (s.explanation || s.detail || '') : ''
+                        return `<li style="margin-bottom:10px;"><strong>${title}</strong>${exp ? `<br><span style="color:#5e6b7f;font-size:12px;">${exp}</span>` : ''}</li>`
+                      }).join('')
+                      const html = `<div style="font-family:'Outfit',system-ui,sans-serif;max-width:700px;margin:0 auto;padding:32px;">
+                        <div style="border-bottom:3px solid #00BFA5;padding-bottom:16px;margin-bottom:24px;">
+                          <div style="font-size:11px;font-weight:700;color:#009688;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">PRODICTA - Interview Brief</div>
+                          <h1 style="font-size:22px;font-weight:800;color:#0f2137;margin:0 0 4px;">${cName}</h1>
+                          <div style="font-size:14px;color:#5e6b7f;">${role}</div>
+                        </div>
+                        <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+                          <tr><td style="padding:8px 0;border-bottom:1px solid #e4e9f0;font-size:13px;color:#94a1b3;font-weight:600;width:40%;">Overall Score</td><td style="padding:8px 0;border-bottom:1px solid #e4e9f0;font-size:13px;font-weight:700;color:#0f172a;">${sc}/100</td></tr>
+                          <tr><td style="padding:8px 0;font-size:13px;color:#94a1b3;font-weight:600;">Candidate Type</td><td style="padding:8px 0;font-size:13px;font-weight:700;color:#00BFA5;">${cType}</td></tr>
+                        </table>
+                        ${watchOuts ? `<div style="margin-bottom:24px;"><h2 style="font-size:15px;font-weight:800;color:#0f2137;border-bottom:2px solid #EF4444;padding-bottom:6px;margin-bottom:12px;">Watch-outs to probe</h2><ul style="margin:0;padding-left:18px;">${watchOuts}</ul></div>` : ''}
+                        ${questions ? `<div style="margin-bottom:24px;"><h2 style="font-size:15px;font-weight:800;color:#0f2137;border-bottom:2px solid #00BFA5;padding-bottom:6px;margin-bottom:12px;">Suggested interview questions</h2><ul style="margin:0;padding-left:18px;">${questions}</ul></div>` : ''}
+                        ${strengths ? `<div style="margin-bottom:24px;"><h2 style="font-size:15px;font-weight:800;color:#0f2137;border-bottom:2px solid #22C55E;padding-bottom:6px;margin-bottom:12px;">Strengths to validate</h2><ul style="margin:0;padding-left:18px;">${strengths}</ul></div>` : ''}
+                        <div style="margin-top:32px;padding-top:12px;border-top:1px solid #e4e9f0;font-size:11px;color:#94a1b3;">Generated by PRODICTA - Candidate Assessment Platform</div>
+                      </div>`
+                      const win = window.open('', '_blank')
+                      if (!win) return
+                      win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Interview Brief - ${cName}</title><style>@media print{body{margin:0}ul{page-break-inside:avoid}}</style></head><body>${html}<script>window.onload=function(){window.print();}<\/script></body></html>`)
+                      win.document.close()
                     }}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: CARD, border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TX2, padding: '9px 16px' }}
                   >
                     <Ic name="file-text" size={14} color={TX2} />
                     Interview Brief
-                  </button>
-                  <button
-                    onClick={() => setSignupPrompt(true)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: CARD, border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TX2, padding: '9px 16px' }}
-                  >
-                    <Ic name="download" size={14} color={TX2} />
-                    Export PDF
-                  </button>
-                  <button onClick={() => router.push('/login')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'transparent', border: `1.5px solid ${TEAL}55`, borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px' }}>
-                    Sign up →
                   </button>
                 </div>
               </div>
