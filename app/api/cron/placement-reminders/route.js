@@ -19,7 +19,7 @@ export async function GET(request) {
   // ── Load all outcomes that have a placement_date ───────────────────────────
   const { data: outcomes, error: ocErr } = await adminClient
     .from('candidate_outcomes')
-    .select('*, candidates(id, name, assessments(role_title)), users(email, company_name, account_type)')
+    .select('*, candidates(id, name, assessments(role_title))')
     .not('placement_date', 'is', null)
 
   if (ocErr) {
@@ -27,10 +27,21 @@ export async function GET(request) {
     return NextResponse.json({ error: ocErr.message }, { status: 500 })
   }
 
+  // ── Batch-fetch user records by user_id ─────────────────────────────────────
+  const userIds = [...new Set((outcomes || []).map(o => o.user_id).filter(Boolean))]
+  let usersById = {}
+  if (userIds.length > 0) {
+    const { data: userRows } = await adminClient
+      .from('users')
+      .select('id, email, company_name, account_type')
+      .in('id', userIds)
+    usersById = Object.fromEntries((userRows || []).map(u => [u.id, u]))
+  }
+
   const now = new Date()
 
   for (const o of outcomes || []) {
-    const user      = o.users
+    const user      = usersById[o.user_id] || null
     const cand      = o.candidates
     const candName  = cand?.name || 'the candidate'
     const role      = cand?.assessments?.role_title || 'this role'
