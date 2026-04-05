@@ -319,9 +319,11 @@ export default function OutcomesPage() {
                     <div style={{ fontSize: 14, fontWeight: 600, color: TX, fontFamily: F }}>{cand?.name || '-'}</div>
                     <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>{cand?.email || ''}</div>
                     {/* Probation mini-tracker (employer) */}
-                    {profile?.account_type === 'employer' && o.placement_date && o.probation_months && (() => {
-                      const elapsed = Math.max(0, Math.floor((Date.now() - new Date(o.placement_date)) / 86400000))
-                      const total   = Math.round(o.probation_months * 30.44)
+                    {profile?.account_type === 'employer' && (o.placement_date || o.outcome_date || o.created_at) && (() => {
+                      const startDate = o.placement_date || o.outcome_date || o.created_at
+                      const probMonths = o.probation_months || 6
+                      const elapsed = Math.max(0, Math.floor((Date.now() - new Date(startDate)) / 86400000))
+                      const total   = Math.round(probMonths * 30.44)
                       const pct     = Math.min(100, (elapsed / total) * 100)
                       const done    = elapsed >= total
                       const danger  = elapsed >= 152
@@ -334,7 +336,7 @@ export default function OutcomesPage() {
                             <InfoTooltip text="Visual tracker from hire date to the 6-month ERA 2025 unfair dismissal threshold. Colour-coded milestones with automated review reminders." />
                           </div>
                           <div style={{ fontFamily: F, fontSize: 10.5, color: danger && !done ? RED : TX3, fontWeight: danger ? 700 : 400, marginBottom: 3 }}>
-                            {done ? 'Probation complete' : `Month ${monthsIn} of ${o.probation_months}${danger ? ' · ERA zone' : ''}`}
+                            {done ? 'Probation complete' : `Month ${monthsIn} of ${probMonths}${danger ? ' · ERA zone' : ''}`}
                           </div>
                           <div style={{ height: 4, background: BD, borderRadius: 2, overflow: 'hidden', width: 120 }}>
                             <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 2 }} />
