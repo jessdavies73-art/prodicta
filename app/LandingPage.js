@@ -98,7 +98,7 @@ function Nav() {
         <a href="/login" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.65)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.14)', marginLeft: 4, transition: 'border-color 0.15s' }}
           onMouseEnter={e => e.target.style.borderColor='rgba(255,255,255,0.35)'} onMouseLeave={e => e.target.style.borderColor='rgba(255,255,255,0.14)'}>Sign in</a>
         <a href="/login" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY, textDecoration: 'none', padding: '9px 20px', borderRadius: 8, background: TEAL, marginLeft: 2, transition: 'opacity 0.15s' }}
-          onMouseEnter={e => e.target.style.opacity='0.88'} onMouseLeave={e => e.target.style.opacity='1'}>Start free →</a>
+          onMouseEnter={e => e.target.style.opacity='0.88'} onMouseLeave={e => e.target.style.opacity='1'}>Get started →</a>
       </div>
     </nav>
   )
@@ -240,7 +240,7 @@ export default function LandingPage() {
           }}
           onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.animation='none'; e.currentTarget.style.boxShadow=`0 12px 40px rgba(0,191,165,0.5)` }}
           onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.animation='ctaPulse 3s ease infinite'; e.currentTarget.style.boxShadow='' }}>
-            Start Free Trial
+            Get started
           </a>
           <a href="/demo" style={{
             fontFamily: F, fontSize: 16, fontWeight: 600, color: '#fff',
@@ -1272,7 +1272,7 @@ export default function LandingPage() {
                 padding: '16px 44px', borderRadius: 12,
                 boxShadow: `0 8px 32px ${TEAL}44`,
               }}>
-                Start Free Trial →
+                Get started →
               </a>
               <a href="/demo" style={{
                 fontFamily: F, fontSize: 16, fontWeight: 600, color: '#fff',

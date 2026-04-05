@@ -209,7 +209,7 @@ export default function SampleReportPage() {
             cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
           }}
         >
-          Get started free
+          Get started
           <Ic name="right" size={14} color={NAVY} />
         </button>
       </div>
@@ -689,7 +689,7 @@ export default function SampleReportPage() {
                 cursor: 'pointer',
               }}
             >
-              Get started free
+              Get started
               <Ic name="right" size={16} color={NAVY} />
             </button>
             <button
