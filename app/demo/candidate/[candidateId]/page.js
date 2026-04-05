@@ -451,7 +451,6 @@ export default function DemoCandidatePage({ params }) {
   const [signupPrompt, setSignupPrompt] = useState(false)
   const [sendModal, setSendModal] = useState(false)
   const [sendEmail, setSendEmail] = useState('')
-  const [wrongHireSalary, setWrongHireSalary] = useState('35000')
   const [expandedSections, setExpandedSections] = useState({ aiSummary: false, candidateDocs: false })
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
@@ -878,61 +877,6 @@ export default function DemoCandidatePage({ params }) {
                       )
                     })}
                   </div>
-                </Card>
-                </ScrollReveal>
-              )
-            })()}
-
-            {/* ── COST OF WRONG HIRE ── */}
-            {(() => {
-              const sal = Math.max(0, parseInt(wrongHireSalary.replace(/[^0-9]/g, '')) || 0)
-              function gbp(n) { return '£' + n.toLocaleString('en-GB') }
-              const recruitment  = Math.round(sal * 0.15)
-              const training     = 3000
-              const productivity = Math.round(sal * 0.25)
-              const tribunal     = Math.round(sal * 0.75)
-              const total        = recruitment + training + productivity + tribunal
-              return (
-                <ScrollReveal delay={60}>
-                <Card>
-                  <SectionHeading>Cost of Wrong Hire</SectionHeading>
-                  <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 16px', lineHeight: 1.6 }}>
-                    If this candidate underperforms or leaves early, here is the estimated financial exposure based on CIPD and ERA 2025 data.
-                  </p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                    <label style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX, whiteSpace: 'nowrap' }}>Annual salary</label>
-                    <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-                      <span style={{ position: 'absolute', left: 10, fontFamily: F, fontSize: 14, color: TX2, pointerEvents: 'none' }}>£</span>
-                      <input
-                        type="text"
-                        value={wrongHireSalary}
-                        onChange={e => setWrongHireSalary(e.target.value.replace(/[^0-9]/g, ''))}
-                        onFocus={e => { e.target.style.borderColor = TEAL; e.target.style.outline = `2px solid ${TEAL}33` }}
-                        onBlur={e => { e.target.style.borderColor = BD; e.target.style.outline = 'none' }}
-                        style={{ paddingLeft: 22, paddingRight: 10, paddingTop: 7, paddingBottom: 7, fontFamily: FM, fontSize: 14, fontWeight: 700, color: TX, background: BG, border: `1.5px solid ${BD}`, borderRadius: 7, width: 120 }}
-                      />
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
-                    {[
-                      { label: 'Recruitment cost (15% of salary)', value: gbp(recruitment) },
-                      { label: 'Training and onboarding', value: gbp(training) },
-                      { label: 'Lost productivity (3 months)', value: gbp(productivity) },
-                      { label: 'ERA 2025 tribunal exposure (est. 75%)', value: gbp(tribunal) },
-                    ].map(row => (
-                      <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: BG, borderRadius: 7, border: `1px solid ${BD}` }}>
-                        <span style={{ fontFamily: F, fontSize: 13, color: TX2 }}>{row.label}</span>
-                        <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 700, color: TX }}>{row.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: REDBG, borderRadius: 8, border: `1.5px solid ${REDBD}` }}>
-                    <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: RED }}>Total exposure</span>
-                    <span style={{ fontFamily: FM, fontSize: 20, fontWeight: 800, color: RED }}>{gbp(total)}</span>
-                  </div>
-                  <p style={{ fontFamily: F, fontSize: 11.5, color: TX3, margin: '10px 0 0', lineHeight: 1.5 }}>
-                    Based on CIPD research, ACAS guidance, and Employment Rights Act 2025 tribunal award estimates. Figures are indicative.
-                  </p>
                 </Card>
                 </ScrollReveal>
               )

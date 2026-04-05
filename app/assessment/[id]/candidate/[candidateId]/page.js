@@ -926,7 +926,6 @@ export default function CandidateReportPage({ params }) {
   const [noteSaving, setNoteSaving] = useState(false)
   const [activeSection, setActiveSection] = useState('summary')
   const [expandedWeeks, setExpandedWeeks] = useState({})
-  const [wrongHireSalary, setWrongHireSalary] = useState('35000')
   const [expandedSections, setExpandedSections] = useState({ aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false })
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
@@ -1790,76 +1789,6 @@ export default function CandidateReportPage({ params }) {
                             </div>
                           )
                         })}
-                      </div>
-                    </Card>
-                    </ScrollReveal>
-                  )
-                })()}
-
-                {/* ══════════════════════════════════════════════════
-                    COST OF WRONG HIRE CALCULATOR
-                ══════════════════════════════════════════════════ */}
-                {(() => {
-                  const isAgency = profile?.account_type === 'agency'
-                  const sal = Math.max(0, parseInt(wrongHireSalary.replace(/[^0-9]/g, '')) || 0)
-                  function gbp(n) { return '£' + n.toLocaleString('en-GB') }
-                  const recruitment  = isAgency ? Math.round(sal * 0.15) : Math.round(sal * 0.15)
-                  const training     = 3000
-                  const productivity = Math.round(sal * 0.25)
-                  const tribunal     = Math.round(sal * 0.75)
-                  const total        = recruitment + training + productivity + tribunal
-                  return (
-                    <ScrollReveal delay={60}>
-                    <Card style={{ marginBottom: 20 }}>
-                      <SectionHeading tooltip="Estimated financial exposure if this hire fails, including recruitment, training, lost productivity, and ERA 2025 tribunal risk.">
-                        Cost of Wrong Hire
-                      </SectionHeading>
-                      <div style={{ marginBottom: 16 }}>
-                        <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
-                          {isAgency ? 'Estimated candidate salary' : 'Role salary'}
-                        </label>
-                        <div style={{ position: 'relative', maxWidth: 240 }}>
-                          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontFamily: FM, fontSize: 14, fontWeight: 700, color: TX3, pointerEvents: 'none' }}>£</span>
-                          <input
-                            type="text"
-                            value={wrongHireSalary}
-                            onChange={e => setWrongHireSalary(e.target.value.replace(/[^0-9]/g, ''))}
-                            style={{
-                              width: '100%', boxSizing: 'border-box', paddingLeft: 26, paddingRight: 12, paddingTop: 9, paddingBottom: 9,
-                              borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: FM, fontSize: 14, fontWeight: 700,
-                              color: TX, background: CARD, outline: 'none',
-                            }}
-                            onFocus={e => e.target.style.borderColor = TEAL}
-                            onBlur={e => e.target.style.borderColor = BD}
-                          />
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-                        {[
-                          isAgency
-                            ? { label: 'Placement fee at risk', value: recruitment, note: '15% of salary, not recovered on failed placement', color: RED, bg: REDBG }
-                            : { label: 'Recruitment cost', value: recruitment, note: '15% of salary to re-hire', color: AMB, bg: AMBBG },
-                          { label: 'Training and onboarding', value: training, note: '£3,000 flat per hire', color: AMB, bg: AMBBG },
-                          { label: 'Lost productivity', value: productivity, note: '3 months salary / 4', color: AMB, bg: AMBBG },
-                          { label: 'ERA 2025 tribunal risk', value: tribunal, note: 'Uncapped from January 2027', color: RED, bg: REDBG },
-                        ].map(({ label, value, note, color, bg }) => (
-                          <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: bg, border: `1px solid ${color}33`, gap: 12 }}>
-                            <div>
-                              <div style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX }}>{label}</div>
-                              <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, marginTop: 1 }}>{note}</div>
-                            </div>
-                            <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color, flexShrink: 0 }}>{gbp(value)}</div>
-                          </div>
-                        ))}
-                      </div>
-                      <div style={{ background: `linear-gradient(135deg, ${REDBG}, #fff5f5)`, border: `1.5px solid ${RED}66`, borderRadius: 10, padding: '16px 18px' }}>
-                        <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-                          Total financial exposure
-                        </div>
-                        <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: RED, lineHeight: 1, marginBottom: 4 }}>{gbp(total)}</div>
-                        <div style={{ fontFamily: F, fontSize: 12, color: TX2 }}>
-                          {isAgency ? 'Placement fee + training + lost productivity + ERA 2025 tribunal' : 'Recruitment + training + lost productivity + ERA 2025 tribunal'}
-                        </div>
                       </div>
                     </Card>
                     </ScrollReveal>
