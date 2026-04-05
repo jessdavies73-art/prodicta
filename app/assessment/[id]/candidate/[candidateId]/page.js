@@ -930,13 +930,7 @@ export default function CandidateReportPage({ params }) {
   const [expandedSections, setExpandedSections] = useState({ aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false })
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
-  const [clientEmailModal, setClientEmailModal] = useState(false)
-  const [clientEmailTo, setClientEmailTo] = useState('')
-  const [clientEmailSubject, setClientEmailSubject] = useState('')
-  const [clientEmailBody, setClientEmailBody] = useState('')
-  const [clientEmailSending, setClientEmailSending] = useState(false)
-  const [clientEmailSent, setClientEmailSent] = useState(false)
-  const [clientEmailError, setClientEmailError] = useState('')
+
 
   // Outcome Tracking (employer only)
   const [outcomeModal, setOutcomeModal] = useState(false)
@@ -1638,48 +1632,6 @@ export default function CandidateReportPage({ params }) {
 
                 <StickyNav active={activeSection} />
 
-                {/* Email to Client - agency only */}
-                {profile?.account_type === 'agency' && (
-                  <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <button
-                      className="no-print"
-                      onClick={() => {
-                        const cName = candidate?.name || 'the candidate'
-                        const role = candidate?.assessments?.role_title || 'the role'
-                        const sc = results?.overall_score ?? 0
-                        const dec = sc >= 80 ? 'Strong hire' : sc >= 70 ? 'Hire with structured onboarding' : sc >= 55 ? 'Proceed with caution' : 'Not recommended at this stage'
-                        const candType = results?.candidate_type ? results.candidate_type.split('|')[0].trim() : null
-                        const topStrengths = (results?.strengths || []).slice(0, 2).map(s => typeof s === 'object' ? (s.strength || s.title || '') : s).filter(Boolean)
-                        const body = [
-                          `Please find our assessment summary for ${cName} for the ${role} role.`,
-                          '',
-                          `**Overall Score:** ${sc}/100`,
-                          `**Recommendation:** ${dec}`,
-                          candType ? `**Candidate Type:** ${candType}` : null,
-                          results?.risk_level ? `**Risk Level:** ${results.risk_level}` : null,
-                          '',
-                          topStrengths.length > 0 ? `**Key Strengths:**\n${topStrengths.map(s => `- ${s}`).join('\n')}` : null,
-                          '',
-                          `Please let me know if you would like to discuss this candidate further.`,
-                        ].filter(l => l !== null).join('\n')
-                        setClientEmailTo('')
-                        setClientEmailSubject(`Candidate Assessment: ${cName} for ${role}`)
-                        setClientEmailBody(body)
-                        setClientEmailSent(false)
-                        setClientEmailError('')
-                        setClientEmailModal(true)
-                      }}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 7,
-                        padding: '8px 16px', borderRadius: 8, border: `1px solid ${TEAL}`,
-                        background: TEALLT, color: TEALD, fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                      }}
-                    >
-                      <Ic name="send" size={13} color={TEALD} />
-                      Email to Client
-                    </button>
-                  </div>
-                )}
 
                 {/* ══════════════════════════════════════════════════
                     VERDICT PANEL
@@ -3479,106 +3431,6 @@ export default function CandidateReportPage({ params }) {
         )}
       </main>
 
-      {/* ── EMAIL TO CLIENT MODAL (agency only) ── */}
-      {clientEmailModal && (
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(15,33,55,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
-          onClick={() => { if (!clientEmailSending) setClientEmailModal(false) }}
-        >
-          <div onClick={e => e.stopPropagation()} style={{ background: CARD, borderRadius: 16, padding: '28px 32px', maxWidth: 560, width: '100%', boxShadow: '0 16px 48px rgba(15,33,55,0.25)' }}>
-            <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 18px' }}>Email to Client</h3>
-            {clientEmailSent ? (
-              <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', background: GRNBG, border: `1px solid ${GRNBD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-                  <Ic name="check" size={22} color={GRN} />
-                </div>
-                <div style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: TX, marginBottom: 6 }}>Email sent</div>
-                <div style={{ fontFamily: F, fontSize: 13.5, color: TX2 }}>Your client will receive the assessment summary shortly.</div>
-                <button onClick={() => setClientEmailModal(false)} style={{ marginTop: 20, padding: '10px 28px', borderRadius: 8, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>Close</button>
-              </div>
-            ) : (
-              <div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <div>
-                    <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>To</label>
-                    <input
-                      type="email"
-                      value={clientEmailTo}
-                      onChange={e => setClientEmailTo(e.target.value)}
-                      placeholder="client@company.com"
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 14, color: TX, outline: 'none' }}
-                      onFocus={e => e.target.style.borderColor = TEAL}
-                      onBlur={e => e.target.style.borderColor = BD}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>Subject</label>
-                    <input
-                      type="text"
-                      value={clientEmailSubject}
-                      onChange={e => setClientEmailSubject(e.target.value)}
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 14, color: TX, outline: 'none' }}
-                      onFocus={e => e.target.style.borderColor = TEAL}
-                      onBlur={e => e.target.style.borderColor = BD}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>Message</label>
-                    <textarea
-                      rows={10}
-                      value={clientEmailBody}
-                      onChange={e => setClientEmailBody(e.target.value)}
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13.5, color: TX, outline: 'none', resize: 'vertical', lineHeight: 1.65 }}
-                      onFocus={e => e.target.style.borderColor = TEAL}
-                      onBlur={e => e.target.style.borderColor = BD}
-                    />
-                  </div>
-                </div>
-                {clientEmailError && (
-                  <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 7, background: REDBG, border: `1px solid ${REDBD}`, color: RED, fontFamily: F, fontSize: 13 }}>
-                    {clientEmailError}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-                  <button
-                    disabled={!clientEmailTo.trim() || !clientEmailSubject.trim() || !clientEmailBody.trim() || clientEmailSending}
-                    onClick={async () => {
-                      setClientEmailSending(true)
-                      setClientEmailError('')
-                      try {
-                        const res = await fetch('/api/send-client-email', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ to: clientEmailTo.trim(), subject: clientEmailSubject.trim(), body: clientEmailBody.trim() }),
-                        })
-                        const data = await res.json()
-                        if (data.success) { setClientEmailSent(true) }
-                        else { setClientEmailError(data.error || 'Failed to send email.') }
-                      } catch { setClientEmailError('Something went wrong. Please try again.') }
-                      finally { setClientEmailSending(false) }
-                    }}
-                    style={{
-                      flex: 1, padding: '11px 0', borderRadius: 8, border: 'none',
-                      background: (!clientEmailTo.trim() || !clientEmailSubject.trim() || clientEmailSending) ? BD : TEAL,
-                      color: (!clientEmailTo.trim() || !clientEmailSubject.trim() || clientEmailSending) ? TX3 : NAVY,
-                      fontFamily: F, fontSize: 14, fontWeight: 700,
-                      cursor: (!clientEmailTo.trim() || !clientEmailSubject.trim() || clientEmailSending) ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    {clientEmailSending ? 'Sending...' : 'Send Email'}
-                  </button>
-                  <button
-                    onClick={() => setClientEmailModal(false)}
-                    style={{ flex: 1, padding: '11px 0', borderRadius: 8, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* ── SEND TO CLIENT MODAL (agency only) ── */}
       {sendModal && (
