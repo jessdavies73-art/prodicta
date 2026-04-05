@@ -451,7 +451,7 @@ export default function DemoCandidatePage({ params }) {
   const [signupPrompt, setSignupPrompt] = useState(false)
   const [sendModal, setSendModal] = useState(false)
   const [sendEmail, setSendEmail] = useState('')
-  const [expandedSections, setExpandedSections] = useState({ aiSummary: false, candidateDocs: false })
+  const [expandedSections, setExpandedSections] = useState({ aiSummary: false, candidateDocs: false, onboarding: false })
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
 
@@ -699,8 +699,8 @@ export default function DemoCandidatePage({ params }) {
             <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
               <button
                 onClick={() => setExpandedSections(allExpanded
-                  ? { aiSummary: false, candidateDocs: false }
-                  : { aiSummary: true,  candidateDocs: true  }
+                  ? { aiSummary: false, candidateDocs: false, onboarding: false }
+                  : { aiSummary: true,  candidateDocs: true,  onboarding: true  }
                 )}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: `1px solid ${BD}`, borderRadius: 7, cursor: 'pointer', padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3 }}
               >
@@ -792,98 +792,6 @@ export default function DemoCandidatePage({ params }) {
               </div>
             </ScrollReveal>
 
-            {/* ── PREDICTED OUTCOME PANEL ── */}
-            {results.predictions && (() => {
-              const rawP = results.predictions
-              const ppRaw = parseInt(rawP.pass_probation) || 0
-              const crRaw = parseInt(rawP.churn_risk) || 0
-              const urRaw = parseInt(rawP.underperformance_risk) || 0
-              const p = {
-                ...rawP,
-                pass_probation:        ppRaw,
-                top_performer:         parseInt(rawP.top_performer) || 0,
-                churn_risk:            ppRaw > 70 ? Math.min(crRaw, 19) : ppRaw <= 50 ? Math.max(crRaw, 40) : crRaw,
-                underperformance_risk: ppRaw > 70 ? Math.min(urRaw, 25) : ppRaw <= 50 ? Math.max(urRaw, 45) : urRaw,
-              }
-              const displayPreds = p ? {...p, churn_risk: p.pass_probation > 70 ? Math.min(p.churn_risk, 19) : p.churn_risk} : null
-              const panels = [
-                { label: 'Pass probation',        key: 'pass_probation',        type: 'positive' },
-                { label: 'Become top performer',  key: 'top_performer',          type: 'positive' },
-                { label: 'Leave within 6 months', key: 'churn_risk',             type: 'risk'     },
-                { label: 'Underperformance risk', key: 'underperformance_risk',  type: 'risk'     },
-              ]
-              function panelColor(type, val, key) {
-                if (key === 'top_performer') return val >= 25 ? '#00BFA5' : '#F59E0B'
-                if (type === 'positive') return val >= 70 ? '#00BFA5' : val >= 50 ? '#F59E0B' : '#EF4444'
-                return val <= 25 ? '#00BFA5' : val <= 50 ? '#F59E0B' : '#EF4444'
-              }
-              function panelBg(type, val, key) {
-                const c = panelColor(type, val, key)
-                if (c === '#00BFA5') return 'rgba(0,191,165,0.07)'
-                if (c === '#F59E0B') return 'rgba(245,158,11,0.07)'
-                return 'rgba(239,68,68,0.07)'
-              }
-              function panelBd(type, val, key) {
-                const c = panelColor(type, val, key)
-                if (c === '#00BFA5') return 'rgba(0,191,165,0.22)'
-                if (c === '#F59E0B') return 'rgba(245,158,11,0.22)'
-                return 'rgba(239,68,68,0.22)'
-              }
-              function panelContext(key, val) {
-                if (key === 'pass_probation') {
-                  if (val >= 80) return 'Strong likelihood of success'
-                  if (val >= 65) return 'Likely to pass with structured onboarding'
-                  if (val >= 50) return 'Could go either way - monitor closely'
-                  return 'Significant risk of probation failure'
-                }
-                if (key === 'top_performer') {
-                  if (val >= 50) return 'Shows signs of exceeding expectations'
-                  if (val >= 25) return 'Likely to meet but not exceed expectations'
-                  return 'Expected to perform at baseline level'
-                }
-                if (key === 'churn_risk') {
-                  if (val <= 20) return 'Low flight risk - likely to stay'
-                  if (val <= 40) return 'Some flight risk - address in onboarding'
-                  return 'High flight risk - investigate motivations'
-                }
-                if (key === 'underperformance_risk') {
-                  if (val <= 25) return 'Low risk - expected to deliver'
-                  if (val <= 50) return 'Some areas may need support'
-                  return 'Significant gaps likely to surface'
-                }
-                return ''
-              }
-              return (
-                <ScrollReveal delay={60}>
-                <Card style={{ marginBottom: 20 }}>
-                  <SectionHeading tooltip="Probability predictions for this candidate's first 6 months, calibrated to the role and seniority level.">
-                    Predicted Outcome Panel
-                  </SectionHeading>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {panels.map(({ label, key, type }) => {
-                      const val = (displayPreds || p)[key] ?? 0
-                      const color = panelColor(type, val, key)
-                      const bg = panelBg(type, val, key)
-                      const bd = panelBd(type, val, key)
-                      const context = panelContext(key, val)
-                      return (
-                        <div key={key} style={{ background: bg, border: `1px solid ${bd}`, borderRadius: 10, padding: '14px 18px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                            <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{label}</span>
-                            <span style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color }}>{val}%</span>
-                          </div>
-                          <div style={{ position: 'relative', height: 8, background: `${color}22`, borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
-                            <div style={{ position: 'absolute', inset: 0, width: `${val}%`, background: color, borderRadius: 4 }} />
-                          </div>
-                          <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, lineHeight: 1.4 }}>{context}</div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </Card>
-                </ScrollReveal>
-              )
-            })()}
 
             {/* ── INTEGRITY ── */}
             <ScrollReveal id="integrity" delay={60}>
@@ -1109,93 +1017,6 @@ export default function DemoCandidatePage({ params }) {
               </ScrollReveal>
             )}
 
-            {/* ── WHAT THE ASSESSMENT REVEALED ── */}
-            {(() => {
-              const cvItems = Array.isArray(results.cv_comparison) ? results.cv_comparison : []
-              const findings = []
-              if (results.scores) {
-                const entries = Object.entries(results.scores).sort((a, b) => b[1] - a[1])
-                if (entries.length > 0) {
-                  const [topSkill, topScore] = entries[0]
-                  findings.push({ text: `${topSkill} scored ${topScore} (${slbl(topScore)})`, type: 'score', score: topScore })
-                }
-                if (entries.length > 1) {
-                  const [lowSkill, lowScore] = entries[entries.length - 1]
-                  findings.push({ text: `${lowSkill} scored ${lowScore} (${slbl(lowScore)})`, type: 'score', score: lowScore })
-                }
-              }
-              const highWo = (results.watchouts || []).filter(w => typeof w === 'object' && (w.severity === 'High' || w.severity === 'Medium')).slice(0, 2)
-              highWo.forEach(w => findings.push({ text: `Watch-out: ${w.watchout || w.title || ''}`, type: w.severity === 'High' ? 'watchout_high' : 'watchout_medium' }))
-              if (findings.length < 4 && results.strengths?.length > 0) {
-                const s = results.strengths[0]
-                const title = typeof s === 'object' ? (s.strength || s.title || s.text) : s
-                findings.push({ text: `Strength: ${title}`, type: 'strength' })
-              }
-              const displayFindings = findings.slice(0, 4)
-              if (cvItems.length === 0 && displayFindings.length === 0) return null
-              const n = Math.max(cvItems.length, displayFindings.length)
-              return (
-                <ScrollReveal delay={60}>
-                <div style={{ background: '#f8fafc', border: `1.5px solid ${BD}`, borderRadius: 12, padding: '24px 28px', marginBottom: 20 }}>
-                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 6px', paddingBottom: 10, borderBottom: `2px solid ${TEAL}`, letterSpacing: '-0.2px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    What the Assessment Revealed
-                  </h2>
-                  <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 16px', lineHeight: 1.55 }}>
-                    A side-by-side view of typical CV claims versus what this candidate actually demonstrated.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 36px 1fr', marginBottom: 10 }}>
-                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                      What a CV would tell you
-                    </div>
-                    <div />
-                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                      What PRODICTA found
-                    </div>
-                  </div>
-                  {Array.from({ length: n }, (_, i) => {
-                    const cv = cvItems[i] || null
-                    const finding = displayFindings[i] || null
-                    const dotColor = !finding ? TX3
-                      : finding.type === 'watchout_high' ? RED
-                      : finding.type === 'watchout_medium' ? AMB
-                      : finding.type === 'strength' ? GRN
-                      : finding.score != null ? sc(finding.score)
-                      : TEAL
-                    return (
-                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 36px 1fr', alignItems: 'center', gap: 0, marginBottom: i < n - 1 ? 8 : 0 }}>
-                        <div style={{ background: CARD, border: '1.5px solid #e2e8f0', borderRadius: 8, padding: '10px 13px', minHeight: 38 }}>
-                          {cv && (
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                              <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#cbd5e1', marginTop: 6, flexShrink: 0 }} />
-                              <span style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>{cv}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {cv && finding && (
-                            <svg width="22" height="12" viewBox="0 0 22 12" fill="none">
-                              <line x1="1" y1="6" x2="17" y2="6" stroke={TEAL} strokeWidth="1.5" />
-                              <polyline points="11,2 17,6 11,10" stroke={TEAL} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          )}
-                        </div>
-                        <div style={{ background: CARD, border: `1.5px solid ${finding ? `${TEAL}88` : BD}`, borderRadius: 8, padding: '10px 13px', minHeight: 38 }}>
-                          {finding && (
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                              <div style={{ width: 5, height: 5, borderRadius: '50%', background: dotColor, marginTop: 6, flexShrink: 0 }} />
-                              <span style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>{finding.text}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-                </ScrollReveal>
-              )
-            })()}
 
             {/* ── STRENGTHS ── */}
             {results.strengths?.length > 0 && (
@@ -1282,9 +1103,11 @@ export default function DemoCandidatePage({ params }) {
             {results.onboarding_plan?.length > 0 && (
               <ScrollReveal id="onboarding" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
-                  <div style={{ marginBottom: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                     <SectionHeading tooltip="A structured 6-week plan tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.">Personalised Onboarding Plan</SectionHeading>
+                    <SectionToggle expanded={expandedSections.onboarding} onToggle={() => toggleSection('onboarding')} />
                   </div>
+                  {expandedSections.onboarding && <>
                   <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
                     Tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.
                   </p>
@@ -1376,6 +1199,7 @@ export default function DemoCandidatePage({ params }) {
                       )
                     })}
                   </div>
+                  </>}
                 </Card>
               </ScrollReveal>
             )}
@@ -1467,22 +1291,84 @@ export default function DemoCandidatePage({ params }) {
               </>}
             </Card>
 
-            {/* ── DEMO CTA ── */}
-            <div style={{ marginBottom: 40, background: `linear-gradient(135deg, ${NAVY} 0%, #1a3a5c 100%)`, borderRadius: 14, padding: '32px 36px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap', boxShadow: SHADOW_LG }}>
-              <div>
-                <h3 style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: '#fff', margin: '0 0 8px', letterSpacing: '-0.3px' }}>
-                  Ready to assess your own candidates?
-                </h3>
-                <p style={{ fontFamily: F, fontSize: 14, color: 'rgba(255,255,255,0.6)', margin: 0, lineHeight: 1.6 }}>
-                  Create your first assessment in under 5 minutes. No CV filtering, just real-world scenario testing.
-                </p>
+            {/* ── LOCKED FEATURES TEASER ── */}
+            <div style={{ marginBottom: 40, borderRadius: 14, overflow: 'hidden', boxShadow: SHADOW_LG }}>
+              {/* Blurred preview strip */}
+              <div style={{ position: 'relative', background: NAVY, overflow: 'hidden', padding: '28px 32px 0' }}>
+                <div style={{ filter: 'blur(4px)', opacity: 0.35, pointerEvents: 'none', userSelect: 'none' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+                    {[
+                      { label: 'Probability of passing probation', val: 78, color: TEAL },
+                      { label: 'Top performer likelihood',         val: 42, color: AMB  },
+                      { label: 'Churn risk',                       val: 18, color: GRN  },
+                    ].map(({ label, val, color }) => (
+                      <div key={label} style={{ background: `${color}12`, border: `1px solid ${color}30`, borderRadius: 10, padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff' }}>{label}</span>
+                          <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 800, color }}>{val}%</span>
+                        </div>
+                        <div style={{ height: 6, background: `${color}22`, borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${val}%`, background: color, borderRadius: 3 }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Fade overlay */}
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, background: `linear-gradient(to bottom, transparent, #0f2137)`, pointerEvents: 'none' }} />
               </div>
-              <button
-                onClick={() => router.push('/login')}
-                style={{ background: TEAL, color: NAVY, border: 'none', borderRadius: 10, padding: '14px 28px', fontFamily: F, fontSize: 15, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, boxShadow: `0 4px 18px ${TEAL}44` }}
-              >
-                Sign up →
-              </button>
+
+              {/* Lock header */}
+              <div style={{ background: '#0f2137', padding: '24px 32px 28px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: `${TEAL}20`, border: `1px solid ${TEAL}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                  </div>
+                  <h3 style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.2px' }}>
+                    Included in your subscription
+                  </h3>
+                </div>
+                <p style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: '0 0 22px', lineHeight: 1.6 }}>
+                  The demo shows a sample of the PRODICTA report. A full subscription includes these additional features on every candidate.
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 10, marginBottom: 28 }}>
+                  {[
+                    { title: 'Predicted Outcome Panel', desc: 'Probability of passing probation, churn risk, and top performer likelihood.' },
+                    { title: '90-Day Reality Timeline', desc: 'What the first three months will actually look like for this hire.' },
+                    { title: 'Hiring Confidence Score', desc: 'A single go/stop number for decision makers, with supporting rationale.' },
+                    { title: 'Decision Alerts', desc: 'Consequence predictions on every watch-out so you know the real cost of ignoring each one.' },
+                    { title: 'What the Assessment Revealed', desc: 'A side-by-side view of what the CV claimed versus what the candidate actually demonstrated.' },
+                    { title: 'Red Flag email alerts', desc: 'Automatic notifications when a candidate scores below your threshold.' },
+                    { title: 'Smart Role Context', desc: 'AI asks follow-up questions about your role to generate more accurate scenarios.' },
+                    { title: 'Interview Brief', desc: 'A one-page printable PDF prepared for the interview room.' },
+                    { title: 'Auto Shortlist', desc: 'AI-ranked top three candidates with a written justification for each.' },
+                    { title: 'Rapid Assessment', desc: 'A 15-minute compressed assessment for urgent or volume hiring.' },
+                    { title: 'Probation Timeline Tracker', desc: 'Visual tracker with automated reminders throughout the probation period.' },
+                    { title: 'Hiring Cost Saved calculator', desc: 'Track the financial value of every hiring decision PRODICTA informed.' },
+                  ].map(({ title, desc }) => (
+                    <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 3 }}>
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      <div>
+                        <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{title}</div>
+                        <div style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 1.55 }}>{desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => router.push('/login')}
+                  style={{ background: TEAL, color: NAVY, border: 'none', borderRadius: 10, padding: '14px 32px', fontFamily: F, fontSize: 15, fontWeight: 800, cursor: 'pointer', boxShadow: `0 4px 18px ${TEAL}44` }}
+                >
+                  Get started
+                </button>
+              </div>
             </div>
           </>
         )}

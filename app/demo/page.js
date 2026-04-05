@@ -95,6 +95,7 @@ function RiskCalculator() {
   const [hires, setHires] = useState('8')
   const [salFocused, setSalFocused] = useState(false)
   const [hiresFocused, setHiresFocused] = useState(false)
+  const [showBreakdown, setShowBreakdown] = useState(false)
 
   const sal = Math.max(0, parseInt(salary.replace(/[^0-9]/g, '')) || 0)
   const h   = Math.max(1, parseInt(hires.replace(/[^0-9]/g, '')) || 1)
@@ -106,72 +107,62 @@ function RiskCalculator() {
   const failCount    = Math.max(1, Math.round(h * 0.2))
   const totalExposure = totalPerHire * failCount
   const gbp = n => '£' + n.toLocaleString('en-GB')
-  const inp = focused => ({ fontFamily: F, fontSize: 15, fontWeight: 700, width: '100%', padding: '10px 14px', borderRadius: 8, border: `1.5px solid ${focused ? TEAL : BD}`, background: CARD, color: NAVY, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' })
+  const inp = focused => ({ fontFamily: F, fontSize: 15, fontWeight: 700, width: '100%', padding: '10px 14px', borderRadius: 8, border: `1.5px solid ${focused ? TEAL : BD}`, background: '#fff', color: NAVY, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' })
+
+  const BREAK = [
+    { label: 'Recruitment cost',       value: recruitment,  note: '15% of salary',          color: AMB, bg: AMBBG },
+    { label: 'Training and onboarding', value: training,    note: 'Average cost per hire',   color: AMB, bg: AMBBG },
+    { label: 'Lost productivity',      value: productivity, note: 'Roughly 3 months in role', color: AMB, bg: AMBBG },
+    { label: 'ERA 2025 tribunal risk', value: tribunal,     note: 'Uncapped from Jan 2027',  color: RED, bg: REDBG },
+  ]
 
   return (
     <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
-      <div style={{ background: NAVY, padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: 20, background: `${TEAL}22`, border: `1px solid ${TEAL}55`, fontSize: 11, fontWeight: 700, color: TEAL, letterSpacing: '0.04em' }}>ERA 2025</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: 20, background: `${RED}22`, border: `1px solid ${RED}55`, fontSize: 11, fontWeight: 700, color: '#f87171', letterSpacing: '0.04em' }}>RISK CALCULATOR</span>
-          </div>
-          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>What does a bad hire actually cost you?</h2>
+      <div style={{ padding: '20px 24px' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>
+          ERA 2025 risk calculator
         </div>
-        <Ic name="shield" size={28} color={`${TEAL}88`} />
-      </div>
-      <div style={{ padding: '24px 28px' }}>
-        <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>Average salary for your hires</label>
-            <div style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ flex: '0 0 auto' }}>
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>Average salary</label>
+            <div style={{ position: 'relative', width: 160 }}>
               <span style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', fontSize: 14, fontWeight: 700, color: TX3, pointerEvents: 'none' }}>£</span>
               <input type="text" value={salary} onChange={e => setSalary(e.target.value.replace(/[^0-9]/g, ''))} onFocus={() => setSalFocused(true)} onBlur={() => setSalFocused(false)} style={{ ...inp(salFocused), paddingLeft: 26 }} placeholder="35000" />
             </div>
           </div>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>Hires planned this year</label>
-            <input type="text" value={hires} onChange={e => setHires(e.target.value.replace(/[^0-9]/g, ''))} onFocus={() => setHiresFocused(true)} onBlur={() => setHiresFocused(false)} style={inp(hiresFocused)} placeholder="8" />
+          <div style={{ flex: '0 0 auto' }}>
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>Hires this year</label>
+            <input type="text" value={hires} onChange={e => setHires(e.target.value.replace(/[^0-9]/g, ''))} onFocus={() => setHiresFocused(true)} onBlur={() => setHiresFocused(false)} style={{ ...inp(hiresFocused), width: 100 }} placeholder="8" />
+          </div>
+          <div style={{ paddingBottom: 2 }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Total exposure</div>
+            <div style={{ fontFamily: FM, fontSize: 30, fontWeight: 800, color: RED, lineHeight: 1 }}>{gbp(totalExposure)}</div>
+            <div style={{ fontSize: 11.5, color: TX3, marginTop: 3 }}>{failCount} of {h} hire{h !== 1 ? 's' : ''} failing · 20% industry average</div>
           </div>
         </div>
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Cost breakdown per failed hire</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[
-              { label: 'Recruitment cost',       value: recruitment,  note: '15% of salary',          color: AMB, bg: AMBBG },
-              { label: 'Training & onboarding',  value: training,     note: 'Average cost per hire',   color: AMB, bg: AMBBG },
-              { label: 'Lost productivity',      value: productivity, note: '~3 months in role',       color: AMB, bg: AMBBG },
-              { label: 'ERA 2025 tribunal risk', value: tribunal,     note: 'Uncapped from Jan 2027',  color: RED, bg: REDBG },
-            ].map(({ label, value, note, color, bg }) => (
+        <button
+          onClick={() => setShowBreakdown(!showBreakdown)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: TEAL, fontFamily: F, padding: 0, display: 'flex', alignItems: 'center', gap: 5 }}
+        >
+          {showBreakdown ? 'Hide breakdown' : 'Show breakdown'}
+          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
+            style={{ transform: showBreakdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        {showBreakdown && (
+          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {BREAK.map(({ label, value, note, color, bg }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: bg, border: `1px solid ${color}33`, gap: 12 }}>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: TX }}>{label}</div>
                   <div style={{ fontSize: 11.5, color: TX3, marginTop: 1 }}>{note}</div>
                 </div>
-                <div style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color, flexShrink: 0 }}>{gbp(value)}</div>
+                <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color, flexShrink: 0 }}>{gbp(value)}</div>
               </div>
             ))}
           </div>
-        </div>
-        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 16 }}>
-          <div style={{ flex: 1, minWidth: 220, background: `linear-gradient(135deg, ${AMBBG}, #fff8ed)`, border: `1.5px solid ${AMB}66`, borderRadius: 12, padding: '18px 20px' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Total exposure: 1 bad hire</div>
-            <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: AMB, lineHeight: 1, marginBottom: 4 }}>{gbp(totalPerHire)}</div>
-            <div style={{ fontSize: 12.5, color: TX2 }}>Recruitment + training + lost productivity + tribunal</div>
-          </div>
-          <div style={{ flex: 1, minWidth: 220, background: `linear-gradient(135deg, ${REDBG}, #fff5f5)`, border: `1.5px solid ${RED}66`, borderRadius: 12, padding: '18px 20px' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Total exposure: 20% failure rate</div>
-            <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: RED, lineHeight: 1, marginBottom: 4 }}>{gbp(totalExposure)}</div>
-            <div style={{ fontSize: 12.5, color: TX2 }}>{failCount} of {h} hire{h !== 1 ? 's' : ''} failing · industry average risk</div>
-          </div>
-        </div>
-        <div style={{ padding: '12px 16px', borderRadius: 8, background: NAVY, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <Ic name="alert" size={15} color={TEAL} />
-          <p style={{ margin: 0, fontSize: 12.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, fontFamily: F }}>
-            <strong style={{ color: '#fff' }}>From January 2027,</strong> unfair dismissal claims can be made after just 6 months of employment, with no compensation cap.{' '}
-            <strong style={{ color: TEAL }}>PRODICTA</strong> helps you identify high-risk hires before they start, reducing your ERA 2025 exposure.
-          </p>
-        </div>
+        )}
       </div>
     </div>
   )
