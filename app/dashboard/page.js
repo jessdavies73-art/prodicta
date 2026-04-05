@@ -244,6 +244,7 @@ export default function DashboardPage() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [activePlacements, setActivePlacements] = useState([])
   const [candidateOutcomes, setCandidateOutcomes] = useState([])
+  const [probationHires, setProbationHires] = useState([])
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -330,6 +331,21 @@ export default function DashboardPage() {
           setCandidateOutcomes(outcomes || [])
         } catch (_) {
           // Table may not exist for all accounts
+        }
+
+        // Load probation hires for employer accounts
+        if (prof?.account_type === 'employer') {
+          try {
+            const { data: hires } = await supabase
+              .from('candidate_outcomes')
+              .select('*, candidates(id, name, assessment_id, assessments(role_title))')
+              .eq('user_id', user.id)
+              .eq('outcome', 'still_in_probation')
+              .order('created_at', { ascending: false })
+            setProbationHires(hires || [])
+          } catch (_) {
+            // Skip silently
+          }
         }
 
         // Show onboarding wizard for new users
@@ -817,6 +833,11 @@ export default function DashboardPage() {
         {/* ── Hiring Risk Overview ── */}
         <HiringRiskOverview completed={completed} />
 
+        {/* ── Probation Tracker (employer only) ── */}
+        {profile?.account_type === 'employer' && (
+          <ProbationTracker hires={probationHires} router={router} />
+        )}
+
         {/* ── ERA 2025 Risk Calculator / Placement Risk ── */}
         <RiskCalculator profile={profile} completed={completed} />
 
@@ -1154,6 +1175,133 @@ export default function DashboardPage() {
 
         </div>
       </main>
+    </div>
+  )
+}
+
+function ProbationTracker({ hires = [], router }) {
+  const now = Date.now()
+
+  return (
+    <div style={{
+      background: CARD,
+      border: `1px solid ${BD}`,
+      borderRadius: 14,
+      overflow: 'hidden',
+      marginBottom: 24,
+    }}>
+      <div style={{
+        padding: '16px 24px',
+        borderBottom: `1px solid ${BD}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+      }}>
+        <div>
+          <h2 style={{ margin: '0 0 2px', fontSize: 15.5, fontWeight: 700, color: TX, display: 'flex', alignItems: 'center', gap: 6 }}>
+            Probation Tracker
+          </h2>
+          <p style={{ margin: 0, fontSize: 12.5, color: TX3, fontFamily: F }}>
+            Hired candidates currently in their probation period.
+          </p>
+        </div>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center',
+          padding: '4px 12px', borderRadius: 20,
+          background: TEALLT, fontSize: 12, fontWeight: 700, color: TEALD,
+          flexShrink: 0,
+        }}>
+          {hires.length} active
+        </span>
+      </div>
+
+      <div style={{ padding: '16px 24px' }}>
+        {hires.length === 0 ? (
+          <p style={{ margin: 0, fontSize: 13.5, color: TX3, lineHeight: 1.6, fontFamily: F }}>
+            No hires being tracked yet. Log an outcome on a candidate's report to start tracking probation.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {hires.map((h, idx) => {
+              const candidate = h.candidates
+              const name = candidate?.name || 'Unknown candidate'
+              const role = candidate?.assessments?.role_title || 'Unknown role'
+              const assessmentId = candidate?.assessment_id
+              const candidateId = candidate?.id
+              const startDate = h.placement_date || h.outcome_date || h.created_at
+              const probMonths = h.probation_months || 6
+              const totalDays = Math.round(probMonths * 30.44)
+              const elapsedDays = startDate
+                ? Math.max(0, Math.floor((now - new Date(startDate).getTime()) / 86400000))
+                : 0
+              const remainingDays = Math.max(0, totalDays - elapsedDays)
+              const pct = Math.min(100, totalDays > 0 ? Math.round((elapsedDays / totalDays) * 100) : 0)
+              const monthsIn = startDate ? Math.floor(elapsedDays / 30.44) : 0
+              const monthsLeft = Math.max(0, probMonths - monthsIn)
+              const done = elapsedDays >= totalDays
+              const danger = !done && remainingDays <= 30
+              const barColor = done ? GRN : danger ? RED : TEAL
+              const isClickable = assessmentId && candidateId
+
+              const hireDateLabel = startDate
+                ? new Date(startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                : 'Date unknown'
+
+              return (
+                <div
+                  key={h.id || idx}
+                  onClick={() => isClickable && router.push(`/assessment/${assessmentId}/candidate/${candidateId}`)}
+                  style={{
+                    padding: '14px 0',
+                    borderBottom: idx < hires.length - 1 ? `1px solid ${BD}` : 'none',
+                    cursor: isClickable ? 'pointer' : 'default',
+                    display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+                  }}
+                  onMouseEnter={e => { if (isClickable) e.currentTarget.style.background = BG }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                >
+                  {/* Name + role */}
+                  <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+                    <div style={{ fontSize: 12, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{role}</div>
+                  </div>
+
+                  {/* Hire date */}
+                  <div style={{ flex: '0 0 auto', minWidth: 100, textAlign: 'right' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>Started</div>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: TX2 }}>{hireDateLabel}</div>
+                  </div>
+
+                  {/* Months remaining */}
+                  <div style={{ flex: '0 0 auto', minWidth: 90, textAlign: 'right' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>Remaining</div>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: done ? GRN : danger ? RED : TX }}>
+                      {done ? 'Complete' : `${monthsLeft} month${monthsLeft !== 1 ? 's' : ''}`}
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div style={{ flex: '1 1 140px', minWidth: 120 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: 11, color: TX3 }}>Month {Math.min(monthsIn, probMonths)} of {probMonths}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: barColor }}>{pct}%</span>
+                    </div>
+                    <div style={{ height: 5, background: BD, borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 3, transition: 'width 0.3s ease' }} />
+                    </div>
+                    {danger && !done && (
+                      <div style={{ fontSize: 11, color: RED, marginTop: 4, fontWeight: 600 }}>Within 30 days of end</div>
+                    )}
+                  </div>
+
+                  {/* Arrow */}
+                  {isClickable && (
+                    <Ic name="right" size={13} color={TX3} />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
