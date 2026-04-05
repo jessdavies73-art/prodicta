@@ -928,7 +928,6 @@ export default function CandidateReportPage({ params }) {
   const [expandedWeeks, setExpandedWeeks] = useState({})
   const [viewMode, setViewMode] = useState('internal') // 'internal' | 'client' - agency only
   const [wrongHireSalary, setWrongHireSalary] = useState('35000')
-  const [ganttView, setGanttView] = useState(false)
   const [expandedSections, setExpandedSections] = useState({ aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false })
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
@@ -2997,17 +2996,6 @@ export default function CandidateReportPage({ params }) {
                         Personalised Onboarding Plan
                       </SectionHeading>
                       <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        <button
-                          onClick={() => setGanttView(v => !v)}
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                            background: ganttView ? TEALLT : 'transparent', border: `1.5px solid ${ganttView ? TEAL : BD}`,
-                            borderRadius: 7, cursor: 'pointer', padding: '6px 14px',
-                            fontFamily: F, fontSize: 12, fontWeight: 700, color: ganttView ? TEALD : TX3,
-                          }}
-                        >
-                          {ganttView ? 'Text view' : 'Gantt view'}
-                        </button>
                       <button
                         onClick={() => {
                           const plan = results?.onboarding_plan || []
@@ -3090,56 +3078,7 @@ export default function CandidateReportPage({ params }) {
                       </div>
                     )}
 
-                    {ganttView && (() => {
-                      const GCOLS = [TEAL, '#3b82f6', '#8b5cf6', '#f59e0b', GRN, '#ef4444']
-                      const planItems = results.onboarding_plan.filter(item => typeof item === 'object' && item !== null && item.objective)
-                      if (planItems.length === 0) return null
-                      return (
-                        <div style={{ overflowX: 'auto', marginBottom: 20 }}>
-                          <div style={{ minWidth: 520 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 90, marginBottom: 8, gap: 4 }}>
-                              {[1,2,3,4,5,6].map(w => (
-                                <div key={w} style={{ flex: 1, textAlign: 'center', fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>W{w}</div>
-                              ))}
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              {planItems.map((item, i) => {
-                                const weekNum = item.week || i + 1
-                                const col = GCOLS[i % GCOLS.length]
-                                return (
-                                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <div style={{ width: 82, flexShrink: 0, fontFamily: F, fontSize: 10.5, color: TX2, lineHeight: 1.3, textAlign: 'right', paddingRight: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.title}>
-                                      {(item.title || '').split(' ').slice(0, 2).join(' ')}
-                                    </div>
-                                    {[1,2,3,4,5,6].map(w => (
-                                      <div key={w} style={{ flex: 1, height: 32, background: w === weekNum ? col : `${BD}`, borderRadius: 5, opacity: w === weekNum ? 0.9 : 0.18, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                                        {w === weekNum && item.checkpoint && (
-                                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', boxShadow: `0 0 0 2px ${col}` }} title={item.checkpoint} />
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )
-                              })}
-                            </div>
-                            <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-                              {planItems.map((item, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  <div style={{ width: 10, height: 10, borderRadius: 2, background: GCOLS[i % GCOLS.length], flexShrink: 0 }} />
-                                  <span style={{ fontFamily: F, fontSize: 11, color: TX2 }}>W{item.week}: {item.title}</span>
-                                </div>
-                              ))}
-                            </div>
-                            <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: TX3, flexShrink: 0 }} />
-                              <span style={{ fontFamily: F, fontSize: 11, color: TX3 }}>White dot = checkpoint milestone</span>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })()}
-
-                    {!ganttView && <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                       {results.onboarding_plan.map((item, i) => {
                         // Support both new structured objects and legacy plain strings
                         const isStructured = typeof item === 'object' && item !== null && item.objective
@@ -3282,7 +3221,7 @@ export default function CandidateReportPage({ params }) {
                           </div>
                         )
                       })}
-                    </div>}
+                    </div>
                   </Card>
                   </ScrollReveal>
                 )}
