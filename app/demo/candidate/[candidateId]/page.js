@@ -451,7 +451,7 @@ export default function DemoCandidatePage({ params }) {
   const [signupPrompt, setSignupPrompt] = useState(false)
   const [sendModal, setSendModal] = useState(false)
   const [sendEmail, setSendEmail] = useState('')
-  const [expandedSections, setExpandedSections] = useState({ aiSummary: false, candidateDocs: false, onboarding: false })
+  const [expandedSections, setExpandedSections] = useState({ aiSummary: false, candidateDocs: false, onboarding: false, fairWork: false })
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
 
@@ -696,8 +696,8 @@ export default function DemoCandidatePage({ params }) {
             <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
               <button
                 onClick={() => setExpandedSections(allExpanded
-                  ? { aiSummary: false, candidateDocs: false, onboarding: false }
-                  : { aiSummary: true,  candidateDocs: true,  onboarding: true  }
+                  ? { aiSummary: false, candidateDocs: false, onboarding: false, fairWork: false }
+                  : { aiSummary: true,  candidateDocs: true,  onboarding: true,  fairWork: true  }
                 )}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: `1px solid ${BD}`, borderRadius: 7, cursor: 'pointer', padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3 }}
               >
@@ -1050,7 +1050,7 @@ export default function DemoCandidatePage({ params }) {
             {results.watchouts?.length > 0 && (
               <ScrollReveal id="watchouts" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
-                  <SectionHeading tooltip="Concerns flagged by severity with evidence, recommended actions, and consequence predictions if ignored.">Watch-outs</SectionHeading>
+                  <SectionHeading tooltip="Concerns flagged by severity with evidence from the candidate's responses.">Watch-outs</SectionHeading>
                   {(() => {
                     const counts = { High: 0, Medium: 0, Low: 0 }
                     results.watchouts.forEach(w => {
@@ -1079,7 +1079,6 @@ export default function DemoCandidatePage({ params }) {
                       const severity = typeof w === 'object' ? w.severity : null
                       const explanation = typeof w === 'object' ? w.explanation : null
                       const evidence = typeof w === 'object' ? w.evidence : null
-                      const action = typeof w === 'object' ? w.action : null
                       const sev = sevStyle(severity)
                       return (
                         <div key={i} style={{ background: sev.bg, border: `1px solid ${sev.border}`, borderLeft: `4px solid ${sev.color}`, borderRadius: '0 10px 10px 0', padding: '16px 18px' }}>
@@ -1087,7 +1086,6 @@ export default function DemoCandidatePage({ params }) {
                           <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 8px' }}>{title}</p>
                           {explanation && <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 6px', lineHeight: 1.7 }}>{explanation}</p>}
                           {evidence && <EvidenceBox color={sev.color}>{evidence}</EvidenceBox>}
-                          {action && <ActionBox>{action}</ActionBox>}
                         </div>
                       )
                     })}
@@ -1288,6 +1286,58 @@ export default function DemoCandidatePage({ params }) {
               </>}
             </Card>
 
+            {/* ── FAIR WORK AGENCY READY ── */}
+            <ScrollReveal delay={40}>
+              <div style={{ border: `1.5px solid ${TEAL}55`, borderRadius: 14, background: TEALLT, padding: '18px 24px', marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 9, background: `${TEAL}18`, border: `1.5px solid ${TEAL}44`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                      </svg>
+                    </div>
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TEALD, letterSpacing: '0.01em' }}>Fair Work Agency Ready</div>
+                  </div>
+                  <button
+                    onClick={() => toggleSection('fairWork')}
+                    style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'transparent', border: `1px solid ${TEAL}55`, borderRadius: 6, cursor: 'pointer', padding: '3px 10px', fontFamily: F, fontSize: 11.5, fontWeight: 600, color: TEALD }}
+                  >
+                    {expandedSections.fairWork ? 'Collapse' : 'Expand'}
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: expandedSections.fairWork ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                </div>
+                {expandedSections.fairWork && (
+                  <div style={{ marginTop: 16 }}>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TEALD, margin: '0 0 12px', lineHeight: 1.7, opacity: 0.9 }}>
+                      This assessment was conducted using PRODICTA, an AI-powered pre-employment assessment platform. The following compliance standards were applied:
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                      {[
+                        'Scoring is based on decisions, actions, and reasoning only.',
+                        'No candidate was penalised for spelling, grammar, or writing style (Equality Act 2010).',
+                        'All scenarios were generated from the specific job description provided.',
+                        'Response timing and integrity were independently verified.',
+                        `Assessment date: ${completedDate || 'Not recorded'}.`,
+                        `Report generated: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.`,
+                      ].map((point, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                          <svg style={{ flexShrink: 0, marginTop: 2 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                          <span style={{ fontFamily: F, fontSize: 13, color: TEALD, lineHeight: 1.6, opacity: 0.9 }}>{point}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p style={{ fontFamily: F, fontSize: 12.5, color: TEALD, margin: 0, lineHeight: 1.6, opacity: 0.75, borderTop: `1px solid ${TEAL}33`, paddingTop: 12 }}>
+                      This record may be used as evidence of a fair and objective assessment process.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </ScrollReveal>
+
             {/* ── LOCKED FEATURES TEASER ── */}
             <div style={{ marginBottom: 40, borderRadius: 14, overflow: 'hidden', boxShadow: SHADOW_LG }}>
               {/* Blurred preview strip */}
@@ -1339,9 +1389,12 @@ export default function DemoCandidatePage({ params }) {
                     { title: 'Hiring Confidence Score', desc: 'A single go/stop number for decision makers, with supporting rationale.' },
                     { title: 'Decision Alerts', desc: 'Consequence predictions on every watch-out so you know the real cost of ignoring each one.' },
                     { title: 'What the Assessment Revealed', desc: 'A side-by-side view of what the CV claimed versus what the candidate actually demonstrated.' },
+                    { title: 'Candidate Responses', desc: 'Full scenario replay with every answer, timing, and integrity signal for each question.' },
+                    { title: 'Cost of Wrong Hire calculator', desc: 'Live calculator showing your ERA 2025 tribunal exposure based on salary and hire volume.' },
+                    { title: 'Document This Assessment', desc: 'One-click compliance record ready for Fair Work Agency audit or employment tribunal.' },
                     { title: 'Red Flag email alerts', desc: 'Automatic notifications when a candidate scores below your threshold.' },
                     { title: 'Smart Role Context', desc: 'AI asks follow-up questions about your role to generate more accurate scenarios.' },
-                    { title: 'Interview Brief', desc: 'A one-page printable PDF prepared for the interview room.' },
+                    { title: 'Interview Brief', desc: 'A one-page printable brief prepared for the interview room.' },
                     { title: 'Auto Shortlist', desc: 'AI-ranked top three candidates with a written justification for each.' },
                     { title: 'Rapid Assessment', desc: 'A 15-minute compressed assessment for urgent or volume hiring.' },
                     { title: 'Probation Timeline Tracker', desc: 'Visual tracker with automated reminders throughout the probation period.' },
