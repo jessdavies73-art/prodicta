@@ -926,7 +926,6 @@ export default function CandidateReportPage({ params }) {
   const [noteSaving, setNoteSaving] = useState(false)
   const [activeSection, setActiveSection] = useState('summary')
   const [expandedWeeks, setExpandedWeeks] = useState({})
-  const [viewMode, setViewMode] = useState('internal') // 'internal' | 'client' - agency only
   const [wrongHireSalary, setWrongHireSalary] = useState('35000')
   const [expandedSections, setExpandedSections] = useState({ aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false })
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
@@ -1639,26 +1638,9 @@ export default function CandidateReportPage({ params }) {
 
                 <StickyNav active={activeSection} />
 
-                {/* Internal / Client view toggle + Email to Client - agency only */}
+                {/* Email to Client - agency only */}
                 {profile?.account_type === 'agency' && (
                   <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: CARD, border: `1px solid ${BD}`, borderRadius: 8, padding: 3 }}>
-                      {['internal', 'client'].map(mode => (
-                        <button
-                          key={mode}
-                          onClick={() => setViewMode(mode)}
-                          style={{
-                            padding: '6px 18px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                            fontFamily: F, fontSize: 13, fontWeight: 700,
-                            background: viewMode === mode ? NAVY : 'transparent',
-                            color: viewMode === mode ? '#fff' : TX3,
-                            transition: 'background 0.15s, color 0.15s',
-                          }}
-                        >
-                          {mode === 'internal' ? 'Internal View' : 'Client View'}
-                        </button>
-                      ))}
-                    </div>
                     <button
                       className="no-print"
                       onClick={() => {
@@ -2237,7 +2219,6 @@ export default function CandidateReportPage({ params }) {
                 {/* ══════════════════════════════════════════════════
                     RESPONSE INTEGRITY , dark navy
                 ══════════════════════════════════════════════════ */}
-                {viewMode !== 'client' && (
                 <ScrollReveal id="integrity" delay={60}>
                 {(() => {
                   const integrity = results.integrity || {}
@@ -2439,7 +2420,6 @@ export default function CandidateReportPage({ params }) {
                   )
                 })()}
                 </ScrollReveal>
-                )}
 
                 {/* ══════════════════════════════════════════════════
                     PRESSURE-FIT , dark navy, 2×2 grid
