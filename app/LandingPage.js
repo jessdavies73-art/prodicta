@@ -183,8 +183,7 @@ export default function LandingPage() {
       ════════════════════════════════════════════════════════════════════ */}
       <section style={{
         position: 'relative', minHeight: '100vh', overflow: 'hidden',
-        background: `linear-gradient(160deg, #0f2137 0%, #132d4a 35%, #0f2137 65%, #132d4a 100%)`,
-        backgroundSize: '300% 300%', animation: 'gradShift 8s ease infinite',
+        background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         justifyContent: 'center', textAlign: 'center',
         padding: '90px 24px 75px',
@@ -417,7 +416,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           CV VS PRODICTA COMPARISON
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: NAVY, padding: '80px 24px' }}>
+      <section style={{ background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)', padding: '80px 24px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 56 }}>
@@ -673,7 +672,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           FEATURES — 2×3 grid
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: NAVY, padding: '72px 24px', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)', padding: '72px 24px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)', width: 800, height: 800, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}0a 0%, transparent 65%)`, pointerEvents: 'none' }} />
         <div style={{ maxWidth: 1080, margin: '0 auto', position: 'relative' }}>
           <Reveal>
@@ -1205,7 +1204,7 @@ export default function LandingPage() {
       ════════════════════════════════════════════════════════════════════ */}
       <section style={{
         position: 'relative', overflow: 'hidden',
-        background: `linear-gradient(135deg, ${NAVY} 0%, #0a1f34 50%, #071a2b 100%)`,
+        background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)',
         padding: '72px 24px',
       }}>
         <div style={{ position: 'absolute', top: '50%', left: '30%', transform: 'translate(-50%,-50%)', width: 600, height: 600, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}10 0%, transparent 65%)`, pointerEvents: 'none' }} />
@@ -1256,7 +1255,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           FINAL CTA
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: NAVY, padding: '80px 24px' }}>
+      <section style={{ background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)', padding: '80px 24px' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
           <Reveal>
             <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>Get started</div>
