@@ -1544,9 +1544,12 @@ export default function CandidateReportPage({ params }) {
                             const sev = typeof w === 'object' ? w.severity : null
                             return `<li style="margin-bottom:10px;"><strong>${title}</strong>${sev ? ` <span style="font-size:11px;background:${sev === 'High' ? '#fee2e2' : '#fffbeb'};color:${sev === 'High' ? '#dc2626' : '#d97706'};padding:1px 7px;border-radius:20px;">${sev}</span>` : ''}</li>`
                           }).join('')
-                          const questions = (results.interview_questions || []).slice(0, 4).map(q => {
-                            const text = typeof q === 'object' ? (q.question || q.text || '') : q
-                            return `<li style="margin-bottom:10px;">${text}</li>`
+                          const questions = (results.interview_questions || []).map(q => {
+                            const raw = typeof q === 'object' ? (q.question || q.text || '') : (q || '')
+                            const probeMatch = raw.match(/\(Follow-up probe:\s*([\s\S]*?)\)\s*$/) || raw.match(/\[Follow-up:\s*([\s\S]*?)\]\s*$/)
+                            const probe = probeMatch ? probeMatch[1].trim() : null
+                            const mainQ = probeMatch ? raw.slice(0, probeMatch.index).trim() : raw.trim()
+                            return `<li style="margin-bottom:16px;">${mainQ}${probe ? `<div style="margin-top:6px;padding:7px 12px;background:#f8f9fa;border-left:3px solid #d97706;border-radius:0 6px 6px 0;font-size:12px;color:#5e6b7f;"><strong style="color:#d97706;">Follow-up probe:</strong> ${probe}</div>` : ''}</li>`
                           }).join('')
                           const strengths = (results.strengths || []).slice(0, 3).map(s => {
                             const title = typeof s === 'object' ? (s.strength || s.title || '') : s
