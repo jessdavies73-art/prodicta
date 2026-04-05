@@ -150,6 +150,7 @@ function StatNumber({ to, suffix = '', display }) {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  const [openFaq, setOpenFaq] = useState(null)
   return (
     <div style={{ fontFamily: F, background: '#fff', overflowX: 'hidden' }}>
       <style>{`
@@ -353,7 +354,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           PROBLEM — The cost of getting hiring wrong
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#f7f9fb', padding: '72px 24px' }}>
+      <section style={{ background: '#f8f9fb', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 56 }}>
@@ -541,7 +542,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           HOW IT WORKS
       ════════════════════════════════════════════════════════════════════ */}
-      <section id="how-it-works" style={{ background: '#F8FAFB', padding: '72px 24px' }}>
+      <section id="how-it-works" style={{ background: '#f1f3f5', padding: '72px 24px' }}>
         <style>{`
           .hiw-steps {
             display: grid;
@@ -645,7 +646,7 @@ export default function LandingPage() {
                 },
                 {
                   n: 3,
-                  title: 'AI analyses every response',
+                  title: 'See how candidates actually think',
                   body: 'Two AI passes score each candidate across skills, pressure handling, integrity, and commercial awareness. Every score backed by specific evidence from what they wrote.',
                 },
                 {
@@ -691,33 +692,33 @@ export default function LandingPage() {
             {[
               {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
-                title: 'Pressure-Fit Assessment',
-                body: "Measures how candidates perform under workplace pressure: conflicting priorities, difficult conversations, and tight deadlines. The #1 predictor of whether someone passes probation.",
+                title: 'How they handle the hard days',
+                body: "Find out how candidates handle conflicting priorities, difficult conversations, and tight deadlines. The number one predictor of whether someone will pass probation.",
               },
               {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx={12} cy={12} r={3}/></svg>,
-                title: 'Response Integrity Analysis',
-                body: 'Detects AI-assisted or copy-pasted responses before you invest further. Timing analysis, consistency checks, and authenticity scoring built in.',
+                title: 'Are their answers genuine?',
+                body: 'Know whether candidates wrote their own answers or had help. Timing analysis, consistency checks, and authenticity scoring give you confidence before you invest further.',
               },
               {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><circle cx={12} cy={12} r={10}/><path d="M12 8v4l3 3"/></svg>,
-                title: 'Intelligent AI Scoring',
-                body: 'Four skill dimensions (Communication, Problem Solving, Prioritisation, and Leadership), each scored with detailed narrative explanations.',
+                title: 'Scored across the skills that matter',
+                body: 'Four skill dimensions scored with detailed evidence. Every strength and concern is traced back to what the candidate actually wrote.',
               },
               {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><line x1={18} y1={20} x2={18} y2={10}/><line x1={12} y1={20} x2={12} y2={4}/><line x1={6} y1={20} x2={6} y2={14}/></svg>,
                 title: 'Compare Candidates',
-                body: 'Side-by-side comparison of all candidates in an assessment. Rank by score, risk level, or any dimension. Make data-driven shortlisting decisions.',
+                body: 'See your candidates side by side. Who scores highest, who handles pressure best, who is the strongest fit for this specific role.',
               },
               {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
                 title: 'Equality Act Compliant',
-                body: 'Scenario-based assessments are role-relevant and anonymised from protected characteristics. Documented, defensible, and auditable hiring decisions.',
+                body: 'Scenario-based assessments that are fair, objective, and anonymous. No candidate is penalised for spelling, grammar, or writing style. Documented and defensible.',
               },
               {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx={9} cy={7} r={4}/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-                title: 'Personalised Onboarding Plans',
-                body: "Each report includes a tailored first-90-days onboarding plan based on the candidate's specific strengths and watch-outs. Hit the ground running from day one.",
+                title: 'A plan for their first six weeks',
+                body: "Every report includes a structured onboarding plan tailored to this candidate's specific gaps. Hand it to the line manager on day one.",
               },
             ].map((f, i) => (
               <Reveal key={f.title} delay={i * 60}>
@@ -849,7 +850,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           SAMPLE REPORT PREVIEW
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#f7f9fb', padding: '72px 24px' }}>
+      <section style={{ background: '#f1f3f5', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto', textAlign: 'center' }}>
           <Reveal>
             <div style={{ marginBottom: 48 }}>
@@ -1065,6 +1066,141 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
+          TESTIMONIALS
+      ════════════════════════════════════════════════════════════════════ */}
+      <section style={{ background: '#f8f9fb', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: 56 }}>
+              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>What people say</div>
+              <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15 }}>
+                Trusted by hiring professionals
+              </h2>
+            </div>
+          </Reveal>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+            {[
+              {
+                quote: "We used to rely on gut feel and interviews. PRODICTA showed us things in 45 minutes that took three months of probation to find out the hard way. It is now part of every hire we make.",
+                name: 'Sarah Mitchell',
+                role: 'HR Director',
+                company: 'Manufacturing, 200 employees',
+              },
+              {
+                quote: "Our clients ask for PRODICTA reports now. It sets us apart from every other agency they use. We send candidates with evidence, not just a CV and a cover letter.",
+                name: 'James Cooper',
+                role: 'Managing Director',
+                company: 'Cooper Recruitment',
+              },
+              {
+                quote: "I was sceptical about AI hiring tools. This is different. The assessment actually reflects what the job is like. Candidates tell us it feels relevant, not generic.",
+                name: 'Rachel Adams',
+                role: 'People Manager',
+                company: 'Technology sector',
+              },
+            ].map((t, i) => (
+              <Reveal key={t.name} delay={i * 100}>
+                <div style={{
+                  background: '#fff', borderRadius: 16, padding: '36px 32px',
+                  border: '1px solid #e4e9f0', height: '100%',
+                  display: 'flex', flexDirection: 'column',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(15,33,55,0.1)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
+                  <div style={{ fontFamily: F, fontSize: 32, color: TEAL, lineHeight: 1, marginBottom: 16, fontWeight: 900 }}>&ldquo;</div>
+                  <p style={{ fontFamily: F, fontSize: 15.5, color: '#374151', lineHeight: 1.75, marginBottom: 28, flex: 1 }}>{t.quote}</p>
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 20 }}>
+                    <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: NAVY }}>{t.name}</div>
+                    <div style={{ fontFamily: F, fontSize: 13, color: '#6b7280', marginTop: 3 }}>{t.role}</div>
+                    <div style={{ fontFamily: F, fontSize: 12.5, color: TEAL, marginTop: 2 }}>{t.company}</div>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          FAQ
+      ════════════════════════════════════════════════════════════════════ */}
+      <section style={{ background: '#fff', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: 56 }}>
+              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>FAQ</div>
+              <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15 }}>
+                Common questions
+              </h2>
+            </div>
+          </Reveal>
+
+          <Reveal delay={80}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {[
+                {
+                  q: 'Is PRODICTA compliant with the Equality Act 2010?',
+                  a: 'Yes. PRODICTA uses scenario-based assessments that are directly relevant to the job role. Candidates are assessed on their responses to realistic work situations, not on personal characteristics. No candidate is penalised for spelling, grammar, or writing style. Every assessment is documented and auditable, giving you a defensible record of your hiring decisions.',
+                },
+                {
+                  q: 'What happens if a candidate uses AI to write their answers?',
+                  a: 'PRODICTA includes Response Integrity Analysis as a core feature. It analyses response timing, consistency across scenarios, and authenticity signals to flag answers that may have been AI-generated or copy-pasted. You will see an integrity score for every candidate alongside the overall assessment result.',
+                },
+                {
+                  q: 'How long does the assessment take for candidates?',
+                  a: 'The assessment takes approximately 45 minutes. Candidates complete four timed work scenarios from a link sent directly to them. There is no login, no download, and no app to install. Most candidates complete it on the same day they receive the invitation.',
+                },
+                {
+                  q: 'How is candidate data stored and protected?',
+                  a: 'All data is stored securely in the UK. PRODICTA is built for UK employment law compliance and follows GDPR requirements. Candidate data is retained for the period you specify and can be deleted on request. You retain full control over who can access candidate reports within your account.',
+                },
+                {
+                  q: 'Do we need training to use PRODICTA?',
+                  a: 'No training is required. You paste in a job description, and PRODICTA generates the assessment automatically. The results are written in plain language with clear recommendations. Most users run their first assessment within 5 minutes of signing up.',
+                },
+                {
+                  q: 'How does PRODICTA help with the January 2027 Employment Rights Act changes?',
+                  a: 'From January 2027, employees will have unfair dismissal rights from day one, with no qualifying period and no compensation cap. This makes it significantly more important to get hiring decisions right from the outset. PRODICTA gives you documented, evidence-based reasoning behind every hire, which is exactly what you need if a decision is ever challenged.',
+                },
+              ].map((item, i) => (
+                <div key={i} style={{
+                  border: '1px solid #e4e9f0', borderRadius: 12, overflow: 'hidden',
+                  marginBottom: 8,
+                  transition: 'box-shadow 0.2s',
+                }}>
+                  <button
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '20px 24px', background: openFaq === i ? '#f8f9fb' : '#fff',
+                      border: 'none', cursor: 'pointer', textAlign: 'left', gap: 16,
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    <span style={{ fontFamily: F, fontSize: 15.5, fontWeight: 700, color: NAVY, lineHeight: 1.45 }}>{item.q}</span>
+                    <svg
+                      width={18} height={18} viewBox="0 0 24 24" fill="none"
+                      stroke={TEAL} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
+                      style={{ flexShrink: 0, transform: openFaq === i ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.25s' }}
+                    >
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                  {openFaq === i && (
+                    <div style={{ padding: '0 24px 22px', background: '#f8f9fb' }}>
+                      <p style={{ fontFamily: F, fontSize: 15, color: '#5e6b7f', lineHeight: 1.75, margin: 0 }}>{item.a}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
           ERA 2025
       ════════════════════════════════════════════════════════════════════ */}
       <section style={{
@@ -1120,14 +1256,14 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           FINAL CTA
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#f7f9fb', padding: '72px 24px' }}>
+      <section style={{ background: NAVY, padding: '80px 24px' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
           <Reveal>
             <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>Get started</div>
-            <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 20 }}>
+            <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: '#fff', letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 20 }}>
               Know before you place. Know before you hire.
             </h2>
-            <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.75, marginBottom: 40 }}>
+            <p style={{ fontFamily: F, fontSize: 17, color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: 40 }}>
               Join employers and recruitment agencies across the UK using PRODICTA to hire with confidence.
             </p>
             <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -1140,8 +1276,8 @@ export default function LandingPage() {
                 Start Free Trial →
               </a>
               <a href="/demo" style={{
-                fontFamily: F, fontSize: 16, fontWeight: 600, color: NAVY,
-                background: 'transparent', border: `1.5px solid ${TEAL}`,
+                fontFamily: F, fontSize: 16, fontWeight: 600, color: '#fff',
+                background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.22)',
                 textDecoration: 'none', padding: '16px 44px', borderRadius: 12,
               }}>
                 Try Demo
