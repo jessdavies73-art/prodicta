@@ -1618,8 +1618,8 @@ export default function CandidateReportPage({ params }) {
             {existingOutcome?.placement_date && profile?.account_type === 'agency' && (
               <RebateTimeline outcome={existingOutcome} candidateName={candidate?.name} />
             )}
-            {existingOutcome?.placement_date && profile?.account_type === 'employer' && (
-              <ProbationTimeline outcome={existingOutcome} />
+            {existingOutcome && profile?.account_type === 'employer' && (
+              <ProbationTimeline outcome={existingOutcome.placement_date ? existingOutcome : { ...existingOutcome, placement_date: existingOutcome.outcome_date }} />
             )}
 
             {!results && <PendingState candidate={candidate} />}
