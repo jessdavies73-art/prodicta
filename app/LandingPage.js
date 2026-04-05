@@ -183,7 +183,8 @@ export default function LandingPage() {
       ════════════════════════════════════════════════════════════════════ */}
       <section style={{
         position: 'relative', minHeight: '100vh', overflow: 'hidden',
-        background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)',
+        background: 'linear-gradient(-45deg, #0f2137, #1a3a5c, #0a2a2e, #0f2137)',
+        backgroundSize: '400% 400%', animation: 'gradShift 12s ease infinite',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         justifyContent: 'center', textAlign: 'center',
         padding: '90px 24px 75px',

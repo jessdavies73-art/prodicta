@@ -105,9 +105,9 @@ function ConfirmationHandler() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(-45deg, #0a1929, #0f2137, #0d2a43, #112240, #091624)',
+      background: 'linear-gradient(-45deg, #0f2137, #1a3a5c, #0a2a2e, #0f2137)',
       backgroundSize: '400% 400%',
-      animation: 'gradientShift 14s ease infinite',
+      animation: 'gradientShift 12s ease infinite',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
