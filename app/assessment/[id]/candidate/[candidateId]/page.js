@@ -1589,11 +1589,11 @@ export default function CandidateReportPage({ params }) {
                         className="no-print"
                         style={{
                           display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: 'transparent', border: `1.5px solid ${BD}`, borderRadius: 8,
-                          cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TX2, padding: '9px 16px',
+                          background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8,
+                          cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px',
                         }}
                       >
-                        <Ic name="file" size={15} color={TX2} />
+                        <Ic name="file-text" size={15} color={TEALD} />
                         Interview Brief
                       </button>
                     )}
