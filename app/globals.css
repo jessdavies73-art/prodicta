@@ -91,11 +91,15 @@ button:not([disabled]):not([data-no-lift]):active {
 
 /* ── Card hover lift ───────────────────────────────────────────────────────── */
 .card-hover {
+  position: relative;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 .card-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 28px rgba(15,33,55,0.13), 0 2px 8px rgba(15,33,55,0.07) !important;
+  /* Raise this stacking context above the sticky nav (z-index 80) so that
+     any position:fixed tooltip inside is not painted behind it. */
+  z-index: 90;
 }
 
 /* ── Checkmark draw animation ──────────────────────────────────────────────── */

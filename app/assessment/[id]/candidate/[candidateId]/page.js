@@ -269,6 +269,60 @@ function SmallRing({ score, size = 60, strokeWidth = 5 }) {
   )
 }
 
+function RadarChart({ scores }) {
+  const entries = Object.entries(scores)
+  const n = entries.length
+  if (n < 3) return null
+  const W = 460, H = 300, cx = 230, cy = 150, r = 85, labelR = 120
+  const angle = (i) => -Math.PI / 2 + i * (2 * Math.PI / n)
+  const pt = (i, val) => {
+    const a = angle(i)
+    return [cx + (val / 100) * r * Math.cos(a), cy + (val / 100) * r * Math.sin(a)]
+  }
+  const dataPts = entries.map(([, s], i) => pt(i, s).join(',')).join(' ')
+  const GRID = [25, 50, 75, 100]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: W, height: 'auto', display: 'block', margin: '0 auto 24px' }}>
+      {GRID.map(lv => (
+        <polygon key={lv}
+          points={entries.map((_, i) => pt(i, lv).join(',')).join(' ')}
+          fill={lv === 100 ? 'rgba(0,191,165,0.03)' : 'none'}
+          stroke="rgba(0,0,0,0.07)" strokeWidth={1}
+        />
+      ))}
+      {GRID.slice(0, 3).map(lv => {
+        const [gx, gy] = pt(0, lv)
+        return (
+          <text key={lv} x={gx + 5} y={gy + 4} fontSize={9} fill="rgba(0,0,0,0.28)" fontFamily="system-ui, sans-serif">{lv}</text>
+        )
+      })}
+      {entries.map((_, i) => {
+        const [ax, ay] = pt(i, 100)
+        return <line key={i} x1={cx} y1={cy} x2={ax} y2={ay} stroke="rgba(0,0,0,0.09)" strokeWidth={1} />
+      })}
+      <polygon points={dataPts} fill="rgba(0,191,165,0.18)" stroke="#00BFA5" strokeWidth={2.5} strokeLinejoin="round" />
+      {entries.map(([, s], i) => {
+        const [px, py] = pt(i, s)
+        return <circle key={i} cx={px} cy={py} r={4.5} fill="#00BFA5" stroke="white" strokeWidth={1.5} />
+      })}
+      {entries.map(([skill, s], i) => {
+        const a = angle(i)
+        const lx = cx + labelR * Math.cos(a)
+        const ly = cy + labelR * Math.sin(a)
+        const ca = Math.cos(a), sa = Math.sin(a)
+        const anchor = ca > 0.25 ? 'start' : ca < -0.25 ? 'end' : 'middle'
+        const nameY = sa > 0.25 ? ly : sa < -0.25 ? ly - 14 : ly - 6
+        return (
+          <g key={i}>
+            <text x={lx} y={nameY} textAnchor={anchor} fontSize={11} fontWeight="700" fontFamily="Outfit, system-ui, sans-serif" fill="#0f2137">{skill}</text>
+            <text x={lx} y={nameY + 14} textAnchor={anchor} fontSize={13} fontWeight="800" fontFamily="'IBM Plex Mono', monospace" fill="#00BFA5">{s}</text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
 /* Pressure-Fit score ring , colour: green 75+, amber 50-74, red below 50 */
 function PFRing({ score, size = 110 }) {
   const [display, setDisplay] = useState(0)
@@ -410,6 +464,7 @@ function SeniorityBadge({ score }) {
 function ScrollReveal({ children, delay = 0, id }) {
   const ref = useRef(null)
   const [visible, setVisible] = useState(false)
+  const [settled, setSettled] = useState(false)
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -417,15 +472,22 @@ function ScrollReveal({ children, delay = 0, id }) {
     obs.observe(el)
     return () => obs.disconnect()
   }, [])
+  // Once the entrance animation finishes we remove the transform entirely so this
+  // element no longer creates a stacking context. A persistent transform would
+  // confine position:fixed descendants (like InfoTooltip) to this element's
+  // containing block and put them behind the sticky nav (z-index 80).
   return (
     <div
       id={id}
       ref={ref}
+      onTransitionEnd={() => { if (visible && !settled) setSettled(true) }}
       style={{
         scrollMarginTop: 56,
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(14px)',
-        transition: `opacity 0.45s ease ${delay}ms, transform 0.45s ease ${delay}ms`,
+        ...(settled ? {} : {
+          transform: visible ? 'translateY(0)' : 'translateY(14px)',
+          transition: `opacity 0.45s ease ${delay}ms, transform 0.45s ease ${delay}ms`,
+        }),
       }}
     >
       {children}
@@ -444,6 +506,7 @@ const NAV_SECTIONS = [
   { id: 'watchouts',     label: 'Watch-outs' },
   { id: 'onboarding',    label: 'Onboarding' },
   { id: 'questions',     label: 'Questions' },
+  { id: 'responses',     label: 'Responses' },
 ]
 
 function StickyNav({ active }) {
@@ -801,6 +864,8 @@ export default function CandidateReportPage({ params }) {
   const [newNote, setNewNote] = useState('')
   const [noteSaving, setNoteSaving] = useState(false)
   const [activeSection, setActiveSection] = useState('summary')
+  const [expandedWeeks, setExpandedWeeks] = useState({})
+  const [viewMode, setViewMode] = useState('internal') // 'internal' | 'client' - agency only
 
   // Outcome Tracking (employer only)
   const [outcomeModal, setOutcomeModal] = useState(false)
@@ -850,16 +915,35 @@ export default function CandidateReportPage({ params }) {
         setUser(u)
 
         const [{ data: cand, error: cErr }, { data: res }, { data: bm }, { data: resps }, { data: prof }] = await Promise.all([
-          supabase.from('candidates').select('*, assessments(role_title, job_description, skill_weights)').eq('id', params.candidateId).single(),
+          supabase.from('candidates').select('*, assessments(role_title, job_description, skill_weights, scenarios)').eq('id', params.candidateId).single(),
           supabase.from('results').select('*').eq('candidate_id', params.candidateId).maybeSingle(),
           supabase.from('benchmarks').select('*').eq('user_id', u.id),
-          supabase.from('responses').select('scenario_index, time_taken_seconds').eq('candidate_id', params.candidateId).order('scenario_index'),
+          supabase.from('responses').select('scenario_index, time_taken_seconds, response_text').eq('candidate_id', params.candidateId).order('scenario_index'),
           supabase.from('users').select('company_name, account_type, report_sections').eq('id', u.id).maybeSingle(),
         ])
 
         if (cErr) throw cErr
         setCandidate(cand)
-        setResults(res || null)
+
+        // Client-side coherence correction: fix incoherent predicted outcomes before rendering
+        let correctedRes = res
+        if (res?.predictions) {
+          const rawPreds = typeof res.predictions === 'string' ? JSON.parse(res.predictions) : res.predictions
+          const pp = parseInt(rawPreds.pass_probation) || 0
+          const cr = parseInt(rawPreds.churn_risk) || 0
+          const ur = parseInt(rawPreds.underperformance_risk) || 0
+          const correctedPreds = { ...rawPreds }
+          if (pp > 70) {
+            correctedPreds.churn_risk = Math.min(cr, 19)
+            correctedPreds.underperformance_risk = Math.min(ur, 25)
+          }
+          if (pp <= 50) {
+            correctedPreds.churn_risk = Math.max(cr, 40)
+            correctedPreds.underperformance_risk = Math.max(ur, 45)
+          }
+          correctedRes = { ...res, predictions: correctedPreds }
+        }
+        setResults(correctedRes || null)
         setBenchmarks(bm || [])
         setResponses(resps || [])
         setProfile(prof || null)
@@ -1220,6 +1304,7 @@ export default function CandidateReportPage({ params }) {
         @keyframes pulse{0%,100%{opacity:.3}50%{opacity:.55}}
         @keyframes glow{0%,100%{box-shadow:0 0 8px 2px rgba(0,191,165,0.25)}50%{box-shadow:0 0 18px 5px rgba(0,191,165,0.45)}}
         html { scroll-behavior: smooth; }
+        @media print { .ob-detail { display: flex !important; } }
       `}</style>
       <Sidebar active="assessment" />
 
@@ -1390,176 +1475,93 @@ export default function CandidateReportPage({ params }) {
 
                 <StickyNav active={activeSection} />
 
+                {/* Internal / Client view toggle - agency only */}
+                {profile?.account_type === 'agency' && (
+                  <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 0, background: CARD, border: `1px solid ${BD}`, borderRadius: 8, padding: 3, width: 'fit-content' }}>
+                    {['internal', 'client'].map(mode => (
+                      <button
+                        key={mode}
+                        onClick={() => setViewMode(mode)}
+                        style={{
+                          padding: '6px 18px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700,
+                          background: viewMode === mode ? NAVY : 'transparent',
+                          color: viewMode === mode ? '#fff' : TX3,
+                          transition: 'background 0.15s, color 0.15s',
+                        }}
+                      >
+                        {mode === 'internal' ? 'Internal View' : 'Client View'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {/* ══════════════════════════════════════════════════
-                    HIRING CONFIDENCE BANNER
+                    VERDICT PANEL
                 ══════════════════════════════════════════════════ */}
-                {results.hiring_confidence && (() => {
+                {(() => {
                   const hc = results.hiring_confidence
-                  const hcScore = hc.score ?? hc
-                  const hcExplanation = hc.explanation || null
-                  const hcColor = hcScore >= 70 ? TEAL : hcScore >= 55 ? AMB : RED
-                  const hcBg    = hcScore >= 70 ? TEALLT : hcScore >= 55 ? AMBBG : REDBG
-                  const hcBd    = hcScore >= 70 ? `${TEAL}55` : hcScore >= 55 ? AMBBD : REDBD
-                  const hcLabel = hcScore >= 80 ? 'High confidence' : hcScore >= 65 ? 'Good confidence' : hcScore >= 50 ? 'Mixed signals' : 'Low confidence'
-                  const hcContext = hcScore >= 80 ? 'High confidence - proceed with offer' : hcScore >= 65 ? 'Good confidence - proceed with targeted onboarding' : hcScore >= 50 ? 'Mixed signals - re-interview or consider alternatives' : 'Low confidence - do not proceed without further evidence'
-                  return (
-                    <ScrollReveal delay={0}>
-                    <div style={{
-                      marginBottom: 20,
-                      background: CARD,
-                      border: `1.5px solid ${hcBd}`,
-                      borderLeft: `5px solid ${hcColor}`,
-                      borderRadius: '0 12px 12px 0',
-                      padding: '20px 28px',
-                      boxShadow: SHADOW,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 28,
-                      flexWrap: 'wrap',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexShrink: 0 }}>
-                        <span style={{ fontFamily: FM, fontSize: 48, fontWeight: 800, color: hcColor, lineHeight: 1 }}>
-                          {hcScore}%
-                        </span>
-                        <div>
-                          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 5 }}>
-                            Hiring Confidence <InfoTooltip text="A single decision-ready percentage combining all assessment data. Use this as your go/stop indicator for hiring decisions." />
-                          </div>
-                          <div style={{
-                            display: 'inline-flex', alignItems: 'center',
-                            padding: '3px 10px', borderRadius: 20,
-                            background: hcBg, border: `1px solid ${hcBd}`,
-                          }}>
-                            <span style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: hcColor }}>{hcLabel}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ flex: 1, minWidth: 200, borderLeft: `1px solid ${BD}`, paddingLeft: 24 }}>
-                        {hcExplanation && (
-                          <p style={{ fontFamily: F, fontSize: 14.5, fontWeight: 600, color: TX, margin: '0 0 6px', lineHeight: 1.5 }}>
-                            {hcExplanation}
-                          </p>
-                        )}
-                        <p style={{ fontFamily: F, fontSize: 11.5, color: TX3, margin: 0, lineHeight: 1.4 }}>
-                          {hcContext}
-                        </p>
-                      </div>
-                    </div>
-                    </ScrollReveal>
-                  )
-                })()}
+                  const hcScore = hc ? (hc.score ?? hc) : null
+                  const hcExplanation = hc?.explanation || null
+                  const hcColor = !hcScore ? TX3 : hcScore >= 70 ? TEAL : hcScore >= 55 ? AMB : RED
 
-                {/* ══════════════════════════════════════════════════
-                    TOP SUMMARY ROW , Pass Probability · Hiring Decision · Risk Level
-                ══════════════════════════════════════════════════ */}
-                <ScrollReveal id="summary">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
-
-                  {/* Pass Probability */}
-                  <Card topColor={sc(passProbability ?? score)} style={{ textAlign: 'center', padding: '24px 20px', background: `linear-gradient(180deg, ${sbg(passProbability ?? score)} 0%, #fff 60%)` }}>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
-                      Pass Probability <InfoTooltip text="The likelihood this candidate will successfully complete probation, based on scores, pressure-fit, and response quality." />
-                    </div>
-                    <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 12px' }}>
-                      <SmallRing score={passProbability ?? score} size={80} strokeWidth={7} />
-                    </div>
-                    <div style={{ fontFamily: FM, fontSize: 32, fontWeight: 800, color: sc(passProbability ?? score), lineHeight: 1, marginBottom: 6 }}>
-                      {passProbability ?? score}%
-                    </div>
-                    <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>predicted probation success</div>
-                  </Card>
-
-                  {/* Hiring Decision */}
-                  <Card topColor={dC(score)} style={{ textAlign: 'center', padding: '24px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(180deg, ${dBg(score)} 0%, #fff 60%)` }}>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14 }}>
-                      Hiring Decision
-                    </div>
-                    <div style={{
-                      width: 52, height: 52, borderRadius: '50%',
-                      background: dC(score),
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14,
-                      boxShadow: `0 4px 14px ${dC(score)}44`,
-                    }}>
-                      <Ic name="award" size={24} color="#fff" />
-                    </div>
-                    <div style={{
-                      display: 'inline-flex', alignItems: 'center',
-                      padding: '8px 20px', borderRadius: 50,
-                      background: dC(score),
-                      boxShadow: `0 3px 12px ${dC(score)}44`,
-                    }}>
-                      <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: '-0.2px' }}>
-                        {dL(score)}
-                      </span>
-                    </div>
-                  </Card>
-
-                  {/* Risk Level */}
-                  <Card topColor={riskCol(results.risk_level)} style={{ padding: '24px 22px', background: `linear-gradient(180deg, ${riskBg(results.risk_level)} 0%, #fff 60%)` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
-                      <span style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Risk Level</span>
-                      <InfoTooltip text="Likelihood of this candidate struggling during probation based on their responses" />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                      <div style={{
-                        width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                        background: riskCol(results.risk_level),
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: `0 3px 10px ${riskCol(results.risk_level)}44`,
-                      }}>
-                        <Ic name="alert" size={18} color="#fff" />
-                      </div>
-                      <span style={{
-                        fontFamily: FM, fontSize: 20, fontWeight: 800, color: riskCol(results.risk_level),
-                        letterSpacing: '-0.3px',
-                      }}>
-                        {results.risk_level || 'Unknown'}
-                      </span>
-                    </div>
-                    {results.risk_reason && (
-                      <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.6 }}>
-                        {results.risk_reason.slice(0, 160)}{results.risk_reason.length > 160 ? '…' : ''}
-                      </p>
-                    )}
-                  </Card>
-                </div>
-                </ScrollReveal>
-
-                {/* ══════════════════════════════════════════════════
-                    CANDIDATE TYPE SNAPSHOT
-                ══════════════════════════════════════════════════ */}
-                {results.candidate_type && (() => {
-                  const pipeIdx = results.candidate_type.indexOf('|')
-                  const typeLabel = pipeIdx > -1 ? results.candidate_type.slice(0, pipeIdx).trim() : results.candidate_type
+                  const pipeIdx = results.candidate_type ? results.candidate_type.indexOf('|') : -1
+                  const typeLabel = pipeIdx > -1 ? results.candidate_type.slice(0, pipeIdx).trim() : (results.candidate_type || null)
                   const typeExplanation = pipeIdx > -1 ? results.candidate_type.slice(pipeIdx + 1).trim() : null
-                  const withIdx = typeLabel.indexOf(' with ')
-                  const whoIdx = typeLabel.search(/ who /i)
+                  const withIdx = typeLabel ? typeLabel.indexOf(' with ') : -1
+                  const whoIdx = typeLabel ? typeLabel.search(/ who /i) : -1
                   const splitIdx = withIdx > -1 ? withIdx : whoIdx > -1 ? whoIdx : -1
                   const splitWord = withIdx > -1 ? 'with' : whoIdx > -1 ? 'who' : null
                   const primary  = splitIdx > -1 ? typeLabel.slice(0, splitIdx) : typeLabel
                   const modifier = splitIdx > -1 ? typeLabel.slice(splitIdx + splitWord.length + 2) : null
+
                   return (
-                    <ScrollReveal delay={60}>
+                    <ScrollReveal id="summary" delay={0}>
                     <div style={{
                       marginBottom: 20,
                       background: 'linear-gradient(135deg, #0a1929 0%, #0f2137 100%)',
                       border: '1px solid rgba(0,191,165,0.22)',
-                      borderRadius: 12, padding: '22px 28px', boxShadow: SHADOW_LG,
+                      borderRadius: 12, padding: '24px 28px', boxShadow: SHADOW_LG,
                     }}>
-                      <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5 }}>
-                        Candidate Type Snapshot <InfoTooltip text="A memorable label capturing this candidate's working style, based on their response patterns across all scenarios." light />
+                      {typeLabel && (
+                        <div style={{ marginBottom: 16 }}>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                            Candidate Type <InfoTooltip text="A memorable label capturing this candidate's working style, based on their response patterns across all scenarios." light />
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                            <span style={{ fontFamily: FM, fontSize: 24, fontWeight: 800, color: '#00BFA5', lineHeight: 1.2 }}>{primary}</span>
+                            {modifier && (
+                              <>
+                                <span style={{ fontFamily: F, fontSize: 14, fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>{splitWord}</span>
+                                <span style={{ fontFamily: FM, fontSize: 20, fontWeight: 700, color: 'rgba(255,255,255,0.8)', lineHeight: 1.2 }}>{modifier}</span>
+                              </>
+                            )}
+                          </div>
+                          {typeExplanation && (
+                            <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '6px 0 0', lineHeight: 1.55 }}>{typeExplanation}</p>
+                          )}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', padding: '7px 16px', borderRadius: 8, background: dBg(score), border: `1.5px solid ${dC(score)}66` }}>
+                          <span style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: dC(score) }}>{dL(score)}</span>
+                        </div>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8, background: riskBg(results.risk_level), border: `1.5px solid ${riskCol(results.risk_level)}66` }}>
+                          <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: riskCol(results.risk_level) }}>{results.risk_level || 'Unknown'} Risk</span>
+                        </div>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 16px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                          <span style={{ fontFamily: F, fontSize: 11.5, color: 'rgba(255,255,255,0.4)' }}>Pass probability</span>
+                          <span style={{ fontFamily: FM, fontSize: 15, fontWeight: 800, color: sc(passProbability ?? score) }}>{passProbability ?? score}%</span>
+                        </div>
+                        {hcScore != null && (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 16px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                            <span style={{ fontFamily: F, fontSize: 11.5, color: 'rgba(255,255,255,0.4)' }}>Hiring confidence</span>
+                            <span style={{ fontFamily: FM, fontSize: 15, fontWeight: 800, color: hcColor }}>{hcScore}%</span>
+                          </div>
+                        )}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-                        <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: '#00BFA5', lineHeight: 1.2 }}>{primary}</span>
-                        {modifier && <>
-                          <span style={{ fontFamily: F, fontSize: 15, fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>{splitWord}</span>
-                          <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.85)', lineHeight: 1.2 }}>{modifier}</span>
-                        </>}
-                      </div>
-                      {typeExplanation && (
-                        <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.42)', margin: '10px 0 0', lineHeight: 1.55 }}>
-                          {typeExplanation}
-                        </p>
+                      {hcExplanation && (
+                        <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.42)', margin: '12px 0 0', lineHeight: 1.5 }}>{hcExplanation}</p>
                       )}
                     </div>
                     </ScrollReveal>
@@ -1570,25 +1572,38 @@ export default function CandidateReportPage({ params }) {
                     PREDICTED OUTCOME PANEL
                 ══════════════════════════════════════════════════ */}
                 {(() => {
-                  const p = results.predictions || {}
+                  const rawP = results.predictions || {}
+                  const ppRaw = parseInt(rawP.pass_probation) || 0
+                  const crRaw = parseInt(rawP.churn_risk) || 0
+                  const urRaw = parseInt(rawP.underperformance_risk) || 0
+                  const p = {
+                    ...rawP,
+                    pass_probation:       ppRaw,
+                    top_performer:        parseInt(rawP.top_performer) || 0,
+                    churn_risk:           ppRaw > 70 ? Math.min(crRaw, 19) : ppRaw <= 50 ? Math.max(crRaw, 40) : crRaw,
+                    underperformance_risk: ppRaw > 70 ? Math.min(urRaw, 25) : ppRaw <= 50 ? Math.max(urRaw, 45) : urRaw,
+                  }
+                  console.log('[predictions panel] raw:', JSON.stringify(rawP), '| corrected:', JSON.stringify({ pass_probation: p.pass_probation, churn_risk: p.churn_risk, underperformance_risk: p.underperformance_risk }))
                   const panels = [
                     { label: 'Pass probation',        key: 'pass_probation',       type: 'positive' },
                     { label: 'Become top performer',  key: 'top_performer',         type: 'positive' },
                     { label: 'Leave within 6 months', key: 'churn_risk',            type: 'risk'     },
                     { label: 'Underperformance risk', key: 'underperformance_risk', type: 'risk'     },
                   ]
-                  function panelColor(type, val) {
+                  function panelColor(type, val, key) {
+                    // top_performer: low is not a problem, so never red - amber below 25, jade above
+                    if (key === 'top_performer') return val >= 25 ? '#00BFA5' : '#F59E0B'
                     if (type === 'positive') return val >= 70 ? '#00BFA5' : val >= 50 ? '#F59E0B' : '#EF4444'
                     return val <= 25 ? '#00BFA5' : val <= 50 ? '#F59E0B' : '#EF4444'
                   }
-                  function panelBg(type, val) {
-                    const c = panelColor(type, val)
+                  function panelBg(type, val, key) {
+                    const c = panelColor(type, val, key)
                     if (c === '#00BFA5') return 'rgba(0,191,165,0.07)'
                     if (c === '#F59E0B') return 'rgba(245,158,11,0.07)'
                     return 'rgba(239,68,68,0.07)'
                   }
-                  function panelBd(type, val) {
-                    const c = panelColor(type, val)
+                  function panelBd(type, val, key) {
+                    const c = panelColor(type, val, key)
                     if (c === '#00BFA5') return 'rgba(0,191,165,0.22)'
                     if (c === '#F59E0B') return 'rgba(245,158,11,0.22)'
                     return 'rgba(239,68,68,0.22)'
@@ -1611,43 +1626,36 @@ export default function CandidateReportPage({ params }) {
                       return 'High flight risk - investigate motivations'
                     }
                     if (key === 'underperformance_risk') {
-                      if (val <= 20) return 'Low risk - expected to deliver'
-                      if (val <= 40) return 'Some areas may need support'
+                      if (val <= 25) return 'Low risk - expected to deliver'
+                      if (val <= 50) return 'Some areas may need support'
                       return 'Significant gaps likely to surface'
                     }
                     return ''
                   }
+                  const displayPreds = p ? {...p, churn_risk: p.pass_probation > 70 ? Math.min(p.churn_risk, 19) : p.churn_risk} : null
                   return (
                     <ScrollReveal delay={60}>
                     <Card style={{ marginBottom: 20 }}>
                       <SectionHeading tooltip="Probability predictions for this candidate's first 6 months, calibrated to the role and seniority level.">
                         Predicted Outcome Panel
                       </SectionHeading>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         {panels.map(({ label, key, type }) => {
-                          const val = p[key] ?? 0
-                          const color = panelColor(type, val)
-                          const bg = panelBg(type, val)
-                          const bd = panelBd(type, val)
+                          const val = (displayPreds || p)[key] ?? 0
+                          const color = panelColor(type, val, key)
+                          const bg = panelBg(type, val, key)
+                          const bd = panelBd(type, val, key)
                           const context = panelContext(key, val)
-                          const r = 22
-                          const circ = 2 * Math.PI * r
-                          const dash = (val / 100) * circ
                           return (
-                            <div key={key} style={{ background: bg, border: `1px solid ${bd}`, borderRadius: 10, padding: '18px 12px', textAlign: 'center' }}>
-                              <div style={{ position: 'relative', width: 60, height: 60, margin: '0 auto 12px' }}>
-                                <svg width={60} height={60} viewBox="0 0 60 60">
-                                  <circle cx={30} cy={30} r={r} fill="none" stroke={`${color}22`} strokeWidth={5} />
-                                  <circle cx={30} cy={30} r={r} fill="none" stroke={color} strokeWidth={5}
-                                    strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-                                    transform="rotate(-90 30 30)" />
-                                </svg>
-                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 800, color }}>{val}%</span>
-                                </div>
+                            <div key={key} style={{ background: bg, border: `1px solid ${bd}`, borderRadius: 10, padding: '14px 18px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                                <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{label}</span>
+                                <span style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color }}>{val}%</span>
                               </div>
-                              <div style={{ fontFamily: F, fontSize: 11.5, color: TX2, lineHeight: 1.4 }}>{label}</div>
-                              <div style={{ fontFamily: F, fontSize: 10, color: TX3, lineHeight: 1.4, marginTop: 4 }}>{context}</div>
+                              <div style={{ position: 'relative', height: 8, background: `${color}22`, borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
+                                <div style={{ position: 'absolute', inset: 0, width: `${val}%`, background: color, borderRadius: 4 }} />
+                              </div>
+                              <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, lineHeight: 1.4 }}>{context}</div>
                             </div>
                           )
                         })}
@@ -1948,6 +1956,7 @@ export default function CandidateReportPage({ params }) {
                 {/* ══════════════════════════════════════════════════
                     RESPONSE INTEGRITY , dark navy
                 ══════════════════════════════════════════════════ */}
+                {viewMode !== 'client' && (
                 <ScrollReveal id="integrity" delay={60}>
                 {(() => {
                   const integrity = results.integrity || {}
@@ -2052,6 +2061,44 @@ export default function CandidateReportPage({ params }) {
                           })}
                         </div>
 
+                        {/* Scenario performance timeline */}
+                        {(() => {
+                          const scenarioTimes = [0, 1, 2, 3].map(i => {
+                            const resp = responses.find(r => r.scenario_index === i)
+                            return resp?.time_taken_seconds ?? null
+                          })
+                          const validTimes = scenarioTimes.filter(Boolean)
+                          if (validTimes.length === 0) return null
+                          const maxT = Math.max(...validTimes)
+                          return (
+                            <div style={{ marginTop: 16, marginBottom: 4 }}>
+                              <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
+                                Response time trend
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 72 }}>
+                                {scenarioTimes.map((secs, i) => {
+                                  const tl = timingLabel(secs)
+                                  const barH = secs ? Math.max(Math.round((secs / maxT) * 50), 6) : 4
+                                  const timeLabel = secs
+                                    ? (Math.floor(secs / 60) > 0 ? `${Math.floor(secs / 60)}m${secs % 60 > 0 ? `${secs % 60}s` : ''}` : `${secs}s`)
+                                    : '-'
+                                  return (
+                                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
+                                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, fontWeight: 800, color: tl.color, lineHeight: 1 }}>
+                                        {timeLabel}
+                                      </div>
+                                      <div style={{ width: '100%', height: barH, background: tl.color, borderRadius: '3px 3px 0 0', opacity: 0.75 }} />
+                                      <div style={{ fontFamily: "'Outfit', system-ui, sans-serif", fontSize: 9.5, fontWeight: 600, color: 'rgba(255,255,255,0.35)', lineHeight: 1 }}>
+                                        S{i + 1}
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )
+                        })()}
+
                         {/* Quality notes */}
                         {integrity.quality_notes && (
                           <div style={{
@@ -2111,6 +2158,7 @@ export default function CandidateReportPage({ params }) {
                   )
                 })()}
                 </ScrollReveal>
+                )}
 
                 {/* ══════════════════════════════════════════════════
                     PRESSURE-FIT , dark navy, 2×2 grid
@@ -2332,6 +2380,7 @@ export default function CandidateReportPage({ params }) {
                     <SectionHeading tooltip="Individual skill scores with detailed narratives referencing specific scenario responses.">
                       Skills Breakdown
                     </SectionHeading>
+                    <RadarChart scores={results.scores} />
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
                       {Object.entries(results.scores).map(([skill, skillScore]) => {
                         const narrative = results.score_narratives?.[skill]
@@ -2578,6 +2627,29 @@ export default function CandidateReportPage({ params }) {
                     <SectionHeading tooltip="Concerns flagged by severity with evidence, recommended actions, and consequence predictions if ignored.">
                       Watch-outs
                     </SectionHeading>
+                    {/* Severity count summary strip */}
+                    {(() => {
+                      const counts = { High: 0, Medium: 0, Low: 0 }
+                      results.watchouts.forEach(w => {
+                        const s = typeof w === 'object' ? w.severity : null
+                        if (s === 'High') counts.High++
+                        else if (s === 'Medium') counts.Medium++
+                        else counts.Low++
+                      })
+                      const parts = []
+                      if (counts.High > 0)   parts.push({ n: counts.High,   label: 'High',   color: RED })
+                      if (counts.Medium > 0) parts.push({ n: counts.Medium, label: 'Medium', color: AMB })
+                      if (counts.Low > 0)    parts.push({ n: counts.Low,    label: 'Low',    color: TX3 })
+                      return (
+                        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 20 }}>
+                          {parts.map(({ n, label, color }) => (
+                            <span key={label} style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color }}>
+                              {n} {label}
+                            </span>
+                          ))}
+                        </div>
+                      )
+                    })()}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       {results.watchouts.map((w, i) => {
                         const title = typeof w === 'object' ? (w.watchout || w.title || w.text) : w
@@ -2642,7 +2714,60 @@ export default function CandidateReportPage({ params }) {
                 {results.onboarding_plan?.length > 0 && (
                   <ScrollReveal id="onboarding" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading tooltip="A structured 6-week plan tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.">Personalised Onboarding Plan</SectionHeading>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 0 }}>
+                      <SectionHeading tooltip="A structured 6-week plan tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.">
+                        Personalised Onboarding Plan
+                      </SectionHeading>
+                      <button
+                        onClick={() => {
+                          const plan = results?.onboarding_plan || []
+                          const candidateName = candidate?.name || 'Candidate'
+                          const roleName = candidate?.assessments?.role_title || ''
+                          let html = `<div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;padding:32px;color:#0f2137">`
+                          html += `<div style="border-bottom:3px solid #00BFA5;padding-bottom:12px;margin-bottom:24px">`
+                          html += `<div style="font-size:11px;font-weight:700;color:#00BFA5;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px">PRODICTA</div>`
+                          html += `<h1 style="font-size:22px;font-weight:800;margin:0 0 4px">Personalised Onboarding Plan</h1>`
+                          html += `<p style="margin:0;font-size:14px;color:#64748b">${candidateName}${roleName ? ` &nbsp;|&nbsp; ${roleName}` : ''}</p></div>`
+                          plan.forEach(item => {
+                            if (typeof item !== 'object' || !item.objective) return
+                            html += `<div style="margin-bottom:28px;page-break-inside:avoid">`
+                            html += `<div style="background:#f1f5f9;border-left:4px solid #00BFA5;padding:10px 14px;margin-bottom:14px">`
+                            html += `<div style="font-size:11px;font-weight:700;color:#00BFA5;text-transform:uppercase;letter-spacing:0.07em">Week ${item.week}</div>`
+                            html += `<div style="font-size:16px;font-weight:800;color:#0f2137">${item.title || ''}</div></div>`
+                            if (item.objective) html += `<p style="font-size:13px;color:#334155;margin:0 0 12px"><strong>Objective:</strong> ${item.objective}</p>`
+                            if (item.activities?.length > 0) {
+                              html += `<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Activities</div>`
+                              item.activities.forEach(act => {
+                                html += `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px"><div style="width:16px;height:16px;border:2px solid #00BFA5;border-radius:3px;flex-shrink:0;margin-top:1px"></div><span style="font-size:13px;color:#334155;line-height:1.6">${act}</span></div>`
+                              })
+                              html += `</div>`
+                            }
+                            if (item.checkpoint) {
+                              html += `<div style="background:#f0fdf8;border:1px solid #99e6d9;border-radius:6px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px">`
+                              html += `<div style="width:16px;height:16px;border:2px solid #00BFA5;border-radius:3px;flex-shrink:0;margin-top:1px"></div>`
+                              html += `<div><div style="font-size:10px;font-weight:700;color:#00897b;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px">Checkpoint</div><span style="font-size:13px;color:#00897b;font-weight:600">${item.checkpoint}</span></div></div>`
+                            }
+                            if (item.involves?.length > 0) html += `<p style="font-size:12px;color:#64748b;margin:0"><strong>Who&#39;s involved:</strong> ${item.involves.join(', ')}</p>`
+                            html += `</div>`
+                          })
+                          html += `</div>`
+                          const w = window.open('', '_blank')
+                          w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Onboarding Plan - ${candidateName}</title><style>@media print{body{margin:0}}</style></head><body>${html}<script>window.onload=function(){window.print();}<\/script></body></html>`)
+                          w.document.close()
+                        }}
+                        className="no-print"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: 'transparent', border: `1.5px solid ${BD}`,
+                          borderRadius: 7, cursor: 'pointer', padding: '6px 14px',
+                          fontFamily: F, fontSize: 12, fontWeight: 700, color: TX2,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Ic name="download" size={13} color={TX2} />
+                        Export Checklist
+                      </button>
+                    </div>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
                       Tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.
                     </p>
@@ -2699,6 +2824,7 @@ export default function CandidateReportPage({ params }) {
                           )
                         }
 
+                        const isExpanded = !!expandedWeeks[i]
                         return (
                           <div key={i} style={{
                             background: CARD,
@@ -2707,7 +2833,7 @@ export default function CandidateReportPage({ params }) {
                             overflow: 'hidden',
                             boxShadow: '0 1px 4px rgba(15,33,55,0.05)',
                           }}>
-                            {/* Card header */}
+                            {/* Card header - always visible */}
                             <div style={{
                               display: 'flex', alignItems: 'center', gap: 14,
                               padding: '16px 20px',
@@ -2722,7 +2848,7 @@ export default function CandidateReportPage({ params }) {
                               }}>
                                 {item.week}
                               </div>
-                              <div>
+                              <div style={{ flex: 1 }}>
                                 <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
                                   Week {item.week}
                                 </div>
@@ -2730,24 +2856,50 @@ export default function CandidateReportPage({ params }) {
                                   {item.title}
                                 </div>
                               </div>
+                              <button
+                                onClick={() => setExpandedWeeks(prev => ({ ...prev, [i]: !prev[i] }))}
+                                data-no-lift
+                                style={{
+                                  flexShrink: 0, background: 'transparent', border: `1px solid ${BD}`,
+                                  borderRadius: 6, cursor: 'pointer', padding: '5px 12px',
+                                  fontFamily: F, fontSize: 11.5, fontWeight: 600, color: TX3,
+                                  display: 'flex', alignItems: 'center', gap: 5,
+                                }}
+                              >
+                                {isExpanded ? 'Hide details' : 'Show details'}
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </button>
                             </div>
 
-                            {/* Card body */}
-                            <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-                              {/* Objective */}
+                            {/* Always-visible summary: objective + checkpoint */}
+                            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                               {item.objective && (
                                 <div>
-                                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Objective</div>
-                                  <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX, margin: 0, lineHeight: 1.65 }}>
-                                    {item.objective}
-                                  </p>
+                                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>Objective</div>
+                                  <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX, margin: 0, lineHeight: 1.65 }}>{item.objective}</p>
                                 </div>
                               )}
+                              {item.checkpoint && (
+                                <div style={{
+                                  background: TEALLT, border: `1px solid ${TEAL}40`,
+                                  borderRadius: 8, padding: '10px 14px',
+                                  display: 'flex', gap: 10, alignItems: 'flex-start',
+                                }}>
+                                  <Ic name="check" size={14} color={TEALD} />
+                                  <div>
+                                    <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Checkpoint</div>
+                                    <p style={{ fontFamily: F, fontSize: 13, color: TEALD, fontWeight: 600, margin: 0, lineHeight: 1.6 }}>{item.checkpoint}</p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
 
-                              {/* Activities */}
+                            {/* Progressive detail: activities, involves, notes */}
+                            <div className="ob-detail" style={{ display: isExpanded ? 'flex' : 'none', flexDirection: 'column', gap: 16, padding: '0 20px 18px', borderTop: `1px solid ${BD}` }}>
                               {item.activities?.length > 0 && (
-                                <div>
+                                <div style={{ paddingTop: 14 }}>
                                   <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Activities</div>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                     {item.activities.map((act, ai) => (
@@ -2757,32 +2909,13 @@ export default function CandidateReportPage({ params }) {
                                           background: TEALLT, border: `1.5px solid ${TEAL}55`,
                                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                                           fontFamily: FM, fontSize: 10, fontWeight: 800, color: TEALD,
-                                        }}>
-                                          {ai + 1}
-                                        </div>
+                                        }}>{ai + 1}</div>
                                         <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.65 }}>{act}</p>
                                       </div>
                                     ))}
                                   </div>
                                 </div>
                               )}
-
-                              {/* Checkpoint */}
-                              {item.checkpoint && (
-                                <div style={{
-                                  background: TEALLT, border: `1px solid ${TEAL}40`,
-                                  borderRadius: 8, padding: '12px 14px',
-                                  display: 'flex', gap: 10, alignItems: 'flex-start',
-                                }}>
-                                  <Ic name="check" size={14} color={TEALD} style={{ flexShrink: 0, marginTop: 1 }} />
-                                  <div>
-                                    <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Checkpoint</div>
-                                    <p style={{ fontFamily: F, fontSize: 13, color: TEALD, fontWeight: 600, margin: 0, lineHeight: 1.6 }}>{item.checkpoint}</p>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Bottom row: involves + notes */}
                               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
                                 {item.involves?.length > 0 && (
                                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -2790,14 +2923,10 @@ export default function CandidateReportPage({ params }) {
                                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                                       {item.involves.map((role, ri) => (
                                         <span key={ri} style={{
-                                          display: 'inline-flex', alignItems: 'center',
-                                          padding: '3px 10px', borderRadius: 50,
-                                          fontFamily: F, fontSize: 11.5, fontWeight: 600,
-                                          background: BG, color: TX2, border: `1px solid ${BD}`,
-                                          whiteSpace: 'nowrap',
-                                        }}>
-                                          {role}
-                                        </span>
+                                          display: 'inline-flex', alignItems: 'center', padding: '3px 10px',
+                                          borderRadius: 50, fontFamily: F, fontSize: 11.5, fontWeight: 600,
+                                          background: BG, color: TX2, border: `1px solid ${BD}`, whiteSpace: 'nowrap',
+                                        }}>{role}</span>
                                       ))}
                                     </div>
                                   </div>
@@ -2809,7 +2938,6 @@ export default function CandidateReportPage({ params }) {
                                   </div>
                                 )}
                               </div>
-
                             </div>
                           </div>
                         )
@@ -2871,6 +2999,79 @@ export default function CandidateReportPage({ params }) {
                                       {followUp}
                                     </p>
                                   </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </Card>
+                  </ScrollReveal>
+                )}
+
+                {/* ══════════════════════════════════════════════════
+                    CANDIDATE RESPONSES
+                ══════════════════════════════════════════════════ */}
+                {responses.length > 0 && candidate?.assessments?.scenarios?.length > 0 && (
+                  <ScrollReveal id="responses" delay={60}>
+                  <Card style={{ marginBottom: 20 }}>
+                    <SectionHeading tooltip="The candidate's actual written responses to each scenario, alongside the scenario prompt and AI skill commentary.">
+                      Candidate Responses
+                    </SectionHeading>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                      {candidate.assessments.scenarios.map((scenario, i) => {
+                        const resp = responses.find(r => r.scenario_index === i)
+                        const scenarioSkills = scenario.skills || []
+                        const narratives = scenarioSkills.map(sk => ({
+                          skill: sk,
+                          text: results?.score_narratives?.[sk] || null,
+                          score: results?.scores?.[sk] ?? null,
+                        })).filter(n => n.text)
+                        return (
+                          <div key={i} style={{ border: `1px solid ${BD}`, borderRadius: 10, overflow: 'hidden' }}>
+                            <div style={{ background: NAVY, padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <span style={{ fontFamily: FM, fontSize: 11, fontWeight: 800, color: TEAL }}>S{i + 1}</span>
+                              <span style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{scenario.type}</span>
+                              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: '#fff', flex: 1 }}>{scenario.title}</span>
+                              <span style={{ fontFamily: F, fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{scenario.timeMinutes}min</span>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0 }}>
+                              {/* Scenario prompt */}
+                              <div style={{ padding: '16px 18px', borderRight: `1px solid ${BD}`, background: BG }}>
+                                <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Scenario</div>
+                                <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '0 0 12px', lineHeight: 1.65 }}>{scenario.context}</p>
+                                <div style={{ background: TEALLT, border: `1px solid ${TEAL}40`, borderRadius: 6, padding: '10px 12px' }}>
+                                  <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Task</div>
+                                  <p style={{ fontFamily: F, fontSize: 12.5, color: TEALD, fontWeight: 600, margin: 0, lineHeight: 1.6 }}>{scenario.task}</p>
+                                </div>
+                              </div>
+                              {/* Candidate response */}
+                              <div style={{ padding: '16px 18px', borderRight: `1px solid ${BD}` }}>
+                                <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Response</div>
+                                {resp?.response_text ? (
+                                  <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0, lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{resp.response_text}</p>
+                                ) : (
+                                  <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: 0, fontStyle: 'italic' }}>No response recorded.</p>
+                                )}
+                              </div>
+                              {/* AI commentary */}
+                              <div style={{ padding: '16px 18px', background: BG }}>
+                                <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>AI Commentary</div>
+                                {narratives.length > 0 ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    {narratives.map(({ skill, text, score }) => (
+                                      <div key={skill}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                                          <span style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TX }}>{skill}</span>
+                                          {score != null && <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 800, color: sc(score) }}>{score}</span>}
+                                        </div>
+                                        <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.65 }}>{text}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: 0, fontStyle: 'italic' }}>Narrative commentary available for newly scored assessments.</p>
                                 )}
                               </div>
                             </div>
@@ -3471,6 +3672,20 @@ export default function CandidateReportPage({ params }) {
               </div>
             </div>
           )}
+          {reportSections.candidate_type && results.candidate_type && (() => {
+            const pipeIdx = results.candidate_type.indexOf('|')
+            const ctLabel = pipeIdx > -1 ? results.candidate_type.slice(0, pipeIdx).trim() : results.candidate_type
+            const ctExplanation = pipeIdx > -1 ? results.candidate_type.slice(pipeIdx + 1).trim() : null
+            return (
+              <div key="ct-pdf-top" style={{ marginBottom: 28 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 8, marginBottom: 14 }}>Candidate Type</div>
+                <div style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: TEAL }}>{ctLabel}</div>
+                {ctExplanation && (
+                  <div style={{ fontFamily: F, fontSize: 13, color: TX3, marginTop: 4, lineHeight: 1.55 }}>{ctExplanation}</div>
+                )}
+              </div>
+            )
+          })()}
           {reportSections.pressure_fit && results.pressure_fit_score != null && (
             <div style={{ marginBottom: 28 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 8, marginBottom: 14 }}>Pressure-Fit</div>
@@ -3520,7 +3735,27 @@ export default function CandidateReportPage({ params }) {
           )}
           {reportSections.watchouts && results.watchouts?.length > 0 && (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${RED}`, paddingBottom: 8, marginBottom: 14 }}>Watch-outs</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${RED}`, paddingBottom: 8, marginBottom: 10 }}>Watch-outs</div>
+              {(() => {
+                const counts = { High: 0, Medium: 0, Low: 0 }
+                results.watchouts.forEach(w => {
+                  const s = typeof w === 'object' ? w.severity : null
+                  if (s === 'High') counts.High++
+                  else if (s === 'Medium') counts.Medium++
+                  else counts.Low++
+                })
+                const parts = []
+                if (counts.High > 0)   parts.push({ n: counts.High,   label: 'High',   color: RED })
+                if (counts.Medium > 0) parts.push({ n: counts.Medium, label: 'Medium', color: AMB })
+                if (counts.Low > 0)    parts.push({ n: counts.Low,    label: 'Low',    color: TX3 })
+                return (
+                  <div style={{ marginBottom: 12, display: 'flex', gap: 20 }}>
+                    {parts.map(({ n, label, color }) => (
+                      <span key={label} style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color }}>{n} {label}</span>
+                    ))}
+                  </div>
+                )
+              })()}
               {results.watchouts.map((w, i) => {
                 const t = typeof w === 'object' ? (w.text || w.title || '') : w
                 const sev = typeof w === 'object' ? w.severity : ''
@@ -3562,12 +3797,6 @@ export default function CandidateReportPage({ params }) {
                   <div style={{ fontFamily: F, fontSize: 13.5, color: TX2, lineHeight: 1.65 }}>{results.hiring_confidence.explanation}</div>
                 )}
               </div>
-            </div>
-          )}
-          {reportSections.candidate_type && results.candidate_type && (
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `2px solid ${TEAL}`, paddingBottom: 8, marginBottom: 14 }}>Candidate Type</div>
-              <div style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: NAVY }}>{results.candidate_type}</div>
             </div>
           )}
           {reportSections.predicted_outcomes && results.predictions && (

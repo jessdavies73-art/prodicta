@@ -178,6 +178,60 @@ function SmallRing({ score, size = 60, strokeWidth = 5 }) {
   )
 }
 
+function RadarChart({ scores }) {
+  const entries = Object.entries(scores)
+  const n = entries.length
+  if (n < 3) return null
+  const W = 460, H = 300, cx = 230, cy = 150, r = 85, labelR = 120
+  const angle = (i) => -Math.PI / 2 + i * (2 * Math.PI / n)
+  const pt = (i, val) => {
+    const a = angle(i)
+    return [cx + (val / 100) * r * Math.cos(a), cy + (val / 100) * r * Math.sin(a)]
+  }
+  const dataPts = entries.map(([, s], i) => pt(i, s).join(',')).join(' ')
+  const GRID = [25, 50, 75, 100]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: W, height: 'auto', display: 'block', margin: '0 auto 24px' }}>
+      {GRID.map(lv => (
+        <polygon key={lv}
+          points={entries.map((_, i) => pt(i, lv).join(',')).join(' ')}
+          fill={lv === 100 ? 'rgba(0,191,165,0.03)' : 'none'}
+          stroke="rgba(0,0,0,0.07)" strokeWidth={1}
+        />
+      ))}
+      {GRID.slice(0, 3).map(lv => {
+        const [gx, gy] = pt(0, lv)
+        return (
+          <text key={lv} x={gx + 5} y={gy + 4} fontSize={9} fill="rgba(0,0,0,0.28)" fontFamily="system-ui, sans-serif">{lv}</text>
+        )
+      })}
+      {entries.map((_, i) => {
+        const [ax, ay] = pt(i, 100)
+        return <line key={i} x1={cx} y1={cy} x2={ax} y2={ay} stroke="rgba(0,0,0,0.09)" strokeWidth={1} />
+      })}
+      <polygon points={dataPts} fill="rgba(0,191,165,0.18)" stroke="#00BFA5" strokeWidth={2.5} strokeLinejoin="round" />
+      {entries.map(([, s], i) => {
+        const [px, py] = pt(i, s)
+        return <circle key={i} cx={px} cy={py} r={4.5} fill="#00BFA5" stroke="white" strokeWidth={1.5} />
+      })}
+      {entries.map(([skill, s], i) => {
+        const a = angle(i)
+        const lx = cx + labelR * Math.cos(a)
+        const ly = cy + labelR * Math.sin(a)
+        const ca = Math.cos(a), sa = Math.sin(a)
+        const anchor = ca > 0.25 ? 'start' : ca < -0.25 ? 'end' : 'middle'
+        const nameY = sa > 0.25 ? ly : sa < -0.25 ? ly - 14 : ly - 6
+        return (
+          <g key={i}>
+            <text x={lx} y={nameY} textAnchor={anchor} fontSize={11} fontWeight="700" fontFamily="Outfit, system-ui, sans-serif" fill="#0f2137">{skill}</text>
+            <text x={lx} y={nameY + 14} textAnchor={anchor} fontSize={13} fontWeight="800" fontFamily="'IBM Plex Mono', monospace" fill="#00BFA5">{s}</text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
 function PFRing({ score, size = 110 }) {
   const [display, setDisplay] = useState(0)
   const [drawn, setDrawn] = useState(false)
@@ -327,6 +381,7 @@ function SeniorityBadge({ score }) {
 export default function DemoCandidatePage({ params }) {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState('summary')
+  const [expandedWeeks, setExpandedWeeks] = useState({})
   const [outcomeModal, setOutcomeModal] = useState(false)
   const [demoOutcome, setDemoOutcome] = useState(() => {
     const s = DEMO_RESULTS[params.candidateId]?.overall_score ?? 0
@@ -414,6 +469,7 @@ export default function DemoCandidatePage({ params }) {
         @keyframes pulse{0%,100%{opacity:.3}50%{opacity:.55}}
         @keyframes glow{0%,100%{box-shadow:0 0 8px 2px rgba(0,191,165,0.25)}50%{box-shadow:0 0 18px 5px rgba(0,191,165,0.45)}}
         html { scroll-behavior: smooth; }
+        @media print { .ob-detail { display: flex !important; } }
       `}</style>
 
       {/* Demo banner fixed at top */}
@@ -522,6 +578,45 @@ export default function DemoCandidatePage({ params }) {
           <>
             <StickyNav active={activeSection} />
 
+            {/* ── CANDIDATE TYPE SNAPSHOT ── */}
+            {results.candidate_type && (() => {
+              const pipeIdx = results.candidate_type.indexOf('|')
+              const typeLabel = pipeIdx > -1 ? results.candidate_type.slice(0, pipeIdx).trim() : results.candidate_type
+              const typeExplanation = pipeIdx > -1 ? results.candidate_type.slice(pipeIdx + 1).trim() : null
+              const withIdx = typeLabel.indexOf(' with ')
+              const whoIdx = typeLabel.search(/ who /i)
+              const splitIdx = withIdx > -1 ? withIdx : whoIdx > -1 ? whoIdx : -1
+              const splitWord = withIdx > -1 ? 'with' : whoIdx > -1 ? 'who' : null
+              const primary  = splitIdx > -1 ? typeLabel.slice(0, splitIdx) : typeLabel
+              const modifier = splitIdx > -1 ? typeLabel.slice(splitIdx + splitWord.length + 2) : null
+              return (
+                <ScrollReveal delay={60}>
+                <div style={{
+                  marginBottom: 20,
+                  background: 'linear-gradient(135deg, #0a1929 0%, #0f2137 100%)',
+                  border: '1px solid rgba(0,191,165,0.22)',
+                  borderRadius: 12, padding: '22px 28px', boxShadow: SHADOW_LG,
+                }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    Candidate Type Snapshot <InfoTooltip text="A memorable label capturing this candidate's working style, based on their response patterns across all scenarios." light />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: '#00BFA5', lineHeight: 1.2 }}>{primary}</span>
+                    {modifier && <>
+                      <span style={{ fontFamily: F, fontSize: 15, fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>{splitWord}</span>
+                      <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.85)', lineHeight: 1.2 }}>{modifier}</span>
+                    </>}
+                  </div>
+                  {typeExplanation && (
+                    <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.42)', margin: '10px 0 0', lineHeight: 1.55 }}>
+                      {typeExplanation}
+                    </p>
+                  )}
+                </div>
+                </ScrollReveal>
+              )
+            })()}
+
             {/* ── SUMMARY ── */}
             <ScrollReveal id="summary">
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
@@ -566,34 +661,6 @@ export default function DemoCandidatePage({ params }) {
               </div>
             </ScrollReveal>
 
-            {/* ── CANDIDATE TYPE SNAPSHOT ── */}
-            {results.candidate_type && (() => {
-              const withIdx = results.candidate_type.indexOf(' with ')
-              const primary  = withIdx > -1 ? results.candidate_type.slice(0, withIdx) : results.candidate_type
-              const modifier = withIdx > -1 ? results.candidate_type.slice(withIdx + 6) : null
-              return (
-                <ScrollReveal delay={60}>
-                <div style={{
-                  marginBottom: 20,
-                  background: 'linear-gradient(135deg, #0a1929 0%, #0f2137 100%)',
-                  border: '1px solid rgba(0,191,165,0.22)',
-                  borderRadius: 12, padding: '22px 28px', boxShadow: SHADOW_LG,
-                }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5 }}>
-                    Candidate Type Snapshot <InfoTooltip text="A memorable label capturing this candidate's working style, based on their response patterns across all scenarios." light />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-                    <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: '#00BFA5', lineHeight: 1.2 }}>{primary}</span>
-                    {modifier && <>
-                      <span style={{ fontFamily: F, fontSize: 15, fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>with</span>
-                      <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.85)', lineHeight: 1.2 }}>{modifier}</span>
-                    </>}
-                  </div>
-                </div>
-                </ScrollReveal>
-              )
-            })()}
-
             {/* ── INTEGRITY ── */}
             <ScrollReveal id="integrity" delay={60}>
               <div style={{ marginBottom: 20, background: `linear-gradient(135deg, #0a1929 0%, #0f2137 60%, #0d2b45 100%)`, border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 12, overflow: 'hidden', boxShadow: SHADOW_LG }}>
@@ -632,6 +699,44 @@ export default function DemoCandidatePage({ params }) {
                       )
                     })}
                   </div>
+
+                  {/* Scenario performance timeline */}
+                  {(() => {
+                    const scenarioTimes = [0, 1, 2, 3].map(i => {
+                      const resp = responses.find(r => r.scenario_index === i)
+                      return resp?.time_taken_seconds ?? null
+                    })
+                    const validTimes = scenarioTimes.filter(Boolean)
+                    if (validTimes.length === 0) return null
+                    const maxT = Math.max(...validTimes)
+                    return (
+                      <div style={{ marginTop: 16, marginBottom: 4 }}>
+                        <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
+                          Response time trend
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 72 }}>
+                          {scenarioTimes.map((secs, i) => {
+                            const tl = timingLabel(secs)
+                            const barH = secs ? Math.max(Math.round((secs / maxT) * 50), 6) : 4
+                            const timeLabel = secs
+                              ? (Math.floor(secs / 60) > 0 ? `${Math.floor(secs / 60)}m${secs % 60 > 0 ? `${secs % 60}s` : ''}` : `${secs}s`)
+                              : '-'
+                            return (
+                              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
+                                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, fontWeight: 800, color: tl.color, lineHeight: 1 }}>
+                                  {timeLabel}
+                                </div>
+                                <div style={{ width: '100%', height: barH, background: tl.color, borderRadius: '3px 3px 0 0', opacity: 0.75 }} />
+                                <div style={{ fontFamily: "'Outfit', system-ui, sans-serif", fontSize: 9.5, fontWeight: 600, color: 'rgba(255,255,255,0.35)', lineHeight: 1 }}>
+                                  S{i + 1}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })()}
 
                   {integrity.quality_notes && (
                     <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderLeft: `3px solid ${qColor}55`, borderRadius: '0 8px 8px 0', padding: '10px 14px', marginBottom: 12 }}>
@@ -745,6 +850,7 @@ export default function DemoCandidatePage({ params }) {
               <ScrollReveal id="skills" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
                   <SectionHeading tooltip="Individual skill scores with detailed narratives referencing specific scenario responses.">Skills Breakdown</SectionHeading>
+                  <RadarChart scores={results.scores} />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
                     {Object.entries(results.scores).map(([skill, skillScore]) => {
                       const narrative = results.score_narratives?.[skill]
@@ -805,6 +911,28 @@ export default function DemoCandidatePage({ params }) {
               <ScrollReveal id="watchouts" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
                   <SectionHeading tooltip="Concerns flagged by severity with evidence, recommended actions, and consequence predictions if ignored.">Watch-outs</SectionHeading>
+                  {(() => {
+                    const counts = { High: 0, Medium: 0, Low: 0 }
+                    results.watchouts.forEach(w => {
+                      const s = typeof w === 'object' ? w.severity : null
+                      if (s === 'High') counts.High++
+                      else if (s === 'Medium') counts.Medium++
+                      else counts.Low++
+                    })
+                    const parts = []
+                    if (counts.High > 0)   parts.push({ n: counts.High,   label: 'High',   color: RED })
+                    if (counts.Medium > 0) parts.push({ n: counts.Medium, label: 'Medium', color: AMB })
+                    if (counts.Low > 0)    parts.push({ n: counts.Low,    label: 'Low',    color: TX3 })
+                    return (
+                      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 20 }}>
+                        {parts.map(({ n, label, color }) => (
+                          <span key={label} style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color }}>
+                            {n} {label}
+                          </span>
+                        ))}
+                      </div>
+                    )
+                  })()}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {results.watchouts.map((w, i) => {
                       const title = typeof w === 'object' ? (w.watchout || w.title || w.text) : w
@@ -854,14 +982,21 @@ export default function DemoCandidatePage({ params }) {
                           </div>
                         )
                       }
+                      const isExpanded = !!expandedWeeks[i]
                       return (
                         <div key={i} style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 4px rgba(15,33,55,0.05)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderBottom: `1px solid ${BD}`, background: '#f8fafc' }}>
                             <div style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, background: TEAL, boxShadow: `0 0 0 4px ${TEALLT}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 14, fontWeight: 800, color: NAVY }}>{item.week}</div>
-                            <div>
+                            <div style={{ flex: 1 }}>
                               <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Week {item.week}</div>
                               <div style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, lineHeight: 1.2 }}>{item.title}</div>
                             </div>
+                            <button
+                              onClick={() => setExpandedWeeks(prev => ({ ...prev, [i]: !prev[i] }))}
+                              style={{ flexShrink: 0, background: 'none', border: `1px solid ${BD}`, borderRadius: 6, padding: '5px 12px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, cursor: 'pointer' }}
+                            >
+                              {isExpanded ? 'Hide details' : 'Show details'}
+                            </button>
                           </div>
                           <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                             {item.objective && (
@@ -870,6 +1005,17 @@ export default function DemoCandidatePage({ params }) {
                                 <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX, margin: 0, lineHeight: 1.65 }}>{item.objective}</p>
                               </div>
                             )}
+                            {item.checkpoint && (
+                              <div style={{ background: TEALLT, border: `1px solid ${TEAL}40`, borderRadius: 8, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                <Ic name="check" size={14} color={TEALD} />
+                                <div>
+                                  <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Checkpoint</div>
+                                  <p style={{ fontFamily: F, fontSize: 13, color: TEALD, fontWeight: 600, margin: 0, lineHeight: 1.6 }}>{item.checkpoint}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="ob-detail" style={{ display: isExpanded ? 'flex' : 'none', flexDirection: 'column', gap: 16, padding: '0 20px 18px', borderTop: `1px solid ${BD}` }}>
                             {item.activities?.length > 0 && (
                               <div>
                                 <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Activities</div>
@@ -880,15 +1026,6 @@ export default function DemoCandidatePage({ params }) {
                                       <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.65 }}>{act}</p>
                                     </div>
                                   ))}
-                                </div>
-                              </div>
-                            )}
-                            {item.checkpoint && (
-                              <div style={{ background: TEALLT, border: `1px solid ${TEAL}40`, borderRadius: 8, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                                <Ic name="check" size={14} color={TEALD} />
-                                <div>
-                                  <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Checkpoint</div>
-                                  <p style={{ fontFamily: F, fontSize: 13, color: TEALD, fontWeight: 600, margin: 0, lineHeight: 1.6 }}>{item.checkpoint}</p>
                                 </div>
                               </div>
                             )}

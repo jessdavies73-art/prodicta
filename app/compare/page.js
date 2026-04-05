@@ -204,6 +204,112 @@ function CandidateSelector({ candidates, selected, onChange, placeholder, usedId
   )
 }
 
+function RadarCompare({ candidates }) {
+  const active = candidates.filter(Boolean)
+  if (active.length < 2) return null
+
+  // Build unified skill order from all active candidates
+  const seen = new Set()
+  const skillOrder = []
+  for (const cand of active) {
+    for (const k of Object.keys(cand.results?.[0]?.scores ?? {})) {
+      if (!seen.has(k)) { seen.add(k); skillOrder.push(k) }
+    }
+  }
+  if (skillOrder.length < 3) return null
+
+  const n = skillOrder.length
+  const W = 500, H = 320, cx = 250, cy = 155, r = 90, labelR = 122
+  const angle = (i) => -Math.PI / 2 + i * (2 * Math.PI / n)
+  const pt = (i, val) => {
+    const a = angle(i)
+    return [cx + (val / 100) * r * Math.cos(a), cy + (val / 100) * r * Math.sin(a)]
+  }
+  const GRID = [25, 50, 75, 100]
+  const COLOURS = ['#00BFA5', '#6366f1', '#f59e0b']
+  const FILLS   = ['rgba(0,191,165,0.12)', 'rgba(99,102,241,0.12)', 'rgba(245,158,11,0.12)']
+
+  return (
+    <div style={{
+      background: '#fff',
+      border: `1px solid #e2e8f0`,
+      borderRadius: 12,
+      padding: '20px 24px',
+      marginBottom: 24,
+      boxShadow: '0 2px 12px rgba(15,33,55,0.06)',
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 4 }}>
+        Skills Comparison
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 16, flexWrap: 'wrap' }}>
+        {active.map((cand, ci) => (
+          <div key={cand.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, borderRadius: '50%', background: COLOURS[ci], flexShrink: 0 }} />
+            <span style={{ fontFamily: "'Outfit', system-ui, sans-serif", fontSize: 13, fontWeight: 600, color: '#0f2137' }}>
+              {cand.name}
+            </span>
+          </div>
+        ))}
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: W, height: 'auto', display: 'block', margin: '0 auto' }}>
+        {/* Grid */}
+        {GRID.map(lv => (
+          <polygon key={lv}
+            points={skillOrder.map((_, i) => pt(i, lv).join(',')).join(' ')}
+            fill={lv === 100 ? 'rgba(0,191,165,0.02)' : 'none'}
+            stroke="rgba(0,0,0,0.07)" strokeWidth={1}
+          />
+        ))}
+        {GRID.slice(0, 3).map(lv => {
+          const [gx, gy] = pt(0, lv)
+          return (
+            <text key={lv} x={gx + 5} y={gy + 4} fontSize={9} fill="rgba(0,0,0,0.28)" fontFamily="system-ui">{lv}</text>
+          )
+        })}
+        {/* Axis lines */}
+        {skillOrder.map((_, i) => {
+          const [ax, ay] = pt(i, 100)
+          return <line key={i} x1={cx} y1={cy} x2={ax} y2={ay} stroke="rgba(0,0,0,0.09)" strokeWidth={1} />
+        })}
+        {/* Data polygons per candidate (back to front) */}
+        {[...active].reverse().map((cand, rci) => {
+          const ci = active.length - 1 - rci
+          const scores = cand.results?.[0]?.scores ?? {}
+          const pts = skillOrder.map((sk, i) => pt(i, scores[sk] ?? 0).join(',')).join(' ')
+          return (
+            <polygon key={cand.id} points={pts}
+              fill={FILLS[ci]} stroke={COLOURS[ci]} strokeWidth={2} strokeLinejoin="round" opacity={0.9}
+            />
+          )
+        })}
+        {/* Data point dots */}
+        {active.map((cand, ci) => {
+          const scores = cand.results?.[0]?.scores ?? {}
+          return skillOrder.map((sk, i) => {
+            const [px, py] = pt(i, scores[sk] ?? 0)
+            return <circle key={`${cand.id}-${sk}`} cx={px} cy={py} r={3.5} fill={COLOURS[ci]} stroke="white" strokeWidth={1.5} />
+          })
+        })}
+        {/* Axis labels */}
+        {skillOrder.map((skill, i) => {
+          const a = angle(i)
+          const lx = cx + labelR * Math.cos(a)
+          const ly = cy + labelR * Math.sin(a)
+          const ca = Math.cos(a), sa = Math.sin(a)
+          const anchor = ca > 0.25 ? 'start' : ca < -0.25 ? 'end' : 'middle'
+          const nameY = sa > 0.25 ? ly : sa < -0.25 ? ly - 12 : ly - 5
+          return (
+            <text key={i} x={lx} y={nameY} textAnchor={anchor} fontSize={11} fontWeight="700"
+              fontFamily="Outfit, system-ui, sans-serif" fill="#0f2137">
+              {skill}
+            </text>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
 function PlaceholderColumn({ label }) {
   return (
     <div style={{
@@ -711,6 +817,8 @@ function ComparePageInner() {
             Select at least 2 candidates to start comparing.
           </div>
         )}
+
+        <RadarCompare candidates={selectedCandidates} />
 
         {/* Comparison columns */}
         <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>

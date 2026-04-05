@@ -277,7 +277,7 @@ export default function LandingPage() {
               <div>
                 <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Assessment Report</div>
                 <div style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px', marginBottom: 3 }}>Alex Johnson</div>
-                <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.48)' }}>Senior Account Manager &middot; Completed 12 Mar 2025</div>
+                <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.48)' }}>Senior Account Manager &middot; Completed 2 Apr 2026</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                 <div style={{ textAlign: 'center' }}>
@@ -766,7 +766,7 @@ export default function LandingPage() {
                   <div>
                     <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Assessment Report</div>
                     <div style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px', marginBottom: 3 }}>Alex Johnson</div>
-                    <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.45)' }}>Senior Account Manager &middot; Completed 12 Mar 2025</div>
+                    <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.45)' }}>Senior Account Manager &middot; Completed 2 Apr 2026</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ width: 60, height: 60, borderRadius: '50%', background: `conic-gradient(${TEAL} 0% 82%, rgba(255,255,255,0.1) 82%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
