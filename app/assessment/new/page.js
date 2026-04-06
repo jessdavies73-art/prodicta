@@ -11,6 +11,80 @@ const FM = "'IBM Plex Mono',monospace"
 
 const SKILLS = ['Communication', 'Problem solving', 'Prioritisation', 'Leadership']
 
+const AGENCY_QUESTIONS = [
+  {
+    id: 'q0',
+    text: 'What actually matters most to your client in this role?',
+    type: 'multi-select',
+    options: ['Speed/urgency', 'Revenue generation', 'Stakeholder management', 'Process/organisation', 'Leadership/ownership'],
+  },
+  {
+    id: 'q1',
+    text: 'What typically causes candidates to fail with this client?',
+    type: 'multi-select-other',
+    options: ['Poor communication', 'Missed deadlines', "Can't handle pressure", 'Cultural mismatch', 'Lack of ownership'],
+  },
+  {
+    id: 'q2',
+    text: 'What type of environment is this?',
+    type: 'single-select',
+    options: ['Fast-paced/reactive', 'Structured/process-driven', 'Chaotic/ambiguous', 'Sales-driven/target-heavy'],
+  },
+  {
+    id: 'q3',
+    text: 'What would make this placement fail in 3 months?',
+    type: 'text',
+  },
+]
+
+const EMPLOYER_QUESTIONS = [
+  {
+    id: 'q0',
+    text: 'What does success look like in the first 90 days?',
+    type: 'text',
+  },
+  {
+    id: 'q1',
+    text: 'What are the biggest challenges in this role?',
+    type: 'multi-select',
+    options: ['Managing stakeholders', 'High workload/pressure', 'Ambiguity', 'Conflict/difficult conversations', 'Tight deadlines'],
+  },
+  {
+    id: 'q2',
+    text: 'What type of person thrives here?',
+    type: 'multi-select',
+    options: ['Highly organised', 'Proactive/self-starter', 'Strong communicator', 'Commercial thinker', 'Detail-oriented'],
+  },
+  {
+    id: 'q3',
+    text: 'What has gone wrong with past hires?',
+    type: 'multi-select',
+    options: ["Didn't adapt quickly", 'Poor communication', "Couldn't prioritise", 'Culture misfit', 'Burned out'],
+  },
+]
+
+function serializeContextAnswers(questions, answers) {
+  const result = {}
+  questions.forEach((q, i) => {
+    const ans = answers[q.id]
+    if (!ans) return
+    let text = ''
+    if (q.type === 'text') {
+      text = typeof ans === 'string' ? ans.trim() : ''
+    } else if (q.type === 'multi-select') {
+      text = Array.isArray(ans) && ans.length > 0 ? ans.join(', ') : ''
+    } else if (q.type === 'multi-select-other') {
+      const selected = Array.isArray(ans?.selected) ? ans.selected : []
+      const other = typeof ans?.other === 'string' ? ans.other.trim() : ''
+      text = [...selected, other].filter(Boolean).join(', ')
+    } else if (q.type === 'single-select') {
+      text = typeof ans === 'string' ? ans : ''
+    }
+    if (text) result[i] = `${q.text}: ${text}`
+  })
+  return result
+}
+
 const GEN_STEPS = [
   'Analysing role requirements…',
   'Generating work scenarios…',
@@ -101,10 +175,8 @@ export default function NewAssessmentPage() {
   const [rapidMode, setRapidMode] = useState(false)
 
   // Context questions
-  const [contextQuestions, setContextQuestions] = useState([])
   const [contextAnswers, setContextAnswers] = useState({})
-  const [generatingContext, setGeneratingContext] = useState(false)
-  const [contextError, setContextError] = useState('')
+  const [accountType, setAccountType] = useState('employer')
 
   useEffect(() => {
     const PLAN_LIMITS = { starter: 10, growth: 30, scale: null, founding: null }
@@ -112,8 +184,9 @@ export default function NewAssessmentPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: profile } = await supabase.from('users').select('company_name, plan').eq('id', user.id).single()
+      const { data: profile } = await supabase.from('users').select('company_name, plan, account_type').eq('id', user.id).single()
       if (profile?.company_name) setCompanyName(profile.company_name)
+      if (profile?.account_type) setAccountType(profile.account_type)
 
       // Check monthly usage limit
       const planKey = (profile?.plan || 'starter').toLowerCase()
@@ -163,31 +236,12 @@ export default function NewAssessmentPage() {
 
   const resetEqual = () => setWeights({ Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 })
 
-  const handleGenerateContextQs = async () => {
-    setContextError('')
-    setGeneratingContext(true)
-    setContextQuestions([])
-    setContextAnswers({})
-    try {
-      const res = await fetch('/api/assessment/context-questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role_title: roleTitle, job_description: jd }),
-      })
-      const data = await res.json()
-      if (data.questions) setContextQuestions(data.questions)
-      else setContextError(data.error || 'Failed to generate questions.')
-    } catch {
-      setContextError('Something went wrong. Please try again.')
-    } finally {
-      setGeneratingContext(false)
-    }
-  }
-
   const handleGenerate = async () => {
     setError('')
     setLoading(true)
     try {
+      const contextQs = accountType === 'agency' ? AGENCY_QUESTIONS : EMPLOYER_QUESTIONS
+      const serialized = serializeContextAnswers(contextQs, contextAnswers)
       const res = await fetch('/api/assessment/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -197,7 +251,7 @@ export default function NewAssessmentPage() {
           skill_weights: weights,
           save_as_template: saveAsTemplate,
           template_name: saveAsTemplate ? (templateName.trim() || roleTitle.trim()) : undefined,
-          context_answers: Object.keys(contextAnswers).length > 0 ? contextAnswers : undefined,
+          context_answers: Object.keys(serialized).length > 0 ? serialized : undefined,
           assessment_mode: rapidMode ? 'rapid' : 'standard',
         })
       })
@@ -398,97 +452,147 @@ export default function NewAssessmentPage() {
             )}
           </div>
 
-          {/* Context questions */}
-          {jd.length >= 50 && roleTitle.trim().length > 0 && (
-            <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #f1f5f9' }}>
-              {contextQuestions.length === 0 ? (
-                <div>
-                  <button
-                    onClick={handleGenerateContextQs}
-                    disabled={generatingContext}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 8,
-                      padding: '9px 18px', borderRadius: 8,
-                      border: '1.5px solid #00BFA5', background: '#f0fdf8',
-                      color: '#009688', fontSize: 13.5, fontWeight: 700,
-                      fontFamily: F, cursor: generatingContext ? 'not-allowed' : 'pointer',
-                      opacity: generatingContext ? 0.65 : 1,
-                      transition: 'background 0.15s',
-                    }}
-                  >
-                    {generatingContext ? (
-                      <>
-                        <div style={{
-                          width: 14, height: 14,
-                          border: '2px solid #a7f3d0',
-                          borderTopColor: '#009688',
-                          borderRadius: '50%',
-                          animation: 'spin 0.8s linear infinite',
-                          flexShrink: 0,
-                        }} />
-                        Generating questions...
-                      </>
-                    ) : (
-                      <>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#009688" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                        </svg>
-                        Generate context questions
-                      </>
-                    )}
-                  </button>
-                  <p style={{ margin: '8px 0 0', fontSize: 12, color: '#94a1b3', fontFamily: F }}>
-                    Optional. Let the AI ask 3-5 short follow-up questions to help build more accurate scenarios.
-                  </p>
-                  {contextError && (
-                    <p style={{ margin: '6px 0 0', fontSize: 12.5, color: '#dc2626', fontFamily: F }}>{contextError}</p>
-                  )}
-                </div>
-              ) : (
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#009688" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                      </svg>
-                      <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', fontFamily: F }}>Help us understand the role better</span>
-                      <span style={{ fontSize: 12, color: '#94a1b3', fontFamily: F }}>(all optional)</span>
-                    </div>
-                    <button
-                      onClick={() => { setContextQuestions([]); setContextAnswers({}) }}
-                      style={{ fontSize: 12, color: '#94a1b3', background: 'none', border: 'none', cursor: 'pointer', fontFamily: F, padding: '4px 8px' }}
-                    >
-                      Clear
-                    </button>
+          {/* Smart Role Context */}
+          {jd.length >= 50 && roleTitle.trim().length > 0 && (() => {
+            const contextQs = accountType === 'agency' ? AGENCY_QUESTIONS : EMPLOYER_QUESTIONS
+            const toggleMulti = (qId, option) => setContextAnswers(prev => {
+              const current = Array.isArray(prev[qId]) ? prev[qId] : []
+              return { ...prev, [qId]: current.includes(option) ? current.filter(o => o !== option) : [...current, option] }
+            })
+            const toggleMultiOther = (qId, option) => setContextAnswers(prev => {
+              const current = prev[qId] || { selected: [], other: '' }
+              const selected = Array.isArray(current.selected) ? current.selected : []
+              return { ...prev, [qId]: { ...current, selected: selected.includes(option) ? selected.filter(o => o !== option) : [...selected, option] } }
+            })
+            return (
+              <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', fontFamily: F }}>Smart Role Context</span>
+                    <span style={{ fontSize: 11.5, color: '#94a1b3', fontFamily: F }}>(all optional)</span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    {contextQuestions.map((q, i) => (
-                      <div key={i}>
-                        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#0f2137', marginBottom: 6, fontFamily: F }}>
-                          {q}
-                        </label>
+                  <span style={{
+                    fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                    background: '#e0f2f0', color: '#009688', fontFamily: F, letterSpacing: 0.1,
+                  }}>
+                    Improves prediction accuracy
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                  {contextQs.map(q => (
+                    <div key={q.id}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0f2137', marginBottom: 8, fontFamily: F }}>{q.text}</div>
+                      {q.type === 'text' && (
                         <input
                           type="text"
-                          value={contextAnswers[i] || ''}
-                          onChange={e => setContextAnswers(prev => ({ ...prev, [i]: e.target.value }))}
-                          placeholder="Your answer (optional)..."
+                          value={contextAnswers[q.id] || ''}
+                          onChange={e => setContextAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                          placeholder="Optional..."
                           style={{
-                            width: '100%', boxSizing: 'border-box',
-                            padding: '9px 13px', borderRadius: 8,
-                            border: '1px solid #e4e9f0', fontSize: 13.5,
+                            width: '100%', boxSizing: 'border-box', padding: '9px 13px',
+                            borderRadius: 8, border: '1px solid #e4e9f0', fontSize: 13.5,
                             color: '#0f172a', fontFamily: F, background: '#fff',
                             outline: 'none', transition: 'border-color 0.15s',
                           }}
                           onFocus={e => e.target.style.borderColor = '#00BFA5'}
                           onBlur={e => e.target.style.borderColor = '#e4e9f0'}
                         />
-                      </div>
-                    ))}
-                  </div>
+                      )}
+                      {q.type === 'multi-select' && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {q.options.map(opt => {
+                            const selected = Array.isArray(contextAnswers[q.id]) && contextAnswers[q.id].includes(opt)
+                            return (
+                              <button
+                                key={opt}
+                                type="button"
+                                onClick={() => toggleMulti(q.id, opt)}
+                                style={{
+                                  padding: '6px 13px', borderRadius: 20, fontSize: 13, fontFamily: F, cursor: 'pointer',
+                                  border: `1.5px solid ${selected ? '#00BFA5' : '#e4e9f0'}`,
+                                  background: selected ? '#e0f2f0' : '#f7f9fb',
+                                  color: selected ? '#009688' : '#5e6b7f',
+                                  fontWeight: selected ? 700 : 500,
+                                  transition: 'all 0.12s',
+                                }}
+                              >
+                                {opt}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                      {q.type === 'multi-select-other' && (
+                        <div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                            {q.options.map(opt => {
+                              const ans = contextAnswers[q.id] || {}
+                              const selected = Array.isArray(ans.selected) && ans.selected.includes(opt)
+                              return (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => toggleMultiOther(q.id, opt)}
+                                  style={{
+                                    padding: '6px 13px', borderRadius: 20, fontSize: 13, fontFamily: F, cursor: 'pointer',
+                                    border: `1.5px solid ${selected ? '#00BFA5' : '#e4e9f0'}`,
+                                    background: selected ? '#e0f2f0' : '#f7f9fb',
+                                    color: selected ? '#009688' : '#5e6b7f',
+                                    fontWeight: selected ? 700 : 500,
+                                    transition: 'all 0.12s',
+                                  }}
+                                >
+                                  {opt}
+                                </button>
+                              )
+                            })}
+                          </div>
+                          <input
+                            type="text"
+                            value={(contextAnswers[q.id] || {}).other || ''}
+                            onChange={e => setContextAnswers(prev => ({ ...prev, [q.id]: { ...(prev[q.id] || { selected: [] }), other: e.target.value } }))}
+                            placeholder="Other (optional)..."
+                            style={{
+                              width: '100%', boxSizing: 'border-box', padding: '8px 13px',
+                              borderRadius: 8, border: '1px solid #e4e9f0', fontSize: 13,
+                              color: '#0f172a', fontFamily: F, background: '#fff',
+                              outline: 'none', transition: 'border-color 0.15s',
+                            }}
+                            onFocus={e => e.target.style.borderColor = '#00BFA5'}
+                            onBlur={e => e.target.style.borderColor = '#e4e9f0'}
+                          />
+                        </div>
+                      )}
+                      {q.type === 'single-select' && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {q.options.map(opt => {
+                            const selected = contextAnswers[q.id] === opt
+                            return (
+                              <button
+                                key={opt}
+                                type="button"
+                                onClick={() => setContextAnswers(prev => ({ ...prev, [q.id]: prev[q.id] === opt ? '' : opt }))}
+                                style={{
+                                  padding: '6px 13px', borderRadius: 20, fontSize: 13, fontFamily: F, cursor: 'pointer',
+                                  border: `1.5px solid ${selected ? '#00BFA5' : '#e4e9f0'}`,
+                                  background: selected ? '#e0f2f0' : '#f7f9fb',
+                                  color: selected ? '#009688' : '#5e6b7f',
+                                  fontWeight: selected ? 700 : 500,
+                                  transition: 'all 0.12s',
+                                }}
+                              >
+                                {opt}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )
+          })()}
         </div>
 
         {/* Card 2: Skill weights */}

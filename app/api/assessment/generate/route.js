@@ -25,8 +25,12 @@ ROLE: ${role_title}
 
 JOB DESCRIPTION:
 ${job_description}
+${context_answers && Object.values(context_answers).some(v => v?.trim()) ? `
+ADDITIONAL CONTEXT PROVIDED BY THE HIRING MANAGER:
+${Object.entries(context_answers).map(([, v]) => v?.trim()).filter(Boolean).map(v => `- ${v}`).join('\n')}
 
----
+Treat these answers as ground truth. Weave the environment, failure modes, and success criteria directly into every scenario.
+` : ''}---
 
 STEP 1 - IDENTIFY THE TWO HIGHEST-PRIORITY SKILLS FROM THE JD
 
@@ -76,10 +80,10 @@ ROLE: ${role_title}
 JOB DESCRIPTION:
 ${job_description}
 ${context_answers && Object.values(context_answers).some(v => v?.trim()) ? `
-ADDITIONAL CONTEXT PROVIDED BY THE EMPLOYER:
+ADDITIONAL CONTEXT PROVIDED BY THE HIRING MANAGER:
 ${Object.entries(context_answers).map(([, v]) => v?.trim()).filter(Boolean).map(v => `- ${v}`).join('\n')}
 
-Treat these answers as ground truth. Weave the team size, pace, challenges, and context directly into every scenario.
+Treat these answers as ground truth. Weave the environment, team size, pace, challenges, failure modes, and success criteria directly into every scenario.
 ` : ''}
 ---
 
