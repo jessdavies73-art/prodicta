@@ -151,6 +151,39 @@ function StatNumber({ to, suffix = '', display }) {
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState(null)
+  const [riskJd, setRiskJd] = useState('')
+  const [riskLoading, setRiskLoading] = useState(false)
+  const [riskResults, setRiskResults] = useState(null)
+  const [riskError, setRiskError] = useState(null)
+
+  async function handleRiskAnalysis() {
+    if (!riskJd.trim() || riskLoading) return
+    const SESSION_KEY = 'prodicta_risk_count'
+    const count = parseInt(sessionStorage.getItem(SESSION_KEY) || '0', 10)
+    if (count >= 3) {
+      setRiskError('You have used your 3 free analyses this session. Create a free account for unlimited access.')
+      return
+    }
+    setRiskLoading(true)
+    setRiskResults(null)
+    setRiskError(null)
+    try {
+      const res = await fetch('/api/risk-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_description: riskJd }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to analyse risks')
+      setRiskResults(data.risks)
+      sessionStorage.setItem(SESSION_KEY, String(count + 1))
+    } catch (e) {
+      setRiskError(e.message)
+    } finally {
+      setRiskLoading(false)
+    }
+  }
+
   return (
     <div style={{ fontFamily: F, background: '#fff', overflowX: 'hidden' }}>
       <style>{`
@@ -227,7 +260,7 @@ export default function LandingPage() {
           color: 'rgba(255,255,255,0.6)', lineHeight: 1.75,
           maxWidth: 620, marginBottom: 44, position: 'relative', zIndex: 1,
         }}>
-          Turn hiring uncertainty into conviction. Work simulations tailored to the role, the company, and the challenges that matter. Predict probation outcomes, reduce hiring risk, and add a layer of protection to every hiring decision.
+          Your next hire is either your best decision or your most expensive. Know which.
         </p>
 
         {/* CTA buttons */}
@@ -352,6 +385,152 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
+          PRE-HIRE RISK REPORT
+      ════════════════════════════════════════════════════════════════════ */}
+      <section style={{ background: '#fff', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: 40 }}>
+              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Free tool</div>
+              <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.2vw, 40px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 16 }}>
+                See your hiring risks in seconds
+              </h2>
+              <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7, maxWidth: 520, margin: '0 auto' }}>
+                Paste any job description and PRODICTA will instantly show you the top 3 risks this role creates in hiring.
+              </p>
+            </div>
+          </Reveal>
+
+          <Reveal delay={80}>
+            <div style={{
+              background: '#f8f9fb',
+              border: `1.5px solid ${TEAL}33`,
+              borderRadius: 16,
+              padding: '32px',
+              boxShadow: '0 4px 24px rgba(15,33,55,0.06)',
+            }}>
+              <textarea
+                value={riskJd}
+                onChange={e => setRiskJd(e.target.value)}
+                placeholder="Paste a job description here..."
+                rows={7}
+                style={{
+                  width: '100%',
+                  fontFamily: F,
+                  fontSize: 14,
+                  color: NAVY,
+                  background: '#fff',
+                  border: '1.5px solid #e4e9f0',
+                  borderRadius: 10,
+                  padding: '14px 16px',
+                  resize: 'vertical',
+                  outline: 'none',
+                  lineHeight: 1.65,
+                  marginBottom: 16,
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s',
+                }}
+                onFocus={e => { e.target.style.borderColor = TEAL }}
+                onBlur={e => { e.target.style.borderColor = '#e4e9f0' }}
+              />
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                <span style={{ fontFamily: F, fontSize: 12.5, color: '#94a1b3' }}>
+                  No account needed. Up to 3 free analyses per session.
+                </span>
+                <button
+                  onClick={handleRiskAnalysis}
+                  disabled={riskLoading || !riskJd.trim()}
+                  style={{
+                    fontFamily: F,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: NAVY,
+                    background: riskLoading || !riskJd.trim() ? '#b2dfdb' : TEAL,
+                    border: 'none',
+                    borderRadius: 9,
+                    padding: '12px 28px',
+                    cursor: riskLoading || !riskJd.trim() ? 'not-allowed' : 'pointer',
+                    transition: 'background 0.2s, transform 0.15s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                  onMouseEnter={e => { if (!riskLoading && riskJd.trim()) e.currentTarget.style.transform = 'translateY(-1px)' }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
+                >
+                  {riskLoading ? (
+                    <>
+                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 0.8s linear infinite' }}>
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                      </svg>
+                      Analysing...
+                    </>
+                  ) : 'Analyse risks'}
+                </button>
+              </div>
+
+              {riskError && (
+                <div style={{ marginTop: 20, padding: '12px 16px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 9 }}>
+                  <p style={{ fontFamily: F, fontSize: 13.5, color: '#dc2626', margin: 0 }}>{riskError}</p>
+                </div>
+              )}
+
+              {riskResults && (
+                <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {riskResults.map((risk, i) => {
+                    const severityColors = {
+                      High:   { bg: 'rgba(239,68,68,0.07)',  border: 'rgba(239,68,68,0.25)',  badge: '#dc2626', text: '#fff' },
+                      Medium: { bg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.25)', badge: '#d97706', text: '#fff' },
+                      Low:    { bg: 'rgba(34,197,94,0.07)',  border: 'rgba(34,197,94,0.25)',  badge: '#16a34a', text: '#fff' },
+                    }
+                    const c = severityColors[risk.severity] || severityColors.Medium
+                    return (
+                      <div key={i} style={{
+                        background: c.bg,
+                        border: `1px solid ${c.border}`,
+                        borderRadius: 10,
+                        padding: '16px 18px',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                          <span style={{
+                            fontFamily: F, fontSize: 10.5, fontWeight: 800, color: c.text,
+                            background: c.badge, borderRadius: 5, padding: '3px 9px',
+                            textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0,
+                          }}>
+                            {risk.severity}
+                          </span>
+                          <span style={{ fontFamily: F, fontSize: 14.5, fontWeight: 700, color: NAVY }}>
+                            {risk.title}
+                          </span>
+                        </div>
+                        <p style={{ fontFamily: F, fontSize: 13.5, color: '#374151', lineHeight: 1.65, margin: 0 }}>
+                          {risk.explanation}
+                        </p>
+                      </div>
+                    )
+                  })}
+                  <div style={{ marginTop: 8, textAlign: 'center' }}>
+                    <p style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', marginBottom: 14 }}>
+                      PRODICTA tests candidates directly against risks like these before you make an offer.
+                    </p>
+                    <a href="/login" style={{
+                      fontFamily: F, fontSize: 14, fontWeight: 700, color: NAVY,
+                      background: TEAL, textDecoration: 'none',
+                      padding: '11px 28px', borderRadius: 9, display: 'inline-block',
+                    }}>
+                      Start assessing candidates
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          </Reveal>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
           PROBLEM — The cost of getting hiring wrong
       ════════════════════════════════════════════════════════════════════ */}
       <section style={{ background: '#f8f9fb', padding: '72px 24px' }}>
@@ -360,8 +539,11 @@ export default function LandingPage() {
             <div style={{ textAlign: 'center', marginBottom: 56 }}>
               <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>The problem</div>
               <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15 }}>
-                The cost of getting hiring wrong
+                What a CV and an interview will never tell you
               </h2>
+              <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7, maxWidth: 480, margin: '16px auto 0' }}>
+                Whether they will actually succeed in the role.
+              </p>
             </div>
           </Reveal>
 
@@ -680,7 +862,7 @@ export default function LandingPage() {
             <div style={{ textAlign: 'center', marginBottom: 64 }}>
               <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Features</div>
               <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: '#fff', letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 14 }}>
-                Everything you need to hire with confidence
+                Test how they work. Not how they interview.
               </h2>
               <p style={{ fontFamily: F, fontSize: 17, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, maxWidth: 500, margin: '0 auto' }}>
                 Designed for UK employers and recruitment agencies.
@@ -1238,6 +1420,9 @@ export default function LandingPage() {
               </div>
             </div>
 
+            <p style={{ fontFamily: F, fontSize: 16, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: 24 }}>
+              You would not sign a contract without legal advice. Why would you make a hire without PRODICTA?
+            </p>
             <p style={{ fontFamily: F, fontSize: 18, fontWeight: 700, color: 'rgba(255,255,255,0.85)', marginBottom: 36 }}>
               Are you ready?
             </p>
@@ -1261,7 +1446,7 @@ export default function LandingPage() {
           <Reveal>
             <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>Get started</div>
             <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: '#fff', letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 20 }}>
-              Know before you place. Know before you hire.
+              Stop guessing. Start knowing.
             </h2>
             <p style={{ fontFamily: F, fontSize: 17, color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: 40 }}>
               Join employers and recruitment agencies across the UK using PRODICTA to hire with confidence.
