@@ -441,7 +441,7 @@ export default function DashboardPage() {
 
   function fmtInsight(mins) {
     if (mins === null) return '-'
-    if (mins < 60) return `${mins}m`
+    if (mins < 60) return `${mins} minutes`
     const h = Math.floor(mins / 60)
     const m = mins % 60
     return m > 0 ? `${h}h ${m}m` : `${h}h`
@@ -800,7 +800,7 @@ export default function DashboardPage() {
             <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>
               {timedCandidates.length > 0
                 ? `From invite to scored result, across ${timedCandidates.length} candidate${timedCandidates.length !== 1 ? 's' : ''}`
-                : 'No completed candidates yet'}
+                : 'No data yet'}
             </div>
           </div>
 

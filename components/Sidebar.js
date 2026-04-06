@@ -6,14 +6,17 @@ import { Ic } from './Icons'
 import { createClient } from '../lib/supabase'
 import ProdictaLogo from './ProdictaLogo'
 
-const BASE_NAV = [
-  { key: 'dashboard',     label: 'Dashboard',      icon: 'grid',     href: '/dashboard' },
-  { key: 'assessment',    label: 'New assessment',  icon: 'plus',     href: '/assessment/new' },
-  { key: 'compare',       label: 'Compare',         icon: 'sliders',  href: '/compare' },
-  { key: 'benchmarks',    label: 'Benchmarks',      icon: 'layers',   href: '/benchmarks' },
-  { key: 'archive',       label: 'Archive',         icon: 'archive',  href: '/archive' },
-  { key: 'how-it-works',  label: 'How It Works',    icon: 'info',     href: '/how-it-works' },
-  { key: 'settings',      label: 'Settings',        icon: 'settings', href: '/settings' },
+const BASE_NAV_TOP = [
+  { key: 'dashboard',    label: 'Dashboard',     icon: 'grid',    href: '/dashboard' },
+  { key: 'assessment',   label: 'New assessment', icon: 'plus',    href: '/assessment/new' },
+  { key: 'compare',      label: 'Compare',        icon: 'sliders', href: '/compare' },
+  { key: 'benchmarks',   label: 'Benchmarks',     icon: 'layers',  href: '/benchmarks' },
+]
+
+const BASE_NAV_BOTTOM = [
+  { key: 'archive',      label: 'Archive',        icon: 'archive',  href: '/archive' },
+  { key: 'how-it-works', label: 'How It Works',   icon: 'info',     href: '/how-it-works' },
+  { key: 'settings',     label: 'Settings',       icon: 'settings', href: '/settings' },
 ]
 
 function timeAgo(dateStr) {
@@ -142,7 +145,9 @@ export default function Sidebar({ active, companyName }) {
         gap: 2,
       }}>
         {[
-          ...BASE_NAV,
+          ...BASE_NAV_TOP,
+          ...(accountType === 'agency' ? [{ key: 'placements', label: 'Active Placements', icon: 'users', href: '/outcomes?filter=active' }] : []),
+          ...BASE_NAV_BOTTOM,
           ...(accountType === 'employer' || accountType === 'agency' ? [{ key: 'outcomes', label: 'Outcomes', icon: 'award', href: '/outcomes' }] : []),
         ].map(({ key, label, icon, href }) => {
           const isActive = active === key
