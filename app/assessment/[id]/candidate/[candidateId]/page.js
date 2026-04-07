@@ -2018,9 +2018,24 @@ export default function CandidateReportPage({ params }) {
                         ))}
                       </div>
                     ) : (
-                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0 }}>
-                        No expectation mismatches identified.
-                      </p>
+                      <div style={{
+                        background: TEALLT, border: `1px solid ${TEAL}55`,
+                        borderLeft: `5px solid ${TEAL}`, borderRadius: 10,
+                        padding: '14px 18px', display: 'flex', alignItems: 'flex-start', gap: 12,
+                      }}>
+                        <div style={{
+                          width: 26, height: 26, borderRadius: '50%', background: `${TEAL}22`,
+                          border: `1px solid ${TEAL}55`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0, marginTop: 1,
+                        }}>
+                          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </div>
+                        <p style={{ fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.6, margin: 0 }}>
+                          No expectation mismatches identified. This candidate's responses align with the role requirements described in the job description.
+                        </p>
+                      </div>
                     )}
                   </Card>
                 </ScrollReveal>

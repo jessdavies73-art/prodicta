@@ -1088,6 +1088,59 @@ export default function DemoCandidatePage({ params }) {
               )
             })()}
 
+            {/* ── EXPECTATION ALIGNMENT ── */}
+            <ScrollReveal delay={60}>
+              <Card style={{ marginBottom: 20 }}>
+                <SectionHeading tooltip="Signs from the candidate's responses that their expectations of the role do not match what the job description describes.">
+                  Expectation Alignment
+                </SectionHeading>
+                {Array.isArray(results?.expectation_mismatches) && results.expectation_mismatches.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {results.expectation_mismatches.map((m, i) => (
+                      <div key={i} style={{
+                        background: AMBBG, border: `1px solid ${AMBBD}`,
+                        borderLeft: `5px solid ${AMB}`, borderRadius: 10, padding: '14px 18px',
+                      }}>
+                        <div style={{ fontFamily: F, fontSize: 12, fontWeight: 800, color: AMB, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+                          Mismatch {i + 1}
+                        </div>
+                        <div style={{ fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.65, marginBottom: 6 }}>
+                          <strong>Expects:</strong> {m.expects}
+                        </div>
+                        <div style={{ fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.65, marginBottom: 6 }}>
+                          <strong>Reality:</strong> {m.reality}
+                        </div>
+                        {m.why_it_matters && (
+                          <div style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.6 }}>
+                            <strong>Why it matters:</strong> {m.why_it_matters}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{
+                    background: TEALLT, border: `1px solid ${TEAL}55`,
+                    borderLeft: `5px solid ${TEAL}`, borderRadius: 10,
+                    padding: '14px 18px', display: 'flex', alignItems: 'flex-start', gap: 12,
+                  }}>
+                    <div style={{
+                      width: 26, height: 26, borderRadius: '50%', background: `${TEAL}22`,
+                      border: `1px solid ${TEAL}55`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, marginTop: 1,
+                    }}>
+                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </div>
+                    <p style={{ fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.6, margin: 0 }}>
+                      No expectation mismatches identified. This candidate's responses align with the role requirements described in the job description.
+                    </p>
+                  </div>
+                )}
+              </Card>
+            </ScrollReveal>
+
             {/* ── STRENGTHS ── */}
             {results.strengths?.length > 0 && (
               <ScrollReveal id="strengths" delay={60}>
