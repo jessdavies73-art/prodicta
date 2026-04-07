@@ -97,7 +97,14 @@ export async function POST(request) {
     stripeSubscriptionId = subscription.id
     console.log('[billing] Step 4 done, status:', subscription.status)
 
-    const paymentIntent = subscription.latest_invoice?.payment_intent
+    let paymentIntent = subscription.latest_invoice?.payment_intent
+
+    if (paymentIntent?.status === 'requires_confirmation') {
+      currentStep = 'confirm-payment-intent'
+      console.log('[billing] Confirming payment intent', paymentIntent.id)
+      paymentIntent = await stripe.paymentIntents.confirm(paymentIntent.id)
+      console.log('[billing] Confirmed, new status:', paymentIntent.status)
+    }
 
     // SCA / 3D Secure required — return the client secret so the browser can
     // open the authentication popup via stripe.confirmCardPayment.
