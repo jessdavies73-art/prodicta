@@ -37,6 +37,7 @@ async function createSupabaseUser({ adminClient, email, password, companyName, a
 export async function POST(request) {
   let stripeCustomerId    = null
   let stripeSubscriptionId = null
+  let currentStep = 'init'
 
   console.log('[billing] create-subscription called')
 
@@ -53,11 +54,13 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Password must be at least 8 characters.' }, { status: 400 })
     }
 
+    currentStep = 'step1-price'
     const stripe  = getStripeClient()
     console.log('[billing] Step 1: Getting price for plan:', plan)
     const priceId = await getOrCreatePriceId(plan)
     console.log('[billing] Step 1 done, priceId:', priceId)
 
+    currentStep = 'step2-customer'
     console.log('[billing] Step 2: Creating customer')
     const customer = await stripe.customers.create({
       email: email.trim(),
@@ -67,6 +70,7 @@ export async function POST(request) {
     stripeCustomerId = customer.id
     console.log('[billing] Step 2 done, customerId:', customer.id)
 
+    currentStep = 'step3-attach-pm'
     console.log('[billing] Step 3: Attaching payment method')
     await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id })
     await stripe.customers.update(customer.id, {
@@ -76,6 +80,7 @@ export async function POST(request) {
 
     // default_incomplete: subscription is created immediately but payment may
     // still require SCA. The payment intent status tells us what to do next.
+    currentStep = 'step4-subscription'
     console.log('[billing] Step 4: Creating subscription')
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
@@ -124,6 +129,7 @@ export async function POST(request) {
     }
 
     // Payment succeeded without SCA — create Supabase user immediately
+    currentStep = 'step5-supabase-user'
     console.log('[billing] Step 5: Creating Supabase user')
     const adminClient = createServiceClient()
     try {
@@ -164,9 +170,9 @@ export async function POST(request) {
 
     return Response.json({
       error: err.message || 'Payment could not be completed',
+      step: currentStep,
       type: err.type || 'unknown',
-      code: err.code || 'unknown',
-      decline_code: err.decline_code || 'none'
+      code: err.code || 'unknown'
     }, { status: 402 });
   }
 }

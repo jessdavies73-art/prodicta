@@ -287,7 +287,7 @@ function SignUpForm() {
       const data = await res.json()
 
       if (data.error) {
-        setError(`${data.error} [${data.type || 'unknown'} / ${data.code || 'unknown'} / ${data.decline_code || 'none'}]`)
+        setError(`${data.error} [step: ${data.step}]`)
         setLoading(false)
         return
       }
