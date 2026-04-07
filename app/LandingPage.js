@@ -906,6 +906,54 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
+          BUILT FOR EVERY ROLE
+      ════════════════════════════════════════════════════════════════════ */}
+      <section style={{ background: '#f8f9fb', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: 36 }}>
+              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Every level, every role</div>
+              <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.2vw, 40px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.18, marginBottom: 14 }}>
+                Built for every role, not just senior hires.
+              </h2>
+            </div>
+          </Reveal>
+
+          <Reveal delay={80}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center', marginBottom: 32 }}>
+              {[
+                { label: 'Customer Service Advisor', icon: 'headphones' },
+                { label: 'Care Worker',              icon: 'heart' },
+                { label: 'Accounts Assistant',       icon: 'calculator' },
+                { label: 'Sales Executive',          icon: 'trending' },
+                { label: 'Operations Manager',       icon: 'settings' },
+                { label: 'Finance Director',         icon: 'briefcase' },
+              ].map(role => (
+                <div key={role.label} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  background: '#fff', border: `1.5px solid ${TEAL}33`,
+                  borderRadius: 50, padding: '10px 18px',
+                  boxShadow: '0 2px 8px rgba(15,33,55,0.04)',
+                }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: TEAL, display: 'inline-block' }} />
+                  <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY }}>{role.label}</span>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+
+          <Reveal delay={140}>
+            <p style={{
+              fontFamily: F, fontSize: 16, color: '#5e6b7f', lineHeight: 1.75,
+              maxWidth: 780, margin: '0 auto', textAlign: 'center',
+            }}>
+              Every role gets scenarios built from the actual job description. A care worker gets a safeguarding scenario. A receptionist gets a multitasking scenario. A director gets a strategic scenario. PRODICTA adapts to the role, not the other way around.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
           FEATURES — 2×3 grid
       ════════════════════════════════════════════════════════════════════ */}
       <section style={{ background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)', padding: '72px 24px', position: 'relative', overflow: 'hidden' }}>
