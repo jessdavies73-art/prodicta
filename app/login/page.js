@@ -15,10 +15,10 @@ const TEAL   = '#00BFA5'
 const DARK_T = '#009688'
 
 const PLAN_OPTIONS = [
-  { value: 'starter',  label: 'Starter',  price: '£49/month'  },
-  { value: 'growth',   label: 'Growth',   price: '£99/month'  },
-  { value: 'scale',    label: 'Scale',    price: '£120/month' },
-  { value: 'founding', label: 'Founding', price: '£79/month'  },
+  { value: 'founding',     label: 'Founding Member', price: '£79/month'  },
+  { value: 'starter',      label: 'Starter',         price: '£49/month'  },
+  { value: 'professional', label: 'Professional',    price: '£120/month' },
+  { value: 'unlimited',    label: 'Unlimited',       price: '£159/month' },
 ]
 
 const CARD_ELEMENT_OPTIONS = {
@@ -235,7 +235,7 @@ function SignUpForm() {
   const [email,       setEmail]       = useState('')
   const [password,    setPassword]    = useState('')
   const [accountType, setAccountType] = useState('employer')
-  const [plan,        setPlan]        = useState('growth')
+  const [plan,        setPlan]        = useState('professional')
   const [postcode,    setPostcode]    = useState('')
   const [cardFocused, setCardFocused] = useState(false)
   const [loading,     setLoading]     = useState(false)

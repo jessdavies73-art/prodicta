@@ -315,16 +315,21 @@ export default function SettingsPage() {
   ]
 
   const PLAN_META = {
-    starter:  { name: 'Starter',          price: '£49',  limit: 10,   period: 'month', color: TEAL,    desc: 'Perfect for small teams getting started with AI assessment.' },
-    growth:   { name: 'Growth',           price: '£99',  limit: 30,   period: 'month', color: '#7C3AED', desc: 'For growing teams with higher hiring volumes.' },
-    scale:    { name: 'Scale',            price: '£120', limit: null,  period: 'month', color: GRN,     desc: 'Unlimited assessments for high-volume hiring.' },
-    founding: { name: 'Founding Member',  price: '£79',  limit: null,  period: 'month', color: TEAL,    desc: 'Founder pricing locked in. Unlimited everything.' },
+    starter:      { name: 'Starter',          price: '£49',  limit: 10,    period: 'month', color: TEAL,      desc: 'Perfect for small teams getting started with AI assessment.' },
+    professional: { name: 'Professional',     price: '£120', limit: 30,    period: 'month', color: '#7C3AED', desc: 'For growing teams with higher hiring volumes.' },
+    unlimited:    { name: 'Unlimited',        price: '£159', limit: null,  period: 'month', color: GRN,       desc: 'Unlimited assessments for high-volume hiring.' },
+    founding:     { name: 'Founding Member',  price: '£79',  limit: null,  period: 'month', color: TEAL,      desc: 'Founder pricing locked in. Unlimited for the first 3 months, then 20 per month.' },
+    // Legacy keys retained so existing rows render correctly
+    growth:       { name: 'Professional',     price: '£120', limit: 30,    period: 'month', color: '#7C3AED', desc: 'For growing teams with higher hiring volumes.' },
+    scale:        { name: 'Unlimited',        price: '£159', limit: null,  period: 'month', color: GRN,       desc: 'Unlimited assessments for high-volume hiring.' },
   }
   const PLAN_FEATURES = {
-    starter:  ['10 assessments per month', 'AI scenario assessment', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs & interview questions'],
-    growth:   ['30 assessments per month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking', 'Onboarding plans'],
-    scale:    ['Unlimited assessments', 'Everything in Growth', 'Archive & outcomes tracking', 'Agency features', 'Priority support'],
-    founding: ['Unlimited assessments', 'Everything in Scale', 'Founding member rate locked in', 'Direct feedback line', 'Feature co-creation'],
+    starter:      ['10 assessments per month', 'AI scenario assessment', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs and interview questions'],
+    professional: ['30 assessments per month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking', 'Onboarding plans'],
+    unlimited:    ['Unlimited assessments', 'Everything in Professional', 'Archive and outcomes tracking', 'Agency features', 'Priority support'],
+    founding:     ['Unlimited assessments for first 3 months', 'Then 20 per month', 'Everything in Unlimited', 'Founding member rate locked in for 12 months', 'Direct feedback line', 'Feature co-creation'],
+    growth:       ['30 assessments per month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking', 'Onboarding plans'],
+    scale:        ['Unlimited assessments', 'Everything in Professional', 'Archive and outcomes tracking', 'Agency features', 'Priority support'],
   }
   const planKey    = (profile?.plan || 'starter').toLowerCase()
   const planMeta   = PLAN_META[planKey] || PLAN_META.starter
@@ -677,9 +682,9 @@ export default function SettingsPage() {
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
                   {[
-                    { plan: 'Growth', price: '£99/mo', limit: '30 assessments/mo', current: planKey === 'growth' },
-                    { plan: 'Scale', price: '£120/mo', limit: 'Unlimited', current: false },
-                    { plan: 'Founding', price: '£79/mo', limit: 'Unlimited · Limited time', current: false },
+                    { plan: 'Professional', price: '£120/mo', limit: '30 assessments/mo', current: planKey === 'professional' || planKey === 'growth' },
+                    { plan: 'Unlimited', price: '£159/mo', limit: 'Unlimited', current: planKey === 'unlimited' || planKey === 'scale' },
+                    { plan: 'Founding Member', price: '£79/mo', limit: 'Unlimited for 3 months, then 20/mo', current: planKey === 'founding' },
                   ].filter(p => !p.current).map(p => (
                     <div key={p.plan} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',

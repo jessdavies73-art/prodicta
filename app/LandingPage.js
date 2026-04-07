@@ -1263,7 +1263,7 @@ export default function LandingPage() {
                 <div style={{ background: `${GOLD}22`, border: `1px solid ${GOLD}66`, borderRadius: 10, padding: '8px 14px', fontFamily: FM, fontSize: 13, fontWeight: 700, color: GOLD, whiteSpace: 'nowrap' }}>OFFER</div>
                 <div>
                   <div style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Founding Member: £79/month</div>
-                  <div style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.55)' }}>Limited time offer: unlimited assessments, all features, for 12 months. Lock in before it's gone.</div>
+                  <div style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.55)' }}>Limited time offer. Unlimited assessments for the first 3 months, then 20 per month. Price locked in for 12 months.</div>
                 </div>
               </div>
               <a href="/login" style={{
@@ -1284,24 +1284,24 @@ export default function LandingPage() {
                 price: '£49',
                 limit: '10 assessments/mo',
                 desc: 'For small teams getting started with AI assessment.',
-                features: ['10 assessments per month', 'AI scenario generation', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs & interview Qs', 'Onboarding plans'],
+                features: ['10 assessments per month', 'AI scenario generation', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs and interview questions', 'Onboarding plans'],
                 highlight: false,
               },
               {
-                name: 'Growth',
-                price: '£99',
+                name: 'Professional',
+                price: '£120',
                 limit: '30 assessments/mo',
                 desc: 'For growing teams hiring at volume.',
-                features: ['30 assessments per month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking tools', 'Archive & outcomes tracking', 'Priority email support'],
+                features: ['30 assessments per month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking tools', 'Archive and outcomes tracking', 'Priority email support'],
                 highlight: true,
                 badge: 'MOST POPULAR',
               },
               {
-                name: 'Scale',
-                price: '£120',
+                name: 'Unlimited',
+                price: '£159',
                 limit: 'Unlimited assessments',
                 desc: 'For high-volume hiring with no limits.',
-                features: ['Unlimited assessments', 'Everything in Growth', 'Agency features', 'Placement risk scores', 'Document upload & send', 'Accountability records'],
+                features: ['Unlimited assessments', 'Everything in Professional', 'Agency features', 'Placement risk scores', 'Document upload and send', 'Accountability records'],
                 highlight: false,
               },
             ].map((p, i) => (

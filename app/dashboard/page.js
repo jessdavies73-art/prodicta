@@ -14,7 +14,7 @@ import {
 } from '@/lib/constants'
 import OnboardingWizard from '@/components/OnboardingWizard'
 
-const PLAN_LIMITS = { starter: 10, growth: 30, scale: null, founding: null }
+const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
 
 const PURPLE = '#7C3AED'
 
@@ -507,9 +507,9 @@ export default function DashboardPage() {
             <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 12, padding: '16px 20px', marginBottom: 24 }}>
               <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Available plans</div>
               {[
-                { plan: 'Growth', price: '£99', limit: '30 assessments/mo', highlight: false },
-                { plan: 'Scale', price: '£120', limit: 'Unlimited', highlight: true },
-                { plan: 'Founding', price: '£79', limit: 'Unlimited · Limited time', highlight: false },
+                { plan: 'Professional', price: '£120', limit: '30 assessments/mo', highlight: true },
+                { plan: 'Unlimited', price: '£159', limit: 'Unlimited', highlight: false },
+                { plan: 'Founding Member', price: '£79', limit: 'Unlimited for 3 months, then 20/mo', highlight: false },
               ].map(p => (
                 <div key={p.plan} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${BD}` }}>
                   <div>
