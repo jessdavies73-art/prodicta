@@ -567,6 +567,13 @@ export default function DemoCandidatePage({ params }) {
                 <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px' }}>{candidate.email}</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <Badge label={candidate.assessments.role_title} bg={TEALLT} color={TEALD} border={`${TEAL}55`} />
+                  {(() => {
+                    const m = candidate.assessments?.assessment_mode
+                    if (!m || m === 'standard') return null
+                    const label = m === 'advanced' ? 'Advanced Assessment' : m === 'quick' || m === 'rapid' ? 'Quick Assessment' : null
+                    if (!label) return null
+                    return <Badge label={label} bg="#fffbeb" color="#d97706" border="#fcd34d" />
+                  })()}
                   {completedDate && <span style={{ fontSize: 12, color: TX3, fontFamily: F }}>Completed {completedDate}</span>}
                   {candidate.rating && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -977,6 +984,67 @@ export default function DemoCandidatePage({ params }) {
             )}
 
 
+            {/* ── EXECUTION RELIABILITY ── */}
+            {typeof results.execution_reliability === 'number' && (
+              <ScrollReveal delay={60}>
+                <Card style={{ marginBottom: 20 }}>
+                  <SectionHeading tooltip="Whether the candidate followed instructions, completed every part of each task, avoided overcomplicating things, and stayed consistent across scenarios.">
+                    Execution Reliability
+                  </SectionHeading>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                    <SmallRing score={results.execution_reliability} size={68} strokeWidth={6} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                        <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: sc(results.execution_reliability) }}>
+                          {results.execution_reliability}
+                        </span>
+                        <Badge label={slbl(results.execution_reliability)} bg={sbg(results.execution_reliability)} color={sc(results.execution_reliability)} border={sbd(results.execution_reliability)} />
+                      </div>
+                      <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.6 }}>
+                        {results.execution_reliability >= 80
+                          ? 'Followed instructions precisely, completed every section, and stayed consistent across all scenarios.'
+                          : results.execution_reliability >= 60
+                          ? 'Generally reliable. Missed or shortened parts of one or two task briefs.'
+                          : 'Significant reliability concerns. Skipped instructions, left sections unfinished, or wandered off the brief.'}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </ScrollReveal>
+            )}
+
+            {/* ── DEVELOPMENT POTENTIAL (junior/mid only) ── */}
+            {(() => {
+              const roleText = (candidate.assessments?.role_title || '').toLowerCase()
+              const isSenior = /\b(director|head of|vp|vice president|chief|cxo|ceo|cto|cfo|coo|senior|principal|lead|staff)\b/.test(roleText)
+              if (isSenior) return null
+              if (typeof results.training_potential !== 'number') return null
+              const tp = results.training_potential
+              return (
+                <ScrollReveal delay={60}>
+                  <Card style={{ marginBottom: 20 }}>
+                    <SectionHeading tooltip="How developable this candidate is. Looks at improvement across scenarios, adaptability, willingness to learn, and self-awareness about gaps.">
+                      Development Potential
+                    </SectionHeading>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+                      <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>Trainability score</span>
+                      <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: sc(tp) }}>{tp}/100</span>
+                    </div>
+                    <div style={{ position: 'relative', height: 10, background: `${sc(tp)}22`, borderRadius: 5, overflow: 'hidden', marginBottom: 12 }}>
+                      <div style={{ position: 'absolute', inset: 0, width: `${tp}%`, background: sc(tp), borderRadius: 5 }} />
+                    </div>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.65 }}>
+                      {results.training_potential_narrative || (tp >= 75
+                        ? 'Strong development signal. Likely to grow quickly with the right support.'
+                        : tp >= 55
+                        ? 'Moderate development signal. Will benefit from a structured 30-60-90 plan with regular feedback.'
+                        : 'Limited development signal in this assessment. May be a fixed performer at current capability.')}
+                    </p>
+                  </Card>
+                </ScrollReveal>
+              )
+            })()}
+
             {/* ── STRENGTHS ── */}
             {results.strengths?.length > 0 && (
               <ScrollReveal id="strengths" delay={60}>
@@ -1361,6 +1429,11 @@ export default function DemoCandidatePage({ params }) {
                     { title: 'Rapid Assessment', desc: 'A 15-minute compressed assessment for urgent or volume hiring.' },
                     { title: 'Probation Timeline Tracker', desc: 'Visual tracker with automated reminders throughout the probation period.' },
                     { title: 'Hiring Cost Saved calculator', desc: 'Track the financial value of every hiring decision PRODICTA informed.' },
+                    { title: 'Candidate Expectation Mismatch Detection', desc: 'Flags when a candidate\'s expectations of the role do not match the reality described in the JD.' },
+                    { title: 'Why They Might Leave Analysis', desc: 'A specific narrative prediction of what would cause this hire to leave within 6 months, with prevention actions.' },
+                    { title: 'Probation Review Generator', desc: 'Auto-generated structured probation reviews at month 1, 3, and 5, cross-checked against the original assessment.' },
+                    { title: 'Simple View toggle', desc: 'A plain-English version of the report for line managers, with no jargon and no technical scoring language.' },
+                    { title: 'Bulk Screening Mode', desc: 'Ranked Recommended / Review / Not Recommended tiers across the full candidate pool for high-volume roles.' },
                   ].map(({ title, desc }) => (
                     <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                       <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 3 }}>

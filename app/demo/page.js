@@ -264,6 +264,29 @@ export default function DemoDashboard() {
           </div>
         </div>
 
+        {/* Assessment Insights */}
+        <div style={{ ...cs, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ padding: '18px 24px 14px', borderBottom: `1px solid ${BD}` }}>
+            <h2 style={{ margin: '0 0 4px', fontSize: 15.5, fontWeight: 700, color: TX }}>Assessment Insights</h2>
+            <div style={{ width: 36, height: 2, background: TEAL, borderRadius: 2, marginBottom: 6 }} />
+            <p style={{ margin: 0, fontSize: 12.5, color: TX3 }}>Completion rates and time-to-complete across all your assessments.</p>
+          </div>
+          <div style={{ padding: '18px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+            {[
+              { label: 'Total sent',          value: 12,        sub: 'All time' },
+              { label: 'Total completed',     value: 10,        sub: '2 not completed' },
+              { label: 'Completion rate',     value: '83%',     sub: 'Platform avg 68%' },
+              { label: 'Avg time to complete', value: '38 min', sub: 'From invite to submit' },
+            ].map(m => (
+              <div key={m.label} style={{ background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{m.label}</div>
+                <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: TEALD, lineHeight: 1.1, marginBottom: 2 }}>{m.value}</div>
+                <div style={{ fontSize: 11.5, color: TX3 }}>{m.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Risk Calculator */}
         <RiskCalculator />
 
