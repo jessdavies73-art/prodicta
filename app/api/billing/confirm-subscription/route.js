@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { getStripeClient, PLANS } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase-server'
 
@@ -49,35 +50,50 @@ export async function POST(request) {
 
     const adminClient = createServiceClient()
 
-    const { data: userData, error: createError } = await adminClient.auth.admin.createUser({
+    // Use anon signUp so Supabase automatically sends the confirmation email.
+    const anonClient = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    )
+
+    const { data: signUpData, error: signUpError } = await anonClient.auth.signUp({
       email: email.trim(),
       password,
-      email_confirm: false,
-      user_metadata: {
-        company_name: companyName.trim(),
-        account_type: accountType,
-        plan,
-      },
-      app_metadata: {
-        subscription_status:    'active',
-        stripe_customer_id:     customerId,
-        stripe_subscription_id: subscription.id,
+      options: {
+        data: {
+          company_name: companyName.trim(),
+          account_type: accountType,
+          plan,
+        },
       },
     })
 
-    if (createError) {
-      const msg = createError.message || ''
+    if (signUpError) {
+      const msg = signUpError.message || ''
       if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('registered')) {
         return NextResponse.json(
           { error: 'An account with this email already exists. Please sign in instead.' },
           { status: 409 }
         )
       }
-      throw createError
+      throw signUpError
     }
 
+    const userId = signUpData.user?.id
+    if (!userId) throw new Error('Sign up did not return a user id')
+
+    const { error: updateError } = await adminClient.auth.admin.updateUserById(userId, {
+      app_metadata: {
+        subscription_status:    'active',
+        stripe_customer_id:     customerId,
+        stripe_subscription_id: subscription.id,
+      },
+    })
+    if (updateError) throw updateError
+
     await adminClient.from('users').insert({
-      id:               userData.user.id,
+      id:               userId,
       email:            email.trim(),
       company_name:     companyName.trim(),
       account_type:     accountType,

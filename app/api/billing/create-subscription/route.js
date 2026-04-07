@@ -1,28 +1,44 @@
 import { NextResponse } from 'next/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { getStripeClient, PLANS, getOrCreatePriceId } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase-server'
 
 async function createSupabaseUser({ adminClient, email, password, companyName, accountType, plan, customerId, subscriptionId }) {
-  const { data: userData, error: createError } = await adminClient.auth.admin.createUser({
+  // Use anon client signUp so Supabase automatically sends the confirmation email.
+  const anonClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  )
+
+  const { data: signUpData, error: signUpError } = await anonClient.auth.signUp({
     email: email.trim(),
     password,
-    email_confirm: false,
-    user_metadata: {
-      company_name: companyName.trim(),
-      account_type: accountType,
-      plan,
+    options: {
+      data: {
+        company_name: companyName.trim(),
+        account_type: accountType,
+        plan,
+      },
     },
+  })
+
+  if (signUpError) throw signUpError
+  const userId = signUpData.user?.id
+  if (!userId) throw new Error('Sign up did not return a user id')
+
+  // Attach Stripe info via service-role admin update (bypasses RLS, sets app_metadata).
+  const { error: updateError } = await adminClient.auth.admin.updateUserById(userId, {
     app_metadata: {
       subscription_status: 'active',
       stripe_customer_id: customerId,
       stripe_subscription_id: subscriptionId,
     },
   })
-
-  if (createError) throw createError
+  if (updateError) throw updateError
 
   await adminClient.from('users').insert({
-    id: userData.user.id,
+    id: userId,
     email: email.trim(),
     company_name: companyName.trim(),
     account_type: accountType,
