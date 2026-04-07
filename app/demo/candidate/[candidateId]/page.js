@@ -546,7 +546,15 @@ export default function DemoCandidatePage({ params }) {
     return { bg: TEALLT, color: TEALD, bd: `${TEAL}55` }
   }
 
-  function fmtTime(s) { if (!s) return ','; const m = Math.floor(s / 60); return m > 0 ? `${m}m ${s % 60}s` : `${s}s` }
+  function fmtTime(s) { if (!s) return 'No data'; const m = Math.floor(s / 60); return m > 0 ? `${m}m ${s % 60}s` : `${s}s` }
+  // Derive scenario count from the assessment's scenarios array, falling back to mode, then 4
+  const scenariosArray = Array.isArray(candidate?.assessments?.scenarios) ? candidate.assessments.scenarios : null
+  const scenarioCount = scenariosArray
+    ? scenariosArray.length
+    : (candidate?.assessments?.assessment_mode === 'quick' || candidate?.assessments?.assessment_mode === 'rapid' ? 2
+       : candidate?.assessments?.assessment_mode === 'standard' ? 3
+       : 4)
+  const scenarioIndices = Array.from({ length: scenarioCount }, (_, i) => i)
   function timingLabel(s) {
     if (!s) return { label: 'No data', color: TX3, bg: 'rgba(255,255,255,0.05)', bd: 'rgba(255,255,255,0.1)' }
     if (s < 90)   return { label: 'Rushed',   color: RED,   bg: `${RED}18`,   bd: `${RED}40` }
@@ -827,8 +835,8 @@ export default function DemoCandidatePage({ params }) {
 
                 <div style={{ padding: '18px 28px' }}>
                   <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>Time per scenario</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 18 }}>
-                    {[0, 1, 2, 3].map(i => {
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${scenarioCount}, 1fr)`, gap: 10, marginBottom: 18 }}>
+                    {scenarioIndices.map(i => {
                       const resp = responses.find(r => r.scenario_index === i)
                       const secs = resp?.time_taken_seconds ?? null
                       const tl = timingLabel(secs)
@@ -844,7 +852,7 @@ export default function DemoCandidatePage({ params }) {
 
                   {/* Scenario performance timeline */}
                   {(() => {
-                    const scenarioTimes = [0, 1, 2, 3].map(i => {
+                    const scenarioTimes = scenarioIndices.map(i => {
                       const resp = responses.find(r => r.scenario_index === i)
                       return resp?.time_taken_seconds ?? null
                     })
