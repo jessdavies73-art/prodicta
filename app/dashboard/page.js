@@ -837,6 +837,9 @@ export default function DashboardPage() {
         {/* ── Hiring Risk Overview ── */}
         <HiringRiskOverview completed={completed} />
 
+        {/* ── Assessment Insights ── */}
+        <AssessmentInsights candidates={candidates} />
+
         {/* ── Probation Tracker (employer only) ── */}
         {profile?.account_type === 'employer' && (
           <ProbationTracker hires={probationHires} router={router} />
@@ -1389,6 +1392,90 @@ function ActivePlacements({ placements, router }) {
           )
         })}
       </div>
+    </div>
+  )
+}
+
+function AssessmentInsights({ candidates = [] }) {
+  if (!candidates.length) return null
+
+  const PLATFORM_AVG = 68 // platform-wide completion rate baseline
+
+  const totalSent      = candidates.length
+  const totalCompleted = candidates.filter(c => c.status === 'completed').length
+  const completionRate = totalSent > 0 ? Math.round((totalCompleted / totalSent) * 100) : 0
+
+  const completedWithTimes = candidates.filter(c => c.status === 'completed' && c.invited_at && c.completed_at)
+  const avgHours = completedWithTimes.length > 0
+    ? Math.round(completedWithTimes.reduce((sum, c) => {
+        const diff = (new Date(c.completed_at).getTime() - new Date(c.invited_at).getTime()) / (1000 * 60 * 60)
+        return sum + diff
+      }, 0) / completedWithTimes.length)
+    : null
+  const avgDisplay = avgHours == null ? '-' : avgHours < 24 ? `${avgHours}h` : `${Math.round(avgHours / 24)}d`
+
+  // Per-assessment breakdown
+  const byAssessment = {}
+  for (const c of candidates) {
+    const aid = c.assessments?.id || c.assessment_id
+    const role = c.assessments?.role_title || 'Unknown role'
+    if (!aid) continue
+    if (!byAssessment[aid]) byAssessment[aid] = { aid, role, sent: 0, completed: 0 }
+    byAssessment[aid].sent += 1
+    if (c.status === 'completed') byAssessment[aid].completed += 1
+  }
+  const lowRoles = Object.values(byAssessment)
+    .map(a => ({ ...a, rate: a.sent > 0 ? Math.round((a.completed / a.sent) * 100) : 0 }))
+    .filter(a => a.sent >= 3 && a.rate < PLATFORM_AVG)
+
+  const rateColor = completionRate >= PLATFORM_AVG ? TEAL : completionRate >= 40 ? AMB : RED
+
+  return (
+    <div style={{
+      background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+      overflow: 'hidden', marginBottom: 24,
+    }}>
+      <div style={{
+        padding: '18px 22px 14px', borderBottom: `1px solid ${BD}`,
+      }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: 15.5, fontWeight: 700, color: TX, display: 'flex', alignItems: 'center', gap: 6 }}>
+          Assessment Insights <InfoTooltip text="How candidates engage with the assessments you send. Low completion rates may indicate the assessment length or job description is putting candidates off." />
+        </h2>
+        <div style={{ width: 36, height: 2, background: TEAL, borderRadius: 2, marginBottom: 6 }} />
+        <p style={{ margin: 0, fontSize: 12.5, color: TX3, fontFamily: F }}>
+          Completion rates and time-to-complete across all your assessments.
+        </p>
+      </div>
+
+      <div style={{ padding: '18px 22px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+        {[
+          { label: 'Total sent',      value: totalSent,         sub: 'All time',                color: TEALD, bg: TEALLT, bd: `${TEAL}55` },
+          { label: 'Total completed', value: totalCompleted,    sub: `${totalSent - totalCompleted} not completed`, color: TEALD, bg: TEALLT, bd: `${TEAL}55` },
+          { label: 'Completion rate', value: `${completionRate}%`, sub: `Platform avg ${PLATFORM_AVG}%`, color: rateColor, bg: completionRate >= PLATFORM_AVG ? TEALLT : completionRate >= 40 ? AMBBG : REDBG, bd: `${rateColor}55` },
+          { label: 'Avg time to complete', value: avgDisplay, sub: avgHours == null ? 'Not enough data' : 'From invite to submit', color: TEALD, bg: TEALLT, bd: `${TEAL}55` },
+        ].map(m => (
+          <div key={m.label} style={{ background: m.bg, border: `1px solid ${m.bd}`, borderRadius: 10, padding: '12px 14px' }}>
+            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{m.label}</div>
+            <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: m.color, lineHeight: 1.1, marginBottom: 2 }}>{m.value}</div>
+            <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>{m.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {lowRoles.length > 0 && (
+        <div style={{ padding: '0 22px 18px' }}>
+          {lowRoles.map(r => (
+            <div key={r.aid} style={{
+              background: AMBBG, border: `1px solid ${AMBBD}`, borderLeft: `4px solid ${AMB}`,
+              borderRadius: 8, padding: '10px 14px', marginTop: 10,
+            }}>
+              <div style={{ fontFamily: F, fontSize: 12.5, color: TX, lineHeight: 1.55 }}>
+                <strong>{r.role}</strong> has a {r.rate}% completion rate. The platform average is {PLATFORM_AVG}%. Consider whether the assessment length or JD is a barrier.
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

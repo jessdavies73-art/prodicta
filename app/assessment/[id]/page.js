@@ -964,6 +964,46 @@ export default function AssessmentPage({ params }) {
               )}
             </div>
 
+            {/* Assessment Insights strip */}
+            {(() => {
+              const sent = candidates.length
+              const completedCount = candidates.filter(c => c.status === 'Completed' || c.status === 'completed').length
+              const rate = sent > 0 ? Math.round((completedCount / sent) * 100) : 0
+              const completedWithTimes = candidates.filter(c => (c.status === 'Completed' || c.status === 'completed') && c.invited_at && c.completed_at)
+              const avgHours = completedWithTimes.length > 0
+                ? Math.round(completedWithTimes.reduce((sum, c) => sum + ((new Date(c.completed_at).getTime() - new Date(c.invited_at).getTime()) / 3600000), 0) / completedWithTimes.length)
+                : null
+              const avgDisplay = avgHours == null ? '-' : avgHours < 24 ? `${avgHours}h` : `${Math.round(avgHours / 24)}d`
+              const PLATFORM_AVG = 68
+              const showWarning = sent >= 3 && rate < PLATFORM_AVG
+              return (
+                <div style={{ padding: '14px 28px', borderBottom: '1px solid #e4e9f0', background: '#fafbfd' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+                    {[
+                      { label: 'Sent',           value: sent },
+                      { label: 'Completed',      value: completedCount },
+                      { label: 'Completion rate', value: `${rate}%` },
+                      { label: 'Avg time',       value: avgDisplay },
+                    ].map(m => (
+                      <div key={m.label}>
+                        <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>{m.label}</div>
+                        <div style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: '#0f2137' }}>{m.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {showWarning && (
+                    <div style={{
+                      marginTop: 12, padding: '9px 13px', borderRadius: 8,
+                      background: AMBBG, border: `1px solid ${AMBBD}`, borderLeft: `4px solid ${AMB}`,
+                      fontSize: 12.5, color: '#0f2137', lineHeight: 1.55,
+                    }}>
+                      This role has a {rate}% completion rate. The platform average is {PLATFORM_AVG}%. Consider whether the assessment length or JD is a barrier.
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+
             {/* Table header */}
             <div style={{
               display: 'grid',
@@ -1045,6 +1085,14 @@ export default function AssessmentPage({ params }) {
                     }}>
                       {candidate.status || 'Sent'}
                     </span>
+                    {!isCompleted && candidate.invited_at && (() => {
+                      const days = Math.floor((Date.now() - new Date(candidate.invited_at).getTime()) / 86400000)
+                      return (
+                        <div style={{ fontSize: 10.5, color: '#94a1b3', marginTop: 3, fontFamily: F }}>
+                          Not started &middot; {days}d since invited
+                        </div>
+                      )
+                    })()}
                   </div>
 
                   {/* Score */}
