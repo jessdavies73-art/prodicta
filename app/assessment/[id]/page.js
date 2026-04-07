@@ -185,6 +185,8 @@ export default function AssessmentPage({ params }) {
   const [shortlistThreshold, setShortlistThreshold] = useState(70)
   const [shortlisted, setShortlisted] = useState(new Set())
   const [shortlistMode, setShortlistMode] = useState(false)
+  const [screeningView, setScreeningView] = useState(false)
+  const [screeningSort, setScreeningSort] = useState({ key: 'score', dir: 'desc' })
 
   // AI Shortlist with justification (agency)
   const [aiShortlistModal, setAiShortlistModal] = useState(false)
@@ -234,7 +236,7 @@ export default function AssessmentPage({ params }) {
 
       const { data: cands } = await supabase
         .from('candidates')
-        .select('*, results(overall_score, risk_level, percentile)')
+        .select('*, results(overall_score, risk_level, percentile, execution_reliability, candidate_type)')
         .eq('assessment_id', id)
         .order('invited_at', { ascending: false })
       setCandidates(cands || [])
@@ -304,7 +306,7 @@ export default function AssessmentPage({ params }) {
         const supabase = createClient()
         const { data: cands } = await supabase
           .from('candidates')
-          .select('*, results(overall_score, risk_level, percentile)')
+          .select('*, results(overall_score, risk_level, percentile, execution_reliability, candidate_type)')
           .eq('assessment_id', id)
           .order('invited_at', { ascending: false })
         setCandidates(cands || [])
@@ -963,6 +965,137 @@ export default function AssessmentPage({ params }) {
                 </div>
               )}
             </div>
+
+            {/* Screening View toggle and tiered table */}
+            {(() => {
+              const completedList = candidates.filter(c => {
+                const r = Array.isArray(c.results) ? c.results[0] : c.results
+                return (c.status === 'Completed' || c.status === 'completed') && r?.overall_score != null
+              })
+              if (completedList.length < 5) return null
+              return (
+                <div style={{ padding: '14px 28px 0' }}>
+                  <button
+                    onClick={() => setScreeningView(v => !v)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '7px 16px', borderRadius: 8,
+                      border: `1.5px solid ${screeningView ? TEAL : BD}`,
+                      background: screeningView ? TEALLT : '#fff',
+                      color: screeningView ? TEALD : TX2,
+                      fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                    }}
+                  >
+                    {screeningView ? 'Exit Screening View' : 'Screening View'}
+                  </button>
+                </div>
+              )
+            })()}
+
+            {screeningView && (() => {
+              const rows = candidates
+                .filter(c => {
+                  const r = Array.isArray(c.results) ? c.results[0] : c.results
+                  return (c.status === 'Completed' || c.status === 'completed') && r?.overall_score != null
+                })
+                .map(c => {
+                  const r = Array.isArray(c.results) ? c.results[0] : c.results
+                  const risk = (r.risk_level || '').toLowerCase()
+                  const score = r.overall_score || 0
+                  let tier = 'review'
+                  if (score >= 70 && (risk.includes('low') || risk.includes('very low'))) tier = 'recommended'
+                  else if (score < 55 || risk.includes('high')) tier = 'not_recommended'
+                  return {
+                    id: c.id,
+                    name: c.name,
+                    score,
+                    risk: r.risk_level || '-',
+                    execution: r.execution_reliability ?? null,
+                    type: r.candidate_type ? r.candidate_type.split('|')[0].trim() : '-',
+                    tier,
+                  }
+                })
+
+              const sortRows = (list) => {
+                const dir = screeningSort.dir === 'asc' ? 1 : -1
+                return [...list].sort((a, b) => {
+                  const av = a[screeningSort.key]
+                  const bv = b[screeningSort.key]
+                  if (av == null) return 1
+                  if (bv == null) return -1
+                  if (typeof av === 'number') return (av - bv) * dir
+                  return String(av).localeCompare(String(bv)) * dir
+                })
+              }
+
+              const tiers = [
+                { key: 'recommended',    label: 'Recommended',     color: TEAL, bg: TEALLT, bd: `${TEAL}55` },
+                { key: 'review',         label: 'Review',          color: AMB,  bg: AMBBG,  bd: AMBBD },
+                { key: 'not_recommended', label: 'Not Recommended', color: RED,  bg: REDBG,  bd: REDBD },
+              ]
+
+              const SortHead = ({ k, label }) => (
+                <button
+                  type="button"
+                  onClick={() => setScreeningSort(s => s.key === k ? { key: k, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key: k, dir: 'desc' })}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: F }}
+                >
+                  {label}{screeningSort.key === k ? (screeningSort.dir === 'asc' ? ' ↑' : ' ↓') : ''}
+                </button>
+              )
+
+              return (
+                <div style={{ padding: '16px 28px 24px' }}>
+                  {tiers.map(t => {
+                    const list = sortRows(rows.filter(r => r.tier === t.key))
+                    if (list.length === 0) return null
+                    return (
+                      <div key={t.key} style={{ marginBottom: 18 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', padding: '4px 12px', borderRadius: 20,
+                            background: t.bg, color: t.color, border: `1px solid ${t.bd}`,
+                            fontSize: 12, fontWeight: 800, fontFamily: F,
+                          }}>
+                            {t.label}
+                          </span>
+                          <span style={{ fontSize: 12, color: '#94a1b3', fontFamily: F }}>{list.length} candidate{list.length === 1 ? '' : 's'}</span>
+                        </div>
+                        <div style={{ border: `1px solid ${BD}`, borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '50px 2fr 100px 110px 120px 1.5fr 110px', padding: '10px 14px', background: '#f7f9fb', borderBottom: `1px solid ${BD}`, alignItems: 'center', gap: 8 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase' }}>Rank</div>
+                            <SortHead k="name" label="Name" />
+                            <SortHead k="score" label="Score" />
+                            <SortHead k="risk" label="Risk" />
+                            <SortHead k="execution" label="Execution" />
+                            <SortHead k="type" label="Type" />
+                            <div></div>
+                          </div>
+                          {list.map((r, i) => (
+                            <div key={r.id} style={{ display: 'grid', gridTemplateColumns: '50px 2fr 100px 110px 120px 1.5fr 110px', padding: '12px 14px', borderBottom: i < list.length - 1 ? `1px solid ${BD}` : 'none', alignItems: 'center', gap: 8 }}>
+                              <div style={{ fontFamily: FM, fontSize: 13, fontWeight: 800, color: '#0f2137' }}>#{i + 1}</div>
+                              <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: '#0f172a' }}>{r.name}</div>
+                              <div style={{ fontFamily: FM, fontSize: 14, fontWeight: 800, color: t.color }}>{r.score}</div>
+                              <div style={{ fontFamily: F, fontSize: 12, color: '#5e6b7f' }}>{r.risk}</div>
+                              <div style={{ fontFamily: FM, fontSize: 13, color: '#0f2137' }}>{r.execution != null ? r.execution : '-'}</div>
+                              <div style={{ fontFamily: F, fontSize: 12.5, color: '#5e6b7f', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.type}</div>
+                              <div>
+                                <button
+                                  onClick={() => router.push(`/assessment/${id}/candidate/${r.id}`)}
+                                  style={{ padding: '6px 12px', borderRadius: 7, background: '#0f2137', color: '#fff', border: 'none', fontFamily: F, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                  View report
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
 
             {/* Assessment Insights strip */}
             {(() => {

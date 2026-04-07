@@ -948,6 +948,7 @@ export default function CandidateReportPage({ params }) {
   const [savingOutcome, setSavingOutcome] = useState(false)
   const [outcomeError, setOutcomeError] = useState(null)
   const [existingOutcome, setExistingOutcome] = useState(null)
+  const [simpleView, setSimpleView] = useState(false)
 
   // Accountability Trail (agency only)
   const [accountRecord, setAccountRecord] = useState(null)
@@ -1702,7 +1703,22 @@ export default function CandidateReportPage({ params }) {
 
             {results && (
               <>
-                <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+                <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 6 }}>
+                  {results?.simple_view && (
+                    <button
+                      onClick={() => setSimpleView(v => !v)}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        background: simpleView ? TEALLT : 'transparent',
+                        border: `1px solid ${simpleView ? TEAL : BD}`,
+                        borderRadius: 7, cursor: 'pointer', padding: '5px 14px',
+                        fontFamily: F, fontSize: 12, fontWeight: 700,
+                        color: simpleView ? TEALD : TX3,
+                      }}
+                    >
+                      {simpleView ? 'Simple View on' : 'Simple View'}
+                    </button>
+                  )}
                   <button
                     onClick={() => setExpandedSections(allExpanded
                       ? { aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false }
@@ -1715,6 +1731,44 @@ export default function CandidateReportPage({ params }) {
                 </div>
 
                 <StickyNav active={activeSection} />
+
+                {/* ══════════════════════════════════════════════════
+                    SIMPLE VIEW SUMMARY (toggleable, plain English)
+                ══════════════════════════════════════════════════ */}
+                {simpleView && results?.simple_view && (
+                  <Card style={{ marginBottom: 20, borderLeft: `5px solid ${TEAL}`, background: `linear-gradient(135deg, ${TEALLT} 0%, #fff 60%)` }}>
+                    <SectionHeading tooltip="The same findings rewritten in plain English a busy line manager would actually use.">
+                      Simple View
+                    </SectionHeading>
+                    {results.simple_view.summary && (
+                      <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.75, margin: '0 0 14px' }}>
+                        {results.simple_view.summary}
+                      </p>
+                    )}
+                    {results.simple_view.candidate_type && (
+                      <div style={{ marginBottom: 14 }}>
+                        <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>What kind of person they are</div>
+                        <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TEALD }}>{results.simple_view.candidate_type}</div>
+                      </div>
+                    )}
+                    {Array.isArray(results.simple_view.strengths) && results.simple_view.strengths.length > 0 && (
+                      <div style={{ marginBottom: 14 }}>
+                        <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>What they are good at</div>
+                        <ul style={{ margin: 0, paddingLeft: 18, fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.7 }}>
+                          {results.simple_view.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                    {Array.isArray(results.simple_view.watchouts) && results.simple_view.watchouts.length > 0 && (
+                      <div>
+                        <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Watch out for</div>
+                        <ul style={{ margin: 0, paddingLeft: 18, fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.7 }}>
+                          {results.simple_view.watchouts.map((w, i) => <li key={i}>{w}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                  </Card>
+                )}
 
 
                 {/* ══════════════════════════════════════════════════
@@ -2722,6 +2776,71 @@ export default function CandidateReportPage({ params }) {
                   </Card>
                   </ScrollReveal>
                 )}
+
+                {/* ══════════════════════════════════════════════════
+                    EXECUTION RELIABILITY
+                ══════════════════════════════════════════════════ */}
+                {typeof results.execution_reliability === 'number' && (
+                  <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <SectionHeading tooltip="Whether the candidate followed instructions, completed every part of each task, avoided overcomplicating things, and stayed consistent across scenarios.">
+                        Execution Reliability
+                      </SectionHeading>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                        <SmallRing score={results.execution_reliability} size={68} strokeWidth={6} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                            <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: sc(results.execution_reliability) }}>
+                              {results.execution_reliability}
+                            </span>
+                            <Badge label={slbl(results.execution_reliability)} bg={sbg(results.execution_reliability)} color={sc(results.execution_reliability)} border={sbd(results.execution_reliability)} />
+                          </div>
+                          <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.6 }}>
+                            {results.execution_reliability >= 80
+                              ? 'Followed instructions precisely, completed every section, and stayed consistent across all scenarios.'
+                              : results.execution_reliability >= 60
+                              ? 'Generally reliable. Missed or shortened parts of one or two task briefs.'
+                              : 'Significant reliability concerns. Skipped instructions, left sections unfinished, or wandered off the brief.'}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  </ScrollReveal>
+                )}
+
+                {/* ══════════════════════════════════════════════════
+                    DEVELOPMENT POTENTIAL (junior and mid only)
+                ══════════════════════════════════════════════════ */}
+                {(() => {
+                  const roleText = (candidate?.assessments?.role_title || '').toLowerCase()
+                  const isSenior = /\b(director|head of|vp|vice president|chief|cxo|ceo|cto|cfo|coo|senior|principal|lead|staff)\b/.test(roleText)
+                  if (isSenior) return null
+                  if (typeof results.training_potential !== 'number') return null
+                  const tp = results.training_potential
+                  return (
+                    <ScrollReveal delay={60}>
+                      <Card style={{ marginBottom: 20 }}>
+                        <SectionHeading tooltip="How developable this candidate is. Looks at improvement across scenarios, adaptability, willingness to learn, and self-awareness about gaps.">
+                          Development Potential
+                        </SectionHeading>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+                          <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>Trainability score</span>
+                          <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: sc(tp) }}>{tp}/100</span>
+                        </div>
+                        <div style={{ position: 'relative', height: 10, background: `${sc(tp)}22`, borderRadius: 5, overflow: 'hidden', marginBottom: 12 }}>
+                          <div style={{ position: 'absolute', inset: 0, width: `${tp}%`, background: sc(tp), borderRadius: 5 }} />
+                        </div>
+                        <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.65 }}>
+                          {results.training_potential_narrative || (tp >= 75
+                            ? 'Strong development signal. Likely to grow quickly with the right support.'
+                            : tp >= 55
+                            ? 'Moderate development signal. Will benefit from a structured 30-60-90 plan with regular feedback.'
+                            : 'Limited development signal in this assessment. May be a fixed performer at current capability.')}
+                        </p>
+                      </Card>
+                    </ScrollReveal>
+                  )
+                })()}
 
                 {/* ══════════════════════════════════════════════════
                     WHAT THE ASSESSMENT REVEALED
