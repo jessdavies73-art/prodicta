@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 
+// Walk any value and replace em/en dashes with commas in every string
+function stripDashes(value) {
+  if (typeof value === 'string') return value.replace(/\s*[\u2014\u2013]\s*/g, ', ')
+  if (Array.isArray(value)) return value.map(stripDashes)
+  if (value && typeof value === 'object') {
+    const out = {}
+    for (const k of Object.keys(value)) out[k] = stripDashes(value[k])
+    return out
+  }
+  return value
+}
+
 export async function POST(request) {
   try {
     const { job_description } = await request.json()
@@ -46,7 +58,7 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
 
     const content = message.content[0].text.trim()
     const jsonStr = content.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()
-    const parsed = JSON.parse(jsonStr)
+    const parsed = stripDashes(JSON.parse(jsonStr))
 
     const risks = Array.isArray(parsed) ? parsed : parsed.risks
     const role_title = (parsed && parsed.role_title) || 'this role'
