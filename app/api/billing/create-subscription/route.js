@@ -150,7 +150,8 @@ export async function POST(request) {
       await stripe.subscriptions.cancel(subscription.id)
       await stripe.customers.del(customer.id)
       stripeCustomerId = stripeSubscriptionId = null
-      return Response.json({ error: 'Payment could not be completed', step: 'payment-intent-status', status: paymentIntent?.status, subscription_status: subscription?.status }, { status: 402 })
+      console.log('[billing] unexpected pi status:', paymentIntent?.status, 'sub:', subscription?.status)
+      return NextResponse.json({ error: 'Payment could not be completed. Please try again.' }, { status: 402 })
     }
 
     // Payment succeeded without SCA — create Supabase user immediately
@@ -193,11 +194,11 @@ export async function POST(request) {
       console.error('Stripe rollback error:', rollbackErr)
     }
 
-    return Response.json({
-      error: err.message || 'Payment could not be completed',
-      step: currentStep,
-      type: err.type || 'unknown',
-      code: err.code || 'unknown'
-    }, { status: 402 });
+    const isCardError = err.type === 'StripeCardError'
+    return NextResponse.json({
+      error: isCardError
+        ? (err.message || 'Your card was declined. Please try a different card.')
+        : 'Payment could not be completed. Please try again.'
+    }, { status: 402 })
   }
 }
