@@ -703,7 +703,7 @@ function LoginPageInner() {
 
 export default function LoginPage() {
   return (
-    <Elements stripe={stripePromise}>
+    <Elements stripe={stripePromise} options={{ locale: 'en-GB' }}>
       <LoginPageInner />
     </Elements>
   )
