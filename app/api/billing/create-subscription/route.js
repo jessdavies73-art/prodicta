@@ -54,22 +54,29 @@ export async function POST(request) {
     }
 
     const stripe  = getStripeClient()
+    console.log('[billing] Step 1: Getting price for plan:', plan)
     const priceId = await getOrCreatePriceId(plan)
+    console.log('[billing] Step 1 done, priceId:', priceId)
 
+    console.log('[billing] Step 2: Creating customer')
     const customer = await stripe.customers.create({
       email: email.trim(),
       name:  companyName.trim(),
       metadata: { plan, accountType },
     })
     stripeCustomerId = customer.id
+    console.log('[billing] Step 2 done, customerId:', customer.id)
 
+    console.log('[billing] Step 3: Attaching payment method')
     await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id })
     await stripe.customers.update(customer.id, {
       invoice_settings: { default_payment_method: paymentMethodId },
     })
+    console.log('[billing] Step 3 done')
 
     // default_incomplete: subscription is created immediately but payment may
     // still require SCA. The payment intent status tells us what to do next.
+    console.log('[billing] Step 4: Creating subscription')
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
       items: [{ price: priceId }],
@@ -81,6 +88,7 @@ export async function POST(request) {
       expand: ['latest_invoice.payment_intent'],
     })
     stripeSubscriptionId = subscription.id
+    console.log('[billing] Step 4 done, status:', subscription.status)
 
     const paymentIntent = subscription.latest_invoice?.payment_intent
 
@@ -116,6 +124,7 @@ export async function POST(request) {
     }
 
     // Payment succeeded without SCA — create Supabase user immediately
+    console.log('[billing] Step 5: Creating Supabase user')
     const adminClient = createServiceClient()
     try {
       await createSupabaseUser({
@@ -124,6 +133,7 @@ export async function POST(request) {
         customerId: customer.id,
         subscriptionId: subscription.id,
       })
+      console.log('[billing] Step 5 done')
     } catch (createError) {
       await stripe.subscriptions.cancel(subscription.id)
       await stripe.customers.del(customer.id)
@@ -142,6 +152,7 @@ export async function POST(request) {
     return NextResponse.json({ success: true })
   } catch (err) {
     console.log('[billing] FULL ERROR:', err.message, err.type, err.code, err.decline_code);
+    console.log('[billing] FAILED AT:', err.stack)
 
     try {
       const stripe = getStripeClient()
