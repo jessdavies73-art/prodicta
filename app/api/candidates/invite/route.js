@@ -16,7 +16,7 @@ export async function POST(request) {
     // Get assessment details
     const { data: assessment } = await supabase
       .from('assessments')
-      .select('role_title, id')
+      .select('role_title, id, assessment_mode')
       .eq('id', assessment_id)
       .eq('user_id', user.id)
       .single()
@@ -31,6 +31,15 @@ export async function POST(request) {
       .single()
 
     const company_name = userProfile?.company_name || 'The hiring team'
+
+    // Resolve mode-specific copy for the invite email
+    const mode = (assessment.assessment_mode || 'standard').toLowerCase()
+    const normalisedMode = mode === 'rapid' ? 'quick' : mode
+    const modeCopy = normalisedMode === 'quick'
+      ? { line: '2 focused work scenarios that take approximately 15 minutes', count: 2, range: '6 to 8 minutes' }
+      : normalisedMode === 'advanced'
+      ? { line: '4 comprehensive work scenarios that take approximately 45 minutes', count: 4, range: '10 to 14 minutes' }
+      : { line: '3 realistic work scenarios that take approximately 25 minutes', count: 3, range: '8 to 9 minutes' }
 
     const adminClient = createServiceClient()
     const resend = new Resend(process.env.RESEND_API_KEY)
@@ -84,7 +93,7 @@ export async function POST(request) {
         <strong style="color:#0f172a;">${company_name}</strong> has invited you to complete a work simulation assessment for the <strong style="color:#0f2137;">${assessment.role_title}</strong> position.
       </p>
       <p style="font-size:15px;color:#5e6b7f;line-height:1.6;margin:0 0 28px;">
-        The assessment consists of 4 realistic work scenarios that take approximately 45 minutes to complete. You can complete it from any device, at any time.
+        The assessment consists of ${modeCopy.line} to complete. You can complete it from any device, at any time.
       </p>
       <div style="text-align:center;margin:32px 0;">
         <a href="${assessmentLink}" style="display:inline-block;background:#00BFA5;color:#0f2137;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none;">Start Assessment &#8594;</a>
@@ -92,10 +101,10 @@ export async function POST(request) {
       <div style="background:#f7f9fb;border-radius:10px;padding:20px 24px;margin:24px 0;">
         <p style="font-size:14px;font-weight:700;color:#0f2137;margin:0 0 12px;">What to expect:</p>
         <ul style="margin:0;padding:0 0 0 18px;color:#5e6b7f;font-size:14px;line-height:1.8;">
-          <li>4 timed scenarios based on real work situations</li>
-          <li>Each scenario takes 8&#8211;15 minutes</li>
+          <li>${modeCopy.count} timed scenarios based on real work situations</li>
+          <li>Each scenario takes ${modeCopy.range}</li>
           <li>Write your responses as you would in the actual role</li>
-          <li>There are no trick questions &#8212; we want to see how you think</li>
+          <li>There are no trick questions, we want to see how you think</li>
         </ul>
       </div>
       <p style="font-size:13px;color:#94a1b3;margin:24px 0 0;">If you have any questions, reply to this email.</p>
