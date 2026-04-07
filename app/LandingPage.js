@@ -1415,7 +1415,7 @@ export default function LandingPage() {
             <div style={{ textAlign: 'center', marginBottom: 56 }}>
               <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>FAQ</div>
               <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15 }}>
-                Common questions
+                Common questions about PRODICTA
               </h2>
             </div>
           </Reveal>
@@ -1424,28 +1424,44 @@ export default function LandingPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {[
                 {
-                  q: 'Is PRODICTA compliant with the Equality Act 2010?',
-                  a: 'Yes. PRODICTA uses scenario-based assessments that are directly relevant to the job role. Candidates are assessed on their responses to realistic work situations, not on personal characteristics. No candidate is penalised for spelling, grammar, or writing style. Every assessment is documented and auditable, giving you a defensible record of your hiring decisions.',
+                  q: 'What is the Employment Rights Act 2025 and why does it matter?',
+                  a: 'The Employment Rights Act 2025 is new UK legislation that fundamentally changes employer risk. From January 2027, the qualifying period for unfair dismissal claims drops from 2 years to 6 months. The statutory compensation cap is being removed entirely. This means a bad hire can take you to tribunal after just 6 months with no limit on what they can claim. Every hiring decision you make from now on needs to be documented, objective, and defensible. PRODICTA gives you that documentation automatically with every assessment.',
                 },
                 {
-                  q: 'What happens if a candidate uses AI to write their answers?',
-                  a: 'PRODICTA includes Response Integrity Analysis as a core feature. It analyses response timing, consistency across scenarios, and authenticity signals to flag answers that may have been AI-generated or copy-pasted. You will see an integrity score for every candidate alongside the overall assessment result.',
+                  q: 'How much does PRODICTA cost?',
+                  a: 'Starter is £49 per month for 10 assessments. Professional is £120 per month for 30 assessments. Unlimited is £159 per month for unlimited assessments. We are currently offering a Founding Member rate of £79 per month with unlimited assessments for the first 3 months, then 20 per month after that, with the price locked for 12 months. All plans include full reports, candidate comparison, benchmarks, onboarding plans, and interview questions. Transparent pricing. No hidden fees. No setup costs.',
                 },
                 {
-                  q: 'How long does the assessment take for candidates?',
-                  a: 'The assessment takes approximately 45 minutes. Candidates complete four timed work scenarios from a link sent directly to them. There is no login, no download, and no app to install. Most candidates complete it on the same day they receive the invitation.',
+                  q: 'What makes PRODICTA different from personality tests and psychometric assessments?',
+                  a: 'Personality tests tell you how someone thinks. PRODICTA tells you how someone works. We do not ask candidates to answer multiple choice questions or rate themselves on a scale. We give them the actual tasks they would face in their first 90 days and measure how they respond under realistic pressure. Every scenario is built from your specific job description, not a generic template. The result is a prediction of how they will actually perform, not a personality label.',
                 },
                 {
-                  q: 'How is candidate data stored and protected?',
-                  a: 'All data is stored securely in the UK. PRODICTA is built for UK employment law compliance and follows GDPR requirements. Candidate data is retained for the period you specify and can be deleted on request. You retain full control over who can access candidate reports within your account.',
+                  q: 'How long does an assessment take?',
+                  a: 'It depends on the role. Quick assessments take 15 minutes and test 2 scenarios, ideal for urgent hires or high volume roles. Standard assessments take 25 minutes with 3 scenarios, recommended for most roles. Advanced assessments take 45 minutes with 4 scenarios, best for senior or high stakes hires. PRODICTA recommends the right level based on the role but you can choose. Reports are available within minutes of the candidate finishing.',
                 },
                 {
-                  q: 'Do we need training to use PRODICTA?',
-                  a: 'No training is required. You paste in a job description, and PRODICTA generates the assessment automatically. The results are written in plain language with clear recommendations. Most users run their first assessment within 5 minutes of signing up.',
+                  q: 'What roles does PRODICTA work for?',
+                  a: 'PRODICTA works for any role where you need to know how someone will actually perform. Customer service advisors, care workers, accounts assistants, office managers, sales executives, marketing managers, operations leads, finance directors. The scenarios adapt to the job description. A care worker gets a safeguarding scenario. A receptionist gets a multitasking scenario. A finance director gets a strategic decision scenario. This is not just for senior hires. The hardest roles to get right are often the everyday ones.',
                 },
                 {
-                  q: 'How does PRODICTA help with the January 2027 Employment Rights Act changes?',
-                  a: 'From January 2027, employees will have unfair dismissal rights from day one, with no qualifying period and no compensation cap. This makes it significantly more important to get hiring decisions right from the outset. PRODICTA gives you documented, evidence-based reasoning behind every hire, which is exactly what you need if a decision is ever challenged.',
+                  q: 'How does PRODICTA ensure compliance with UK employment law?',
+                  a: 'Every PRODICTA assessment is scenario based, objective, and anonymous. No candidate is penalised for spelling, grammar, or writing style in line with the Equality Act 2010. Every score is backed by specific evidence from what the candidate actually wrote. Every report includes a compliance statement documenting the assessment methodology, date, and fairness standards applied. This creates a documented audit trail that can be used as evidence of a fair and objective hiring process.',
+                },
+                {
+                  q: 'Can candidates use AI to write their answers?',
+                  a: 'PRODICTA includes built in response integrity analysis. It detects AI assisted responses, copy paste answers, rushed submissions, and inconsistent quality across scenarios. Every candidate receives an authenticity rating. The scenarios are unique to each job description and timed, so there is nothing to prepare for or look up. If a candidate does use AI, the integrity analysis flags it and you can probe it at interview.',
+                },
+                {
+                  q: 'How quickly do I get results?',
+                  a: 'Reports are generated within minutes of the candidate completing their assessment. There is no waiting for human scorers or manual review. You get the full report including overall score, candidate type, predicted outcomes, strengths, watch outs, onboarding plan, and interview questions as soon as the candidate submits. Most users have a complete hiring insight within 24 hours of sending the assessment.',
+                },
+                {
+                  q: 'Do we need to train our team to use it?',
+                  a: 'No. Paste a job description, answer 3 to 4 quick questions about the role, send to your candidates, and receive a report. There is no software to install, no training required, and no complex setup. Most users create their first assessment within 5 minutes. The reports are designed to be understood by anyone, and include a Simple View option that translates everything into plain, jargon free language for line managers.',
+                },
+                {
+                  q: 'What happens after January 2027?',
+                  a: 'From January 2027, employees gain unfair dismissal protection from their first day of employment. There is no qualifying period and no cap on compensation. This means every hire you make is a legal and financial risk from day one. PRODICTA helps you document fair, evidence based hiring decisions before you make the offer. It also includes a Probation Timeline Tracker with automated review reminders at month 1, 3, and 5 so you never miss a critical checkpoint during the probation period.',
                 },
               ].map((item, i) => (
                 <div key={i} style={{
