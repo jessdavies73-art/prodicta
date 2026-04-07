@@ -86,18 +86,55 @@ const ActionBox = ({ children }) => (
 )
 
 function InfoTooltip({ text, light = false }) {
-  const [visible, setVisible] = useState(false)
+  const [pos, setPos] = useState(null)
+  const [pinned, setPinned] = useState(false)
+  const ref = useRef(null)
   const tooltipBg = light ? '#1e3a52' : NAVY
+
+  function open() {
+    if (ref.current) {
+      const r = ref.current.getBoundingClientRect()
+      setPos({ top: r.top, left: r.left + r.width / 2 })
+    }
+  }
+  function close() { setPos(null); setPinned(false) }
+
+  useEffect(() => {
+    if (!pinned) return
+    function onDocClick(e) { if (ref.current && !ref.current.contains(e.target)) close() }
+    function onKey(e) { if (e.key === 'Escape') close() }
+    document.addEventListener('mousedown', onDocClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDocClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [pinned])
+
+  if (!text) return null
+
   return (
     <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-      <span onMouseEnter={() => setVisible(true)} onMouseLeave={() => setVisible(false)} style={{ cursor: 'help', display: 'inline-flex', alignItems: 'center' }}>
+      <span
+        ref={ref}
+        onMouseEnter={() => { if (!pinned) open() }}
+        onMouseLeave={() => { if (!pinned) setPos(null) }}
+        onClick={(e) => { e.stopPropagation(); if (pinned) close(); else { open(); setPinned(true) } }}
+        role="button"
+        tabIndex={0}
+        aria-label="Show explanation"
+        style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+      >
         <Ic name="info" size={14} color={light ? 'rgba(255,255,255,0.45)' : TX3} />
       </span>
-      {visible && (
+      {pos && (
         <span style={{
-          position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)',
+          position: 'fixed',
+          bottom: `calc(100vh - ${pos.top}px + 8px)`,
+          left: pos.left,
+          transform: 'translateX(-50%)',
           background: tooltipBg, color: '#fff', fontSize: 12, fontFamily: F, fontWeight: 400, lineHeight: 1.55,
-          padding: '9px 13px', borderRadius: 8, width: 240, zIndex: 200,
+          padding: '9px 13px', borderRadius: 8, width: 240, zIndex: 9999,
           boxShadow: '0 4px 16px rgba(0,0,0,0.35)', pointerEvents: 'none', textAlign: 'left',
           whiteSpace: 'normal', border: light ? '1px solid rgba(255,255,255,0.15)' : 'none',
         }}>

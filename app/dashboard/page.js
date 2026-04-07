@@ -808,24 +808,30 @@ export default function DashboardPage() {
           <div style={{
             flex: 2, minWidth: 280,
             background: costSaved > 0 ? GRNBG : CARD,
-            border: `1px solid ${costSaved > 0 ? GRNBD : BD}`,
-            borderTop: `3px solid ${costSaved > 0 ? GRN : BD}`,
+            border: `1px solid ${costSaved > 0 ? GRNBD : `${TEAL}55`}`,
+            borderTop: `3px solid ${costSaved > 0 ? GRN : TEAL}`,
             borderRadius: 12, padding: '18px 22px',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-              <Ic name="shield" size={13} color={costSaved > 0 ? GRN : TX3} />
+              <Ic name="shield" size={13} color={costSaved > 0 ? GRN : TEAL} />
               <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Estimated cost of bad hires avoided
               </span>
             </div>
-            <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: costSaved > 0 ? GRN : TX3, lineHeight: 1, marginBottom: 6 }}>
-              {costSaved > 0 ? `£${costSaved.toLocaleString('en-GB')}` : '£0'}
-            </div>
-            <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>
-              {avoidedBadHires.length > 0
-                ? `${avoidedBadHires.length} below-threshold candidate${avoidedBadHires.length !== 1 ? 's' : ''} not hired · £30,000 average bad hire cost`
-                : 'PRODICTA will track bad hires avoided as your pipeline grows'}
-            </div>
+            {costSaved > 0 ? (
+              <>
+                <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: GRN, lineHeight: 1, marginBottom: 6 }}>
+                  £{costSaved.toLocaleString('en-GB')}
+                </div>
+                <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>
+                  {avoidedBadHires.length} below-threshold candidate{avoidedBadHires.length !== 1 ? 's' : ''} not hired &middot; £30,000 average bad hire cost
+                </div>
+              </>
+            ) : (
+              <div style={{ fontSize: 13, color: TX2, fontFamily: F, lineHeight: 1.55, marginTop: 2 }}>
+                Once you start assessing candidates, PRODICTA will calculate how much you have saved by avoiding bad hires.
+              </div>
+            )}
           </div>
         </div>
 
