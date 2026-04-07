@@ -346,6 +346,7 @@ function SectionToggle({ expanded, onToggle }) {
 function ScrollReveal({ children, delay = 0, id }) {
   const ref = useRef(null)
   const [visible, setVisible] = useState(false)
+  const [settled, setSettled] = useState(false)
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -353,8 +354,24 @@ function ScrollReveal({ children, delay = 0, id }) {
     obs.observe(el)
     return () => obs.disconnect()
   }, [])
+  // Once the entrance animation finishes, drop the transform so this element no
+  // longer creates a containing block. A persistent transform would trap any
+  // position:fixed descendants (like InfoTooltip) inside this element's bounds
+  // and place them behind sibling sections.
   return (
-    <div id={id} ref={ref} style={{ scrollMarginTop: 56, opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(14px)', transition: `opacity 0.45s ease ${delay}ms, transform 0.45s ease ${delay}ms` }}>
+    <div
+      id={id}
+      ref={ref}
+      onTransitionEnd={() => { if (visible && !settled) setSettled(true) }}
+      style={{
+        scrollMarginTop: 56,
+        opacity: visible ? 1 : 0,
+        ...(settled ? {} : {
+          transform: visible ? 'translateY(0)' : 'translateY(14px)',
+          transition: `opacity 0.45s ease ${delay}ms, transform 0.45s ease ${delay}ms`,
+        }),
+      }}
+    >
       {children}
     </div>
   )
