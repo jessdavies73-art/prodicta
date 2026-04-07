@@ -255,18 +255,25 @@ function SignUpForm() {
     setLoading(true)
     try {
       const cardElement = elements.getElement(CardElement)
-      const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: cardElement,
-        billing_details: {
-          email: email.trim(),
-          name: company.trim(),
-          address: { postal_code: postcode.trim(), country: 'GB' },
-        },
-      })
-
-      if (pmError) {
-        setError(pmError.message)
+      let paymentMethod
+      try {
+        const result = await stripe.createPaymentMethod({
+          type: 'card',
+          card: cardElement,
+          billing_details: {
+            email: email.trim(),
+            name: company.trim(),
+            address: { postal_code: postcode.trim(), country: 'GB' },
+          },
+        })
+        if (result.error) {
+          setError(`createPaymentMethod error: ${result.error.message} [${result.error.type || 'unknown'} / ${result.error.code || 'unknown'}]`)
+          setLoading(false)
+          return
+        }
+        paymentMethod = result.paymentMethod
+      } catch (pmEx) {
+        setError(`createPaymentMethod threw: ${pmEx?.message || String(pmEx)}`)
         setLoading(false)
         return
       }

@@ -42,6 +42,7 @@ export async function POST(request) {
   console.log('[billing] create-subscription called')
 
   try {
+    currentStep = 'parsing-request'
     const { email, password, companyName, accountType, plan, paymentMethodId } = await request.json()
 
     if (!email || !password || !companyName || !accountType || !plan || !paymentMethodId) {
