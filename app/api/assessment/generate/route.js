@@ -301,10 +301,20 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
 
     // Detect role type
     const jdLower = job_description.toLowerCase()
+    const t = `${role_title} ${jdLower}`.toLowerCase()
+    const has = (...words) => words.some(w => t.includes(w))
     let detected_role_type = 'general'
-    if (['sales', 'revenue', 'pipeline', 'account manager', 'business development'].some(w => jdLower.includes(w))) detected_role_type = 'sales'
-    else if (['marketing', 'campaign', 'brand', 'content', 'digital'].some(w => jdLower.includes(w))) detected_role_type = 'marketing'
-    else if (['engineer', 'developer', 'software', 'backend', 'frontend', 'fullstack', 'devops'].some(w => jdLower.includes(w))) detected_role_type = 'engineering'
+    if (has('legal counsel', 'solicitor', 'paralegal', 'barrister', 'compliance officer')) detected_role_type = 'legal'
+    else if (has('nurse', 'carer', 'care worker', 'support worker', 'healthcare', 'clinical', 'midwife', 'safeguarding')) detected_role_type = 'healthcare'
+    else if (has('finance director', 'accountant', 'bookkeeper', 'accounts assistant', 'finance manager', 'fp&a', 'controller', 'auditor', 'tax ', 'payroll')) detected_role_type = 'finance'
+    else if (has('sales', 'business development', 'account manager', 'account executive', 'pipeline', 'revenue', 'bdr', 'sdr')) detected_role_type = 'sales'
+    else if (has('marketing', 'campaign', 'brand', 'content marketing', 'digital marketing', 'seo', 'growth marketing')) detected_role_type = 'marketing'
+    else if (has('hr ', ' hr', 'people partner', 'people operations', 'talent acquisition', 'recruiter', 'l&d', 'learning and development')) detected_role_type = 'hr'
+    else if (has('engineer', 'developer', 'software', 'backend', 'frontend', 'fullstack', 'devops', 'data scientist', 'data engineer', 'qa ', 'sre')) detected_role_type = 'engineering'
+    else if (has('customer service', 'customer support', 'contact centre', 'call centre', 'helpdesk', 'service advisor', 'customer experience')) detected_role_type = 'customer_service'
+    else if (has('operations manager', 'operations director', 'logistics', 'supply chain', 'warehouse', 'fulfilment', 'dispatch')) detected_role_type = 'operations'
+    else if (has('director', 'head of', 'chief', 'managing director', 'general manager')) detected_role_type = 'management'
+    else if (has('office manager', 'office', 'admin', 'administrator', 'receptionist', 'secretary', 'personal assistant', ' pa ', 'executive assistant')) detected_role_type = 'office'
 
     // Save assessment to Supabase (use service role to bypass RLS for the insert)
     const adminClient = createServiceClient()

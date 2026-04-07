@@ -318,10 +318,35 @@ function PFSparkline({ dimScore, dimKey, color }) {
 }
 
 const ROLE_BENCHMARKS = {
-  sales:       { label: 'Sales roles',       avg: 62, strong: 76 },
-  marketing:   { label: 'Marketing roles',   avg: 64, strong: 77 },
-  engineering: { label: 'Engineering roles', avg: 67, strong: 78 },
-  general:     { label: 'Similar roles',     avg: 63, strong: 75 },
+  office:           { label: 'Office and admin roles',     avg: 65, strong: 76 },
+  customer_service: { label: 'Customer service roles',     avg: 62, strong: 74 },
+  finance:          { label: 'Finance and accounting roles', avg: 67, strong: 78 },
+  sales:            { label: 'Sales roles',                avg: 62, strong: 76 },
+  marketing:        { label: 'Marketing roles',            avg: 64, strong: 77 },
+  engineering:      { label: 'Engineering and tech roles', avg: 67, strong: 78 },
+  hr:               { label: 'HR and people roles',        avg: 64, strong: 76 },
+  legal:            { label: 'Legal roles',                avg: 68, strong: 79 },
+  healthcare:       { label: 'Healthcare and care roles',  avg: 61, strong: 74 },
+  operations:       { label: 'Operations and logistics roles', avg: 63, strong: 75 },
+  management:       { label: 'Management and leadership roles', avg: 66, strong: 78 },
+  general:          { label: 'Similar roles',              avg: 63, strong: 75 },
+}
+
+function detectRoleCategory(roleTitle = '', jd = '') {
+  const t = `${roleTitle} ${jd}`.toLowerCase()
+  const has = (...words) => words.some(w => t.includes(w))
+  if (has('legal counsel', 'solicitor', 'paralegal', 'barrister', 'compliance officer')) return 'legal'
+  if (has('nurse', 'carer', 'care worker', 'support worker', 'healthcare', 'clinical', 'midwife', 'safeguarding')) return 'healthcare'
+  if (has('finance director', 'accountant', 'bookkeeper', 'accounts assistant', 'finance manager', 'fp&a', 'controller', 'auditor', 'tax ', 'payroll')) return 'finance'
+  if (has('sales', 'business development', 'account manager', 'account executive', 'pipeline', 'revenue', 'bdr', 'sdr')) return 'sales'
+  if (has('marketing', 'campaign', 'brand', 'content marketing', 'digital marketing', 'seo', 'growth marketing')) return 'marketing'
+  if (has('hr ', ' hr', 'people partner', 'people operations', 'talent acquisition', 'recruiter', 'l&d', 'learning and development')) return 'hr'
+  if (has('engineer', 'developer', 'software', 'backend', 'frontend', 'fullstack', 'devops', 'data scientist', 'data engineer', 'qa ', 'sre')) return 'engineering'
+  if (has('customer service', 'customer support', 'contact centre', 'call centre', 'helpdesk', 'service advisor', 'customer experience')) return 'customer_service'
+  if (has('operations manager', 'operations director', 'logistics', 'supply chain', 'warehouse', 'fulfilment', 'dispatch')) return 'operations'
+  if (has('director', 'head of', 'chief', 'managing director', 'general manager')) return 'management'
+  if (has('office manager', 'office', 'admin', 'administrator', 'receptionist', 'secretary', 'personal assistant', ' pa ', 'executive assistant')) return 'office'
+  return 'general'
 }
 
 function SectionToggle({ expanded, onToggle }) {
@@ -623,7 +648,8 @@ export default function DemoCandidatePage({ params }) {
                     </div>
                   )}
                   {(() => {
-                    const bm = ROLE_BENCHMARKS.marketing
+                    const roleType = detectRoleCategory(candidate?.assessments?.role_title, candidate?.assessments?.job_description)
+                    const bm = ROLE_BENCHMARKS[roleType] || ROLE_BENCHMARKS.general
                     const diff = score - bm.avg
                     return (
                       <div style={{ marginTop: 10, textAlign: 'center' }}>
