@@ -127,7 +127,7 @@ export async function POST(request) {
       await stripe.subscriptions.cancel(subscription.id)
       await stripe.customers.del(customer.id)
       stripeCustomerId = stripeSubscriptionId = null
-      return NextResponse.json({ error: 'Payment could not be completed. Please try again.' }, { status: 402 })
+      return Response.json({ error: 'Payment could not be completed', step: 'payment-intent-status', status: paymentIntent?.status, subscription_status: subscription?.status }, { status: 402 })
     }
 
     // Payment succeeded without SCA — create Supabase user immediately
