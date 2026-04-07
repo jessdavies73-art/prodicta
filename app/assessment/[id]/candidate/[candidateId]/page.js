@@ -1438,11 +1438,18 @@ export default function CandidateReportPage({ params }) {
                           <span style={{ fontSize: 12.5, fontWeight: 600, color: TX2, fontFamily: F }}>{candidate.assessments.role_title}</span>
                         </div>
                       )}
-                      {candidate?.assessments?.assessment_mode === 'rapid' && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 20, background: '#fffbeb', color: '#d97706', border: '1px solid #fcd34d', fontFamily: F }}>
-                          Rapid Assessment
-                        </span>
-                      )}
+                      {(() => {
+                        const m = candidate?.assessments?.assessment_mode
+                        if (!m || m === 'standard') return null
+                        const labelMap = { rapid: 'Quick Assessment', quick: 'Quick Assessment', advanced: 'Advanced Assessment' }
+                        const label = labelMap[m] || null
+                        if (!label) return null
+                        return (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 20, background: '#fffbeb', color: '#d97706', border: '1px solid #fcd34d', fontFamily: F }}>
+                            {label}
+                          </span>
+                        )
+                      })()}
                       {completedDate && (
                         <span style={{ fontSize: 12, color: TX3, fontFamily: F }}>Completed {completedDate}</span>
                       )}

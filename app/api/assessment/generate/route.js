@@ -5,7 +5,12 @@ import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-
 export async function POST(request) {
   try {
     const { role_title, job_description, skill_weights, save_as_template, template_name, context_answers, assessment_mode } = await request.json()
-    const isRapid = assessment_mode === 'rapid'
+    // Normalise mode: 'quick' (2 scenarios), 'standard' (3 scenarios), 'advanced' (4 scenarios). Legacy 'rapid' -> quick.
+    const rawMode = (assessment_mode || 'standard').toLowerCase()
+    const mode = rawMode === 'rapid' ? 'quick' : (['quick', 'standard', 'advanced'].includes(rawMode) ? rawMode : 'standard')
+    const isQuick    = mode === 'quick'
+    const isStandard = mode === 'standard'
+    const isAdvanced = mode === 'advanced'
 
     // Auth check
     const supabase = createServerSupabaseClient()
@@ -15,7 +20,69 @@ export async function POST(request) {
     // Call Claude API
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-    const prompt = isRapid ? `You are a specialist assessment designer for UK businesses. Your job is to create TWO rapid work simulation scenarios for this role. These are for a 15-minute rapid assessment - they must be tightly focused on the highest-priority skills from the job description.
+    const standard3Prompt = `You are a specialist assessment designer for UK businesses. Your job is to create THREE work simulation scenarios for this role. These are for a 25-minute Standard Assessment, the right balance of depth and candidate experience for most roles.
+
+These are NOT hypothetical exercises. Each scenario must be built from actual tasks listed in the job description. The candidate should feel like they are already in the role.
+
+---
+
+ROLE: ${role_title}
+
+JOB DESCRIPTION:
+${job_description}
+${context_answers && Object.values(context_answers).some(v => v?.trim()) ? `
+ADDITIONAL CONTEXT PROVIDED BY THE HIRING MANAGER:
+${Object.entries(context_answers).map(([, v]) => v?.trim()).filter(Boolean).map(v => `- ${v}`).join('\n')}
+
+Treat these answers as ground truth. Weave the environment, failure modes, and success criteria directly into every scenario.
+` : ''}---
+
+STEP 1 - EXTRACT ROLE INTELLIGENCE
+
+Read the job description and identify the specific tasks, tools, KPIs, stakeholders, seniority level, sector, and day-to-day pressures. Build the scenarios from this, not from generic templates for the job title.
+
+---
+
+SCENARIO 1 - "Can they do the job?" (Type: "Core Task", Time: 9 minutes)
+
+Take a core responsibility from the JD and give the candidate that actual work to do. Include realistic email content, data, or briefing material at least 80 words long. The output must reveal whether they can execute the fundamental work of this role competently.
+
+---
+
+SCENARIO 2 - "Will they last under pressure?" (Type: "Pressure Test", Time: 8 minutes)
+
+Take another real task from the JD but add pressure: a competing deadline, a difficult stakeholder, a system that has gone down, or an unexpected problem mid-task. The candidate must complete real work while managing the pressure. Feeds the four Pressure-Fit sub-scores.
+
+---
+
+SCENARIO 3 - "Will they fit?" (Type: "Judgment Call", Time: 8 minutes)
+
+A scenario involving a colleague, manager, or competing team priorities, built around a real task from the JD. The candidate must navigate the relationship while still producing a concrete decision, response, or plan.
+
+---
+
+OUTPUT FORMAT
+
+Return ONLY a JSON array with exactly 3 objects. No preamble, no explanation, no markdown.
+
+[
+  {
+    "type": "Core Task",
+    "title": "Concise title describing the situation",
+    "context": "The full situation in present tense. At least 130 words. Named characters, specific numbers. Must feel like a real working day.",
+    "task": "Exactly what the candidate must produce. One specific deliverable.",
+    "timeMinutes": 9,
+    "skills": ["Communication", "Problem solving"]
+  }
+]
+
+The three scenario types must be: "Core Task", "Pressure Test", "Judgment Call"
+
+Skills must be chosen only from: Communication, Problem solving, Prioritisation, Leadership, Negotiation, Client management, Judgment, Strategy, Analysis, Crisis management, People management, Technical communication, Stakeholder management, Conflict resolution
+
+Write in UK English throughout. No Americanisms. Pull everything from the JD.`
+
+    const prompt = isQuick ? `You are a specialist assessment designer for UK businesses. Your job is to create TWO rapid work simulation scenarios for this role. These are for a 15-minute rapid assessment - they must be tightly focused on the highest-priority skills from the job description.
 
 These are NOT hypothetical exercises. Each scenario must be built from actual tasks listed in the job description. The candidate should feel like they are already in the role.
 
@@ -69,7 +136,7 @@ The two scenario types must be: "Core Task", "Pressure Test"
 
 Skills must be chosen only from: Communication, Problem solving, Prioritisation, Leadership, Negotiation, Client management, Judgment, Strategy, Analysis, Crisis management, People management, Technical communication, Stakeholder management, Conflict resolution
 
-Write in UK English throughout. No Americanisms.` : `You are a specialist assessment designer for UK businesses. Your job is to create four work simulation scenarios that test whether this specific hire will succeed, last, and fit.
+Write in UK English throughout. No Americanisms.` : isStandard ? standard3Prompt : `You are a specialist assessment designer for UK businesses. Your job is to create four work simulation scenarios that test whether this specific hire will succeed, last, and fit.
 
 These are NOT hypothetical exercises or personality tests. Each scenario must be built from actual tasks, responsibilities, and requirements listed in the job description. The candidate should feel like they are already in the role on a Tuesday morning, doing real work.
 
@@ -246,7 +313,7 @@ Write in UK English throughout. No Americanisms. No generic scenarios. No abstra
         scenarios,
         skill_weights: skill_weights || { Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 },
         status: 'active',
-        assessment_mode: isRapid ? 'rapid' : 'standard',
+        assessment_mode: mode,
         ...(context_answers && Object.values(context_answers).some(v => v?.trim()) && {
           context_answers,
         }),

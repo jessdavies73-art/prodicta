@@ -172,7 +172,8 @@ export default function NewAssessmentPage() {
   const [selectedTemplate, setSelectedTemplate] = useState('')
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
   const [templateName, setTemplateName] = useState('')
-  const [rapidMode, setRapidMode] = useState(false)
+  const [mode, setMode] = useState('standard') // 'quick' | 'standard' | 'advanced'
+  const [modeOverridden, setModeOverridden] = useState(false)
 
   // Context questions
   const [contextAnswers, setContextAnswers] = useState({})
@@ -229,6 +230,25 @@ export default function NewAssessmentPage() {
   const roleType = jd.length > 0 ? detectRoleType(jd) : null
   const canGenerate = roleTitle.trim().length > 0 && jd.length >= 50 && totalWeight === 100
 
+  // Detect seniority from role title and JD
+  const detectedSeniority = (() => {
+    const text = `${roleTitle} ${jd}`.toLowerCase()
+    if (/\b(director|head of|vp|vice president|chief|cxo|ceo|cto|cfo|coo)\b/.test(text)) return 'senior'
+    if (/\b(senior|principal|lead|staff|manager of|head)\b/.test(text)) return 'senior'
+    if (/\b(junior|jr\.?|graduate|trainee|entry[- ]level|apprentice|assistant)\b/.test(text)) return 'junior'
+    if (/\b(mid[- ]level|associate|executive|specialist|coordinator|analyst|advisor)\b/.test(text)) return 'mid'
+    if (jd.length >= 50) return 'mid'
+    return null
+  })()
+  const recommendedMode = detectedSeniority === 'senior' ? 'advanced' : 'standard'
+
+  // Auto-select recommended mode when seniority changes (unless user has overridden)
+  useEffect(() => {
+    if (modeOverridden) return
+    if (detectedSeniority && recommendedMode !== mode) setMode(recommendedMode)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detectedSeniority])
+
   const setWeight = (skill, val) => {
     const n = Math.max(0, Math.min(100, Number(val)))
     setWeights(prev => ({ ...prev, [skill]: n }))
@@ -252,7 +272,7 @@ export default function NewAssessmentPage() {
           save_as_template: saveAsTemplate,
           template_name: saveAsTemplate ? (templateName.trim() || roleTitle.trim()) : undefined,
           context_answers: Object.keys(serialized).length > 0 ? serialized : undefined,
-          assessment_mode: rapidMode ? 'rapid' : 'standard',
+          assessment_mode: mode,
         })
       })
       const data = await res.json()
@@ -709,40 +729,86 @@ export default function NewAssessmentPage() {
           )}
         </div>
 
-        {/* Rapid Assessment toggle */}
-        <div style={{
-          background: rapidMode ? '#fffbeb' : '#fff',
-          borderRadius: 14,
-          border: `1.5px solid ${rapidMode ? '#fcd34d' : '#e4e9f0'}`,
-          padding: '20px 28px', marginBottom: 20,
-          transition: 'border-color 0.15s, background 0.15s',
-        }}>
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 14, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={rapidMode}
-              onChange={e => setRapidMode(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#d97706', cursor: 'pointer', marginTop: 2, flexShrink: 0 }}
-            />
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', fontFamily: F }}>
-                  Rapid Assessment (15 minutes)
-                </span>
-                <span style={{
-                  fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
-                  background: '#fffbeb', color: '#d97706', border: '1px solid #fcd34d', fontFamily: F
-                }}>
-                  2 scenarios
-                </span>
-              </div>
-              <p style={{ margin: 0, fontSize: 13, color: '#5e6b7f', lineHeight: 1.55, fontFamily: F }}>
-                Generates 2 focused scenarios instead of 4, targeted at the highest-priority skills in the JD.
-                The report will include overall score, top risk, hiring confidence, candidate type, and the single most important interview question.
-                Flagged clearly as a Rapid Assessment on all reports.
-              </p>
-            </div>
-          </label>
+        {/* Assessment Mode selection */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', fontFamily: F, marginBottom: 6 }}>
+            Assessment depth
+          </div>
+          <p style={{ margin: '0 0 14px', fontSize: 12.5, color: '#5e6b7f', fontFamily: F }}>
+            PRODICTA recommends a depth based on the seniority detected in the job description. You can override this.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
+            {[
+              {
+                value: 'quick',
+                title: 'Quick Assessment',
+                subtitle: '15 minutes, 2 scenarios',
+                description: 'Best for urgent hires, high-volume roles, or when you need a fast initial screen. Tests core competence and pressure handling. Use when speed matters more than depth.',
+              },
+              {
+                value: 'standard',
+                title: 'Standard Assessment',
+                subtitle: '25 minutes, 3 scenarios',
+                description: 'Best for most roles. Tests core competence, pressure handling, and team fit. The right balance of depth and candidate experience. Recommended for junior and mid-level roles.',
+              },
+              {
+                value: 'advanced',
+                title: 'Advanced Assessment',
+                subtitle: '45 minutes, 4 scenarios',
+                description: 'Best for senior, leadership, or high-stakes roles. Tests competence, pressure, team fit, and long-term retention risk. The most comprehensive assessment. Recommended for senior and director-level hires.',
+              },
+            ].map(opt => {
+              const selected = mode === opt.value
+              const isRecommended = recommendedMode === opt.value && detectedSeniority
+              const recLabel = isRecommended
+                ? `Recommended for ${detectedSeniority === 'senior' ? 'senior' : detectedSeniority === 'junior' ? 'junior' : 'mid-level'} roles`
+                : null
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => { setMode(opt.value); setModeOverridden(true) }}
+                  style={{
+                    textAlign: 'left',
+                    background: selected ? '#f0fbf9' : '#fff',
+                    border: `1.5px solid ${selected ? '#00BFA5' : '#e4e9f0'}`,
+                    borderRadius: 12,
+                    padding: '18px 18px 16px',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s',
+                    boxShadow: selected ? '0 4px 14px rgba(0,191,165,0.12)' : 'none',
+                    position: 'relative',
+                    fontFamily: F,
+                  }}
+                >
+                  {isRecommended && (
+                    <span style={{
+                      position: 'absolute', top: 10, right: 10,
+                      fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 20,
+                      background: '#00BFA5', color: '#fff', fontFamily: F,
+                      textTransform: 'uppercase', letterSpacing: '0.05em',
+                    }}>
+                      Recommended
+                    </span>
+                  )}
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginBottom: 2, paddingRight: isRecommended ? 90 : 0 }}>
+                    {opt.title}
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#00BFA5', marginBottom: 10 }}>
+                    {opt.subtitle}
+                  </div>
+                  <p style={{ margin: 0, fontSize: 12.5, color: '#5e6b7f', lineHeight: 1.6 }}>
+                    {opt.description}
+                  </p>
+                  {recLabel && (
+                    <div style={{ marginTop: 10, fontSize: 11, fontWeight: 700, color: '#009688' }}>
+                      {recLabel}
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Generate button */}
