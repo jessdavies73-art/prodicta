@@ -872,22 +872,22 @@ export default function LandingPage() {
                 {
                   n: 1,
                   title: 'Paste your job description',
-                  body: 'Our AI reads every detail. The company, the targets, the team, the challenges. It builds 4 realistic scenarios this candidate would face in their first 90 days. Every assessment is unique to the role.',
+                  body: 'PRODICTA reads every detail. The company, the targets, the team, the pressure points. Then asks you 3 to 4 sharp questions about what really matters in this role. Whether you are a recruiter briefing a client vacancy, an HR team filling an internal role, or a hiring manager replacing a leaver, PRODICTA builds an assessment tailored to exactly what success looks like in this specific position.',
                 },
                 {
                   n: 2,
-                  title: 'Send to your candidates',
-                  body: 'One click sends a professional branded email. Candidates complete 4 timed scenarios in about 45 minutes. No login, no download. They just click and start.',
+                  title: 'Choose your assessment depth',
+                  body: 'Quick for urgent hires and high-volume roles. Standard for most positions. Advanced for senior or high-stakes hires. PRODICTA recommends the right depth based on the role level. Recruiters filling multiple roles get speed. Employers hiring for critical positions get depth. Every scenario is built from the actual job description, not a generic template.',
                 },
                 {
                   n: 3,
-                  title: 'See how candidates actually think',
-                  body: 'Two AI passes score each candidate across skills, pressure handling, integrity, and commercial awareness. Every score backed by specific evidence from what they wrote.',
+                  title: 'Candidates complete real work simulations',
+                  body: 'No personality tests. No tick-box questionnaires. Candidates face the exact situations they would face in their first 90 days. A difficult stakeholder. Competing deadlines. A team that needs managing. Whether you are assessing a customer service advisor or a finance director, the scenarios match the role. How they respond tells you more than any interview ever could.',
                 },
                 {
                   n: 4,
-                  title: 'Get a report worth paying for',
-                  body: 'Overall score, Pressure-Fit Assessment, risk level, hiring recommendation, strengths with evidence, concerns with actions, a 6-week onboarding plan, and interview questions targeting each candidate\'s gaps.',
+                  title: 'Get a report that changes how you hire',
+                  body: 'Everything you need to make the right call. A clear score. An honest assessment of how they work under pressure. Where the risks are. What their first 90 days will actually look like. The questions to ask before you commit. And a plan to set them up for success from day one. One report. Clear, specific, and backed by evidence from real work.',
                 },
               ].map((s, i) => (
                 <Reveal key={s.n} delay={i * 80}>
