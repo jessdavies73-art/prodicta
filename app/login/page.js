@@ -31,6 +31,7 @@ const CARD_ELEMENT_OPTIONS = {
     },
     invalid: { color: '#ef4444' },
   },
+  hidePostalCode: true,
 }
 
 // ── Styles ─────────────────────────────────────────────────────────────────
@@ -235,6 +236,7 @@ function SignUpForm() {
   const [password,    setPassword]    = useState('')
   const [accountType, setAccountType] = useState('employer')
   const [plan,        setPlan]        = useState('growth')
+  const [postcode,    setPostcode]    = useState('')
   const [cardFocused, setCardFocused] = useState(false)
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
@@ -247,6 +249,7 @@ function SignUpForm() {
     if (!company.trim())     { setError('Please enter your company name.'); return }
     if (!email.trim())       { setError('Please enter your email address.'); return }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    if (!postcode.trim())    { setError('Please enter your postcode.'); return }
     if (!stripe || !elements) { setError('Payment form is loading. Please wait a moment.'); return }
 
     setLoading(true)
@@ -255,7 +258,11 @@ function SignUpForm() {
       const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
         card: cardElement,
-        billing_details: { email: email.trim(), name: company.trim() },
+        billing_details: {
+          email: email.trim(),
+          name: company.trim(),
+          address: { postal_code: postcode.trim(), country: 'GB' },
+        },
       })
 
       if (pmError) {
@@ -472,6 +479,15 @@ function SignUpForm() {
             />
           </div>
         </div>
+
+        <Field
+          label="Postcode"
+          id="su-postcode"
+          value={postcode}
+          onChange={e => setPostcode(e.target.value)}
+          placeholder="SW1A 1AA"
+          autoComplete="postal-code"
+        />
       </div>
 
       <button
