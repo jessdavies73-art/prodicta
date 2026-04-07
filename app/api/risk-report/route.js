@@ -13,34 +13,43 @@ export async function POST(request) {
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 800,
+      max_tokens: 900,
       messages: [{
         role: 'user',
-        content: `You are a hiring risk analyst for UK employers. Read this job description and identify the top 3 hiring risks this role creates. Focus on risks that interviews and CVs typically miss: pressure tolerance, cultural fit, capability under realistic conditions, retention risk.
+        content: `You are a hiring risk analyst for UK employers. Read this job description and identify the top 3 hiring risks built into THIS ROLE.
+
+The question you are answering is: "What about this role makes it hard to hire the right person?" You are NOT predicting what might go wrong with any individual candidate. You are describing the structural risks the role itself creates for the hiring process, the kind of risks that interviews and CVs typically fail to test for (for example: pressure tolerance under realistic workload, decision quality with incomplete information, cultural fit with a specific environment, retention risk given the day-to-day reality of the work).
+
+Also extract the role title from the job description. If unclear, return "this role".
 
 JOB DESCRIPTION:
 ${job_description.slice(0, 3000)}
 
-Return ONLY a JSON array with exactly 3 objects. No preamble, no explanation, no markdown.
+Return ONLY a JSON object with no preamble, no explanation, no markdown:
 
-[
-  {
-    "title": "Short risk title (5-8 words)",
-    "severity": "High",
-    "explanation": "One to two sentences explaining the specific risk and why it is hard to detect before hiring."
-  }
-]
+{
+  "role_title": "Short role title from the JD",
+  "risks": [
+    {
+      "title": "Short risk title (5 to 8 words) describing a property of the role",
+      "severity": "High",
+      "explanation": "One to two sentences explaining why this aspect of the role is hard for a standard hiring process to test for, and what the hiring process needs to assess in order to de-risk it."
+    }
+  ]
+}
 
-Severity must be one of: High, Medium, Low.
-Write in UK English. Be specific to this role, not generic.`
+There must be exactly 3 risks. Severity must be one of: High, Medium, Low. Write in UK English. Be specific to this role, not generic. Frame every risk as a property of the role and the hiring process, never as a prediction about a candidate.`
       }]
     })
 
     const content = message.content[0].text.trim()
     const jsonStr = content.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()
-    const risks = JSON.parse(jsonStr)
+    const parsed = JSON.parse(jsonStr)
 
-    return NextResponse.json({ risks })
+    const risks = Array.isArray(parsed) ? parsed : parsed.risks
+    const role_title = (parsed && parsed.role_title) || 'this role'
+
+    return NextResponse.json({ risks, role_title })
   } catch (err) {
     console.error('Risk report error:', err)
     return NextResponse.json({ error: 'Failed to analyse risks' }, { status: 500 })

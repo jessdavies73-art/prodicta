@@ -154,6 +154,7 @@ export default function LandingPage() {
   const [riskJd, setRiskJd] = useState('')
   const [riskLoading, setRiskLoading] = useState(false)
   const [riskResults, setRiskResults] = useState(null)
+  const [riskRoleTitle, setRiskRoleTitle] = useState('this role')
   const [riskError, setRiskError] = useState(null)
 
   async function handleRiskAnalysis() {
@@ -176,6 +177,7 @@ export default function LandingPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to analyse risks')
       setRiskResults(data.risks)
+      setRiskRoleTitle(data.role_title || 'this role')
       sessionStorage.setItem(SESSION_KEY, String(count + 1))
     } catch (e) {
       setRiskError(e.message)
@@ -477,48 +479,99 @@ export default function LandingPage() {
               )}
 
               {riskResults && (
-                <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  {riskResults.map((risk, i) => {
-                    const severityColors = {
-                      High:   { bg: 'rgba(239,68,68,0.07)',  border: 'rgba(239,68,68,0.25)',  badge: '#dc2626', text: '#fff' },
-                      Medium: { bg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.25)', badge: '#d97706', text: '#fff' },
-                      Low:    { bg: 'rgba(34,197,94,0.07)',  border: 'rgba(34,197,94,0.25)',  badge: '#16a34a', text: '#fff' },
-                    }
-                    const c = severityColors[risk.severity] || severityColors.Medium
-                    return (
-                      <div key={i} style={{
-                        background: c.bg,
-                        border: `1px solid ${c.border}`,
-                        borderRadius: 10,
-                        padding: '16px 18px',
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <div style={{ marginTop: 28 }}>
+                  {/* Results header */}
+                  <div style={{ marginBottom: 22 }}>
+                    <div style={{
+                      fontFamily: F, fontSize: 11, fontWeight: 800, color: TEAL,
+                      textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8,
+                    }}>
+                      Risk report
+                    </div>
+                    <h3 style={{
+                      fontFamily: F, fontSize: 20, fontWeight: 800, color: NAVY,
+                      letterSpacing: '-0.4px', lineHeight: 1.3, margin: '0 0 8px',
+                    }}>
+                      {riskResults.length} hiring risks identified for: {riskRoleTitle}
+                    </h3>
+                    <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', lineHeight: 1.6, margin: 0 }}>
+                      These are the risks built into this role that your hiring process needs to test for.
+                    </p>
+                  </div>
+
+                  {/* Risk cards */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {riskResults.map((risk, i) => {
+                      const severityColors = {
+                        High:   { bar: '#EF4444', tint: 'rgba(239,68,68,0.06)',  border: 'rgba(239,68,68,0.18)',  badge: '#DC2626', icon: '#EF4444' },
+                        Medium: { bar: '#F59E0B', tint: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.18)', badge: '#D97706', icon: '#F59E0B' },
+                        Low:    { bar: '#22C55E', tint: 'rgba(34,197,94,0.06)',  border: 'rgba(34,197,94,0.18)',  badge: '#16A34A', icon: '#22C55E' },
+                      }
+                      const c = severityColors[risk.severity] || severityColors.Medium
+                      return (
+                        <div key={i} style={{
+                          background: c.tint,
+                          border: `1px solid ${c.border}`,
+                          borderLeft: `6px solid ${c.bar}`,
+                          borderRadius: 12,
+                          padding: '20px 22px',
+                          position: 'relative',
+                          boxShadow: '0 2px 10px rgba(15,33,55,0.04)',
+                        }}>
+                          {/* Severity badge top right */}
                           <span style={{
-                            fontFamily: F, fontSize: 10.5, fontWeight: 800, color: c.text,
-                            background: c.badge, borderRadius: 5, padding: '3px 9px',
-                            textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0,
+                            position: 'absolute', top: 16, right: 18,
+                            fontFamily: F, fontSize: 10.5, fontWeight: 800, color: '#fff',
+                            background: c.badge, borderRadius: 5, padding: '4px 10px',
+                            textTransform: 'uppercase', letterSpacing: '0.08em',
                           }}>
                             {risk.severity}
                           </span>
-                          <span style={{ fontFamily: F, fontSize: 14.5, fontWeight: 700, color: NAVY }}>
-                            {risk.title}
-                          </span>
+
+                          {/* Title row with shield icon */}
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10, paddingRight: 80 }}>
+                            <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c.icon} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                              <line x1="12" y1="9" x2="12" y2="13" />
+                              <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            <h4 style={{
+                              fontFamily: F, fontSize: 18, fontWeight: 800, color: NAVY,
+                              letterSpacing: '-0.2px', lineHeight: 1.35, margin: 0,
+                            }}>
+                              {risk.title}
+                            </h4>
+                          </div>
+                          <p style={{
+                            fontFamily: F, fontSize: 15, color: '#374151',
+                            lineHeight: 1.75, margin: 0, paddingLeft: 34,
+                          }}>
+                            {risk.explanation}
+                          </p>
                         </div>
-                        <p style={{ fontFamily: F, fontSize: 13.5, color: '#374151', lineHeight: 1.65, margin: 0 }}>
-                          {risk.explanation}
-                        </p>
-                      </div>
-                    )
-                  })}
-                  <div style={{ marginTop: 8, textAlign: 'center' }}>
-                    <p style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', marginBottom: 14 }}>
-                      PRODICTA tests candidates directly against risks like these before you make an offer.
+                      )
+                    })}
+                  </div>
+
+                  {/* Closing context + CTA */}
+                  <div style={{ marginTop: 28, padding: '24px 24px 22px', background: '#fff', border: `1px solid ${TEAL}33`, borderRadius: 12, textAlign: 'center' }}>
+                    <p style={{ fontFamily: F, fontSize: 14.5, color: '#374151', lineHeight: 1.65, margin: '0 0 6px' }}>
+                      PRODICTA's work simulations are designed to test candidates against exactly these risks.
                     </p>
+                    <p style={{ fontFamily: F, fontSize: 13.5, color: '#5e6b7f', lineHeight: 1.6, margin: '0 0 18px' }}>
+                      Every scenario is built from your job description.
+                    </p>
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 14 }}>
+                      See how PRODICTA tests for these exact risks
+                    </div>
                     <a href="/login" style={{
-                      fontFamily: F, fontSize: 14, fontWeight: 700, color: NAVY,
+                      fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY,
                       background: TEAL, textDecoration: 'none',
-                      padding: '11px 28px', borderRadius: 9, display: 'inline-block',
-                    }}>
+                      padding: '13px 32px', borderRadius: 10, display: 'inline-block',
+                      transition: 'transform 0.15s, box-shadow 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,191,165,0.35)' }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
                       Start assessing candidates
                     </a>
                   </div>
