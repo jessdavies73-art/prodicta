@@ -1293,8 +1293,7 @@ export default function LandingPage() {
                 limit: '30 assessments/mo',
                 desc: 'For growing teams hiring at volume.',
                 features: ['30 assessments per month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking tools', 'Archive and outcomes tracking', 'Priority email support'],
-                highlight: true,
-                badge: 'MOST POPULAR',
+                highlight: false,
               },
               {
                 name: 'Unlimited',
@@ -1302,7 +1301,8 @@ export default function LandingPage() {
                 limit: 'Unlimited assessments',
                 desc: 'For high-volume hiring with no limits.',
                 features: ['Unlimited assessments', 'Everything in Professional', 'Agency features', 'Placement risk scores', 'Document upload and send', 'Accountability records'],
-                highlight: false,
+                highlight: true,
+                badge: 'BEST VALUE',
               },
             ].map((p, i) => (
               <Reveal key={p.name} delay={i * 80}>
