@@ -287,7 +287,7 @@ function SignUpForm() {
       const data = await res.json()
 
       if (data.error) {
-        setError(data.error)
+        setError(`${data.error} [${data.type || 'unknown'} / ${data.code || 'unknown'} / ${data.decline_code || 'none'}]`)
         setLoading(false)
         return
       }
@@ -336,7 +336,7 @@ function SignUpForm() {
       // Payment succeeded without SCA
       setDone(true)
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.')
+      setError(err?.message || 'An unexpected error occurred. Please try again.')
       setLoading(false)
     }
   }

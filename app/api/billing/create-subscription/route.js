@@ -141,8 +141,7 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true })
   } catch (err) {
-    console.error('create-subscription error:', err)
-    console.log('[billing] ERROR:', err.message, err.type)
+    console.log('[billing] FULL ERROR:', err.message, err.type, err.code, err.decline_code);
 
     try {
       const stripe = getStripeClient()
@@ -152,9 +151,11 @@ export async function POST(request) {
       console.error('Stripe rollback error:', rollbackErr)
     }
 
-    if (err.type === 'StripeCardError') {
-      return NextResponse.json({ error: err.message }, { status: 402 })
-    }
-    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
+    return Response.json({
+      error: err.message || 'Payment could not be completed',
+      type: err.type || 'unknown',
+      code: err.code || 'unknown',
+      decline_code: err.decline_code || 'none'
+    }, { status: 402 });
   }
 }
