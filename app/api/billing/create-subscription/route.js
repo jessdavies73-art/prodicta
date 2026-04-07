@@ -35,15 +35,16 @@ async function createSupabaseUser({ adminClient, email, password, companyName, a
 }
 
 export async function POST(request) {
+  let currentStep = 'init'
   let stripeCustomerId    = null
   let stripeSubscriptionId = null
-  let currentStep = 'init'
 
   console.log('[billing] create-subscription called')
 
   try {
-    currentStep = 'parsing-request'
-    const { email, password, companyName, accountType, plan, paymentMethodId } = await request.json()
+    currentStep = 'parse-body'
+    const body = await request.json()
+    const { email, password, companyName, accountType, plan, paymentMethodId } = body
 
     if (!email || !password || !companyName || !accountType || !plan || !paymentMethodId) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
