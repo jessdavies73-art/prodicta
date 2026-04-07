@@ -651,10 +651,11 @@ export default function DemoCandidatePage({ params }) {
                     const roleType = detectRoleCategory(candidate?.assessments?.role_title, candidate?.assessments?.job_description)
                     const bm = ROLE_BENCHMARKS[roleType] || ROLE_BENCHMARKS.general
                     const diff = score - bm.avg
+                    const titleLabel = candidate?.assessments?.role_title || 'Similar'
                     return (
                       <div style={{ marginTop: 10, textAlign: 'center' }}>
                         <div style={{ fontFamily: F, fontSize: 10.5, color: TX3, marginBottom: 5 }}>
-                          {bm.label} avg: {bm.avg}
+                          {titleLabel} roles avg: {bm.avg}
                         </div>
                         <div style={{ position: 'relative', height: 5, background: '#e4e9f0', borderRadius: 3, width: 120, margin: '0 auto' }}>
                           <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${Math.min(score, 100)}%`, background: sc(score), borderRadius: 3 }} />
