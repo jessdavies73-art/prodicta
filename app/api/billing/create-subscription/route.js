@@ -38,6 +38,8 @@ export async function POST(request) {
   let stripeCustomerId    = null
   let stripeSubscriptionId = null
 
+  console.log('[billing] create-subscription called')
+
   try {
     const { email, password, companyName, accountType, plan, paymentMethodId } = await request.json()
 
@@ -140,6 +142,7 @@ export async function POST(request) {
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('create-subscription error:', err)
+    console.log('[billing] ERROR:', err.message, err.type)
 
     try {
       const stripe = getStripeClient()
