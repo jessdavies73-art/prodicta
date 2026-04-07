@@ -101,7 +101,9 @@ Return ONLY valid JSON. No preamble, no markdown.
       "reason": "One sentence reason."
     }
   ]
-}`
+}
+
+FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in the output. Use commas, full stops, or rewrite the sentence instead.`
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const message = await client.messages.create({

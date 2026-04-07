@@ -80,7 +80,9 @@ The three scenario types must be: "Core Task", "Pressure Test", "Judgment Call"
 
 Skills must be chosen only from: Communication, Problem solving, Prioritisation, Leadership, Negotiation, Client management, Judgment, Strategy, Analysis, Crisis management, People management, Technical communication, Stakeholder management, Conflict resolution
 
-Write in UK English throughout. No Americanisms. Pull everything from the JD.`
+Write in UK English throughout. No Americanisms. Pull everything from the JD.
+
+FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in the output. Use commas, full stops, or rewrite the sentence instead.`
 
     const prompt = isQuick ? `You are a specialist assessment designer for UK businesses. Your job is to create TWO rapid work simulation scenarios for this role. These are for a 15-minute rapid assessment - they must be tightly focused on the highest-priority skills from the job description.
 
@@ -136,7 +138,9 @@ The two scenario types must be: "Core Task", "Pressure Test"
 
 Skills must be chosen only from: Communication, Problem solving, Prioritisation, Leadership, Negotiation, Client management, Judgment, Strategy, Analysis, Crisis management, People management, Technical communication, Stakeholder management, Conflict resolution
 
-Write in UK English throughout. No Americanisms.` : isStandard ? standard3Prompt : `You are a specialist assessment designer for UK businesses. Your job is to create four work simulation scenarios that test whether this specific hire will succeed, last, and fit.
+Write in UK English throughout. No Americanisms.
+
+FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in the output. Use commas, full stops, or rewrite the sentence instead.` : isStandard ? standard3Prompt : `You are a specialist assessment designer for UK businesses. Your job is to create four work simulation scenarios that test whether this specific hire will succeed, last, and fit.
 
 These are NOT hypothetical exercises or personality tests. Each scenario must be built from actual tasks, responsibilities, and requirements listed in the job description. The candidate should feel like they are already in the role on a Tuesday morning, doing real work.
 
@@ -281,7 +285,9 @@ The four scenario types must be: "Core Task", "Pressure Test", "Judgment Call", 
 
 Skills must be chosen only from: Communication, Problem solving, Prioritisation, Leadership, Negotiation, Client management, Judgment, Strategy, Analysis, Crisis management, People management, Technical communication, Stakeholder management, Conflict resolution
 
-Write in UK English throughout. No Americanisms. No generic scenarios. No abstract situations. Pull everything from the JD.`
+Write in UK English throughout. No Americanisms. No generic scenarios. No abstract situations. Pull everything from the JD.
+
+FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in the output. Use commas, full stops, or rewrite the sentence instead.`
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',

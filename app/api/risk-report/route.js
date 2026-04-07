@@ -38,7 +38,9 @@ Return ONLY a JSON object with no preamble, no explanation, no markdown:
   ]
 }
 
-There must be exactly 3 risks. Severity must be one of: High, Medium, Low. Write in UK English. Be specific to this role, not generic. Frame every risk as a property of the role and the hiring process, never as a prediction about a candidate.`
+There must be exactly 3 risks. Severity must be one of: High, Medium, Low. Write in UK English. Be specific to this role, not generic. Frame every risk as a property of the role and the hiring process, never as a prediction about a candidate.
+
+FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in the output. Use commas, full stops, or rewrite the sentence instead.`
       }]
     })
 
