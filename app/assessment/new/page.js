@@ -178,6 +178,9 @@ export default function NewAssessmentPage() {
   // Context questions
   const [contextAnswers, setContextAnswers] = useState({})
   const [accountType, setAccountType] = useState('employer')
+  const [smartQuestions, setSmartQuestions] = useState(null) // null = not yet loaded
+  const [smartLoading, setSmartLoading] = useState(false)
+  const smartCacheRef = useRef({ key: '', questions: null })
 
   useEffect(() => {
     const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
@@ -249,6 +252,42 @@ export default function NewAssessmentPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detectedSeniority])
 
+  // Fetch role-specific Smart Role Context questions when role+JD are ready (debounced)
+  useEffect(() => {
+    if (jd.length < 50 || roleTitle.trim().length === 0) {
+      setSmartQuestions(null)
+      return
+    }
+    const key = `${accountType}::${roleTitle.trim().toLowerCase()}::${jd.length}::${jd.slice(0, 200)}`
+    if (smartCacheRef.current.key === key && smartCacheRef.current.questions) {
+      setSmartQuestions(smartCacheRef.current.questions)
+      return
+    }
+    let cancelled = false
+    const timer = setTimeout(async () => {
+      setSmartLoading(true)
+      try {
+        const res = await fetch('/api/assessment/context-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role_title: roleTitle, job_description: jd, account_type: accountType }),
+        })
+        const data = await res.json()
+        if (cancelled) return
+        if (Array.isArray(data?.questions) && data.questions.length > 0) {
+          smartCacheRef.current = { key, questions: data.questions }
+          setSmartQuestions(data.questions)
+          setContextAnswers({})
+        }
+      } catch (_) {
+        // fall back silently to hardcoded questions
+      } finally {
+        if (!cancelled) setSmartLoading(false)
+      }
+    }, 900)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [roleTitle, jd, accountType])
+
   const setWeight = (skill, val) => {
     const n = Math.max(0, Math.min(100, Number(val)))
     setWeights(prev => ({ ...prev, [skill]: n }))
@@ -260,7 +299,9 @@ export default function NewAssessmentPage() {
     setError('')
     setLoading(true)
     try {
-      const contextQs = accountType === 'agency' ? AGENCY_QUESTIONS : EMPLOYER_QUESTIONS
+      const contextQs = smartQuestions && smartQuestions.length > 0
+        ? smartQuestions
+        : (accountType === 'agency' ? AGENCY_QUESTIONS : EMPLOYER_QUESTIONS)
       const serialized = serializeContextAnswers(contextQs, contextAnswers)
       const res = await fetch('/api/assessment/generate', {
         method: 'POST',
@@ -474,7 +515,9 @@ export default function NewAssessmentPage() {
 
           {/* Smart Role Context */}
           {jd.length >= 50 && roleTitle.trim().length > 0 && (() => {
-            const contextQs = accountType === 'agency' ? AGENCY_QUESTIONS : EMPLOYER_QUESTIONS
+            const contextQs = smartQuestions && smartQuestions.length > 0
+              ? smartQuestions
+              : (accountType === 'agency' ? AGENCY_QUESTIONS : EMPLOYER_QUESTIONS)
             const toggleMulti = (qId, option) => setContextAnswers(prev => {
               const current = Array.isArray(prev[qId]) ? prev[qId] : []
               return { ...prev, [qId]: current.includes(option) ? current.filter(o => o !== option) : [...current, option] }
@@ -489,7 +532,9 @@ export default function NewAssessmentPage() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', fontFamily: F }}>Smart Role Context</span>
-                    <span style={{ fontSize: 11.5, color: '#94a1b3', fontFamily: F }}>(all optional)</span>
+                    <span style={{ fontSize: 11.5, color: '#94a1b3', fontFamily: F }}>
+                      {smartLoading ? 'tailoring questions to this role...' : '(all optional)'}
+                    </span>
                   </div>
                   <span style={{
                     fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
