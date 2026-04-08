@@ -1018,6 +1018,7 @@ export default function CandidateReportPage({ params }) {
   const [reportSections, setReportSections] = useState(DEFAULT_SECTIONS)
   const [reportSectionsModal, setReportSectionsModal] = useState(false)
   const [savingReportPrefs, setSavingReportPrefs] = useState(false)
+  const [liveBenchmark, setLiveBenchmark] = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -1107,6 +1108,38 @@ export default function CandidateReportPage({ params }) {
     }
     load()
   }, [params.candidateId])
+
+  // Live benchmark fetch: query average overall_score across all results for the same role category
+  useEffect(() => {
+    if (!candidate || !results) return
+    let cancelled = false
+    async function loadLive() {
+      try {
+        const supabase = createClient()
+        const stored = candidate?.assessments?.detected_role_type
+        const roleType = (stored && ROLE_BENCHMARKS[stored])
+          ? stored
+          : detectRoleCategory(candidate?.assessments?.role_title, candidate?.assessments?.job_description)
+        if (!roleType) return
+        const { data } = await supabase
+          .from('results')
+          .select('overall_score, candidates!inner(assessments!inner(detected_role_type))')
+          .eq('candidates.assessments.detected_role_type', roleType)
+          .not('overall_score', 'is', null)
+          .limit(2000)
+        if (cancelled) return
+        const rows = (data || []).filter(r => typeof r.overall_score === 'number')
+        if (rows.length >= 10) {
+          const avg = Math.round(rows.reduce((s, r) => s + r.overall_score, 0) / rows.length)
+          setLiveBenchmark({ roleType, count: rows.length, avg, source: 'live' })
+        } else {
+          setLiveBenchmark({ roleType, count: rows.length, avg: null, source: 'estimate' })
+        }
+      } catch (_) {}
+    }
+    loadLive()
+    return () => { cancelled = true }
+  }, [candidate, results])
 
   // Scroll listener for sticky nav active section tracking
   useEffect(() => {
@@ -1544,17 +1577,22 @@ export default function CandidateReportPage({ params }) {
                         const roleType = (stored && ROLE_BENCHMARKS[stored])
                           ? stored
                           : detectRoleCategory(candidate?.assessments?.role_title, candidate?.assessments?.job_description)
-                        const bm = ROLE_BENCHMARKS[roleType] || ROLE_BENCHMARKS.general
-                        const diff = score - bm.avg
+                        const seeded = ROLE_BENCHMARKS[roleType] || ROLE_BENCHMARKS.general
+                        const useLive = liveBenchmark && liveBenchmark.source === 'live' && liveBenchmark.avg != null
+                        const avgVal = useLive ? liveBenchmark.avg : seeded.avg
+                        const diff = score - avgVal
                         const titleLabel = candidate?.assessments?.role_title || 'Similar'
+                        const sourceLabel = useLive
+                          ? `based on ${liveBenchmark.count} assessments`
+                          : 'platform estimate'
                         return (
                           <div style={{ marginTop: 10, textAlign: 'center' }}>
                             <div style={{ fontFamily: F, fontSize: 10.5, color: TX3, marginBottom: 5 }}>
-                              {titleLabel} roles avg: {bm.avg}
+                              {titleLabel} roles avg: {avgVal} ({sourceLabel})
                             </div>
                             <div style={{ position: 'relative', height: 5, background: '#e4e9f0', borderRadius: 3, width: 120, margin: '0 auto' }}>
                               <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${Math.min(score, 100)}%`, background: sc(score), borderRadius: 3 }} />
-                              <div style={{ position: 'absolute', top: -4, left: `${bm.avg}%`, width: 2, height: 13, background: '#94a3b8', borderRadius: 1, transform: 'translateX(-50%)' }} />
+                              <div style={{ position: 'absolute', top: -4, left: `${avgVal}%`, width: 2, height: 13, background: '#94a3b8', borderRadius: 1, transform: 'translateX(-50%)' }} />
                             </div>
                             <div style={{ fontFamily: F, fontSize: 10, color: diff > 0 ? GRN : diff < 0 ? RED : TX3, marginTop: 4 }}>
                               {diff > 0 ? `+${diff} above average` : diff < 0 ? `${diff} below average` : 'At average'}
@@ -2005,6 +2043,88 @@ export default function CandidateReportPage({ params }) {
                     </Card>
                   </ScrollReveal>
                 )}
+
+                {/* ══════════════════════════════════════════════════
+                    COUNTER-OFFER RESILIENCE
+                ══════════════════════════════════════════════════ */}
+                {results?.counter_offer_resilience != null && (() => {
+                  const cor = results.counter_offer_resilience
+                  const high = cor >= 65
+                  const mid = cor >= 45 && cor < 65
+                  const accent = high ? GRN : mid ? AMB : RED
+                  const accentBg = high ? GRNBG : mid ? AMBBG : REDBG
+                  return (
+                    <ScrollReveal delay={60}>
+                      <Card style={{ marginBottom: 20, borderLeft: `5px solid ${accent}`, background: `linear-gradient(135deg, ${accentBg} 0%, #fff 60%)` }}>
+                        <SectionHeading tooltip="A measure of whether the candidate's motivation looks genuine, or whether they may waver if their current employer counter-offers.">
+                          Counter-Offer Resilience
+                        </SectionHeading>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 10 }}>
+                          <div style={{ fontFamily: F, fontSize: 38, fontWeight: 800, color: accent, lineHeight: 1 }}>{cor}%</div>
+                          <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            {high ? 'Strong commitment' : mid ? 'Mixed signals' : 'Exploratory motivation'}
+                          </div>
+                        </div>
+                        {results.counter_offer_narrative && (
+                          <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.7, margin: 0 }}>
+                            {results.counter_offer_narrative}
+                          </p>
+                        )}
+                      </Card>
+                    </ScrollReveal>
+                  )
+                })()}
+
+                {/* ══════════════════════════════════════════════════
+                    CULTURE FIT
+                ══════════════════════════════════════════════════ */}
+                {results?.culture_fit && (results.culture_fit.score != null || (Array.isArray(results.culture_fit.points) && results.culture_fit.points.length > 0)) && (() => {
+                  const cf = results.culture_fit
+                  const sv = cf.score ?? 0
+                  const high = sv >= 70
+                  const mid = sv >= 50 && sv < 70
+                  const accent = high ? GRN : mid ? AMB : RED
+                  return (
+                    <ScrollReveal delay={60}>
+                      <Card style={{ marginBottom: 20 }}>
+                        <SectionHeading tooltip="How the candidate's natural working style aligns with the role environment across structure, collaboration, pace, communication and process.">
+                          Culture Fit
+                        </SectionHeading>
+                        {cf.score != null && (
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 12 }}>
+                            <div style={{ fontFamily: F, fontSize: 38, fontWeight: 800, color: accent, lineHeight: 1 }}>{cf.score}%</div>
+                            <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                              {high ? 'Strong alignment' : mid ? 'Partial alignment' : 'Notable friction'}
+                            </div>
+                          </div>
+                        )}
+                        {Array.isArray(cf.points) && cf.points.length > 0 && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {cf.points.map((p, i) => {
+                              const isFriction = p.type === 'friction'
+                              const c = isFriction ? AMB : TEALD
+                              const bg = isFriction ? AMBBG : TEALLT
+                              const bd = isFriction ? AMBBD : `${TEAL}55`
+                              return (
+                                <div key={i} style={{
+                                  background: bg, border: `1px solid ${bd}`,
+                                  borderLeft: `5px solid ${c}`, borderRadius: 10, padding: '12px 16px',
+                                }}>
+                                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: c, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+                                    {isFriction ? 'Friction' : 'Alignment'}
+                                  </div>
+                                  <div style={{ fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.65 }}>
+                                    {p.text}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </Card>
+                    </ScrollReveal>
+                  )
+                })()}
 
                 {/* ══════════════════════════════════════════════════
                     EXPECTATION ALIGNMENT

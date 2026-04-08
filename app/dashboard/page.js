@@ -245,6 +245,7 @@ export default function DashboardPage() {
   const [activePlacements, setActivePlacements] = useState([])
   const [candidateOutcomes, setCandidateOutcomes] = useState([])
   const [probationHires, setProbationHires] = useState([])
+  const [accuracyData, setAccuracyData] = useState(null)
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -329,6 +330,41 @@ export default function DashboardPage() {
             .select('candidate_id, outcome')
             .eq('user_id', user.id)
           setCandidateOutcomes(outcomes || [])
+
+          // Prediction accuracy: join outcomes with results.pass_probability
+          try {
+            const { data: outcomesWithResults } = await supabase
+              .from('candidate_outcomes')
+              .select('candidate_id, outcome, candidates!inner(results(pass_probability))')
+              .eq('user_id', user.id)
+            const judged = []
+            let pending = 0
+            for (const row of (outcomesWithResults || [])) {
+              const r = Array.isArray(row.candidates?.results) ? row.candidates.results[0] : row.candidates?.results
+              const pp = r?.pass_probability
+              const oc = (row.outcome || '').toLowerCase()
+              const passed = oc === 'passed_probation' || oc === 'still_employed' || oc === 'still_in_probation'
+              const failed = oc === 'failed_probation' || oc === 'left_early' || oc === 'dismissed'
+              if (pp == null || (!passed && !failed)) { pending++; continue }
+              if (pp >= 70 && passed) judged.push(true)
+              else if (pp < 50 && failed) judged.push(true)
+              else if (pp >= 70 && failed) judged.push(false)
+              else if (pp < 50 && passed) judged.push(false)
+              else pending++
+            }
+            const total = judged.length
+            const correct = judged.filter(Boolean).length
+            const incorrect = total - correct
+            if (total >= 3) {
+              setAccuracyData({
+                total,
+                correct,
+                incorrect,
+                pending,
+                accuracy: Math.round((correct / total) * 100),
+              })
+            }
+          } catch (_) {}
         } catch (_) {
           // Table may not exist for all accounts
         }
@@ -838,6 +874,40 @@ export default function DashboardPage() {
         {/* ── Active Placements (agency only) ── */}
         {profile?.account_type === 'agency' && (
           <ActivePlacements placements={activePlacements} router={router} />
+        )}
+
+        {/* ── Prediction Accuracy ── */}
+        {accuracyData && (
+          <div style={{
+            ...cs,
+            marginBottom: 20,
+            padding: '20px 24px',
+            borderTop: `3px solid ${TEAL}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Ic name="shield" size={14} color={TEAL} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Prediction Accuracy
+              </span>
+            </div>
+            <div style={{ fontFamily: F, fontSize: 16, color: TX, marginBottom: 14, lineHeight: 1.55 }}>
+              PRODICTA prediction accuracy across your {accuracyData.total} {accuracyData.total === 1 ? 'hire' : 'hires'} with logged outcomes: <strong style={{ color: TEAL, fontSize: 22 }}>{accuracyData.accuracy}%</strong>
+            </div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ background: GRNBG, border: `1px solid ${GRNBD}`, borderRadius: 8, padding: '10px 16px', flex: 1, minWidth: 140 }}>
+                <div style={{ fontSize: 11, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Correct</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: GRN, fontFamily: FM }}>{accuracyData.correct}</div>
+              </div>
+              <div style={{ background: REDBG, border: `1px solid #fecaca`, borderRadius: 8, padding: '10px 16px', flex: 1, minWidth: 140 }}>
+                <div style={{ fontSize: 11, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Incorrect</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: RED, fontFamily: FM }}>{accuracyData.incorrect}</div>
+              </div>
+              <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '10px 16px', flex: 1, minWidth: 140 }}>
+                <div style={{ fontSize: 11, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Pending</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: TX2, fontFamily: FM }}>{accuracyData.pending}</div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ── Hiring Risk Overview ── */}
