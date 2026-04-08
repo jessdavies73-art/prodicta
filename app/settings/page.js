@@ -168,6 +168,9 @@ export default function SettingsPage() {
   const [savingAlerts, setSavingAlerts] = useState(false)
   const [alertsToast, setAlertsToast] = useState(null)
   const [alertThresholdFocused, setAlertThresholdFocused] = useState(false)
+  const [candidateFeedbackEnabled, setCandidateFeedbackEnabled] = useState(true)
+  const [savingFeedback, setSavingFeedback] = useState(false)
+  const [feedbackToast, setFeedbackToast] = useState(null)
 
   // Password state
   const [newPassword, setNewPassword] = useState('')
@@ -196,6 +199,7 @@ export default function SettingsPage() {
         setCompanySize(prof?.company_size || '')
         setWeights({ ...DEFAULT_WEIGHTS, ...(prof?.default_weightings || {}) })
         setAlertThreshold(prof?.alert_threshold ?? 50)
+        setCandidateFeedbackEnabled(prof?.candidate_feedback_enabled !== false)
 
         // Monthly assessment count for billing tab
         const now = new Date()
@@ -275,6 +279,24 @@ export default function SettingsPage() {
       setPasswordToast({ type: 'error', message: err.message })
     } finally {
       setSavingPassword(false)
+    }
+  }
+
+  async function handleToggleFeedback(next) {
+    setSavingFeedback(true)
+    setFeedbackToast(null)
+    setCandidateFeedbackEnabled(next)
+    try {
+      const supabase = createClient()
+      const { error: e } = await supabase.from('users').update({ candidate_feedback_enabled: next }).eq('id', profile.id)
+      if (e) throw e
+      setFeedbackToast({ type: 'success', message: next ? 'Candidate feedback enabled.' : 'Candidate feedback disabled.' })
+      setTimeout(() => setFeedbackToast(null), 3500)
+    } catch (err) {
+      setFeedbackToast({ type: 'error', message: err.message })
+      setCandidateFeedbackEnabled(!next)
+    } finally {
+      setSavingFeedback(false)
     }
   }
 
@@ -908,6 +930,40 @@ export default function SettingsPage() {
               <p style={{ margin: '12px 0 0', fontSize: 12, color: TX3, fontFamily: F, lineHeight: 1.6 }}>
                 Alert emails are sent to your account email address immediately after scoring completes.
               </p>
+            </div>
+
+            <div style={{ ...cs }}>
+              <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX, display: 'flex', alignItems: 'center', gap: 8 }}>
+                Candidate feedback page
+                <InfoTooltip text="When enabled, candidates can view a development-focused feedback page after their assessment. It shows three strengths and two positive development suggestions. It never shows scores, watch-outs, or hiring decisions." />
+              </h2>
+              <p style={{ margin: '0 0 18px', fontSize: 13, color: TX2, lineHeight: 1.65 }}>
+                Give every candidate a positive, development-focused feedback page after they complete their assessment. They see three strengths and two suggestions for further development. They never see scores, watch-outs, or any hint of the hiring decision.
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 18px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleToggleFeedback(!candidateFeedbackEnabled)}
+                  disabled={savingFeedback}
+                  aria-pressed={candidateFeedbackEnabled}
+                  style={{
+                    width: 44, height: 24, borderRadius: 999,
+                    background: candidateFeedbackEnabled ? TEAL : '#cbd5e1',
+                    border: 'none', position: 'relative', cursor: savingFeedback ? 'wait' : 'pointer',
+                    transition: 'background 0.15s', flexShrink: 0,
+                  }}
+                >
+                  <span style={{
+                    position: 'absolute', top: 2, left: candidateFeedbackEnabled ? 22 : 2,
+                    width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                    transition: 'left 0.15s', boxShadow: '0 1px 3px rgba(15,33,55,0.2)',
+                  }} />
+                </button>
+                <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX }}>
+                  {candidateFeedbackEnabled ? 'Enabled (default)' : 'Disabled'}
+                </div>
+                {feedbackToast && <Toast message={feedbackToast.message} type={feedbackToast.type} />}
+              </div>
             </div>
           </div>
         )}

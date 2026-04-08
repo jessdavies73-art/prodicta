@@ -867,6 +867,28 @@ export default function LandingPage() {
             </div>
           </Reveal>
 
+          <Reveal delay={60}>
+            <div style={{
+              maxWidth: 760, margin: '0 auto 40px',
+              background: '#fff', border: `1.5px solid ${TEAL}33`, borderRadius: 14,
+              padding: '22px 28px', display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', justifyContent: 'center',
+              boxShadow: '0 4px 18px rgba(15,33,55,0.05)',
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: F, fontSize: 32, fontWeight: 800, color: TEAL, lineHeight: 1 }}>Under 1 hour</div>
+                <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 4 }}>With PRODICTA</div>
+              </div>
+              <div style={{ fontFamily: F, fontSize: 14, color: '#94a1b3', fontWeight: 600 }}>vs</div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: F, fontSize: 32, fontWeight: 800, color: '#94a1b3', lineHeight: 1 }}>3 to 4 weeks</div>
+                <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 4 }}>Traditional process</div>
+              </div>
+              <div style={{ flexBasis: '100%', textAlign: 'center', fontFamily: F, fontSize: 13, color: '#6b7a90', marginTop: 4 }}>
+                From job description to hiring decision.
+              </div>
+            </div>
+          </Reveal>
+
           <div style={{ position: 'relative' }}>
             <div className="hiw-connector" />
             <div className="hiw-steps">
@@ -885,6 +907,7 @@ export default function LandingPage() {
                   n: 3,
                   title: 'Candidates complete real work simulations',
                   body: 'No personality tests. No tick-box questionnaires. Candidates face the exact situations they would face in their first 90 days. A difficult stakeholder. Competing deadlines. A team that needs managing. Whether you are assessing a customer service advisor or a finance director, the scenarios match the role. How they respond tells you more than any interview ever could.',
+                  pill: '100% mobile optimised',
                 },
                 {
                   n: 4,
@@ -897,6 +920,16 @@ export default function LandingPage() {
                     <div className="hiw-step-circle">{s.n}</div>
                     <div>
                       <h3 style={{ fontFamily: F, fontSize: 15.5, fontWeight: 700, color: NAVY, marginBottom: 10, letterSpacing: '-0.2px' }}>{s.title}</h3>
+                      {s.pill && (
+                        <div style={{
+                          display: 'inline-block', fontFamily: F, fontSize: 11, fontWeight: 700,
+                          color: TEAL, background: `${TEAL}18`, border: `1px solid ${TEAL}55`,
+                          borderRadius: 20, padding: '3px 10px', marginBottom: 10,
+                          textTransform: 'uppercase', letterSpacing: '0.05em',
+                        }}>
+                          {s.pill}
+                        </div>
+                      )}
                       <p style={{ fontFamily: F, fontSize: 13.5, color: '#6b7a90', lineHeight: 1.75, margin: 0 }}>{s.body}</p>
                     </div>
                   </div>
@@ -1004,6 +1037,11 @@ export default function LandingPage() {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx={9} cy={7} r={4}/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
                 title: 'A plan for their first six weeks',
                 body: "Every report includes a structured onboarding plan tailored to this candidate's specific gaps. Hand it to the line manager on day one.",
+              },
+              {
+                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x={5} y={2} width={14} height={20} rx={2} ry={2}/><line x1={12} y1={18} x2={12} y2={18}/></svg>,
+                title: 'Mobile Optimised',
+                body: 'Candidates complete assessments on any device. No app to download. Perfect for sectors where candidates are rarely at a desk, from care workers to site managers.',
               },
             ].map((f, i) => (
               <Reveal key={f.title} delay={i * 60}>

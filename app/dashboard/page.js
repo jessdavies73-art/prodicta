@@ -830,13 +830,29 @@ export default function DashboardPage() {
                 Average time to insight
               </span>
             </div>
-            <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: TEALD, lineHeight: 1, marginBottom: 6 }}>
-              {avgMinutesToInsight !== null ? fmtInsight(avgMinutesToInsight) : '-'}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap', marginBottom: 8 }}>
+              <div>
+                <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: TEALD, lineHeight: 1 }}>
+                  {avgMinutesToInsight !== null ? fmtInsight(avgMinutesToInsight) : '-'}
+                </div>
+                <div style={{ fontSize: 10.5, color: TEALD, fontFamily: F, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 3 }}>
+                  PRODICTA
+                </div>
+              </div>
+              <div style={{ fontSize: 14, color: TX3, fontFamily: F, fontWeight: 600 }}>vs</div>
+              <div>
+                <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 700, color: TX3, lineHeight: 1 }}>
+                  3 to 4 weeks
+                </div>
+                <div style={{ fontSize: 10.5, color: TX3, fontFamily: F, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 3 }}>
+                  Traditional process
+                </div>
+              </div>
             </div>
             <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>
               {timedCandidates.length > 0
-                ? `From invite to scored result, across ${timedCandidates.length} candidate${timedCandidates.length !== 1 ? 's' : ''}`
-                : 'No data yet'}
+                ? `From JD to hiring decision, across ${timedCandidates.length} candidate${timedCandidates.length !== 1 ? 's' : ''}`
+                : 'From JD to hiring decision'}
             </div>
           </div>
 

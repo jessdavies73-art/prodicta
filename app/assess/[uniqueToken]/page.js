@@ -134,7 +134,7 @@ function ErrorPage({ message }) {
 }
 
 // ─── State: Already completed ─────────────────────────────────────────────────
-function AlreadyCompletedPage({ candidateName }) {
+function AlreadyCompletedPage({ candidateName, token }) {
   return (
     <>
       <NavBar candidateName={candidateName} />
@@ -147,9 +147,21 @@ function AlreadyCompletedPage({ candidateName }) {
           <h2 style={{ fontFamily: F, color: TX, fontSize: 22, fontWeight: 700, margin: '0 0 12px' }}>
             Already Submitted
           </h2>
-          <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: 0 }}>
+          <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 20px' }}>
             You have already completed this assessment. Thank you!
           </p>
+          {token && (
+            <a
+              href={`/assess/${token}/feedback`}
+              style={{
+                display: 'inline-block', background: '#00BFA5', color: '#fff',
+                padding: '10px 22px', borderRadius: 8, fontWeight: 700,
+                textDecoration: 'none', fontSize: 14, fontFamily: F,
+              }}
+            >
+              View your feedback
+            </a>
+          )}
         </Card>
       </CentredCard>
     </>
@@ -954,7 +966,7 @@ export default function AssessPage({ params }) {
   }
 
   if (uiState === 'error') return <ErrorPage message={errorMessage} />
-  if (uiState === 'already_complete') return <AlreadyCompletedPage candidateName={candidate?.name} />
+  if (uiState === 'already_complete') return <AlreadyCompletedPage candidateName={candidate?.name} token={params.uniqueToken} />
   if (uiState === 'intro') return (
     <IntroPage
       candidate={candidate}
