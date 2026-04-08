@@ -1058,8 +1058,8 @@ export default function LandingPage() {
             {[
               {
                 tag: 'For Recruitment Agencies',
-                headline: 'Your competitors send CVs. You send proof.',
-                body: 'Every candidate you place comes with a professional AI assessment report. Your client sees their score, how they handle pressure, where the risks are, and exactly what to ask in the interview. No other agency offers this.',
+                headline: 'Your competitors send CVs. You send hiring certainty.',
+                body: 'Every candidate you present comes with a professional AI assessment that shows exactly how they will perform on the job, before your client even interviews them. You are not just submitting profiles. You are removing risk, proving value, and making the decision obvious.',
                 points: [
                   'Placement Risk Score predicts if this hire will last beyond probation',
                   'Professional reports with scores, pressure-fit analysis, strengths, concerns, and evidence',
@@ -1074,8 +1074,8 @@ export default function LandingPage() {
               },
               {
                 tag: 'For Direct Employers',
-                headline: 'Stop gambling on interviews. Start predicting outcomes.',
-                body: '77% of employers say probation reveals more about capability than interviews. PRODICTA gives you that probation insight before you make the offer. Every candidate is tested in realistic scenarios specific to your role.',
+                headline: 'Know who will perform before you hire them.',
+                body: 'Every candidate is tested in real-world scenarios tailored to your role, giving you clear, evidence-backed insight into how they will actually perform on the job.',
                 points: [
                   'Predict probation outcomes before you make the offer',
                   'Pressure-Fit Assessment reveals how candidates handle conflict, deadlines, and competing priorities',
