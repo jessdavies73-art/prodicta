@@ -54,6 +54,14 @@ export async function POST(request) {
     else if (sectorHas('electrician', 'plumber', 'gas engineer', 'maintenance technician', 'site manager', 'facilities manager', 'tradesperson', 'on site', 'engineer technician')) sector = 'trades'
     else if (sectorHas('restaurant manager', 'hotel receptionist', 'bar manager', 'retail manager', 'store supervisor', 'duty manager', 'hospitality', 'front of house', 'hotel ', 'shop floor', 'merchand', 'concession')) sector = 'hospitality_retail'
     else if (sectorHas('paralegal', 'legal secretary', 'conveyanc', 'solicitor', 'legal assistant', 'compliance officer', 'barrister', 'law firm')) sector = 'legal'
+    else if (sectorHas('software developer', 'software engineer', 'devops', 'qa tester', 'technical lead', 'product manager', 'it support', 'systems administrator', 'sysadmin', 'data analyst', 'ux designer', 'scrum master', 'cto', 'backend', 'frontend', 'fullstack', 'full stack', 'sre', 'data engineer', 'data scientist')) sector = 'technology'
+    else if (sectorHas('accounts assistant', 'management accountant', 'financial controller', 'credit controller', 'payroll manager', 'finance director', 'bookkeeper', 'tax advisor', 'auditor', 'fp&a', 'accountant', 'reconciliation', 'month end', 'month-end')) sector = 'finance'
+    else if (sectorHas('marketing manager', 'content writer', 'social media manager', 'graphic designer', 'brand manager', 'digital marketing', 'pr manager', 'communications officer', 'campaign manager', 'copywriter', 'creative director')) sector = 'marketing'
+    else if (sectorHas('sales executive', 'business development manager', 'account manager', 'sales director', 'inside sales', 'key account manager', 'telesales', 'bdr', 'sdr', 'pipeline', 'sales pipeline', 'new business sales')) sector = 'sales'
+    else if (sectorHas('hr advisor', 'hr manager', 'people partner', 'talent acquisition', 'hr director', 'recruitment coordinator', 'learning and development', 'l&d manager', 'people operations')) sector = 'hr'
+    else if (sectorHas('operations manager', 'logistics coordinator', 'supply chain', 'production manager', 'quality manager', 'warehouse manager', 'fleet manager', 'operations director')) sector = 'operations'
+    else if (sectorHas('charity', 'non-profit', 'nonprofit', 'fundraiser', 'volunteer coordinator', 'impact manager', 'trustee', 'third sector')) sector = 'charity'
+    else if (sectorHas('quantity surveyor', 'estate agent', 'property manager', 'building surveyor', 'contracts manager', 'site manager', 'project manager construction', 'rics', 'planning consent')) sector = 'property_construction'
 
     const SECTOR_GUIDANCE = {
       healthcare: `SECTOR: HEALTHCARE / NHS.
@@ -79,6 +87,38 @@ Never include strategy decks, sales pipelines, board reporting or marketing camp
       hospitality_retail: `SECTOR: HOSPITALITY AND RETAIL.
 Build scenarios from: customer complaints, team management during busy periods, handling difficult customers, stock or cash discrepancies, health and safety, covering for absent staff, and upselling or service standards. Use realistic shop, restaurant, bar or hotel settings, named team members and customers, and recognisable pressures (a no-show shift, a complaint that escalates, a busy service hour).
 Never include corporate strategy, board reporting or B2B sales pipelines.`,
+
+      technology: `SECTOR: TECHNOLOGY.
+Build scenarios from: debugging under pressure, stakeholder communication about technical issues, prioritising bug fixes versus feature work, code review disagreements, incident response, estimating delivery timelines, explaining technical concepts to non-technical stakeholders, and handling scope creep. Use realistic team and product settings, named colleagues (PM, tech lead, designer, support), and recognisable pressures (production incident, sprint slipping, blocked PR, vague brief).
+Avoid clinical, classroom or shop-floor framing.`,
+
+      finance: `SECTOR: FINANCE AND ACCOUNTING.
+Build scenarios from: month-end pressure, audit preparation, variance analysis, stakeholder queries about numbers, reconciliation discrepancies, regulatory compliance, fraud or irregularity detection, and balancing accuracy with deadlines. Use realistic finance team settings, named colleagues (FC, FD, auditor, budget holder), and recognisable pressures (close week, missing supporting docs, pushed-back deadline).
+Avoid clinical, classroom or trades framing.`,
+
+      marketing: `SECTOR: MARKETING AND CREATIVE.
+Build scenarios from: campaign deadline pressure, stakeholder feedback on creative work, budget constraints, balancing multiple projects, data-driven decisions versus creative instinct, client or internal brief changes, and measuring ROI. Use realistic agency or in-house marketing settings, named stakeholders (brand lead, designer, sales, agency partner), and recognisable pressures (last-minute brief change, copy not approved, paid budget cut).
+Avoid clinical, classroom or trades framing.`,
+
+      sales: `SECTOR: SALES AND BUSINESS DEVELOPMENT.
+Build scenarios from: pipeline management, handling rejection, client relationship management, negotiation pressure, hitting targets under pressure, upselling, dealing with competitor threats, and managing client expectations. Use realistic sales settings, named prospects and accounts, and recognisable pressures (deal at risk, quarter end, undercut by competitor).
+Avoid clinical, classroom or care-setting framing.`,
+
+      hr: `SECTOR: HR AND PEOPLE.
+Build scenarios from: employee grievances, disciplinary processes, redundancy conversations, recruitment decisions, policy interpretation, supporting managers with difficult conversations, TUPE transfers, and absence management. Use realistic HR settings, named employees and managers, and recognisable pressures (formal process timing, sensitive disclosures, line manager wanting a shortcut).
+Score policy adherence and confidentiality higher than commercial framing.`,
+
+      operations: `SECTOR: OPERATIONS AND LOGISTICS.
+Build scenarios from: supply chain disruptions, scheduling conflicts, quality control decisions, health and safety incidents, managing shift patterns, dealing with suppliers, and cost reduction pressure. Use realistic operations settings, named colleagues and suppliers, and recognisable pressures (late delivery, broken kit, staff shortage on a shift).
+Avoid clinical, classroom or pure office framing.`,
+
+      charity: `SECTOR: CHARITY AND NON-PROFIT.
+Build scenarios from: funding pressure, volunteer management, safeguarding, stakeholder reporting, balancing mission with financial reality, trustee communication, and beneficiary complaints. Use realistic third-sector settings, named volunteers, beneficiaries, trustees, and funders, and recognisable pressures (grant deadline, beneficiary in crisis, volunteer no-show).
+Treat safeguarding as a high-priority dimension. Avoid hard commercial framing that ignores mission.`,
+
+      property_construction: `SECTOR: PROPERTY AND CONSTRUCTION.
+Build scenarios from: project delays, health and safety on site, client expectations, budget overruns, subcontractor management, planning disputes, and defect resolution. Use realistic site or property settings, named clients and subcontractors, and recognisable pressures (programme slipping, defect found at handover, planning objection).
+Health and safety must be treated as non-negotiable.`,
 
       legal: `SECTOR: LEGAL.
 Build scenarios from: client confidentiality, managing case deadlines, dealing with difficult clients, prioritising competing matters, billing accuracy, working with counsel, and compliance decisions. Use realistic firm settings, named clients and matters, and recognisable pressures (limitation deadlines, missing client documents, fee earner under pressure).
@@ -383,13 +423,8 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
     const t = `${role_title} ${jdLower}`.toLowerCase()
     const has = (...words) => words.some(w => t.includes(w))
     let detected_role_type = 'general'
-    if (sector === 'social_care') detected_role_type = 'social_care'
-    else if (sector === 'education') detected_role_type = 'education'
-    else if (sector === 'public_sector') detected_role_type = 'public_sector'
-    else if (sector === 'trades') detected_role_type = 'trades'
-    else if (sector === 'hospitality_retail') detected_role_type = 'hospitality_retail'
-    else if (sector === 'healthcare') detected_role_type = 'healthcare'
-    else if (sector === 'legal') detected_role_type = 'legal'
+    if (sector !== 'general') detected_role_type = sector
+    else if (false) {} // keep legacy fallthroughs below intact
     else if (has('legal counsel', 'solicitor', 'paralegal', 'barrister', 'compliance officer')) detected_role_type = 'legal'
     else if (has('nurse', 'carer', 'care worker', 'support worker', 'healthcare', 'clinical', 'midwife', 'safeguarding')) detected_role_type = 'healthcare'
     else if (has('finance director', 'accountant', 'bookkeeper', 'accounts assistant', 'finance manager', 'fp&a', 'controller', 'auditor', 'tax ', 'payroll')) detected_role_type = 'finance'
