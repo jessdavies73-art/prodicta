@@ -2662,6 +2662,25 @@ export default function CandidateReportPage({ params }) {
                           </div>
                         )}
 
+                        {/* Plagiarism / shared template warning */}
+                        {integrity.pattern_match && (
+                          <div style={{
+                            background: `${RED}14`, border: `1px solid ${RED}35`,
+                            borderLeft: `4px solid ${RED}`, borderRadius: 8,
+                            padding: '12px 14px', marginBottom: redFlags.length > 0 ? 12 : 0,
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                              <Ic name="alert" size={14} color={RED} />
+                              <span style={{ fontSize: 11.5, fontWeight: 800, color: RED, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                Pattern match detected ({integrity.pattern_match.similarity}% similarity)
+                              </span>
+                            </div>
+                            <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.7)', margin: 0, lineHeight: 1.6 }}>
+                              {integrity.pattern_match.message}
+                            </p>
+                          </div>
+                        )}
+
                         {/* Red flags */}
                         {redFlags.length > 0 && (
                           <div>

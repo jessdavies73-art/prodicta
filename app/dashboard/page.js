@@ -937,8 +937,9 @@ export default function DashboardPage() {
           <ProbationTracker hires={probationHires} router={router} />
         )}
 
-        {/* ── ERA 2025 Risk Calculator / Placement Risk ── */}
+        {/* ── ERA 2025 Risk Calculator / Placement Risk + Cost of Vacancy ── */}
         <RiskCalculator profile={profile} completed={completed} />
+        <CostOfVacancyCard profile={profile} />
 
         {/* ── Bottom grid: table + assessments panel ── */}
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
@@ -1882,6 +1883,163 @@ function PlacementRiskCard({ completed = [] }) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function CostOfVacancyCard({ profile }) {
+  const isAgency = profile?.account_type === 'agency'
+  const [salary, setSalary] = useState(isAgency ? '6000' : '35000')
+  const [days, setDays] = useState('14')
+  const [salFocused, setSalFocused] = useState(false)
+  const [daysFocused, setDaysFocused] = useState(false)
+  const [showBreakdown, setShowBreakdown] = useState(false)
+
+  const sal = Math.max(0, parseInt(String(salary).replace(/[^0-9]/g, '')) || 0)
+  const d   = Math.max(0, parseInt(String(days).replace(/[^0-9]/g, '')) || 0)
+
+  // Employer: lost productivity per working day (annual salary / 260)
+  const dailyCost = isAgency ? 0 : Math.round(sal / 260)
+  const totalCost = isAgency ? 0 : dailyCost * d
+
+  // Agency: fee at risk grows with elapsed days, capped at the full fee.
+  // Treat 30 days as the point at which the client is most likely to walk.
+  const urgencyFactor = Math.min(1, d / 30)
+  const feeAtRisk    = isAgency ? Math.round(sal * urgencyFactor) : 0
+
+  function gbp(n) { return '£' + n.toLocaleString('en-GB') }
+
+  const inputStyle = focused => ({
+    fontFamily: F, fontSize: 15, fontWeight: 700, width: '100%',
+    padding: '10px 14px', borderRadius: 8,
+    background: 'rgba(255,255,255,0.08)', color: '#fff',
+    border: `1.5px solid ${focused ? TEAL : 'rgba(255,255,255,0.18)'}`,
+    outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s',
+  })
+
+  const headlineFigure = isAgency ? feeAtRisk : totalCost
+  const headlineLabel  = isAgency ? 'Estimated lost revenue' : 'Estimated cost of vacancy'
+  const subline = isAgency
+    ? `This role has been open for ${d} day${d !== 1 ? 's' : ''}.`
+    : `This role has been empty for ${d} day${d !== 1 ? 's' : ''}.`
+
+  return (
+    <div style={{
+      background: '#0f2137',
+      border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: 14, overflow: 'hidden', marginBottom: 24,
+    }}>
+      <div style={{ padding: '20px 24px' }}>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+            Cost of vacancy
+          </div>
+          <div style={{ width: 36, height: 2, background: TEAL, borderRadius: 2 }} />
+        </div>
+
+        <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ flex: '0 0 auto' }}>
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: F }}>
+              {isAgency ? 'Expected placement fee' : 'Annual salary'}
+            </label>
+            <div style={{ position: 'relative', width: 160 }}>
+              <span style={{
+                position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
+                fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.4)', pointerEvents: 'none',
+              }}>£</span>
+              <input
+                type="text"
+                value={salary}
+                onChange={e => setSalary(e.target.value.replace(/[^0-9]/g, ''))}
+                onFocus={() => setSalFocused(true)}
+                onBlur={() => setSalFocused(false)}
+                style={{ ...inputStyle(salFocused), paddingLeft: 26 }}
+                placeholder={isAgency ? '6000' : '35000'}
+              />
+            </div>
+          </div>
+          <div style={{ flex: '0 0 auto' }}>
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: F }}>
+              Days {isAgency ? 'open' : 'vacant'}
+            </label>
+            <input
+              type="text"
+              value={days}
+              onChange={e => setDays(e.target.value.replace(/[^0-9]/g, ''))}
+              onFocus={() => setDaysFocused(true)}
+              onBlur={() => setDaysFocused(false)}
+              style={{ ...inputStyle(daysFocused), width: 100 }}
+              placeholder="14"
+            />
+          </div>
+          <div style={{ paddingBottom: 2 }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+              {headlineLabel}
+            </div>
+            <div style={{ fontFamily: FM, fontSize: 30, fontWeight: 800, color: TEAL, lineHeight: 1 }}>
+              {gbp(headlineFigure)}
+            </div>
+            <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', marginTop: 3 }}>
+              {subline}
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setShowBreakdown(!showBreakdown)}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 12.5, fontWeight: 700, color: TEAL, fontFamily: F,
+            padding: 0, display: 'flex', alignItems: 'center', gap: 5,
+          }}
+        >
+          {showBreakdown ? 'Hide breakdown' : 'Show breakdown'}
+          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
+            style={{ transform: showBreakdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+
+        {showBreakdown && (
+          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {isAgency ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Placement fee</div>
+                    <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>Expected fee on placement</div>
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color: '#fff' }}>{gbp(sal)}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Urgency factor</div>
+                    <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>Risk client goes elsewhere after 30 days</div>
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color: AMB }}>{Math.round(urgencyFactor * 100)}%</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Daily lost productivity</div>
+                    <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>Annual salary divided by 260 working days</div>
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color: '#fff' }}>{gbp(dailyCost)}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Days vacant</div>
+                    <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>Working days the role has been empty</div>
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color: AMB }}>{d}</div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
