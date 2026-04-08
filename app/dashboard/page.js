@@ -247,6 +247,7 @@ export default function DashboardPage() {
   const [probationHires, setProbationHires] = useState([])
   const [accuracyData, setAccuracyData] = useState(null)
   const [overrideStats, setOverrideStats] = useState(null)
+  const [pendingCheckins, setPendingCheckins] = useState([])
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -371,6 +372,18 @@ export default function DashboardPage() {
                 accuracy: Math.round((correct / total) * 100),
               })
             }
+          } catch (_) {}
+
+          // Pending outcome check-ins (reminders awaiting response)
+          try {
+            const { data: pending } = await supabase
+              .from('outcome_reminders')
+              .select('id, reminder_month, sent_at, candidate_outcome_id, candidate_outcomes!inner(candidate_id, user_id, candidates(id, name, assessment_id, assessments(role_title)))')
+              .is('responded_at', null)
+              .eq('candidate_outcomes.user_id', user.id)
+              .order('sent_at', { ascending: false })
+              .limit(20)
+            setPendingCheckins(pending || [])
           } catch (_) {}
         } catch (_) {
           // Table may not exist for all accounts
@@ -929,6 +942,46 @@ export default function DashboardPage() {
                 <div style={{ fontSize: 11, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Pending</div>
                 <div style={{ fontSize: 22, fontWeight: 800, color: TX2, fontFamily: FM }}>{accuracyData.pending}</div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Pending check-ins ── */}
+        {pendingCheckins.length > 0 && (
+          <div style={{
+            ...cs, marginBottom: 20, padding: '20px 24px',
+            borderTop: `3px solid ${TEAL}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Ic name="clock" size={14} color={TEAL} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Pending check-ins: {pendingCheckins.length}
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {pendingCheckins.slice(0, 8).map(r => {
+                const co = r.candidate_outcomes
+                const cand = co?.candidates
+                if (!cand) return null
+                return (
+                  <a
+                    key={r.id}
+                    href={`/assessment/${cand.assessment_id}/candidate/${cand.id}`}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 14px', borderRadius: 8,
+                      background: BG, border: `1px solid ${BD}`, textDecoration: 'none',
+                      color: TX, fontFamily: F, fontSize: 13.5,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 700, color: TX }}>{cand.name}</div>
+                      <div style={{ fontSize: 12, color: TX3 }}>{cand.assessments?.role_title || ''} &middot; {r.reminder_month}-month review</div>
+                    </div>
+                    <div style={{ fontSize: 11, color: TEALD, fontWeight: 700 }}>Open report</div>
+                  </a>
+                )
+              })}
             </div>
           </div>
         )}

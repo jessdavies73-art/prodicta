@@ -1616,6 +1616,19 @@ export default function CandidateReportPage({ params }) {
                   )}
 
                   <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {existingOutcome && (
+                      <button
+                        onClick={() => router.push(`/assessment/${params.id}/candidate/${params.candidateId}/copilot`)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: TEAL, padding: '9px 16px',
+                        }}
+                      >
+                        <Ic name="award" size={15} color={TEAL} />
+                        Probation Co-pilot
+                      </button>
+                    )}
                     {results && (profile?.account_type === 'employer' || profile?.account_type === 'agency') && (
                       <button onClick={() => setOutcomeModal(true)} style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
