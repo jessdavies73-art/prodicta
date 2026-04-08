@@ -62,6 +62,7 @@ export async function POST(request) {
     else if (sectorHas('operations manager', 'logistics coordinator', 'supply chain', 'production manager', 'quality manager', 'warehouse manager', 'fleet manager', 'operations director')) sector = 'operations'
     else if (sectorHas('charity', 'non-profit', 'nonprofit', 'fundraiser', 'volunteer coordinator', 'impact manager', 'trustee', 'third sector')) sector = 'charity'
     else if (sectorHas('quantity surveyor', 'estate agent', 'property manager', 'building surveyor', 'contracts manager', 'site manager', 'project manager construction', 'rics', 'planning consent')) sector = 'property_construction'
+    else if (sectorHas('receptionist', 'office administrator', 'office admin', 'admin assistant', 'administrative assistant', 'data entry', 'personal assistant', ' pa ', 'executive assistant', 'secretary', 'office manager', 'front of house admin', 'front desk')) sector = 'admin_reception'
 
     const SECTOR_GUIDANCE = {
       healthcare: `SECTOR: HEALTHCARE / NHS.
@@ -119,6 +120,10 @@ Treat safeguarding as a high-priority dimension. Avoid hard commercial framing t
       property_construction: `SECTOR: PROPERTY AND CONSTRUCTION.
 Build scenarios from: project delays, health and safety on site, client expectations, budget overruns, subcontractor management, planning disputes, and defect resolution. Use realistic site or property settings, named clients and subcontractors, and recognisable pressures (programme slipping, defect found at handover, planning objection).
 Health and safety must be treated as non-negotiable.`,
+
+      admin_reception: `SECTOR: ADMINISTRATION AND RECEPTION.
+Build scenarios from: managing a busy front desk with multiple demands at once, handling a difficult visitor or caller, prioritising incoming requests, diary management conflicts, dealing with confidential information, supporting multiple managers with competing deadlines, and handling a complaint when the right person is unavailable. Use realistic office or reception settings, named visitors, callers and managers, and recognisable pressures (phone ringing while a visitor is at the desk, two managers wanting the same slot, a courier interrupting).
+These are often entry-level roles. Keep scenarios straightforward and practical, not strategic. Test multitasking, communication, common sense and reliability. Do NOT expect leadership, commercial thinking, P&L awareness or board-level framing. A receptionist scenario should feel like a busy Monday morning, not a board meeting.`,
 
       legal: `SECTOR: LEGAL.
 Build scenarios from: client confidentiality, managing case deadlines, dealing with difficult clients, prioritising competing matters, billing accuracy, working with counsel, and compliance decisions. Use realistic firm settings, named clients and matters, and recognisable pressures (limitation deadlines, missing client documents, fee earner under pressure).
