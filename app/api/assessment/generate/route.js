@@ -17,6 +17,78 @@ export async function POST(request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
+    // ── Unsuitable role detection ───────────────────────────────────────────────
+    // Block roles that are primarily physical, repetitive, or short-term temporary
+    // before we burn any tokens. Friendly message returned to the UI.
+    const unsuitableText = `${role_title} ${job_description}`.toLowerCase()
+    const UNSUITABLE_PATTERNS = [
+      /\bwarehouse operative\b/,
+      /\bpicker\b/,
+      /\bpacker\b/,
+      /\bpicker\s*\/?\s*packer\b/,
+      /\bdelivery driver\b/,
+      /\blorry driver\b/,
+      /\bhgv driver\b/,
+      /\bhgv\b/,
+      /\bcleaner\b/,
+      /\blabourer\b/,
+      /\btemporary\b/,
+      /\bseasonal\b/,
+      /\bagency temp\b/,
+    ]
+    if (UNSUITABLE_PATTERNS.some(p => p.test(unsuitableText))) {
+      return NextResponse.json({
+        error: 'unsuitable_role',
+        message: 'This role type may not be suitable for scenario-based assessment. PRODICTA works best for roles involving decision-making, communication, and problem-solving. Roles that are primarily physical, repetitive, or short-term temporary may not benefit from this type of assessment.',
+      }, { status: 422 })
+    }
+
+    // ── Sector detection (drives sector-specific scenario guidance) ─────────────
+    const sectorText = `${role_title} ${job_description}`.toLowerCase()
+    const sectorHas = (...words) => words.some(w => sectorText.includes(w))
+    let sector = 'general'
+    if (sectorHas('nurse', 'midwife', 'paramedic', 'healthcare assistant', 'hca ', 'physiotherap', 'occupational therap', 'radiograph', 'pharmacist', 'ward manager', 'clinical lead', 'mental health support', 'nhs', 'a&e', 'a & e', 'emergency department')) sector = 'healthcare'
+    else if (sectorHas('care worker', 'senior carer', 'support worker', 'domiciliary', 'registered manager', 'care assistant', 'residential care', 'supported living', 'safeguarding adults')) sector = 'social_care'
+    else if (sectorHas('teaching assistant', 'hlta', 'sen support', 'school administrator', 'pastoral lead', 'cover supervisor', 'teacher', 'classroom', 'pupil', 'safeguarding children', 'sendco', 'send ')) sector = 'education'
+    else if (sectorHas('council officer', 'benefits advisor', 'planning officer', 'social worker', 'housing officer', 'civil servant', 'local authority', 'central government', 'public sector')) sector = 'public_sector'
+    else if (sectorHas('electrician', 'plumber', 'gas engineer', 'maintenance technician', 'site manager', 'facilities manager', 'tradesperson', 'on site', 'engineer technician')) sector = 'trades'
+    else if (sectorHas('restaurant manager', 'hotel receptionist', 'bar manager', 'retail manager', 'store supervisor', 'duty manager', 'hospitality', 'front of house', 'hotel ', 'shop floor', 'merchand', 'concession')) sector = 'hospitality_retail'
+    else if (sectorHas('paralegal', 'legal secretary', 'conveyanc', 'solicitor', 'legal assistant', 'compliance officer', 'barrister', 'law firm')) sector = 'legal'
+
+    const SECTOR_GUIDANCE = {
+      healthcare: `SECTOR: HEALTHCARE / NHS.
+Build scenarios from: patient safety decisions, safeguarding concerns, working under staffing pressure, handling difficult patients or families, escalation to senior clinicians, handover accuracy, infection control decisions, and prioritising competing patient needs. Use realistic ward, clinic or community settings, named colleagues (consultant, nurse in charge, ward manager, HCA), and recognisable NHS pressures (bed pressures, short staffing, missed breaks).
+DO NOT generate scenarios that require specific clinical knowledge such as drug dosages, dosing calculations, ECG interpretation, or differential diagnosis. Focus on decision making, communication, prioritisation and safeguarding. Never include sales pipelines, board presentations, P&L, KPIs or commercial targets.`,
+
+      social_care: `SECTOR: SOCIAL CARE.
+Build scenarios from: safeguarding vulnerable adults, lone working decisions, medication administration as a process (never clinical dosing), family communication, dignity and respect, reporting concerns, capacity assessments, and boundary setting with service users. Use realistic care settings (residential, supported living, domiciliary visits), named service users with brief context, and recognisable pressures (lone working, missed visits, family disagreements).
+Never include sales, pipelines, board presentations, KPIs, marketing or commercial strategy.`,
+
+      education: `SECTOR: EDUCATION.
+Build scenarios from: safeguarding children, managing disruptive behaviour, communicating with parents, supporting SEN pupils, working alongside teaching staff, reporting concerns, and adapting to unexpected changes in the school day. Use realistic primary or secondary school settings, named pupils and parents, and recognisable pressures (cover at short notice, parent complaints, behaviour incidents).
+Never include sales, pipelines, board presentations, commercial KPIs or P&L.`,
+
+      public_sector: `SECTOR: PUBLIC SECTOR / LOCAL GOVERNMENT.
+Build scenarios from: following policy and procedure, handling complaints from members of the public, data protection decisions, working across departments, prioritising statutory deadlines, and politically sensitive communications. Use realistic council, government department or housing settings, named residents or applicants, and recognisable pressures (statutory deadlines, FOI requests, ward councillor enquiries).
+Never include sales targets, commercial pipelines or private sector P&L language.`,
+
+      trades: `SECTOR: TRADES AND TECHNICAL.
+Build scenarios from: health and safety decisions, client communication, prioritising multiple jobs across the day, dealing with unexpected problems on site, working independently, quality versus speed decisions, and reporting faults or concerns. Use realistic site or customer settings, named clients, and recognisable pressures (parts not arriving, customer not happy, second job overrunning).
+Never include strategy decks, sales pipelines, board reporting or marketing campaigns.`,
+
+      hospitality_retail: `SECTOR: HOSPITALITY AND RETAIL.
+Build scenarios from: customer complaints, team management during busy periods, handling difficult customers, stock or cash discrepancies, health and safety, covering for absent staff, and upselling or service standards. Use realistic shop, restaurant, bar or hotel settings, named team members and customers, and recognisable pressures (a no-show shift, a complaint that escalates, a busy service hour).
+Never include corporate strategy, board reporting or B2B sales pipelines.`,
+
+      legal: `SECTOR: LEGAL.
+Build scenarios from: client confidentiality, managing case deadlines, dealing with difficult clients, prioritising competing matters, billing accuracy, working with counsel, and compliance decisions. Use realistic firm settings, named clients and matters, and recognisable pressures (limitation deadlines, missing client documents, fee earner under pressure).
+Avoid clinical, classroom, or shop-floor framing.`,
+    }
+
+    const sectorGuidanceBlock = SECTOR_GUIDANCE[sector]
+      ? `\n\nSECTOR-SPECIFIC GUIDANCE (you MUST follow this):\n${SECTOR_GUIDANCE[sector]}\n\nEvery scenario must feel like a real day in this specific job. A nurse must never get a scenario about managing a sales pipeline. A care worker must never get a scenario about board presentations. Read the JD and write scenarios that the actual person doing this job would recognise as their normal week.\n`
+      : ''
+
     // Call Claude API
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -289,10 +361,17 @@ Write in UK English throughout. No Americanisms. No generic scenarios. No abstra
 
 FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in the output. Use commas, full stops, or rewrite the sentence instead.`
 
+    const finalPrompt = sectorGuidanceBlock
+      ? prompt.replace(
+          'FORMATTING RULE: Never use em dash',
+          `${sectorGuidanceBlock}\nFORMATTING RULE: Never use em dash`
+        )
+      : prompt
+
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: finalPrompt }]
     })
 
     const content = message.content[0].text.trim()
@@ -304,7 +383,14 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
     const t = `${role_title} ${jdLower}`.toLowerCase()
     const has = (...words) => words.some(w => t.includes(w))
     let detected_role_type = 'general'
-    if (has('legal counsel', 'solicitor', 'paralegal', 'barrister', 'compliance officer')) detected_role_type = 'legal'
+    if (sector === 'social_care') detected_role_type = 'social_care'
+    else if (sector === 'education') detected_role_type = 'education'
+    else if (sector === 'public_sector') detected_role_type = 'public_sector'
+    else if (sector === 'trades') detected_role_type = 'trades'
+    else if (sector === 'hospitality_retail') detected_role_type = 'hospitality_retail'
+    else if (sector === 'healthcare') detected_role_type = 'healthcare'
+    else if (sector === 'legal') detected_role_type = 'legal'
+    else if (has('legal counsel', 'solicitor', 'paralegal', 'barrister', 'compliance officer')) detected_role_type = 'legal'
     else if (has('nurse', 'carer', 'care worker', 'support worker', 'healthcare', 'clinical', 'midwife', 'safeguarding')) detected_role_type = 'healthcare'
     else if (has('finance director', 'accountant', 'bookkeeper', 'accounts assistant', 'finance manager', 'fp&a', 'controller', 'auditor', 'tax ', 'payroll')) detected_role_type = 'finance'
     else if (has('sales', 'business development', 'account manager', 'account executive', 'pipeline', 'revenue', 'bdr', 'sdr')) detected_role_type = 'sales'

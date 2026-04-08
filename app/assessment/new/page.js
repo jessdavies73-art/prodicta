@@ -318,6 +318,7 @@ export default function NewAssessmentPage() {
       })
       const data = await res.json()
       if (data.id) { toast('Assessment created'); router.push(`/assessment/${data.id}`) }
+      else if (data.error === 'unsuitable_role') setError(data.message || 'This role type may not be suitable for scenario-based assessment.')
       else setError(data.error || 'Failed to generate')
     } catch {
       setError('Something went wrong. Please try again.')
