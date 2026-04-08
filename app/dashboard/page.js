@@ -246,6 +246,7 @@ export default function DashboardPage() {
   const [candidateOutcomes, setCandidateOutcomes] = useState([])
   const [probationHires, setProbationHires] = useState([])
   const [accuracyData, setAccuracyData] = useState(null)
+  const [overrideStats, setOverrideStats] = useState(null)
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -335,8 +336,14 @@ export default function DashboardPage() {
           try {
             const { data: outcomesWithResults } = await supabase
               .from('candidate_outcomes')
-              .select('candidate_id, outcome, candidates!inner(results(pass_probability))')
+              .select('candidate_id, outcome, override_warning, candidates!inner(results(pass_probability))')
               .eq('user_id', user.id)
+            // Override outcomes counter
+            const overrides = (outcomesWithResults || []).filter(r => r.override_warning === true)
+            const overrideFailed = overrides.filter(r => ['failed_probation', 'left_probation', 'dismissed', 'left_early'].includes((r.outcome || '').toLowerCase()))
+            if (overrides.length > 0) {
+              setOverrideStats({ total: overrides.length, failed: overrideFailed.length })
+            }
             const judged = []
             let pending = 0
             for (const row of (outcomesWithResults || [])) {
@@ -923,6 +930,27 @@ export default function DashboardPage() {
                 <div style={{ fontSize: 22, fontWeight: 800, color: TX2, fontFamily: FM }}>{accuracyData.pending}</div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ── Override Outcomes ── */}
+        {overrideStats && (
+          <div style={{
+            ...cs, marginBottom: 20, padding: '20px 24px',
+            borderTop: `3px solid ${RED}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Ic name="alert" size={14} color={RED} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Override outcomes
+              </span>
+            </div>
+            <div style={{ fontFamily: F, fontSize: 16, color: TX, marginBottom: 6, lineHeight: 1.55 }}>
+              You overrode PRODICTA warnings <strong style={{ color: RED, fontSize: 22 }}>{overrideStats.total}</strong> time{overrideStats.total === 1 ? '' : 's'}. <strong style={{ color: RED }}>{overrideStats.failed}</strong> of those hire{overrideStats.failed === 1 ? '' : 's'} {overrideStats.failed === 1 ? 'has' : 'have'} since failed.
+            </div>
+            <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: 0, lineHeight: 1.6 }}>
+              An override is recorded when you hire a candidate PRODICTA flagged as high risk (score below 55 or risk level High).
+            </p>
           </div>
         )}
 

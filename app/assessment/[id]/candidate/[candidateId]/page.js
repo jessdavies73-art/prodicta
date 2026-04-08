@@ -980,6 +980,8 @@ export default function CandidateReportPage({ params }) {
   // Outcome Tracking (employer only)
   const [outcomeModal, setOutcomeModal] = useState(false)
   const [selectedOutcome, setSelectedOutcome] = useState('')
+  const [confirmHireModal, setConfirmHireModal] = useState(false)
+  const [rerunPending, setRerunPending] = useState(false)
   const [outcomeDate, setOutcomeDate] = useState('')
   const [outcomeNoteText, setOutcomeNoteText] = useState('')
   const [outcomeClientName, setOutcomeClientName] = useState('')
@@ -1290,12 +1292,21 @@ export default function CandidateReportPage({ params }) {
     setNotes(prev => prev.filter(n => n.id !== noteId))
   }
 
-  async function logOutcome() {
+  async function logOutcome(skipHireConfirm = false) {
     if (!selectedOutcome || !user) return
+    // First-time log of any outcome means the candidate was hired. Force the
+    // hiring professional to confront the risk profile before persisting.
+    if (!skipHireConfirm && !existingOutcome) {
+      setConfirmHireModal(true)
+      return
+    }
     setSavingOutcome(true)
     setOutcomeError(null)
     const supabase = createClient()
+    const overrideWarning = !existingOutcome && results
+      && (results.overall_score < 55 || results.risk_level === 'High')
     const payload = {
+      override_warning: overrideWarning || undefined,
       candidate_id: params.candidateId,
       user_id: user.id,
       outcome: selectedOutcome,
@@ -1324,6 +1335,7 @@ export default function CandidateReportPage({ params }) {
     } else if (saved) {
       setExistingOutcome(saved)
       setOutcomeModal(false)
+      setConfirmHireModal(false)
     }
     setSavingOutcome(false)
   }
@@ -1625,6 +1637,53 @@ export default function CandidateReportPage({ params }) {
                       }}>
                         <Ic name="file" size={15} color={TEAL} />
                         Export Client Report
+                      </button>
+                    )}
+                    {results && (
+                      <button
+                        onClick={() => window.open(`/api/candidates/${params.candidateId}/certificate`, '_blank')}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: '#fff', border: `1.5px solid ${TEAL}55`, borderRadius: 8, cursor: 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px',
+                        }}
+                      >
+                        <Ic name="shield" size={15} color={TEALD} />
+                        Export Compliance Certificate
+                      </button>
+                    )}
+                    {results && (
+                      <button
+                        disabled={!!results.additional_scenario || rerunPending}
+                        onClick={async () => {
+                          if (results.additional_scenario || rerunPending) return
+                          if (!confirm('Generate one additional scenario for this candidate? They will receive a new email with a single extra task.')) return
+                          setRerunPending(true)
+                          try {
+                            const res = await fetch(`/api/candidates/${params.candidateId}/rerun`, { method: 'POST' })
+                            const data = await res.json()
+                            if (!res.ok) throw new Error(data?.error || 'Re-run failed')
+                            alert('Additional scenario sent to the candidate.')
+                            setResults(r => ({ ...r, additional_scenario: data.additional_scenario }))
+                          } catch (e) {
+                            alert(e.message)
+                          } finally {
+                            setRerunPending(false)
+                          }
+                        }}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: results.additional_scenario || rerunPending ? '#e2e8f0' : '#fff',
+                          border: `1.5px solid ${results.additional_scenario || rerunPending ? BD : `${TEAL}55`}`,
+                          borderRadius: 8,
+                          cursor: results.additional_scenario || rerunPending ? 'not-allowed' : 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700,
+                          color: results.additional_scenario || rerunPending ? TX3 : TEALD,
+                          padding: '9px 16px',
+                        }}
+                      >
+                        <Ic name="refresh" size={15} color={results.additional_scenario || rerunPending ? TX3 : TEALD} />
+                        {results.additional_scenario ? 'Re-run already used' : rerunPending ? 'Sending...' : 'Re-run Scenario'}
                       </button>
                     )}
                     {results && profile?.account_type === 'agency' && (
@@ -2043,6 +2102,61 @@ export default function CandidateReportPage({ params }) {
                     </Card>
                   </ScrollReveal>
                 )}
+
+                {/* ══════════════════════════════════════════════════
+                    ADDITIONAL SCENARIO (re-run)
+                ══════════════════════════════════════════════════ */}
+                {results?.additional_scenario && (() => {
+                  const ad = results.additional_scenario
+                  const status = ad.status || 'pending'
+                  const adScore = typeof ad.score === 'number' ? ad.score : null
+                  const accent = adScore == null ? AMB : adScore >= 75 ? GRN : adScore >= 50 ? AMB : RED
+                  return (
+                    <ScrollReveal delay={60}>
+                      <Card style={{ marginBottom: 20, borderLeft: `5px solid ${TEAL}` }}>
+                        <SectionHeading tooltip="An extra scenario sent to this candidate after their main assessment, to double-check a borderline call.">
+                          Additional Scenario
+                        </SectionHeading>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                          <span style={{
+                            fontFamily: F, fontSize: 11, fontWeight: 800,
+                            color: status === 'completed' ? TEALD : AMB,
+                            background: status === 'completed' ? TEALLT : AMBBG,
+                            border: `1px solid ${status === 'completed' ? TEAL : AMB}55`,
+                            padding: '3px 10px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: '0.05em',
+                          }}>
+                            {status === 'completed' ? 'Completed' : 'Awaiting candidate'}
+                          </span>
+                          {adScore != null && (
+                            <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: accent }}>
+                              {adScore}/100
+                            </span>
+                          )}
+                        </div>
+                        {ad.scenario?.title && (
+                          <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 6 }}>
+                            {ad.scenario.title}
+                          </div>
+                        )}
+                        {ad.scenario?.task && (
+                          <p style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.65, margin: '0 0 12px' }}>
+                            {ad.scenario.task}
+                          </p>
+                        )}
+                        {ad.narrative && (
+                          <p style={{ fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.7, margin: 0 }}>
+                            {ad.narrative}
+                          </p>
+                        )}
+                        {status !== 'completed' && (
+                          <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, marginTop: 10, lineHeight: 1.55 }}>
+                            The candidate has been emailed a link to complete this extra scenario. The result will appear here once they submit.
+                          </p>
+                        )}
+                      </Card>
+                    </ScrollReveal>
+                  )
+                })()}
 
                 {/* ══════════════════════════════════════════════════
                     COUNTER-OFFER RESILIENCE
@@ -4244,9 +4358,140 @@ export default function CandidateReportPage({ params }) {
         </div>
       )}
 
+      {/* ── CONFIRM HIRE MODAL ── */}
+      {confirmHireModal && results && (() => {
+        const score = results.overall_score ?? 0
+        const risk = results.risk_level || 'Unknown'
+        const conf = results.hiring_confidence?.score ?? null
+        const finalRisk = 100 - (conf ?? score)
+        const watchouts = (results.watchouts || []).slice(0, 2)
+        const isOverride = score < 55 || risk === 'High'
+        const accent = isOverride ? RED : score >= 75 ? GRN : AMB
+        const accentBg = isOverride ? REDBG : score >= 75 ? GRNBG : AMBBG
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1100, padding: 20,
+          }} onClick={() => setConfirmHireModal(false)}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: '#fff', borderRadius: 14, maxWidth: 560, width: '100%',
+              maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(15,33,55,0.35)',
+            }}>
+              <div style={{ padding: '24px 28px 18px', borderBottom: `1px solid ${BD}` }}>
+                <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: accent, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+                  Confirm hire decision
+                </div>
+                <h2 style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: NAVY, margin: 0 }}>
+                  Review the risk before you commit
+                </h2>
+              </div>
+              <div style={{ padding: '22px 28px' }}>
+                <div style={{ display: 'flex', gap: 16, marginBottom: 18, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 120, background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '12px 14px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Overall score</div>
+                    <div style={{ fontFamily: FM, fontSize: 24, fontWeight: 800, color: accent, marginTop: 4 }}>{score}/100</div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 120, background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '12px 14px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Risk level</div>
+                    <div style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: accent, marginTop: 4 }}>{risk}</div>
+                  </div>
+                  {conf != null && (
+                    <div style={{ flex: 1, minWidth: 120, background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '12px 14px' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hiring confidence</div>
+                      <div style={{ fontFamily: FM, fontSize: 24, fontWeight: 800, color: TEALD, marginTop: 4 }}>{conf}%</div>
+                    </div>
+                  )}
+                </div>
+
+                {watchouts.length > 0 && (
+                  <div style={{ marginBottom: 18 }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                      Top {watchouts.length} watch-out{watchouts.length > 1 ? 's' : ''}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {watchouts.map((w, i) => (
+                        <div key={i} style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderLeft: `4px solid ${AMB}`, borderRadius: 8, padding: '10px 14px' }}>
+                          <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, lineHeight: 1.5 }}>{w.text}</div>
+                          {w.if_ignored && (
+                            <div style={{ fontFamily: F, fontSize: 12, color: TX2, marginTop: 4, lineHeight: 1.55 }}>
+                              <strong>If unmanaged:</strong> {w.if_ignored}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ background: accentBg, border: `1px solid ${accent}55`, borderLeft: `4px solid ${accent}`, borderRadius: 10, padding: '14px 16px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: accent, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>
+                    Final hiring risk: {finalRisk}% ({isOverride ? 'High' : score >= 75 ? 'Low' : 'Moderate'})
+                  </div>
+                  <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0, lineHeight: 1.65 }}>
+                    {watchouts[0]?.text ? <><strong>Key risk:</strong> {watchouts[0].text}. </> : null}
+                    {watchouts[0]?.if_ignored ? <><strong>If unmanaged:</strong> {watchouts[0].if_ignored}. </> : null}
+                    <strong>Recommendation:</strong> {isOverride ? 'PRODICTA flagged this candidate as high risk. Proceed only if you have a structured mitigation plan.' : score >= 75 ? 'Proceed with confidence and use the onboarding plan to set them up for success.' : 'Proceed with a structured onboarding plan addressing the key risks above.'}
+                  </p>
+                </div>
+
+                {isOverride && (
+                  <p style={{ fontFamily: F, fontSize: 12, color: RED, marginTop: 12, lineHeight: 1.55 }}>
+                    By confirming, you are overriding a high-risk warning. PRODICTA will record this as an override outcome.
+                  </p>
+                )}
+              </div>
+              <div style={{ padding: '16px 28px 22px', borderTop: `1px solid ${BD}`, display: 'flex', gap: 10 }}>
+                <button
+                  onClick={() => logOutcome(true)}
+                  disabled={savingOutcome}
+                  style={{
+                    flex: 1, padding: '12px 0', borderRadius: 9, border: 'none',
+                    background: TEAL, color: NAVY,
+                    fontFamily: F, fontSize: 14, fontWeight: 800,
+                    cursor: savingOutcome ? 'wait' : 'pointer',
+                  }}
+                >
+                  {savingOutcome ? 'Saving...' : 'Confirm Hire'}
+                </button>
+                <button
+                  onClick={() => setConfirmHireModal(false)}
+                  style={{
+                    flex: 1, padding: '12px 0', borderRadius: 9,
+                    border: `1.5px solid ${BD}`, background: 'transparent',
+                    color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  Go back
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* ── CLIENT REPORT ── */}
       {candidate && results && (
         <div className="client-report-container" style={{ fontFamily: F, color: TX, padding: '40px 48px', maxWidth: 800, margin: '0 auto' }}>
+          {/* Override outcome banner */}
+          {existingOutcome?.override_warning && ['failed_probation', 'left_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
+            <div style={{
+              marginBottom: 24, padding: '16px 20px',
+              background: REDBG, border: `1px solid #fecaca`,
+              borderLeft: `5px solid ${RED}`, borderRadius: '0 12px 12px 0',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <Ic name="alert" size={15} color={RED} />
+                <span style={{ fontFamily: F, fontSize: 12, fontWeight: 800, color: RED, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Override outcome: predicted risk has materialised
+                </span>
+              </div>
+              <p style={{ fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.65, margin: 0 }}>
+                PRODICTA flagged this candidate as high risk before hiring. The hiring decision overrode that warning, and the predicted risk has now materialised in the logged outcome.
+              </p>
+            </div>
+          )}
+
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, paddingBottom: 20, borderBottom: `2px solid ${NAVY}` }}>
             <div>
