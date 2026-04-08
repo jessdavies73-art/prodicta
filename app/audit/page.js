@@ -23,9 +23,15 @@ export default function AuditPage() {
   const [companyName, setCompanyName] = useState('')
   const [email, setEmail] = useState('')
   const [jds, setJds] = useState(['', '', ''])
+  const [hiresPerYear, setHiresPerYear] = useState('20')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+
+  const hiresN = Math.max(0, parseInt(String(hiresPerYear).replace(/[^0-9]/g, '')) || 0)
+  const projectedCost = hiresN * 0.30 * 38400
+  const prodictaSaving = Math.round(projectedCost * 0.47)
+  const fmt = n => '£' + Math.round(n).toLocaleString('en-GB')
 
   function updateJd(i, value) {
     const next = [...jds]
@@ -50,7 +56,7 @@ export default function AuditPage() {
       const res = await fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company_name: companyName, email, jds }),
+        body: JSON.stringify({ company_name: companyName, email, jds, hires_per_year: hiresN }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Audit failed')
@@ -117,6 +123,37 @@ export default function AuditPage() {
                   style={{ width: '100%', padding: '11px 14px', border: `1px solid ${BD}`, borderRadius: 8, fontSize: 14, fontFamily: F, color: TX, boxSizing: 'border-box' }}
                 />
               </div>
+            </div>
+
+            <div style={{ marginBottom: 22 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: TX2, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                How many hires do you make per year?
+              </label>
+              <input
+                type="text"
+                value={hiresPerYear}
+                onChange={e => setHiresPerYear(e.target.value.replace(/[^0-9]/g, ''))}
+                style={{ width: 140, padding: '11px 14px', border: `1px solid ${BD}`, borderRadius: 8, fontSize: 14, fontFamily: F, color: TX, boxSizing: 'border-box' }}
+              />
+              {hiresN > 0 && (
+                <div style={{
+                  marginTop: 14, padding: '16px 18px', borderRadius: 12,
+                  background: NAVY, color: '#fff',
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                    Your projected bad-hire cost in 2027
+                  </div>
+                  <div style={{ fontSize: 14, lineHeight: 1.65, marginBottom: 6 }}>
+                    If you make <strong>{hiresN}</strong> hire{hiresN === 1 ? '' : 's'} per year, the projected cost of bad hires under ERA 2025: <strong style={{ color: TEAL, fontSize: 22 }}>{fmt(projectedCost)}</strong>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>
+                    PRODICTA could save you up to <strong style={{ color: TEAL }}>{fmt(prodictaSaving)}</strong> of that.
+                  </div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 8, lineHeight: 1.55 }}>
+                    Based on a 30% industry average failure rate and £38,400 average cost per bad hire.
+                  </div>
+                </div>
+              )}
             </div>
 
             {jds.map((jd, i) => (

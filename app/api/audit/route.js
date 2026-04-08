@@ -79,7 +79,7 @@ function wrap(text, font, size, maxWidth) {
   return lines
 }
 
-async function buildPdf(companyName, reports) {
+async function buildPdf(companyName, reports, projection) {
   const pdf = await PDFDocument.create()
   const helv = await pdf.embedFont(StandardFonts.Helvetica)
   const helvB = await pdf.embedFont(StandardFonts.HelveticaBold)
@@ -139,6 +139,39 @@ async function buildPdf(companyName, reports) {
     }
   }
 
+  // Projection page (if hires_per_year provided)
+  if (projection && projection.hires > 0) {
+    page = pdf.addPage([595, 842])
+    page.drawRectangle({ x: 0, y: 770, width: 595, height: 4, color: teal })
+    page.drawText('PROJECTION', { x: 40, y: 740, size: 9, font: helvB, color: grey })
+    page.drawText('Your projected bad-hire cost in 2027', { x: 40, y: 715, size: 18, font: helvB, color: navy })
+
+    let yp = 670
+    page.drawRectangle({ x: 40, y: yp - 110, width: 515, height: 130, color: navy })
+    page.drawText('UNDER ERA 2025', { x: 56, y: yp - 8, size: 9, font: helvB, color: teal })
+    page.drawText(`If you make ${projection.hires} hire${projection.hires === 1 ? '' : 's'} per year, the projected cost`, {
+      x: 56, y: yp - 30, size: 11, font: helv, color: rgb(1, 1, 1),
+    })
+    page.drawText(`of bad hires under ERA 2025:`, {
+      x: 56, y: yp - 46, size: 11, font: helv, color: rgb(1, 1, 1),
+    })
+    page.drawText(`£${projection.projectedCost.toLocaleString('en-GB')}`, {
+      x: 56, y: yp - 80, size: 28, font: helvB, color: teal,
+    })
+
+    yp -= 150
+    page.drawText('PRODICTA could save you up to', { x: 40, y: yp, size: 11, font: helv, color: black })
+    page.drawText(`£${projection.saving.toLocaleString('en-GB')}`, { x: 40, y: yp - 28, size: 24, font: helvB, color: navy })
+    page.drawText('of that, based on a 47% reduction in bad hire costs across our user base.', {
+      x: 40, y: yp - 50, size: 10.5, font: helv, color: grey,
+    })
+
+    yp -= 90
+    const note = 'Calculation: hires per year x 30% industry average failure rate x £38,400 average cost per bad hire. The PRODICTA saving applies a 47% reduction observed across our customer base in their first year of use.'
+    const noteLines = wrap(note, helv, 10, 515)
+    noteLines.forEach(l => { page.drawText(l, { x: 40, y: yp, size: 10, font: helv, color: grey }); yp -= 13 })
+  }
+
   // CTA page
   page = pdf.addPage([595, 842])
   page.drawRectangle({ x: 0, y: 642, width: 595, height: 200, color: navy })
@@ -155,7 +188,7 @@ async function buildPdf(companyName, reports) {
 
 export async function POST(request) {
   try {
-    const { company_name, email, jds } = await request.json()
+    const { company_name, email, jds, hires_per_year } = await request.json()
     if (!company_name || !email || !Array.isArray(jds)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
@@ -178,7 +211,16 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Failed to analyse any job descriptions' }, { status: 500 })
     }
 
-    const pdfBytes = await buildPdf(company_name, reports)
+    const hiresN = Math.max(0, parseInt(hires_per_year) || 0)
+    const projection = hiresN > 0
+      ? {
+          hires: hiresN,
+          projectedCost: Math.round(hiresN * 0.30 * 38400),
+          saving: Math.round(hiresN * 0.30 * 38400 * 0.47),
+        }
+      : null
+
+    const pdfBytes = await buildPdf(company_name, reports, projection)
     const pdfBase64 = Buffer.from(pdfBytes).toString('base64')
 
     const resend = new Resend(process.env.RESEND_API_KEY)

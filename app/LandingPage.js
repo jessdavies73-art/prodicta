@@ -106,6 +106,132 @@ function Nav() {
   )
 }
 
+// ── ROI calculator ────────────────────────────────────────────────────────────
+const SECTOR_COSTS = {
+  'General':     38400,
+  'Healthcare':  42000,
+  'Finance':     45000,
+  'Sales':       35000,
+  'Legal':       48000,
+  'Operations':  36000,
+  'Technology':  52000,
+  'Admin':       28000,
+}
+
+function RoiCalculator() {
+  const [sector, setSector] = useState('General')
+  const cost = SECTOR_COSTS[sector] || SECTOR_COSTS.General
+  const saving = Math.round(cost * 0.47)
+  const fmt = n => '£' + n.toLocaleString('en-GB')
+
+  return (
+    <section style={{
+      background: 'linear-gradient(180deg, #0d1e30 0%, #0f2137 100%)',
+      padding: '72px 24px', position: 'relative', overflow: 'hidden',
+    }}>
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}10 0%, transparent 65%)`, pointerEvents: 'none' }} />
+      <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative' }}>
+        <div style={{ textAlign: 'center', marginBottom: 36 }}>
+          <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
+            ROI calculator
+          </div>
+          <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.2vw, 40px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.8px', lineHeight: 1.15, margin: 0 }}>
+            The cost of getting it wrong.
+          </h2>
+        </div>
+
+        <div style={{
+          background: 'rgba(255,255,255,0.04)',
+          border: `1px solid ${TEAL}33`,
+          borderRadius: 16, padding: '32px 36px',
+        }}>
+          <label style={{ display: 'block', fontFamily: F, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+            Pick your sector
+          </label>
+          <select
+            value={sector}
+            onChange={e => setSector(e.target.value)}
+            style={{
+              width: '100%', padding: '12px 16px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.08)', color: '#fff',
+              border: `1.5px solid ${TEAL}55`, fontFamily: F, fontSize: 14, fontWeight: 600,
+              outline: 'none', cursor: 'pointer', marginBottom: 28,
+            }}
+          >
+            {Object.keys(SECTOR_COSTS).map(s => (
+              <option key={s} value={s} style={{ background: NAVY, color: '#fff' }}>{s}</option>
+            ))}
+          </select>
+
+          <div style={{ textAlign: 'center', marginBottom: 26 }}>
+            <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+              Average bad hire cost in {sector === 'General' ? 'the UK' : `${sector.toLowerCase()}`}
+            </div>
+            <div style={{ fontFamily: FM, fontSize: 'clamp(42px, 6vw, 64px)', fontWeight: 800, color: TEAL, lineHeight: 1 }}>
+              {fmt(cost)}
+            </div>
+          </div>
+
+          <div style={{
+            background: 'rgba(0,191,165,0.08)', border: `1px solid ${TEAL}33`,
+            borderRadius: 12, padding: '18px 22px', marginBottom: 14,
+          }}>
+            <div style={{ fontFamily: F, fontSize: 14, color: 'rgba(255,255,255,0.85)', lineHeight: 1.65, marginBottom: 6 }}>
+              PRODICTA users reduce bad hire costs by up to <strong style={{ color: TEAL }}>47%</strong> in their first year.
+            </div>
+            <div style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>
+              That is roughly <strong style={{ color: TEAL }}>{fmt(saving)}</strong> saved per prevented bad hire in your sector.
+            </div>
+          </div>
+
+          <p style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.65, margin: 0, textAlign: 'center' }}>
+            One prevented bad hire pays for <strong style={{ color: TEAL }}>10+ years</strong> of PRODICTA subscription.
+          </p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── 6-month trap section ──────────────────────────────────────────────────────
+function SixMonthTrap() {
+  return (
+    <section style={{
+      background: '#0a1828', padding: '88px 24px',
+      borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      <div style={{ position: 'absolute', top: 0, right: 0, width: 500, height: 500, borderRadius: '50%', background: `radial-gradient(circle, rgba(239,68,68,0.06) 0%, transparent 65%)`, pointerEvents: 'none' }} />
+      <div style={{ maxWidth: 820, margin: '0 auto', position: 'relative' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 50, padding: '6px 16px', marginBottom: 22 }}>
+          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><circle cx={12} cy={12} r={10}/><line x1={12} y1={8} x2={12} y2={12}/><line x1={12} y1={16} x2="12.01" y2={16}/></svg>
+          <span style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.07em' }}>January 2027</span>
+        </div>
+        <h2 style={{
+          fontFamily: F, fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 800,
+          color: '#fff', letterSpacing: '-1.5px', lineHeight: 1.05, margin: '0 0 28px',
+        }}>
+          The 6-Month Trap.
+        </h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ fontFamily: F, fontSize: 17, color: 'rgba(255,255,255,0.78)', lineHeight: 1.75, margin: 0 }}>
+            From January 2027, every employee in the UK has unfair dismissal protection after just 6 months. No qualifying period. No compensation cap. For employers, every hire is a legal and financial risk from day one.
+          </p>
+          <p style={{ fontFamily: F, fontSize: 17, color: 'rgba(255,255,255,0.78)', lineHeight: 1.75, margin: 0 }}>
+            A bad hire costs you recruitment fees, training, lost productivity, team morale, and now an uncapped tribunal claim.
+          </p>
+          <p style={{ fontFamily: F, fontSize: 17, color: 'rgba(255,255,255,0.78)', lineHeight: 1.75, margin: 0 }}>
+            For recruitment agencies, every placement you make carries that same risk. When a hire fails, your client blames you. Your fee is at risk. Your reputation takes the hit. And from 2027, your clients will demand proof that the candidates you sent were properly assessed.
+          </p>
+          <p style={{ fontFamily: F, fontSize: 17, color: '#fff', lineHeight: 1.75, margin: '14px 0 0', fontWeight: 600 }}>
+            PRODICTA exists because this problem is about to get much worse. The employers who prepare now will be protected. The agencies who offer this now will win the clients. Everyone else will be scrambling in January 2027.
+          </p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 // ── Check icon ────────────────────────────────────────────────────────────────
 function Check({ color = TEAL, size = 15 }) {
   return (
@@ -1538,6 +1664,16 @@ export default function LandingPage() {
           </Reveal>
         </div>
       </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          ROI CALCULATOR
+      ════════════════════════════════════════════════════════════════════ */}
+      <RoiCalculator />
+
+      {/* ════════════════════════════════════════════════════════════════════
+          THE 6-MONTH TRAP
+      ════════════════════════════════════════════════════════════════════ */}
+      <SixMonthTrap />
 
       {/* ════════════════════════════════════════════════════════════════════
           ERA 2025
