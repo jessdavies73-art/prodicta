@@ -90,24 +90,94 @@ function RiskBadge({ risk }) {
   )
 }
 
-function RiskCalculator() {
-  const [salary, setSalary] = useState('35000')
-  const [hires, setHires] = useState('8')
+function RiskCalculator({ isAgency }) {
+  const [salary, setSalary] = useState(isAgency ? '30000' : '35000')
+  const [count, setCount] = useState(isAgency ? '12' : '8')
+  const [rebateWeeks, setRebateWeeks] = useState('12')
   const [salFocused, setSalFocused] = useState(false)
-  const [hiresFocused, setHiresFocused] = useState(false)
+  const [countFocused, setCountFocused] = useState(false)
+  const [rebateFocused, setRebateFocused] = useState(false)
   const [showBreakdown, setShowBreakdown] = useState(false)
 
   const sal = Math.max(0, parseInt(salary.replace(/[^0-9]/g, '')) || 0)
-  const h   = Math.max(1, parseInt(hires.replace(/[^0-9]/g, '')) || 1)
+  const c   = Math.max(1, parseInt(count.replace(/[^0-9]/g, '')) || 1)
+  const gbp = n => '£' + n.toLocaleString('en-GB')
+  const inp = focused => ({ fontFamily: F, fontSize: 15, fontWeight: 700, width: '100%', padding: '10px 14px', borderRadius: 8, border: `1.5px solid ${focused ? TEAL : BD}`, background: '#fff', color: NAVY, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' })
+
+  if (isAgency) {
+    const fee = Math.round(sal * 0.18)
+    const rw = Math.max(1, parseInt(rebateWeeks.toString().replace(/[^0-9]/g, '')) || 12)
+    const rebateCost = fee
+    const adminCost = 2500
+    const reputationCost = Math.round(fee * 0.5)
+    const totalPerFail = rebateCost + adminCost + reputationCost
+    const failCount = Math.max(1, Math.round(c * 0.15))
+    const totalExposure = totalPerFail * failCount
+
+    const BREAK = [
+      { label: 'Fee rebate',              value: rebateCost,     note: `Full fee refund within ${rw}-week rebate window`, color: RED, bg: REDBG },
+      { label: 'Replacement admin cost',   value: adminCost,      note: 'Re-sourcing, re-screening, re-presenting',       color: AMB, bg: AMBBG },
+      { label: 'Reputation and repeat risk', value: reputationCost, note: 'Client confidence impact on future fees',       color: AMB, bg: AMBBG },
+    ]
+
+    return (
+      <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+        <div style={{ padding: '20px 24px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 }}>
+            Placement risk calculator
+          </div>
+          <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div style={{ flex: '0 0 auto' }}>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>Average placement salary</label>
+              <div style={{ position: 'relative', width: 160 }}>
+                <span style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', fontSize: 14, fontWeight: 700, color: TX3, pointerEvents: 'none' }}>£</span>
+                <input type="text" value={salary} onChange={e => setSalary(e.target.value.replace(/[^0-9]/g, ''))} onFocus={() => setSalFocused(true)} onBlur={() => setSalFocused(false)} style={{ ...inp(salFocused), paddingLeft: 26 }} placeholder="30000" />
+              </div>
+            </div>
+            <div style={{ flex: '0 0 auto' }}>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>Placements this year</label>
+              <input type="text" value={count} onChange={e => setCount(e.target.value.replace(/[^0-9]/g, ''))} onFocus={() => setCountFocused(true)} onBlur={() => setCountFocused(false)} style={{ ...inp(countFocused), width: 100 }} placeholder="12" />
+            </div>
+            <div style={{ flex: '0 0 auto' }}>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>Rebate window (weeks)</label>
+              <input type="text" value={rebateWeeks} onChange={e => setRebateWeeks(e.target.value.replace(/[^0-9]/g, ''))} onFocus={() => setRebateFocused(true)} onBlur={() => setRebateFocused(false)} style={{ ...inp(rebateFocused), width: 100 }} placeholder="12" />
+            </div>
+            <div style={{ paddingBottom: 2 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Total exposure</div>
+              <div style={{ fontFamily: FM, fontSize: 30, fontWeight: 800, color: RED, lineHeight: 1 }}>{gbp(totalExposure)}</div>
+              <div style={{ fontSize: 11.5, color: TX3, marginTop: 3 }}>{failCount} of {c} placement{c !== 1 ? 's' : ''} failing, 15% industry average</div>
+            </div>
+          </div>
+          <button onClick={() => setShowBreakdown(!showBreakdown)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: TEAL, fontFamily: F, padding: 0, display: 'flex', alignItems: 'center', gap: 5 }}>
+            {showBreakdown ? 'Hide breakdown' : 'Show breakdown'}
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ transform: showBreakdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          {showBreakdown && (
+            <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {BREAK.map(({ label, value, note, color, bg }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: bg, border: `1px solid ${color}33`, gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: TX }}>{label}</div>
+                    <div style={{ fontSize: 11.5, color: TX3, marginTop: 1 }}>{note}</div>
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color, flexShrink: 0 }}>{gbp(value)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Employer: ERA 2025 tribunal risk calculator
   const recruitment  = Math.round(sal * 0.15)
   const training     = 3000
   const productivity = Math.round(sal * 0.25)
   const tribunal     = Math.round(sal * 0.75)
   const totalPerHire = recruitment + training + productivity + tribunal
-  const failCount    = Math.max(1, Math.round(h * 0.2))
+  const failCount    = Math.max(1, Math.round(c * 0.2))
   const totalExposure = totalPerHire * failCount
-  const gbp = n => '£' + n.toLocaleString('en-GB')
-  const inp = focused => ({ fontFamily: F, fontSize: 15, fontWeight: 700, width: '100%', padding: '10px 14px', borderRadius: 8, border: `1.5px solid ${focused ? TEAL : BD}`, background: '#fff', color: NAVY, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' })
 
   const BREAK = [
     { label: 'Recruitment cost',       value: recruitment,  note: '15% of salary',          color: AMB, bg: AMBBG },
@@ -132,23 +202,17 @@ function RiskCalculator() {
           </div>
           <div style={{ flex: '0 0 auto' }}>
             <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6, fontFamily: F }}>Hires this year</label>
-            <input type="text" value={hires} onChange={e => setHires(e.target.value.replace(/[^0-9]/g, ''))} onFocus={() => setHiresFocused(true)} onBlur={() => setHiresFocused(false)} style={{ ...inp(hiresFocused), width: 100 }} placeholder="8" />
+            <input type="text" value={count} onChange={e => setCount(e.target.value.replace(/[^0-9]/g, ''))} onFocus={() => setCountFocused(true)} onBlur={() => setCountFocused(false)} style={{ ...inp(countFocused), width: 100 }} placeholder="8" />
           </div>
           <div style={{ paddingBottom: 2 }}>
             <div style={{ fontSize: 11.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Total exposure</div>
             <div style={{ fontFamily: FM, fontSize: 30, fontWeight: 800, color: RED, lineHeight: 1 }}>{gbp(totalExposure)}</div>
-            <div style={{ fontSize: 11.5, color: TX3, marginTop: 3 }}>{failCount} of {h} hire{h !== 1 ? 's' : ''} failing · 20% industry average</div>
+            <div style={{ fontSize: 11.5, color: TX3, marginTop: 3 }}>{failCount} of {c} hire{c !== 1 ? 's' : ''} failing, 20% industry average</div>
           </div>
         </div>
-        <button
-          onClick={() => setShowBreakdown(!showBreakdown)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: TEAL, fontFamily: F, padding: 0, display: 'flex', alignItems: 'center', gap: 5 }}
-        >
+        <button onClick={() => setShowBreakdown(!showBreakdown)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: TEAL, fontFamily: F, padding: 0, display: 'flex', alignItems: 'center', gap: 5 }}>
           {showBreakdown ? 'Hide breakdown' : 'Show breakdown'}
-          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
-            style={{ transform: showBreakdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
+          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ transform: showBreakdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         {showBreakdown && (
           <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -309,7 +373,7 @@ function DemoDashboardInner() {
         </div>
 
         {/* Risk Calculator */}
-        <RiskCalculator />
+        <RiskCalculator isAgency={isAgency} />
 
         {/* Candidates table + assessments panel */}
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
