@@ -1,22 +1,19 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useSyncExternalStore } from 'react'
 
-export default function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return window.innerWidth <= breakpoint
-  })
+function subscribe(callback) {
+  window.addEventListener('resize', callback)
+  return () => window.removeEventListener('resize', callback)
+}
 
-  const check = useCallback(() => {
-    setIsMobile(window.innerWidth <= breakpoint)
-  }, [breakpoint])
+function getSnapshot() {
+  return window.innerWidth <= 768
+}
 
-  useEffect(() => {
-    // Ensure correct value on mount (covers SSR hydration)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [check])
+function getServerSnapshot() {
+  return false
+}
 
-  return isMobile
+export default function useIsMobile() {
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }

@@ -453,7 +453,7 @@ export default function DashboardPage() {
     return (
       <div style={{ display: 'flex' }}>
         <Sidebar active="dashboard" companyName={profile?.company_name} />
-        <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', minHeight: '100vh', background: BG, fontFamily: F }}>
+        <main className="main-content" style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', minHeight: '100vh', background: BG, fontFamily: F }}>
           <div style={{
             ...cs, background: REDBG, border: `1px solid #fecaca`,
             display: 'flex', alignItems: 'center', gap: 12, color: RED,
@@ -721,7 +721,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <main style={{
+      <main className="main-content" style={{
         marginLeft: isMobile ? 0 : 220,
         padding: isMobile ? '72px 16px 32px' : '32px 40px',
         minHeight: '100vh',

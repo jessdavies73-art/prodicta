@@ -1481,7 +1481,7 @@ export default function CandidateReportPage({ params }) {
       `}</style>
       <Sidebar active="assessment" />
 
-      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', maxWidth: 1000, boxSizing: 'border-box' }}>
+      <main className="main-content" style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', maxWidth: 1000, boxSizing: 'border-box' }}>
 
         {/* Back */}
         <button

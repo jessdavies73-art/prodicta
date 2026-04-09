@@ -153,6 +153,8 @@ button:not([disabled]):not([data-no-lift]):active {
   .report-action-buttons a {
     width: 100% !important;
     box-sizing: border-box !important;
+    display: flex !important;
+    justify-content: center !important;
   }
 
   /* Dashboard - stack columns */
@@ -188,6 +190,19 @@ button:not([disabled]):not([data-no-lift]):active {
   /* Candidate responses - single column */
   .response-columns {
     grid-template-columns: 1fr !important;
+  }
+
+  /* Main content areas - remove sidebar offset */
+  .main-content {
+    margin-left: 0 !important;
+    padding: 72px 16px 32px !important;
+  }
+
+  /* Score ring + actions wrapper */
+  .report-score-actions {
+    flex-direction: column !important;
+    width: 100% !important;
+    align-items: stretch !important;
   }
 
   /* Prevent horizontal overflow on all elements */
