@@ -517,25 +517,97 @@ function SeniorityBadge({ score }) {
 }
 
 /* ── Locked / blurred premium section ────────────────────────────────────── */
-function LockedSection({ title, desc }) {
-  return (
-    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 14, marginBottom: 20 }}>
-      {/* Blurred placeholder content */}
-      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', padding: '24px 28px', background: CARD, border: `1px solid ${BD}` }}>
-        <div style={{ height: 14, width: '45%', background: '#d1d5db', borderRadius: 6, marginBottom: 14 }} />
-        <div style={{ height: 10, width: '90%', background: '#e5e7eb', borderRadius: 4, marginBottom: 8 }} />
-        <div style={{ height: 10, width: '75%', background: '#e5e7eb', borderRadius: 4, marginBottom: 8 }} />
-        <div style={{ height: 10, width: '82%', background: '#e5e7eb', borderRadius: 4, marginBottom: 14 }} />
-        <div style={{ display: 'flex', gap: 12 }}>
-          <div style={{ height: 48, flex: 1, background: '#e5e7eb', borderRadius: 8 }} />
-          <div style={{ height: 48, flex: 1, background: '#e5e7eb', borderRadius: 8 }} />
-          <div style={{ height: 48, flex: 1, background: '#e5e7eb', borderRadius: 8 }} />
+function LockedSection({ title, desc, variant = 'text' }) {
+  const blurContent = {
+    score: (
+      <>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 16 }}>
+          <div style={{ width: 72, height: 72, borderRadius: '50%', border: '6px solid #d1d5db', background: '#f3f4f6' }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ height: 22, width: '30%', background: '#d1d5db', borderRadius: 6, marginBottom: 8 }} />
+            <div style={{ height: 10, width: '60%', background: '#e5e7eb', borderRadius: 4 }} />
+          </div>
         </div>
+        <div style={{ height: 8, width: '100%', background: '#e5e7eb', borderRadius: 4, marginBottom: 10 }} />
+        <div style={{ height: 10, width: '85%', background: '#e5e7eb', borderRadius: 4 }} />
+      </>
+    ),
+    timeline: (
+      <>
+        <div style={{ height: 14, width: '40%', background: '#d1d5db', borderRadius: 6, marginBottom: 16 }} />
+        {[1,2,3].map(i => (
+          <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 14 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e5e7eb', flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ height: 12, width: `${50 + i * 10}%`, background: '#e5e7eb', borderRadius: 4, marginBottom: 6 }} />
+              <div style={{ height: 9, width: `${65 + i * 5}%`, background: '#f3f4f6', borderRadius: 4 }} />
+            </div>
+          </div>
+        ))}
+      </>
+    ),
+    cards: (
+      <>
+        <div style={{ height: 14, width: '35%', background: '#d1d5db', borderRadius: 6, marginBottom: 14 }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          {[1,2,3].map(i => (
+            <div key={i} style={{ background: '#f3f4f6', borderRadius: 10, padding: '16px 14px', border: '1px solid #e5e7eb' }}>
+              <div style={{ height: 28, width: 28, borderRadius: '50%', background: '#d1d5db', marginBottom: 10 }} />
+              <div style={{ height: 10, width: '70%', background: '#e5e7eb', borderRadius: 4, marginBottom: 6 }} />
+              <div style={{ height: 8, width: '90%', background: '#f3f4f6', borderRadius: 3 }} />
+            </div>
+          ))}
+        </div>
+      </>
+    ),
+    chart: (
+      <>
+        <div style={{ height: 14, width: '50%', background: '#d1d5db', borderRadius: 6, marginBottom: 16 }} />
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 80, marginBottom: 14 }}>
+          {[45,70,55,80,35,65].map((h, i) => (
+            <div key={i} style={{ flex: 1, height: `${h}%`, background: '#e5e7eb', borderRadius: '4px 4px 0 0' }} />
+          ))}
+        </div>
+        <div style={{ height: 10, width: '80%', background: '#e5e7eb', borderRadius: 4 }} />
+      </>
+    ),
+    text: (
+      <>
+        <div style={{ height: 14, width: '45%', background: '#d1d5db', borderRadius: 6, marginBottom: 14 }} />
+        <div style={{ height: 10, width: '92%', background: '#e5e7eb', borderRadius: 4, marginBottom: 8 }} />
+        <div style={{ height: 10, width: '78%', background: '#e5e7eb', borderRadius: 4, marginBottom: 8 }} />
+        <div style={{ height: 10, width: '85%', background: '#e5e7eb', borderRadius: 4, marginBottom: 8 }} />
+        <div style={{ height: 10, width: '60%', background: '#e5e7eb', borderRadius: 4, marginBottom: 14 }} />
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ height: 48, flex: 1, background: '#f3f4f6', borderRadius: 8, border: '1px solid #e5e7eb' }} />
+          <div style={{ height: 48, flex: 1, background: '#f3f4f6', borderRadius: 8, border: '1px solid #e5e7eb' }} />
+        </div>
+      </>
+    ),
+    grid: (
+      <>
+        <div style={{ height: 14, width: '40%', background: '#d1d5db', borderRadius: 6, marginBottom: 14 }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {[1,2,3,4].map(i => (
+            <div key={i} style={{ background: '#f3f4f6', borderRadius: 8, padding: '14px 16px', border: '1px solid #e5e7eb' }}>
+              <div style={{ height: 10, width: '55%', background: '#d1d5db', borderRadius: 4, marginBottom: 8 }} />
+              <div style={{ height: 8, width: '80%', background: '#e5e7eb', borderRadius: 3, marginBottom: 6 }} />
+              <div style={{ height: 8, width: '65%', background: '#e5e7eb', borderRadius: 3 }} />
+            </div>
+          ))}
+        </div>
+      </>
+    ),
+  }
+
+  return (
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 14, marginBottom: 20, border: `1px solid ${BD}` }}>
+      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', padding: '24px 28px', background: CARD }}>
+        {blurContent[variant] || blurContent.text}
       </div>
-      {/* Lock overlay */}
       <div style={{
         position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(2px)', zIndex: 2,
+        background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(2px)', zIndex: 2,
       }}>
         <div style={{ textAlign: 'center', maxWidth: 340, padding: '0 16px' }}>
           <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 8, opacity: 0.7 }}>
@@ -1574,23 +1646,23 @@ function DemoCandidateInner({ params }) {
 
             {/* ── BLURRED / LOCKED PREMIUM SECTIONS ── */}
             {[
-              { title: 'Predicted Outcomes', desc: 'See the probability of passing probation, churn risk, and top performer likelihood with dynamic colour-coded bars.' },
-              { title: '90-Day Reality Timeline', desc: 'See what the first three months will actually look like for this hire, phase by phase.' },
-              { title: 'Hiring Confidence Score', desc: 'A single go/stop number with detailed rationale and confidence tier breakdown.' },
-              { title: 'Decision Alerts', desc: 'Consequence predictions on every watch-out showing the real cost of ignoring each one.' },
-              { title: 'What the Assessment Revealed', desc: 'Side-by-side comparison of what the CV claimed versus what the candidate actually demonstrated.' },
-              { title: 'Candidate Responses', desc: 'Full scenario replay with every answer the candidate wrote, detailed timing, and integrity signals.' },
-              { title: 'Tuesday Reality', desc: 'What managing this person actually looks like on a normal day when everything is happening at once.' },
-              { title: '90-Day Hiring Manager Coaching Plan', desc: 'A structured probation guide with SMART objectives, weekly check-ins, and Alchemy Training UK coach sign-off at each phase.' },
-              { title: 'Key Stakeholder Mapping', desc: 'Who this hire will work with, the pressure points in each relationship, and what to watch for.' },
-              { title: 'Culture-Fit DNA', desc: 'Five-dimension working style analysis showing how this candidate\'s natural approach matches the role environment.' },
-              { title: 'Counter-Offer Resilience', desc: 'How likely this candidate is to accept a counter-offer from their current employer.' },
-              { title: 'Training Potential', desc: 'How quickly this candidate will develop with the right support.' },
-              { title: 'Why They Might Leave', desc: 'A specific prediction of what would cause this hire to leave within 6 months, with prevention actions.' },
-              { title: 'Simple View', desc: 'A plain English version of this report for line managers, with no jargon and no technical scoring language.' },
-            ].map(({ title, desc }) => (
+              { title: 'Predicted Outcomes', desc: 'See the probability of passing probation, churn risk, and top performer likelihood with dynamic colour-coded bars.', variant: 'cards' },
+              { title: '90-Day Reality Timeline', desc: 'See what the first three months will actually look like for this hire, phase by phase.', variant: 'timeline' },
+              { title: 'Hiring Confidence Score', desc: 'A single go/stop number with detailed rationale and confidence tier breakdown.', variant: 'score' },
+              { title: 'Decision Alerts', desc: 'Consequence predictions on every watch-out showing the real cost of ignoring each one.', variant: 'grid' },
+              { title: 'What the Assessment Revealed', desc: 'Side-by-side comparison of what the CV claimed versus what the candidate actually demonstrated.', variant: 'grid' },
+              { title: 'Candidate Responses', desc: 'Full scenario replay with every answer the candidate wrote, detailed timing, and integrity signals.', variant: 'text' },
+              { title: 'Tuesday Reality', desc: 'What managing this person actually looks like on a normal day when everything is happening at once.', variant: 'text' },
+              { title: '90-Day Hiring Manager Coaching Plan', desc: 'A structured probation guide with SMART objectives, weekly check-ins, and Alchemy Training UK coach sign-off at each phase.', variant: 'timeline' },
+              { title: 'Key Stakeholder Mapping', desc: 'Who this hire will work with, the pressure points in each relationship, and what to watch for.', variant: 'grid' },
+              { title: 'Culture-Fit DNA', desc: 'Five-dimension working style analysis showing how this candidate\'s natural approach matches the role environment.', variant: 'chart' },
+              { title: 'Counter-Offer Resilience', desc: 'How likely this candidate is to accept a counter-offer from their current employer.', variant: 'score' },
+              { title: 'Training Potential', desc: 'How quickly this candidate will develop with the right support.', variant: 'score' },
+              { title: 'Why They Might Leave', desc: 'A specific prediction of what would cause this hire to leave within 6 months, with prevention actions.', variant: 'text' },
+              { title: 'Simple View', desc: 'A plain English version of this report for line managers, with no jargon and no technical scoring language.', variant: 'text' },
+            ].map(({ title, desc, variant }) => (
               <ScrollReveal key={title} delay={60}>
-                <LockedSection title={title} desc={desc} />
+                <LockedSection title={title} desc={desc} variant={variant} />
               </ScrollReveal>
             ))}
 
