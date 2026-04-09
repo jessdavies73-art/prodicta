@@ -745,7 +745,7 @@ export default function LandingPage() {
                 label: 'of hiring decisions are based on interview performance',
                 body: 'But interviews test confidence, not competence. PRODICTA tests pressure-fit.',
                 accent: '#F59E0B',
-                link: { text: 'See how pressure-fit testing works', href: '/pressure-fit' },
+                link: { text: 'See how it works', href: '#how-it-works' },
               },
               {
                 stat: 'Jan 2027',
