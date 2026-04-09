@@ -375,6 +375,207 @@ function DemoDashboardInner() {
         {/* Risk Calculator */}
         <RiskCalculator isAgency={isAgency} />
 
+        {/* Hiring Cost Saved + Cost of Vacancy */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+          <div style={{ background: NAVY, borderRadius: 14, padding: '22px 24px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Hiring cost saved</div>
+            <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, color: TEAL, lineHeight: 1, marginBottom: 6 }}>£86,400</div>
+            <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.5)', marginBottom: 14 }}>Estimated savings this quarter</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {[
+                { label: 'Bad hires avoided', value: '3', note: 'Candidates scored below threshold and not hired' },
+                { label: 'Avg cost per bad hire', value: '£28,800', note: 'Recruitment, training, lost productivity' },
+              ].map(r => (
+                <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>{r.label}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{r.note}</div>
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: TEAL }}>{r.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ background: NAVY, borderRadius: 14, padding: '22px 24px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Cost of vacancy</div>
+            <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, color: AMB, lineHeight: 1, marginBottom: 6 }}>£4,800</div>
+            <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.5)', marginBottom: 14 }}>Average cost per week a role stays unfilled</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {[
+                { label: 'Open roles', value: '2', note: 'Currently unfilled positions' },
+                { label: 'Avg weeks open', value: '6.5', note: 'Time from vacancy to offer' },
+                { label: 'Total vacancy cost', value: '£62,400', note: 'Across all open roles this quarter' },
+              ].map(r => (
+                <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>{r.label}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{r.note}</div>
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: AMB }}>{r.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Assessment Decline Insights + Speed to Offer + Prediction Accuracy */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 24 }}>
+          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Assessment completion insights</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TX2 }}>Completion rate</span>
+                  <span style={{ fontFamily: FM, fontSize: 15, fontWeight: 800, color: GRN }}>89%</span>
+                </div>
+                <div style={{ height: 6, background: `${GRN}22`, borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: '89%', background: GRN, borderRadius: 3 }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontSize: 12.5, color: TX2 }}>Average time to complete</span>
+                <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 700, color: TEALD }}>23 min</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontSize: 12.5, color: TX2 }}>Started but not finished</span>
+                <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 700, color: AMB }}>3</span>
+              </div>
+            </div>
+          </div>
+          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Speed to offer</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 12.5, color: TX2, marginBottom: 4 }}>With PRODICTA</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: TEAL }}>5.2</span>
+                  <span style={{ fontSize: 12, color: TX3 }}>days avg from assessment to offer</span>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: TX2, marginBottom: 4 }}>Traditional process</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: TX3 }}>18.4</span>
+                  <span style={{ fontSize: 12, color: TX3 }}>days avg industry benchmark</span>
+                </div>
+              </div>
+              <div style={{ fontSize: 11.5, color: TEALD, fontWeight: 700 }}>72% faster time to offer</div>
+            </div>
+          </div>
+          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Prediction accuracy</div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '18px 0' }}>
+              <Ic name="bar" size={28} color={BD} />
+              <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '12px 0 0', lineHeight: 1.55 }}>Available when 3+ outcomes are logged. Track whether PRODICTA predictions matched real hiring outcomes.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Agency-only: Auto Shortlist */}
+        {isAgency && (
+          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+            <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Ic name="award" size={16} color={TEAL} />
+                <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Auto Shortlist</h2>
+              </div>
+              <p style={{ margin: '4px 0 0', fontSize: 12.5, color: TX3 }}>AI-ranked top candidates for Marketing Manager</p>
+            </div>
+            <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { rank: 1, name: 'Sophie Chen', score: 92, reason: 'Strongest pressure-fit. Handled every scenario with clear priorities and structured responses. Top performer likelihood 94%.' },
+                { rank: 2, name: 'David Park', score: 81, reason: 'Strong communication and stakeholder management. Slight hesitation under time pressure but self-corrected effectively.' },
+                { rank: 3, name: 'Rachel Adams', score: 74, reason: 'Solid technical skills. Development area around delegation, but high training potential score suggests rapid improvement.' },
+              ].map(c => (
+                <div key={c.rank} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '12px 16px', background: c.rank === 1 ? TEALLT : BG, border: `1px solid ${c.rank === 1 ? `${TEAL}55` : BD}`, borderRadius: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: c.rank === 1 ? TEAL : BD, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 14, fontWeight: 800, color: c.rank === 1 ? NAVY : TX3, flexShrink: 0 }}>{c.rank}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: TX }}>{c.name}</span>
+                      <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: scolor(c.score) }}>{c.score}/100</span>
+                    </div>
+                    <p style={{ fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>{c.reason}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Employer-only: Probation Tracker + Decision Overrides + Pending Check-ins */}
+        {!isAgency && (
+          <>
+            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+              <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Ic name="clock" size={16} color={TEAL} />
+                  <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Probation Tracker</h2>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: 12.5, color: TX3 }}>Active probation periods for recent hires</p>
+              </div>
+              <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {[
+                  { name: 'Sophie Chen', role: 'Marketing Manager', week: 8, total: 26, status: 'On track' },
+                  { name: 'David Park', role: 'Sales Executive', week: 3, total: 26, status: 'On track' },
+                  { name: 'Tom Walsh', role: 'Customer Service Team Leader', week: 18, total: 26, status: 'Extended' },
+                ].map(p => {
+                  const pct = Math.round((p.week / p.total) * 100)
+                  const col = p.status === 'Extended' ? AMB : TEAL
+                  return (
+                    <div key={p.name} style={{ padding: '12px 16px', background: BG, border: `1px solid ${BD}`, borderRadius: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                        <div>
+                          <span style={{ fontSize: 13.5, fontWeight: 700, color: TX }}>{p.name}</span>
+                          <span style={{ fontSize: 12, color: TX3, marginLeft: 8 }}>{p.role}</span>
+                        </div>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, color: col, background: `${col}18`, padding: '2px 10px', borderRadius: 20 }}>{p.status}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ flex: 1, height: 8, background: `${col}22`, borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: col, borderRadius: 4 }} />
+                        </div>
+                        <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: TX3, flexShrink: 0 }}>Week {p.week}/{p.total}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Decision overrides</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
+                  <span style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: AMB }}>1</span>
+                  <span style={{ fontSize: 13, color: TX2 }}>override tracked this quarter</span>
+                </div>
+                <p style={{ fontSize: 12, color: TX3, margin: 0, lineHeight: 1.5 }}>When you hire against the PRODICTA recommendation, the decision is documented for your records.</p>
+              </div>
+              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Pending check-ins</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
+                  <span style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: TEAL }}>2</span>
+                  <span style={{ fontSize: 13, color: TX2 }}>check-ins due this week</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    { name: 'Sophie Chen', role: 'Marketing Manager' },
+                    { name: 'David Park', role: 'Sales Executive' },
+                  ].map(c => (
+                    <div key={c.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 8 }}>
+                      <div>
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: TX }}>{c.name}</div>
+                        <div style={{ fontSize: 11, color: TX3 }}>{c.role}</div>
+                      </div>
+                      <Ic name="chevron-right" size={14} color={TEALD} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Candidates table + assessments panel */}
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
