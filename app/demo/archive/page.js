@@ -5,6 +5,7 @@ import { DemoLayout, SignUpModal } from '@/components/DemoShell'
 import { Ic } from '@/components/Icons'
 import Avatar from '@/components/Avatar'
 import { DEMO_CANDIDATES } from '@/lib/demo-data'
+import useIsMobile from '@/hooks/useIsMobile'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, F, FM, riskBg, riskCol } from '@/lib/constants'
 
 const SHADOW = '0 2px 12px rgba(15,33,55,0.08)'
@@ -31,12 +32,13 @@ function StarRating({ value }) {
 
 export default function DemoArchivePage() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [modal, setModal] = useState(false)
 
   return (
     <DemoLayout active="archive">
       {modal && <SignUpModal onClose={() => setModal(false)} />}
-      <main style={{ marginLeft: 220, marginTop: 46, minHeight: '100vh', background: BG, padding: '32px 32px 48px' }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 96 : 46, minHeight: '100vh', background: BG, padding: isMobile ? '16px 16px 32px' : '32px 32px 48px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
           {/* Header */}
           <div style={{ marginBottom: 28 }}>

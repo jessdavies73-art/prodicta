@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
 import { useToast } from '@/components/ToastProvider'
+import useIsMobile from '@/hooks/useIsMobile'
 
 const F = "'Outfit',system-ui,sans-serif"
 const FM = "'IBM Plex Mono',monospace"
@@ -158,6 +159,7 @@ const roleTypeBadgeStyle = type => {
 export default function NewAssessmentPage() {
   const router = useRouter()
   const toast = useToast()
+  const isMobile = useIsMobile()
   const [companyName, setCompanyName] = useState('')
   const [roleTitle, setRoleTitle] = useState('')
   const [jd, setJd] = useState('')
@@ -359,7 +361,7 @@ export default function NewAssessmentPage() {
     return (
       <div style={{ fontFamily: F, background: '#f7f9fb', minHeight: '100vh' }}>
         <Sidebar companyName={companyName} />
-        <main style={{ marginLeft: 220, padding: '32px 40px', minHeight: '100vh', background: '#f7f9fb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', minHeight: '100vh', background: '#f7f9fb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ maxWidth: 480, width: '100%', background: '#fff', borderRadius: 16, padding: '40px 40px', boxShadow: '0 2px 16px rgba(15,33,55,0.08)', textAlign: 'center' }}>
             <div style={{ width: 56, height: 56, borderRadius: 14, background: '#fffbeb', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
               <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -402,7 +404,7 @@ export default function NewAssessmentPage() {
   return (
     <div style={{ fontFamily: F, background: '#f7f9fb', minHeight: '100vh' }}>
       <Sidebar companyName={companyName} />
-      <main style={{ marginLeft: 220, padding: '32px 40px', minHeight: '100vh', background: '#f7f9fb' }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', minHeight: '100vh', background: '#f7f9fb' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>

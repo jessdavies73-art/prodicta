@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import InfoTooltip from '@/components/InfoTooltip'
+import useIsMobile from '@/hooks/useIsMobile'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -21,6 +22,7 @@ function scoreColour(s) {
 }
 
 function LoadingSpinner() {
+  const isMobile = useIsMobile()
   const shimmer = {
     background: 'linear-gradient(90deg, #e4e9f0 25%, #f1f5f9 50%, #e4e9f0 75%)',
     backgroundSize: '200% 100%',
@@ -30,7 +32,7 @@ function LoadingSpinner() {
   return (
     <div style={{ display: 'flex', fontFamily: F }}>
       <Sidebar active="compare" />
-      <main style={{ marginLeft: 220, padding: '36px 40px', minHeight: '100vh', background: BG, flex: 1 }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '36px 40px', minHeight: '100vh', background: BG, flex: 1 }}>
         <div style={{ ...shimmer, height: 34, width: 240, marginBottom: 10 }} />
         <div style={{ ...shimmer, height: 16, width: 320, marginBottom: 36, borderRadius: 6 }} />
         <div style={{ ...shimmer, height: 104, marginBottom: 24 }} />
@@ -635,6 +637,7 @@ function CandidateColumn({ candidate, allScores, skillOrder, assessmentId }) {
 
 function ComparePageInner() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const searchParams = useSearchParams()
   const presetAssessmentId = searchParams.get('assessmentId')
 
@@ -723,7 +726,7 @@ function ComparePageInner() {
   return (
     <div style={{ display: 'flex', fontFamily: F }}>
       <Sidebar active="compare" companyName={profile?.company_name} />
-      <main style={{ marginLeft: 220, padding: '36px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '36px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
 
         {/* Header */}
         <div style={{ marginBottom: 28 }}>

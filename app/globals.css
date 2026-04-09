@@ -1,4 +1,5 @@
 html { scroll-behavior: smooth; }
+body { overflow-x: hidden; }
 
 /* ── Avatar gradients ──────────────────────────────────────────────────────── */
 .avatar-jade    { background: linear-gradient(135deg, #00BFA5, #009688) !important; }

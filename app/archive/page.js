@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
+import useIsMobile from '@/hooks/useIsMobile'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -37,6 +38,7 @@ function fmt(dateStr) {
 
 export default function ArchivePage() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
   const [candidates, setCandidates] = useState([])
   const [profile, setProfile] = useState(null)
@@ -95,8 +97,8 @@ export default function ArchivePage() {
     <div style={{ display: 'flex', fontFamily: F }}>
       <Sidebar active="archive" companyName={profile?.company_name} />
       <main style={{
-        marginLeft: 220,
-        padding: '36px 40px',
+        marginLeft: isMobile ? 0 : 220,
+        padding: isMobile ? '72px 16px 32px' : '36px 40px',
         minHeight: '100vh',
         background: BG,
         flex: 1,

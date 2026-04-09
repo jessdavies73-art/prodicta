@@ -6,6 +6,7 @@ import { Ic } from '@/components/Icons'
 import ProdictaLogo from '@/components/ProdictaLogo'
 import { DemoBanner, DemoSidebar, SignUpModal } from '@/components/DemoShell'
 import { DEMO_CANDIDATES, DEMO_RESULTS, DEMO_RESPONSES } from '@/lib/demo-data'
+import useIsMobile from '@/hooks/useIsMobile'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -671,6 +672,7 @@ function LockedSection({ title, desc, variant = 'text' }) {
 function DemoCandidateInner({ params }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const isMobile = useIsMobile()
   const demoType = searchParams.get('type') === 'employer' ? 'employer' : 'agency'
   const isAgency = demoType === 'agency'
   const [activeSection, setActiveSection] = useState('summary')
@@ -783,7 +785,7 @@ function DemoCandidateInner({ params }) {
 
       <DemoSidebar active={null} />
 
-      <main style={{ marginLeft: 220, marginTop: 46, padding: '32px 40px', maxWidth: 1000, boxSizing: 'border-box' }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 96 : 46, padding: isMobile ? '16px 16px 32px' : '32px 40px', maxWidth: 1000, boxSizing: 'border-box' }}>
 
         {/* Back */}
         <button
@@ -1014,7 +1016,7 @@ function DemoCandidateInner({ params }) {
 
             {/* ── SUMMARY ── */}
             <ScrollReveal id="summary">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 16, marginBottom: 20 }}>
                 <Card topColor={sc(passProbability ?? score)} style={{ textAlign: 'center', padding: '24px 20px', background: `linear-gradient(180deg, ${sbg(passProbability ?? score)} 0%, #fff 60%)` }}>
                   <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>Pass Probability <InfoTooltip text="The likelihood this candidate will successfully complete probation, based on scores, pressure-fit, and response quality." /></div>
                   <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 12px' }}>

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
+import useIsMobile from '@/hooks/useIsMobile'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -959,6 +960,7 @@ function sevStyle(severity) {
 ───────────────────────────────────────────────────────────── */
 export default function CandidateReportPage({ params }) {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
   const [candidate, setCandidate] = useState(null)
   const [results, setResults] = useState(null)
@@ -1477,7 +1479,7 @@ export default function CandidateReportPage({ params }) {
       `}</style>
       <Sidebar active="assessment" />
 
-      <main style={{ marginLeft: 220, padding: '32px 40px', maxWidth: 1000, boxSizing: 'border-box' }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', maxWidth: 1000, boxSizing: 'border-box' }}>
 
         {/* Back */}
         <button
@@ -4794,7 +4796,7 @@ export default function CandidateReportPage({ params }) {
 
           {/* Feature 6: Conditional sections */}
           {reportSections.overall_score && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 12, marginBottom: 28 }}>
               <div style={{ background: sbg(score), border: `1px solid ${sbd(score)}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center' }}>
                 <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Overall Score</div>
                 <div style={{ fontFamily: FM, fontSize: 38, fontWeight: 800, color: sc(score), lineHeight: 1 }}>{score}</div>

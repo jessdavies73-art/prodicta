@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
 import InfoTooltip from '@/components/InfoTooltip'
+import useIsMobile from '@/hooks/useIsMobile'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, RED, REDBG, REDBD,
@@ -14,6 +15,7 @@ import {
 const DEFAULT_WEIGHTS = { Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 }
 
 function LoadingSpinner() {
+  const isMobile = useIsMobile()
   const shimmer = {
     background: 'linear-gradient(90deg, #e4e9f0 25%, #f1f5f9 50%, #e4e9f0 75%)',
     backgroundSize: '200% 100%',
@@ -23,7 +25,7 @@ function LoadingSpinner() {
   return (
     <div style={{ display: 'flex', fontFamily: F }}>
       <Sidebar active="settings" />
-      <main style={{ marginLeft: 220, padding: '36px 40px', minHeight: '100vh', background: BG, flex: 1 }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '36px 40px', minHeight: '100vh', background: BG, flex: 1 }}>
         <div style={{ ...shimmer, height: 34, width: 180, marginBottom: 36 }} />
         <div style={{ ...shimmer, height: 52, width: 340, marginBottom: 28, borderRadius: 8 }} />
         <div style={{ ...shimmer, height: 260, marginBottom: 20 }} />
@@ -143,6 +145,7 @@ function SelectInput({ value, onChange, children, focused, onFocus, onBlur }) {
 
 export default function SettingsPage() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState(null)
   const [userEmail, setUserEmail] = useState('')
@@ -394,8 +397,8 @@ export default function SettingsPage() {
     <div style={{ display: 'flex', fontFamily: F }}>
       <Sidebar active="settings" companyName={profile?.company_name} />
       <main style={{
-        marginLeft: 220,
-        padding: '36px 40px',
+        marginLeft: isMobile ? 0 : 220,
+        padding: isMobile ? '72px 16px 32px' : '36px 40px',
         minHeight: '100vh',
         background: BG,
         flex: 1,

@@ -6,6 +6,7 @@ import { Ic } from '@/components/Icons'
 import InfoTooltip from '@/components/InfoTooltip'
 import Avatar from '@/components/Avatar'
 import { DEMO_ASSESSMENTS, DEMO_CANDIDATES, getDemoCandidatesFull } from '@/lib/demo-data'
+import useIsMobile from '@/hooks/useIsMobile'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, F, FM, riskBg, riskCol, riskBd } from '@/lib/constants'
 
 const sc   = s => s >= 85 ? GRN  : s >= 70 ? TEAL : s >= 50 ? AMB  : RED
@@ -176,6 +177,7 @@ function Col({ candidateId, onClear, onViewReport }) {
 
 export default function DemoComparePage() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [modal, setModal] = useState(false)
   const [slots, setSlots] = useState([null, null, null])
 
@@ -186,7 +188,7 @@ export default function DemoComparePage() {
   return (
     <DemoLayout active="compare">
       {modal && <SignUpModal onClose={() => setModal(false)} />}
-      <main style={{ marginLeft: 220, marginTop: 46, minHeight: '100vh', background: BG, padding: '32px 32px 48px' }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 96 : 46, minHeight: '100vh', background: BG, padding: isMobile ? '16px 16px 32px' : '32px 32px 48px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           {/* Page header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
@@ -204,7 +206,7 @@ export default function DemoComparePage() {
           </div>
 
           {/* Selectors */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 16, marginBottom: 24 }}>
             {slots.map((val, i) => (
               <div key={i}>
                 <p style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX3, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Candidate {i + 1}</p>
@@ -218,7 +220,7 @@ export default function DemoComparePage() {
           </div>
 
           {/* Columns */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 16, alignItems: 'start' }}>
             {slots.map((val, i) => (
               <Col
                 key={i}

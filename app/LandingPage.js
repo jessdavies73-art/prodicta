@@ -70,40 +70,77 @@ function FloatingDots() {
 // ── Navbar ────────────────────────────────────────────────────────────────────
 function Nav() {
   const [scrolled, setScrolled] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', fn, { passive: true })
-    return () => window.removeEventListener('scroll', fn)
+    const mq = window.matchMedia('(max-width: 768px)')
+    setIsMobile(mq.matches)
+    const mqHandler = e => setIsMobile(e.matches)
+    mq.addEventListener('change', mqHandler)
+    return () => { window.removeEventListener('scroll', fn); mq.removeEventListener('change', mqHandler) }
   }, [])
+
+  const navLinks = [
+    { href: '#how-it-works', label: 'How it works' },
+    { href: '#pricing', label: 'Pricing' },
+    { href: '/demo', label: 'Demo' },
+    { href: '/audit', label: 'Free audit' },
+    { href: '/blog', label: 'Blog' },
+  ]
+
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
-      background: scrolled ? 'rgba(13,30,48,0.96)' : 'transparent',
-      backdropFilter: scrolled ? 'blur(20px)' : 'none',
+      background: scrolled || menuOpen ? 'rgba(13,30,48,0.96)' : 'transparent',
+      backdropFilter: scrolled || menuOpen ? 'blur(20px)' : 'none',
       borderBottom: scrolled ? '1px solid rgba(255,255,255,0.07)' : 'none',
       transition: 'background 0.3s, border-color 0.3s',
-      padding: '0 48px', height: 68,
+      padding: isMobile ? '0 16px' : '0 48px', height: 68,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      flexWrap: isMobile && menuOpen ? 'wrap' : 'nowrap',
     }}>
       <a href="/" style={{ textDecoration: 'none' }}>
-        <ProdictaLogo size={36} textColor="#ffffff" />
+        <ProdictaLogo size={isMobile ? 30 : 36} textColor="#ffffff" />
       </a>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        <a href="#how-it-works" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, transition: 'color 0.15s' }}
-          onMouseEnter={e => e.target.style.color='#fff'} onMouseLeave={e => e.target.style.color='rgba(255,255,255,0.6)'}>How it works</a>
-        <a href="#pricing" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, transition: 'color 0.15s' }}
-          onMouseEnter={e => e.target.style.color='#fff'} onMouseLeave={e => e.target.style.color='rgba(255,255,255,0.6)'}>Pricing</a>
-        <a href="/demo" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, transition: 'color 0.15s' }}
-          onMouseEnter={e => e.target.style.color='#fff'} onMouseLeave={e => e.target.style.color='rgba(255,255,255,0.6)'}>Demo</a>
-        <a href="/audit" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, transition: 'color 0.15s' }}
-          onMouseEnter={e => e.target.style.color='#fff'} onMouseLeave={e => e.target.style.color='rgba(255,255,255,0.6)'}>Free audit</a>
-        <a href="/blog" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, transition: 'color 0.15s' }}
-          onMouseEnter={e => e.target.style.color='#fff'} onMouseLeave={e => e.target.style.color='rgba(255,255,255,0.6)'}>Blog</a>
-        <a href="/login" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.65)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.14)', marginLeft: 4, transition: 'border-color 0.15s' }}
-          onMouseEnter={e => e.target.style.borderColor='rgba(255,255,255,0.35)'} onMouseLeave={e => e.target.style.borderColor='rgba(255,255,255,0.14)'}>Sign in</a>
-        <a href="/login" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY, textDecoration: 'none', padding: '9px 20px', borderRadius: 8, background: TEAL, marginLeft: 2, transition: 'opacity 0.15s' }}
-          onMouseEnter={e => e.target.style.opacity='0.88'} onMouseLeave={e => e.target.style.opacity='1'}>Get started →</a>
-      </div>
+
+      {isMobile ? (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <a href="/login" style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: NAVY, textDecoration: 'none', padding: '7px 14px', borderRadius: 7, background: TEAL }}>Get started</a>
+            <button
+              onClick={() => setMenuOpen(v => !v)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6 }}
+            >
+              {menuOpen ? (
+                <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round"><line x1={18} y1={6} x2={6} y2={18}/><line x1={6} y1={6} x2={18} y2={18}/></svg>
+              ) : (
+                <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round"><line x1={3} y1={6} x2={21} y2={6}/><line x1={3} y1={12} x2={21} y2={12}/><line x1={3} y1={18} x2={21} y2={18}/></svg>
+              )}
+            </button>
+          </div>
+          {menuOpen && (
+            <div style={{ flexBasis: '100%', display: 'flex', flexDirection: 'column', gap: 2, padding: '12px 0 16px' }}>
+              {navLinks.map(l => (
+                <a key={l.href} href={l.href} onClick={() => setMenuOpen(false)} style={{ fontFamily: F, fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.7)', textDecoration: 'none', padding: '10px 8px', borderRadius: 7 }}>{l.label}</a>
+              ))}
+              <a href="/login" onClick={() => setMenuOpen(false)} style={{ fontFamily: F, fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.65)', textDecoration: 'none', padding: '10px 8px', borderRadius: 7 }}>Sign in</a>
+            </div>
+          )}
+        </>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {navLinks.map(l => (
+            <a key={l.href} href={l.href} style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, transition: 'color 0.15s' }}
+              onMouseEnter={e => e.target.style.color='#fff'} onMouseLeave={e => e.target.style.color='rgba(255,255,255,0.6)'}>{l.label}</a>
+          ))}
+          <a href="/login" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.65)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.14)', marginLeft: 4, transition: 'border-color 0.15s' }}
+            onMouseEnter={e => e.target.style.borderColor='rgba(255,255,255,0.35)'} onMouseLeave={e => e.target.style.borderColor='rgba(255,255,255,0.14)'}>Sign in</a>
+          <a href="/login" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY, textDecoration: 'none', padding: '9px 20px', borderRadius: 8, background: TEAL, marginLeft: 2, transition: 'opacity 0.15s' }}
+            onMouseEnter={e => e.target.style.opacity='0.88'} onMouseLeave={e => e.target.style.opacity='1'}>Get started →</a>
+        </div>
+      )}
     </nav>
   )
 }
@@ -339,6 +376,19 @@ export default function LandingPage() {
           50% { box-shadow: 0 8px 48px rgba(0,191,165,0.6), 0 0 0 10px rgba(0,191,165,0.1); }
         }
         @keyframes goldPulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+        @media (max-width: 768px) {
+          .cv-vs-prodicta {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+          .cv-vs-prodicta > div:nth-child(2) {
+            display: flex;
+            justify-content: center;
+          }
+          .cv-vs-prodicta > div:nth-child(2) svg {
+            transform: rotate(90deg);
+          }
+        }
       `}</style>
 
       <Nav />
@@ -463,7 +513,7 @@ export default function LandingPage() {
               </div>
             </div>
             {/* Score strips */}
-            <div style={{ background: '#fff', padding: '20px 28px', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 16 }}>
+            <div style={{ background: '#fff', padding: '20px 28px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16 }}>
               {[
                 { label: 'Communication', score: 88 },
                 { label: 'Problem Solving', score: 79 },
@@ -799,7 +849,7 @@ export default function LandingPage() {
           </Reveal>
 
           <Reveal delay={100}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 48px 1fr', gap: '0 16px', alignItems: 'center' }}>
+            <div className="cv-vs-prodicta" style={{ display: 'grid', gridTemplateColumns: '1fr 48px 1fr', gap: '0 16px', alignItems: 'center' }}>
 
               {/* LEFT — Traditional CV */}
               <div style={{
@@ -1257,7 +1307,7 @@ export default function LandingPage() {
             </div>
           </Reveal>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(440px, 1fr))', gap: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 440px), 1fr))', gap: 24 }}>
             {[
               {
                 tag: 'For Recruitment Agencies',
@@ -1304,7 +1354,7 @@ export default function LandingPage() {
             ].map((col, i) => (
               <Reveal key={col.tag} delay={i * 100}>
                 <div style={{
-                  background: col.bg, borderRadius: 20, padding: '44px 40px',
+                  background: col.bg, borderRadius: 20, padding: 'clamp(24px, 4vw, 44px) clamp(20px, 3.5vw, 40px)',
                   height: '100%', border: col.dark ? 'none' : `1px solid ${TEAL}30`,
                   transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                 }}
@@ -1847,7 +1897,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           FOOTER
       ════════════════════════════════════════════════════════════════════ */}
-      <footer style={{ background: '#071524', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '48px 48px 36px' }}>
+      <footer style={{ background: '#071524', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '48px clamp(16px, 4vw, 48px) 36px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 32, marginBottom: 40 }}>
             {/* Brand */}

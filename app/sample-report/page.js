@@ -242,7 +242,7 @@ export default function SampleReportPage() {
       </div>
       <style>{`@media print { .no-print { display: none !important; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }`}</style>
 
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 40px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: 'clamp(16px, 3vw, 32px) clamp(12px, 3vw, 40px)' }}>
 
         {/* ── 1. Candidate header ── */}
         <Card style={{ marginBottom: 20 }}>
@@ -303,7 +303,7 @@ export default function SampleReportPage() {
         </Card>
 
         {/* ── 2. Summary row ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 16, marginBottom: 20 }}>
 
           {/* Probation prediction */}
           <Card style={{ textAlign: 'center' }}>

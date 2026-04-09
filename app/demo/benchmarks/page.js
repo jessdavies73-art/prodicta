@@ -5,6 +5,7 @@ import { DemoLayout, SignUpModal } from '@/components/DemoShell'
 import { Ic } from '@/components/Icons'
 import InfoTooltip from '@/components/InfoTooltip'
 import { DEMO_BENCHMARK_SKILLS, getDemoBenchmarkData } from '@/lib/demo-data'
+import useIsMobile from '@/hooks/useIsMobile'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, F, FM } from '@/lib/constants'
 
 const sc = s => s >= 85 ? GRN : s >= 70 ? TEAL : s >= 50 ? AMB : RED
@@ -81,6 +82,7 @@ function SkillBenchmarkCard({ skill, candidates, threshold, onThresholdChange })
 }
 
 export default function DemoBenchmarksPage() {
+  const isMobile = useIsMobile()
   const [modal, setModal] = useState(false)
   const PRESET = {
     'Strategic Communication': 75,
@@ -99,7 +101,7 @@ export default function DemoBenchmarksPage() {
   return (
     <DemoLayout active="benchmarks">
       {modal && <SignUpModal onClose={() => setModal(false)} />}
-      <main style={{ marginLeft: 220, marginTop: 46, minHeight: '100vh', background: BG, padding: '32px 32px 48px' }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 96 : 46, minHeight: '100vh', background: BG, padding: isMobile ? '16px 16px 32px' : '32px 32px 48px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>

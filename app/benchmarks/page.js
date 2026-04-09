@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import InfoTooltip from '@/components/InfoTooltip'
+import useIsMobile from '@/hooks/useIsMobile'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -336,6 +337,7 @@ function SkillRow({ skill, threshold, onChange, candidateData, router }) {
 
 export default function BenchmarksPage() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [profile, setProfile] = useState(null)
@@ -446,7 +448,7 @@ export default function BenchmarksPage() {
   return (
     <div style={{ display: 'flex', fontFamily: F }}>
       <Sidebar active="benchmarks" companyName={profile?.company_name} />
-      <main style={{ marginLeft: 220, padding: '36px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '36px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 10, flexWrap: 'wrap' }}>

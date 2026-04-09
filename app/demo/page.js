@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
+import useIsMobile from '@/hooks/useIsMobile'
 import { DEMO_CANDIDATES, DEMO_ASSESSMENTS } from '@/lib/demo-data'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
@@ -235,6 +236,7 @@ function RiskCalculator({ isAgency }) {
 function DemoDashboardInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const isMobile = useIsMobile()
   const [demoType, setDemoType] = useState(searchParams.get('type') === 'employer' ? 'employer' : 'agency')
   const isAgency = demoType === 'agency'
   const [search, setSearch] = useState('')
@@ -268,7 +270,7 @@ function DemoDashboardInner() {
     <DemoLayout active="dashboard">
       {modal && <SignUpModal onClose={() => setModal(false)} />}
 
-      <main style={{ marginLeft: 220, marginTop: 46, padding: '32px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 96 : 46, padding: isMobile ? '16px 16px 32px' : '32px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, gap: 16 }}>

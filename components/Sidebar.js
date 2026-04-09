@@ -5,6 +5,7 @@ import { NAVY, TEAL, TEALD, TX2, TX3, F } from '../lib/constants'
 import { Ic } from './Icons'
 import { createClient } from '../lib/supabase'
 import ProdictaLogo from './ProdictaLogo'
+import useIsMobile from '../hooks/useIsMobile'
 
 const BASE_NAV_TOP = [
   { key: 'dashboard',    label: 'Dashboard',     icon: 'grid',    href: '/dashboard' },
@@ -31,6 +32,8 @@ function timeAgo(dateStr) {
 
 export default function Sidebar({ active, companyName }) {
   const router = useRouter()
+  const isMobile = useIsMobile()
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [hoveredKey, setHoveredKey] = useState(null)
   const [logoutHover, setLogoutHover] = useState(false)
   const [accountType, setAccountType] = useState(null)
@@ -42,6 +45,9 @@ export default function Sidebar({ active, companyName }) {
   const panelRef = useRef(null)
 
   const unreadCount = notifications.filter(n => !n.read).length
+
+  // Close mobile sidebar on route change
+  useEffect(() => { setMobileOpen(false) }, [active])
 
   async function loadNotifications(uid) {
     const supabase = createClient()
@@ -103,6 +109,7 @@ export default function Sidebar({ active, companyName }) {
     if (n.candidate_id && n.assessment_id) {
       router.push(`/assessment/${n.assessment_id}/candidate/${n.candidate_id}`)
       setNotifOpen(false)
+      setMobileOpen(false)
     }
   }
 
@@ -112,28 +119,32 @@ export default function Sidebar({ active, companyName }) {
     router.push('/login')
   }
 
+  function handleNavClick(href) {
+    router.push(href)
+    setMobileOpen(false)
+  }
+
   const notifIcon = type => type === 'scoring_finished' ? 'award' : 'check'
 
-  return (
-    <aside style={{
-      width: 220,
-      minHeight: '100vh',
-      background: NAVY,
-      display: 'flex',
-      flexDirection: 'column',
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      bottom: 0,
-      zIndex: 100,
-      fontFamily: F,
-    }}>
+  const sidebarContent = (
+    <>
       {/* Logo */}
       <div style={{
         padding: '28px 24px 24px',
         borderBottom: '1px solid rgba(255,255,255,0.07)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
       }}>
         <ProdictaLogo textColor="#ffffff" size={32} />
+        {isMobile && (
+          <button
+            onClick={() => setMobileOpen(false)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+          >
+            <Ic name="x" size={20} color="rgba(255,255,255,0.6)" />
+          </button>
+        )}
       </div>
 
       {/* Nav */}
@@ -155,7 +166,7 @@ export default function Sidebar({ active, companyName }) {
           return (
             <button
               key={key}
-              onClick={() => router.push(href)}
+              onClick={() => handleNavClick(href)}
               onMouseEnter={() => setHoveredKey(key)}
               onMouseLeave={() => setHoveredKey(null)}
               style={{
@@ -274,9 +285,9 @@ export default function Sidebar({ active, companyName }) {
             ref={panelRef}
             style={{
               position: 'fixed',
-              left: 228,
-              bottom: 40,
-              width: 320,
+              ...(isMobile
+                ? { left: 12, right: 12, bottom: 60, width: 'auto' }
+                : { left: 228, bottom: 40, width: 320 }),
               maxHeight: 460,
               background: '#fff',
               borderRadius: 14,
@@ -460,6 +471,85 @@ export default function Sidebar({ active, companyName }) {
           Sign out
         </button>
       </div>
+    </>
+  )
+
+  // ── Mobile: hamburger bar + slide-out drawer ──
+  if (isMobile) {
+    return (
+      <>
+        {/* Top bar with hamburger */}
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 110,
+          height: 56, background: NAVY,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 16px',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+        }}>
+          <ProdictaLogo textColor="#ffffff" size={28} />
+          <button
+            onClick={() => setMobileOpen(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, position: 'relative' }}
+          >
+            <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round">
+              <line x1={3} y1={6} x2={21} y2={6}/>
+              <line x1={3} y1={12} x2={21} y2={12}/>
+              <line x1={3} y1={18} x2={21} y2={18}/>
+            </svg>
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute', top: 2, right: 2,
+                width: 8, height: 8, borderRadius: '50%',
+                background: '#dc2626',
+              }} />
+            )}
+          </button>
+        </div>
+
+        {/* Overlay */}
+        {mobileOpen && (
+          <div
+            onClick={() => setMobileOpen(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 120,
+              background: 'rgba(0,0,0,0.5)',
+              transition: 'opacity 0.2s',
+            }}
+          />
+        )}
+
+        {/* Slide-out drawer */}
+        <aside style={{
+          position: 'fixed', top: 0, left: 0, bottom: 0,
+          width: 260, background: NAVY,
+          zIndex: 130, fontFamily: F,
+          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.25s ease',
+          display: 'flex', flexDirection: 'column',
+          overflowY: 'auto',
+        }}>
+          {sidebarContent}
+        </aside>
+      </>
+    )
+  }
+
+  // ── Desktop: fixed sidebar ──
+  return (
+    <aside style={{
+      width: 220,
+      minHeight: '100vh',
+      background: NAVY,
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      bottom: 0,
+      zIndex: 100,
+      fontFamily: F,
+    }}>
+      {sidebarContent}
     </aside>
   )
 }

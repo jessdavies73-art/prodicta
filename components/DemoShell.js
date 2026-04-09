@@ -3,37 +3,41 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ic } from './Icons'
 import ProdictaLogo from './ProdictaLogo'
+import useIsMobile from '../hooks/useIsMobile'
 import { NAVY, TEAL, TEALD, TEALLT, CARD, BD, TX, TX2, TX3, GRN, GRNBG, GRNBD, F, FM, bs } from '../lib/constants'
 
 // ── Demo Banner ───────────────────────────────────────────────────────────────
 export function DemoBanner() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   return (
     <div style={{
       background: `linear-gradient(90deg, ${NAVY} 0%, #1a3a5c 100%)`,
       borderBottom: `2px solid ${TEAL}`,
-      padding: '10px 24px',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+      padding: isMobile ? '8px 12px' : '10px 24px',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? 8 : 16,
       flexWrap: 'wrap',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10, minWidth: 0 }}>
         <div style={{ background: TEAL, color: NAVY, fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase', flexShrink: 0 }}>
           DEMO
         </div>
-        <span style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
-          You're viewing a demo. Sign up to assess your own candidates.
-        </span>
+        {!isMobile && (
+          <span style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
+            You're viewing a demo. Sign up to assess your own candidates.
+          </span>
+        )}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
         <button
           onClick={() => router.push('/login')}
-          style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 7, padding: '7px 14px', fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+          style={{ background: 'transparent', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 7, padding: isMobile ? '5px 10px' : '7px 14px', fontFamily: F, fontSize: isMobile ? 12 : 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
         >
           Exit Demo
         </button>
         <button
           onClick={() => router.push('/login')}
-          style={{ background: TEAL, color: NAVY, border: 'none', borderRadius: 7, padding: '8px 18px', fontFamily: F, fontSize: 13, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}
+          style={{ background: TEAL, color: NAVY, border: 'none', borderRadius: 7, padding: isMobile ? '6px 12px' : '8px 18px', fontFamily: F, fontSize: isMobile ? 12 : 13, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}
         >
           Sign up →
         </button>
@@ -56,16 +60,27 @@ const NAV = [
 
 export function DemoSidebar({ active }) {
   const router = useRouter()
+  const isMobile = useIsMobile()
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [signupModal, setSignupModal] = useState(false)
-  return (
-    <aside style={{
-      width: 220, minHeight: '100vh', background: NAVY,
-      display: 'flex', flexDirection: 'column',
-      position: 'fixed', top: 0, left: 0, bottom: 0,
-      zIndex: 100, fontFamily: F,
-    }}>
-      <div style={{ padding: '28px 24px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+
+  function handleNavClick(href) {
+    router.push(href)
+    setMobileOpen(false)
+  }
+
+  const sidebarContent = (
+    <>
+      <div style={{ padding: '28px 24px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <ProdictaLogo textColor="#ffffff" size={32} />
+        {isMobile && (
+          <button
+            onClick={() => setMobileOpen(false)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+          >
+            <Ic name="x" size={20} color="rgba(255,255,255,0.6)" />
+          </button>
+        )}
       </div>
 
       <nav style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -89,13 +104,13 @@ export function DemoSidebar({ active }) {
               >
                 <Ic name={icon} size={17} color="rgba(255,255,255,0.18)" />
                 {label}
-                      </button>
+              </button>
             )
           }
           return (
             <button
               key={key}
-              onClick={() => router.push(href)}
+              onClick={() => handleNavClick(href)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 11,
                 width: '100%', padding: '10px 12px',
@@ -120,7 +135,7 @@ export function DemoSidebar({ active }) {
       </nav>
 
       <div style={{ padding: '14px 12px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {/* Notifications bell , restricted */}
+        {/* Notifications bell, restricted */}
         <button
           onClick={() => setSignupModal(true)}
           style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 500, textAlign: 'left', background: 'transparent', color: 'rgba(255,255,255,0.3)', transition: 'background 0.15s' }}
@@ -145,6 +160,68 @@ export function DemoSidebar({ active }) {
       </div>
 
       {signupModal && <SignUpModal onClose={() => setSignupModal(false)} />}
+    </>
+  )
+
+  if (isMobile) {
+    return (
+      <>
+        {/* Top bar with hamburger */}
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 110,
+          height: 56, background: NAVY,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 16px',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+        }}>
+          <ProdictaLogo textColor="#ffffff" size={28} />
+          <button
+            onClick={() => setMobileOpen(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6 }}
+          >
+            <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round">
+              <line x1={3} y1={6} x2={21} y2={6}/>
+              <line x1={3} y1={12} x2={21} y2={12}/>
+              <line x1={3} y1={18} x2={21} y2={18}/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Overlay */}
+        {mobileOpen && (
+          <div
+            onClick={() => setMobileOpen(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 120,
+              background: 'rgba(0,0,0,0.5)',
+            }}
+          />
+        )}
+
+        {/* Slide-out drawer */}
+        <aside style={{
+          position: 'fixed', top: 0, left: 0, bottom: 0,
+          width: 260, background: NAVY,
+          zIndex: 130, fontFamily: F,
+          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.25s ease',
+          display: 'flex', flexDirection: 'column',
+          overflowY: 'auto',
+        }}>
+          {sidebarContent}
+        </aside>
+      </>
+    )
+  }
+
+  return (
+    <aside style={{
+      width: 220, minHeight: '100vh', background: NAVY,
+      display: 'flex', flexDirection: 'column',
+      position: 'fixed', top: 0, left: 0, bottom: 0,
+      zIndex: 100, fontFamily: F,
+    }}>
+      {sidebarContent}
     </aside>
   )
 }
@@ -155,11 +232,11 @@ export function SignUpModal({ onClose }) {
   return (
     <div
       onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{ background: CARD, borderRadius: 16, padding: '32px', maxWidth: 420, width: '100%', boxShadow: '0 24px 72px rgba(0,0,0,0.35)', animation: 'fadeInUp 0.2s ease-out' }}
+        style={{ background: CARD, borderRadius: 16, padding: '28px 24px', maxWidth: 420, width: '100%', boxShadow: '0 24px 72px rgba(0,0,0,0.35)', animation: 'fadeInUp 0.2s ease-out' }}
       >
         <div style={{ width: 52, height: 52, borderRadius: 14, background: TEALLT, border: `1px solid ${TEAL}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
           <Ic name="award" size={24} color={TEALD} />
@@ -191,9 +268,10 @@ export function SignUpModal({ onClose }) {
 
 // ── Demo page wrapper (banner + sidebar + main) ────────────────────────────────
 export function DemoLayout({ active, children }) {
+  const isMobile = useIsMobile()
   return (
     <div style={{ display: 'flex', fontFamily: F, flexDirection: 'column', minHeight: '100vh' }}>
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 300 }}>
+      <div style={{ position: 'fixed', top: isMobile ? 56 : 0, left: 0, right: 0, zIndex: 300 }}>
         <DemoBanner />
       </div>
       <DemoSidebar active={active} />

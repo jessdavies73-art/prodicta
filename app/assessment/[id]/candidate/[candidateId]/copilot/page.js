@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
+import useIsMobile from '@/hooks/useIsMobile'
 
 const NAVY = '#0f2137'
 const TEAL = '#00BFA5'
@@ -45,6 +46,7 @@ function lightBg(s) {
 
 export default function ProbationCopilotPage({ params }) {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
   const [candidate, setCandidate] = useState(null)
   const [results, setResults] = useState(null)
@@ -160,7 +162,7 @@ export default function ProbationCopilotPage({ params }) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', background: BG, fontFamily: F }}>
         <Sidebar active="dashboard" companyName={profile?.company_name} />
-        <main style={{ marginLeft: 220, padding: 40, color: TX3 }}>Loading...</main>
+        <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : 40, color: TX3 }}>Loading...</main>
       </div>
     )
   }
@@ -169,7 +171,7 @@ export default function ProbationCopilotPage({ params }) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', background: BG, fontFamily: F }}>
         <Sidebar active="dashboard" companyName={profile?.company_name} />
-        <main style={{ marginLeft: 220, padding: 40 }}>
+        <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : 40 }}>
           <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: 32, maxWidth: 600 }}>
             <h2 style={{ margin: '0 0 10px', color: NAVY }}>No outcome logged</h2>
             <p style={{ color: TX2, margin: 0 }}>Log a hire outcome on this candidate before opening the Probation Co-pilot.</p>
@@ -186,7 +188,7 @@ export default function ProbationCopilotPage({ params }) {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: BG, fontFamily: F, color: TX }}>
       <Sidebar active="dashboard" companyName={profile?.company_name} />
-      <main style={{ marginLeft: 220, padding: '32px 40px', flex: 1, minWidth: 0 }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22, gap: 16, flexWrap: 'wrap' }}>
           <div>
             <button

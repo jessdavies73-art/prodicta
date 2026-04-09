@@ -60,8 +60,8 @@ export default function InfoTooltip({ text, light = false }) {
         <span style={{
           position: 'fixed',
           bottom: `calc(100vh - ${pos.top}px + 8px)`,
-          left: pos.left,
-          transform: 'translateX(-50%)',
+          left: `clamp(8px, ${pos.left}px - 120px, calc(100vw - 248px))`,
+          transform: 'none',
           background: tooltipBg,
           color: '#fff',
           fontSize: 12,
@@ -71,6 +71,7 @@ export default function InfoTooltip({ text, light = false }) {
           padding: '9px 13px',
           borderRadius: 8,
           width: 240,
+          maxWidth: 'calc(100vw - 16px)',
           zIndex: 9999,
           boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
           pointerEvents: 'none',

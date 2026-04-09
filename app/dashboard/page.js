@@ -13,6 +13,7 @@ import {
   F, FM, scolor, sbg, slabel, dL, dC, riskCol, riskBg, riskBd, cs, ps, bs
 } from '@/lib/constants'
 import OnboardingWizard from '@/components/OnboardingWizard'
+import useIsMobile from '@/hooks/useIsMobile'
 
 const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
 
@@ -134,6 +135,7 @@ function RiskBadge({ risk }) {
 }
 
 function LoadingSkeleton() {
+  const isMobile = useIsMobile()
   const shimmer = {
     background: 'linear-gradient(90deg, #f0f4f8 25%, #e4eaf2 50%, #f0f4f8 75%)',
     backgroundSize: '200% 100%',
@@ -143,7 +145,7 @@ function LoadingSkeleton() {
   return (
     <div style={{ display: 'flex' }}>
       <style>{`@keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }`}</style>
-      <div style={{ marginLeft: 220, padding: '32px 40px', minHeight: '100vh', background: '#f7f9fb', flex: 1 }}>
+      <div style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', minHeight: '100vh', background: '#f7f9fb', flex: 1 }}>
         {/* Header skeleton */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 28 }}>
           <div style={{ ...shimmer, width: 160, height: 32 }} />
@@ -247,6 +249,7 @@ export default function DashboardPage() {
   const [probationHires, setProbationHires] = useState([])
   const [accuracyData, setAccuracyData] = useState(null)
   const [overrideStats, setOverrideStats] = useState(null)
+  const isMobile = useIsMobile()
   const [pendingCheckins, setPendingCheckins] = useState([])
 
   // Close ⋯ menu when clicking anywhere outside
@@ -450,7 +453,7 @@ export default function DashboardPage() {
     return (
       <div style={{ display: 'flex' }}>
         <Sidebar active="dashboard" companyName={profile?.company_name} />
-        <main style={{ marginLeft: 220, padding: '32px 40px', minHeight: '100vh', background: BG, fontFamily: F }}>
+        <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', minHeight: '100vh', background: BG, fontFamily: F }}>
           <div style={{
             ...cs, background: REDBG, border: `1px solid #fecaca`,
             display: 'flex', alignItems: 'center', gap: 12, color: RED,
@@ -719,8 +722,8 @@ export default function DashboardPage() {
       )}
 
       <main style={{
-        marginLeft: 220,
-        padding: '32px 40px',
+        marginLeft: isMobile ? 0 : 220,
+        padding: isMobile ? '72px 16px 32px' : '32px 40px',
         minHeight: '100vh',
         background: BG,
         flex: 1,
@@ -1023,7 +1026,7 @@ export default function DashboardPage() {
         <CostOfVacancyCard profile={profile} />
 
         {/* ── Bottom grid: table + assessments panel ── */}
-        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
 
           {/* ── Candidates table ── */}
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -1065,8 +1068,8 @@ export default function DashboardPage() {
               {filtered.length === 0 ? (
                 <EmptyState />
               ) : (
-                <div>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: isMobile ? 700 : undefined }}>
                     <colgroup>
                       <col style={{ width: '24%' }} />
                       <col style={{ width: '17%' }} />

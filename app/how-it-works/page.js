@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
+import useIsMobile from '@/hooks/useIsMobile'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, RED, REDBG, PURPLE,
@@ -106,12 +107,13 @@ const PF_DIMS = [
 
 export default function HowItWorksPage() {
   const router = useRouter()
+  const isMobile = useIsMobile()
 
   return (
     <div style={{ display: 'flex', fontFamily: F, background: BG, minHeight: '100vh' }}>
       <Sidebar active="how-it-works" />
 
-      <main style={{ marginLeft: 220, padding: '40px 48px', flex: 1, minWidth: 0, maxWidth: 900 }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '40px 48px', flex: 1, minWidth: 0, maxWidth: 900 }}>
 
         {/* ── Hero ── */}
         <div style={{ marginBottom: 40 }}>

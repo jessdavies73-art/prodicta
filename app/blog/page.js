@@ -30,7 +30,7 @@ export default function BlogIndex() {
 
   return (
     <div style={{ minHeight: '100vh', background: BG, fontFamily: F, color: TX }}>
-      <header style={{ background: NAVY, padding: '18px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <header style={{ background: NAVY, padding: '18px clamp(16px, 3vw, 32px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
           <span style={{ fontSize: 22, fontWeight: 800, color: TEAL, letterSpacing: '-0.5px' }}>PRODICTA</span>
         </Link>

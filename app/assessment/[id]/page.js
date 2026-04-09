@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
+import useIsMobile from '@/hooks/useIsMobile'
 
 const F = "'Outfit',system-ui,sans-serif"
 const FM = "'IBM Plex Mono',monospace"
@@ -162,6 +163,7 @@ function parseBulkEmails(text) {
 export default function AssessmentPage({ params }) {
   const router = useRouter()
   const { id } = params
+  const isMobile = useIsMobile()
 
   const [companyName, setCompanyName] = useState('')
   const [accountType, setAccountType] = useState(null)
@@ -357,7 +359,7 @@ export default function AssessmentPage({ params }) {
     return (
       <div style={{ fontFamily: F, background: '#f7f9fb', minHeight: '100vh' }}>
         <Sidebar companyName={companyName} />
-        <main style={{ marginLeft: 220, padding: '32px 40px', minHeight: '100vh', background: '#f7f9fb' }}>
+        <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', minHeight: '100vh', background: '#f7f9fb' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12, color: '#5e6b7f' }}>
             <div style={{
               width: 22, height: 22, border: '3px solid #e0f2f0',
@@ -376,7 +378,7 @@ export default function AssessmentPage({ params }) {
     return (
       <div style={{ fontFamily: F, background: '#f7f9fb', minHeight: '100vh' }}>
         <Sidebar companyName={companyName} />
-        <main style={{ marginLeft: 220, padding: '32px 40px', minHeight: '100vh', background: '#f7f9fb' }}>
+        <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', minHeight: '100vh', background: '#f7f9fb' }}>
           <div style={{ color: '#dc2626', fontSize: 15, paddingTop: 40 }}>Assessment not found.</div>
         </main>
       </div>
@@ -628,7 +630,7 @@ export default function AssessmentPage({ params }) {
           </div>
         </div>
       )}
-      <main style={{ marginLeft: 220, padding: '32px 40px', minHeight: '100vh', background: '#f7f9fb' }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', minHeight: '100vh', background: '#f7f9fb' }}>
 
         {/* Header row */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32, gap: 16, flexWrap: 'wrap' }}>

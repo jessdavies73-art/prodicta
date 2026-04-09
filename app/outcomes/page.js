@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
 import InfoTooltip from '@/components/InfoTooltip'
+import useIsMobile from '@/hooks/useIsMobile'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -57,11 +58,12 @@ function StatCard({ icon, label, value, sub, accent = TEAL }) {
 }
 
 function LoadingSkeleton() {
+  const isMobile = useIsMobile()
   const sh = { background: 'linear-gradient(90deg,#f0f4f8 25%,#e4eaf2 50%,#f0f4f8 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease infinite', borderRadius: 8 }
   return (
     <div style={{ display: 'flex' }}>
       <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
-      <div style={{ marginLeft: 220, padding: '32px 40px', minHeight: '100vh', background: BG, flex: 1 }}>
+      <div style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', minHeight: '100vh', background: BG, flex: 1 }}>
         <div style={{ ...sh, width: 200, height: 32, marginBottom: 32 }} />
         <div style={{ display: 'flex', gap: 16, marginBottom: 28 }}>
           {[1,2,3,4].map(i => <div key={i} style={{ flex: 1, ...sh, height: 110 }} />)}
@@ -74,6 +76,7 @@ function LoadingSkeleton() {
 
 export default function OutcomesPage() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState(null)
   const [outcomes, setOutcomes] = useState([])
@@ -148,7 +151,7 @@ export default function OutcomesPage() {
   return (
     <div style={{ display: 'flex', fontFamily: F }}>
       <Sidebar active="outcomes" companyName={profile?.company_name} />
-      <main style={{ marginLeft: 220, padding: '32px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
 
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px' }}>
