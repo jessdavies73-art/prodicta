@@ -1307,6 +1307,37 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
+          MARKET GROWTH STAT
+      ════════════════════════════════════════════════════════════════════ */}
+      <section style={{
+        position: 'relative', overflow: 'hidden',
+        background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)',
+        padding: '72px 24px',
+      }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, height: 600, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}10 0%, transparent 65%)`, pointerEvents: 'none' }} />
+        <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative', textAlign: 'center' }}>
+          <Reveal>
+            <div style={{ marginBottom: 40 }}>
+              <div style={{ fontFamily: FM, fontSize: 'clamp(72px, 10vw, 120px)', fontWeight: 900, color: TEAL, lineHeight: 1, letterSpacing: '-3px', textShadow: `0 0 60px ${TEAL}40` }}>84%</div>
+              <div style={{ fontFamily: F, fontSize: 'clamp(16px, 2vw, 20px)', fontWeight: 600, color: NAVY, marginTop: 12, letterSpacing: '-0.3px' }}>
+                of recruitment leaders expect sales growth in 2026
+              </div>
+            </div>
+          </Reveal>
+          <Reveal delay={100}>
+            <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.5vw, 40px)', fontWeight: 800, color: '#fff', letterSpacing: '-1px', lineHeight: 1.2, marginBottom: 24 }}>
+              The market is growing. The smart agencies are investing.
+            </h2>
+          </Reveal>
+          <Reveal delay={200}>
+            <p style={{ fontFamily: F, fontSize: 'clamp(15px, 1.6vw, 18px)', color: 'rgba(255,255,255,0.65)', lineHeight: 1.75, maxWidth: 640, margin: '0 auto' }}>
+              84% of recruitment leaders expect growth in 2026. The agencies that win will not be the ones sending the most CVs. They will be the ones sending the best evidence. One PRODICTA assessment gives your client more insight than three rounds of interviews.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
           SAMPLE REPORT PREVIEW
       ════════════════════════════════════════════════════════════════════ */}
       <section style={{ background: '#f1f3f5', padding: '72px 24px' }}>
