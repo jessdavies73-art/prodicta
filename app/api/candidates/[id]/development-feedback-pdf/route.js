@@ -85,7 +85,7 @@ export async function GET(request, { params }) {
     try {
       const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
       const strengthsText = strengths.map(s => `${s.text}: ${s.detail || s.evidence || ''}`).join('\n')
-      const prompt = `Career development coach. Candidate assessment for "${candidate.assessments?.role_title || 'professional'}" role. Development areas: ${lowestSkills.join(', ')}. Strengths: ${strengthsText}. For each of 3 development areas: positive title, advice, 2 actions, and relevant Alchemy Training UK course (Bullet-proofing Your Probation Process, From Technical Expert to People Leader, or Mastering Hiring Interviews). UK English, no emoji, no em dashes. JSON: {"development_areas": [{"area":"string","advice":"string","actions":["string"],"course":"string"}]}`
+      const prompt = `Career development coach. Candidate assessment for "${candidate.assessments?.role_title || 'professional'}" role. Development areas: ${lowestSkills.join(', ')}. Strengths: ${strengthsText}. For each of 3 development areas: positive title, advice, and 2 concrete actions the candidate can take independently. UK English, no emoji, no em dashes. JSON: {"development_areas": [{"area":"string","advice":"string","actions":["string"]}]}`
 
       const msg = await client.messages.create({
         model: 'claude-haiku-4-20250414',
@@ -103,7 +103,6 @@ export async function GET(request, { params }) {
         area: `Building your ${skill.toLowerCase()} skills`,
         advice: `To strengthen your ${skill.toLowerCase()}, try setting aside dedicated time to practise.`,
         actions: [`Find a mentor who excels at ${skill.toLowerCase()}.`],
-        course: 'From Technical Expert to People Leader by Alchemy Training UK',
       }))
     }
 
@@ -206,12 +205,6 @@ export async function GET(request, { params }) {
           actionLines.forEach(l => { page.drawText(l, { x: 58, y, size: 9.5, font: helv, color: black }); y -= 12 })
         }
       }
-      if (d.course) {
-        checkPage(18)
-        y -= 4
-        const courseLines = wrap(`Recommended: ${d.course}`, helv, 9, 480)
-        courseLines.forEach(l => { page.drawText(l, { x: 58, y, size: 9, font: helvB, color: teal }); y -= 12 })
-      }
       y -= 10
     }
 
@@ -227,16 +220,6 @@ export async function GET(request, { params }) {
         y -= 16
       }
     }
-
-    // Alchemy Training info
-    checkPage(50)
-    y -= 14
-    page.drawRectangle({ x: 40, y, width: 515, height: 1, color: rgb(0.88, 0.9, 0.94) })
-    y -= 18
-    page.drawText('TRAINING RECOMMENDATIONS', { x: 40, y, size: 9, font: helvB, color: grey })
-    y -= 14
-    const trainingLines = wrap('Training recommendations developed by Liz Harris, Founder, Alchemy Training UK. Contact: liz@alchemytraininguk.com | alchemytraininguk.com', helv, 9, 515)
-    trainingLines.forEach(l => { page.drawText(l, { x: 40, y, size: 9, font: helv, color: grey }); y -= 12 })
 
     // Footer
     const lastPage = pdf.getPages()[pdf.getPageCount() - 1]

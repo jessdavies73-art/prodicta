@@ -81,7 +81,6 @@ export async function POST(request, { params }) {
 
     // Generate development plan via Claude
     let development_plan = []
-    let course_recommendations = []
     try {
       const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
       const strengthsText = strengths.map(s => `${s.text}: ${s.detail || s.evidence || ''}`).join('\n')
@@ -91,19 +90,14 @@ Their three development areas (lowest-scored skills): ${lowestSkills.join(', ')}
 Their strengths: ${strengthsText}
 
 Generate:
-1. For each of the 3 development areas: a positively-framed title, specific actionable advice, and 2-3 concrete actions.
-2. For each development area, recommend a relevant training course from Alchemy Training UK using these mappings:
-   - Prioritisation or time management: "Bullet-proofing Your Probation Process" by Alchemy Training UK
-   - Communication or feedback: "From Technical Expert to People Leader" by Alchemy Training UK
-   - Interview skills or self-presentation: "Mastering Hiring Interviews" by Alchemy Training UK
-   - For other areas, pick the most relevant of the above three courses.
+1. For each of the 3 development areas: a positively-framed title, specific actionable advice, and 2-3 concrete actions the candidate can take independently.
 
 UK English. No emoji. No em dashes.
 
 JSON format:
 {
   "development_areas": [
-    {"area": "string", "advice": "string", "actions": ["string", "string"], "course": "string"}
+    {"area": "string", "advice": "string", "actions": ["string", "string"]}
   ]
 }`
 
@@ -117,7 +111,6 @@ JSON format:
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0])
         development_plan = (parsed.development_areas || []).slice(0, 3)
-        course_recommendations = development_plan.filter(d => d.course).map(d => d.course)
       }
     } catch (aiErr) {
       console.error('Development feedback Claude error:', aiErr)
@@ -125,7 +118,6 @@ JSON format:
         area: `Building your ${skill.toLowerCase()} skills`,
         advice: `To strengthen your ${skill.toLowerCase()}, try setting aside dedicated time each week to practise this skill.`,
         actions: [`Find a mentor or peer who excels at ${skill.toLowerCase()} and ask for specific feedback.`],
-        course: 'From Technical Expert to People Leader by Alchemy Training UK',
       }))
     }
 
@@ -172,7 +164,6 @@ JSON format:
         <div style="font-size:14px;font-weight:700;color:#0f2137;margin-bottom:6px;">${d.area}</div>
         <div style="font-size:13px;color:#4a5568;line-height:1.65;margin-bottom:10px;">${d.advice}</div>
         ${d.actions ? `<ul style="margin:0;padding-left:18px;">${d.actions.map(a => `<li style="font-size:12.5px;color:#1a202c;line-height:1.6;margin-bottom:4px;">${a}</li>`).join('')}</ul>` : ''}
-        ${d.course ? `<div style="margin-top:10px;padding:8px 12px;background:#fff;border:1px solid #e4e9f0;border-radius:6px;font-size:12px;color:#00897B;"><strong>Recommended course:</strong> ${d.course}</div>` : ''}
       </div>
     `).join('')
 
@@ -211,10 +202,6 @@ JSON format:
       </div>
 
       <div style="margin-top:28px;padding-top:16px;border-top:1px solid #e4e9f0;">
-        <p style="font-size:11px;color:#94a1b3;line-height:1.6;margin:0 0 8px;">
-          Training recommendations developed by Liz Harris, Founder, Alchemy Training UK.
-          Contact: liz@alchemytraininguk.com | alchemytraininguk.com
-        </p>
         <p style="font-size:11px;color:#94a1b3;line-height:1.6;margin:0 0 8px;">
           Provided by ${companyName} in partnership with PRODICTA.
         </p>
