@@ -1029,10 +1029,10 @@ export default function LandingPage() {
             <div style={{ textAlign: 'center', marginBottom: 80 }}>
               <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>How it works</div>
               <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.2vw, 42px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 18 }}>
-                Pressure-Fit testing, from job description to hiring decision in minutes
+                From job description to hiring decision in minutes
               </h2>
-              <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7, maxWidth: 560, margin: '0 auto' }}>
-                No personality tests. No guesswork. Real work simulations that measure Pressure-Fit, how candidates actually hold up when the role gets hard.
+              <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7, maxWidth: 520, margin: '0 auto' }}>
+                No personality tests. No guesswork. Real work simulations that show you exactly who will succeed.
               </p>
             </div>
           </Reveal>
@@ -1075,8 +1075,8 @@ export default function LandingPage() {
                 },
                 {
                   n: 3,
-                  title: 'Candidates complete real work simulations that measure Pressure-Fit',
-                  body: 'No personality tests. No tick-box questionnaires. Candidates face the exact situations they would face in their first 90 days. A difficult stakeholder. Competing deadlines. A team that needs managing. This is Pressure-Fit in practice, not how well they answer interview questions but how they actually behave when the role gets hard. Whether you are assessing a customer service advisor or a finance director, the scenarios match the role.',
+                  title: 'Candidates complete real work simulations',
+                  body: 'No personality tests. No tick-box questionnaires. Candidates face the exact situations they would face in their first 90 days. A difficult stakeholder. Competing deadlines. A team that needs managing. Whether you are assessing a customer service advisor or a finance director, the scenarios match the role. How they respond tells you more than any interview ever could.',
                   pill: '100% mobile optimised',
                 },
                 {
@@ -1168,7 +1168,7 @@ export default function LandingPage() {
             <div style={{ textAlign: 'center', marginBottom: 64 }}>
               <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Features</div>
               <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: '#fff', letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 14 }}>
-                Pressure-Fit tells you how they work. Not how they interview.
+                Test how they work. Not how they interview.
               </h2>
               <p style={{ fontFamily: F, fontSize: 17, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, maxWidth: 500, margin: '0 auto' }}>
                 Designed for UK employers and recruitment agencies.
@@ -1180,8 +1180,8 @@ export default function LandingPage() {
             {[
               {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
-                title: 'Pressure-Fit: how they handle the hard days',
-                body: "Pressure-Fit measures how candidates handle conflicting priorities, difficult conversations, and tight deadlines. The number one predictor of whether someone will pass probation, and the thing interviews cannot test.",
+                title: 'How they handle the hard days',
+                body: "Find out how candidates handle conflicting priorities, difficult conversations, and tight deadlines. The number one predictor of whether someone will pass probation.",
               },
               {
                 icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx={12} cy={12} r={3}/></svg>,
