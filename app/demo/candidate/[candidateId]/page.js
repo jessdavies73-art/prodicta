@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import ProdictaLogo from '@/components/ProdictaLogo'
@@ -518,8 +518,11 @@ function SeniorityBadge({ score }) {
 
 
 /* ── Main page ────────────────────────────────────────────────────────────── */
-export default function DemoCandidatePage({ params }) {
+function DemoCandidateInner({ params }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const demoType = searchParams.get('type') === 'employer' ? 'employer' : 'agency'
+  const isAgency = demoType === 'agency'
   const [activeSection, setActiveSection] = useState('summary')
   const [expandedWeeks, setExpandedWeeks] = useState({})
   const [outcomeModal, setOutcomeModal] = useState(false)
@@ -727,15 +730,26 @@ export default function DemoCandidatePage({ params }) {
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px' }}
                   >
                     <Ic name="file" size={14} color={TEAL} />
-                    Export Client Report
+                    {isAgency ? 'Export Client Report' : 'Export PDF'}
                   </button>
-                  <button
-                    onClick={() => setSendModal(true)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEAL, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px' }}
-                  >
-                    <Ic name="send" size={14} color={NAVY} />
-                    Send to Client
-                  </button>
+                  {isAgency && (
+                    <button
+                      onClick={() => setSendModal(true)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEAL, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px' }}
+                    >
+                      <Ic name="send" size={14} color={NAVY} />
+                      Send to Client
+                    </button>
+                  )}
+                  {!isAgency && (
+                    <button
+                      onClick={() => setSignupPrompt(true)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEAL, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px' }}
+                    >
+                      <Ic name="bar" size={14} color={NAVY} />
+                      Probation Co-pilot
+                    </button>
+                  )}
                   <button
                     onClick={() => setSignupPrompt(true)}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px' }}
@@ -1567,33 +1581,39 @@ export default function DemoCandidatePage({ params }) {
                     { title: '90-Day Hiring Manager Coaching Plan', desc: 'A structured probation guide for the hiring manager developed with Alchemy Training UK. Three phases with SMART objectives, weekly check-in templates, SBI feedback prompts, stakeholder mapping, and Alchemy coach sign-off at each phase.' },
                     { title: 'Key Stakeholder Mapping', desc: 'Identifies who the new hire will work with, the pressure points in each relationship, and what to watch for based on the assessment findings.' },
                     { title: 'Brief Health Check', desc: 'Analyses the job description before assessment and flags mismatches between role title, responsibilities, seniority, and what actually predicts success.' },
-                    { title: 'Probation Co-pilot', desc: 'Live dashboard tracking whether predictions are materialising during probation. Traffic lights for each watch-out, manager notes, and exportable PDF evidence trail.' },
-                    { title: 'Outcome Tracking 2.0', desc: 'Automatic email check-ins at 3, 6, and 12 months asking how the hire is performing. One-click responses. Builds your prediction accuracy data over time.' },
+                    { title: 'Outcome Tracking 2.0', desc: isAgency ? 'Automatic check-ins tracking whether your placement is still in role. Builds your prediction accuracy data over time.' : 'Automatic email check-ins at 3, 6, and 12 months asking how the hire is performing. One-click responses. Builds your prediction accuracy data over time.' },
                     { title: 'Candidate Development Portal', desc: 'Professional feedback for candidates showing strengths, development areas with actionable advice, anonymised benchmarks, growth trajectory for retakes, and downloadable PDF.' },
-                    { title: 'Rejected Candidate Development Plan', desc: 'Send candidates who were not hired a professional development plan with strengths and growth areas. Employer only. Builds your employer brand.' },
                     { title: 'ERA 2025 Compliance Certificate', desc: 'Documenting the objective, evidence-based hiring decision for every assessment. Tribunal-ready.' },
-                    { title: 'Cost of Wrong Hire Calculator', desc: 'Live calculator showing your ERA 2025 tribunal exposure based on salary and hire volume.' },
-                    { title: 'Document This Assessment', desc: 'One-click compliance record ready for Fair Work Agency audit or employment tribunal.' },
-                    { title: 'Red Flag Email Alerts', desc: 'Automatic notifications when a candidate scores below your threshold.' },
-                    { title: 'Smart Role Context', desc: 'AI asks follow-up questions about your role to generate more accurate scenarios.' },
-                    { title: 'Interview Brief', desc: 'A one-page printable brief prepared for the interview room.' },
-                    { title: 'Auto Shortlist', desc: 'AI-ranked top three candidates with a written justification for each.' },
-                    { title: 'Rapid Assessment', desc: 'A 15-minute compressed assessment for urgent or volume hiring.' },
-                    { title: 'Probation Timeline Tracker', desc: 'Visual tracker with automated reminders throughout the probation period.' },
-                    { title: 'Hiring Cost Saved Calculator', desc: 'Track the financial value of every hiring decision PRODICTA informed.' },
-                    { title: 'Candidate Expectation Mismatch Detection', desc: 'Flags when a candidate\'s expectations of the role do not match the reality described in the JD.' },
-                    { title: 'Why They Might Leave Analysis', desc: 'A specific narrative prediction of what would cause this hire to leave within 6 months, with prevention actions.' },
-                    { title: 'Probation Review Generator', desc: 'Auto-generated structured probation reviews at month 1, 3, and 5, cross-checked against the original assessment.' },
                     { title: 'Simple View Toggle', desc: 'A plain-English version of the report for line managers, with no jargon and no technical scoring language.' },
-                    { title: 'Bulk Screening Mode', desc: 'Ranked Recommended, Review, and Not Recommended tiers across the full candidate pool for high-volume roles.' },
-                    { title: 'Response Integrity Checks', desc: 'Detect AI-assisted or rushed answers before you make a decision.' },
+                    { title: 'Response Integrity Checks', desc: isAgency ? 'Detect AI-assisted or rushed answers before you present the candidate.' : 'Detect AI-assisted or rushed answers before you make a decision.' },
                     { title: 'Culture-Fit DNA Matching', desc: 'Five-dimension working style analysis showing how the candidate\'s natural approach matches the role environment.' },
                     { title: 'Counter-Offer Resilience Score', desc: 'Predicts how likely the candidate is to accept a counter-offer from their current employer.' },
                     { title: 'Execution Reliability Score', desc: 'Measures follow-through and consistency under pressure.' },
                     { title: 'Training Potential Score', desc: 'For junior and mid-level candidates, predicts how quickly they will develop with the right support.' },
-                    { title: 'Offer Risk Confirmation', desc: 'Shows a risk summary before you confirm a hire, so you make the decision with full awareness.' },
-                    { title: 'Decision Override Tracking', desc: 'Documents when you hire against the assessment recommendation, creating an evidence trail.' },
+                    { title: 'Smart Role Context', desc: 'AI asks follow-up questions about your role to generate more accurate scenarios.' },
+                    { title: 'Interview Brief', desc: 'A one-page printable brief prepared for the interview room.' },
+                    { title: 'Rapid Assessment', desc: 'A 15-minute compressed assessment for urgent or volume hiring.' },
                     { title: 'Re-run Scenario', desc: 'Generate one additional scenario per candidate for deeper assessment on a specific area.' },
+                    ...(isAgency ? [
+                      { title: 'Auto Shortlist', desc: 'AI-ranked top three candidates with a written justification for each. Send the shortlist directly to your client.' },
+                      { title: 'Configurable Client Reports', desc: 'Choose exactly what your client sees. Toggle sections on and off before sending the report.' },
+                      { title: 'Rebate Period Tracker', desc: 'Track rebate windows for every placement. Automated reminders before rebate periods expire.' },
+                      { title: 'Placement Risk Calculator', desc: 'Calculate the financial risk of each placement based on salary, rebate terms, and assessment results.' },
+                      { title: 'Bulk Screening Mode', desc: 'Ranked Recommended, Review, and Not Recommended tiers across the full candidate pool for high-volume roles.' },
+                    ] : [
+                      { title: 'Probation Co-pilot', desc: 'Live dashboard tracking whether predictions are materialising during probation. Traffic lights for each watch-out, manager notes, and exportable PDF evidence trail.' },
+                      { title: 'Probation Timeline Tracker', desc: 'Visual tracker with automated reminders throughout the probation period.' },
+                      { title: 'Probation Review Generator', desc: 'Auto-generated structured probation reviews at month 1, 3, and 5, cross-checked against the original assessment.' },
+                      { title: 'ERA 2025 Risk Calculator', desc: 'Live calculator showing your ERA 2025 tribunal exposure based on salary and hire volume.' },
+                      { title: 'Rejected Candidate Development Plan', desc: 'Send candidates who were not hired a professional development plan with strengths and growth areas. Builds your employer brand.' },
+                      { title: 'Red Flag Email Alerts', desc: 'Automatic notifications when a candidate scores below your threshold.' },
+                      { title: 'Hiring Cost Saved Calculator', desc: 'Track the financial value of every hiring decision PRODICTA informed.' },
+                      { title: 'Candidate Expectation Mismatch Detection', desc: 'Flags when a candidate\'s expectations of the role do not match the reality described in the JD.' },
+                      { title: 'Why They Might Leave Analysis', desc: 'A specific narrative prediction of what would cause this hire to leave within 6 months, with prevention actions.' },
+                      { title: 'Offer Risk Confirmation', desc: 'Shows a risk summary before you confirm your decision, so you hire with full awareness.' },
+                      { title: 'Decision Override Tracking', desc: 'Documents when you hire against the assessment recommendation, creating an evidence trail.' },
+                      { title: 'Document This Assessment', desc: 'One-click compliance record ready for Fair Work Agency audit or employment tribunal.' },
+                    ]),
                   ].map(({ title, desc }) => (
                     <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                       <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 3 }}>
@@ -1757,4 +1777,8 @@ export default function DemoCandidatePage({ params }) {
       )}
     </div>
   )
+}
+
+export default function DemoCandidatePage({ params }) {
+  return <Suspense><DemoCandidateInner params={params} /></Suspense>
 }

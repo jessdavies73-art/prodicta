@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
@@ -168,8 +168,11 @@ function RiskCalculator() {
   )
 }
 
-export default function DemoDashboard() {
+function DemoDashboardInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const [demoType, setDemoType] = useState(searchParams.get('type') === 'employer' ? 'employer' : 'agency')
+  const isAgency = demoType === 'agency'
   const [search, setSearch] = useState('')
   const [hoveredRow, setHoveredRow] = useState(null)
   const [searchFocused, setSearchFocused] = useState(false)
@@ -225,6 +228,24 @@ export default function DemoDashboard() {
           </div>
         </div>
 
+        {/* Account type toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 24, background: CARD, borderRadius: 10, border: `1.5px solid ${BD}`, padding: 3, width: 'fit-content' }}>
+          {[{ key: 'agency', label: 'Recruitment Agency' }, { key: 'employer', label: 'Direct Employer' }].map(opt => (
+            <button
+              key={opt.key}
+              onClick={() => { setDemoType(opt.key); window.history.replaceState(null, '', `/demo?type=${opt.key}`) }}
+              style={{
+                fontFamily: F, fontSize: 13.5, fontWeight: 700, border: 'none', cursor: 'pointer',
+                padding: '9px 22px', borderRadius: 8, transition: 'all 0.15s',
+                background: demoType === opt.key ? TEAL : 'transparent',
+                color: demoType === opt.key ? NAVY : TX3,
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
         {/* Stats */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 28 }}>
           <StatCard icon="check" label="Completed" value={completed.length} sub="Completed assessments" accent={TEAL} />
@@ -237,8 +258,8 @@ export default function DemoDashboard() {
         <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
           <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div>
-              <h2 style={{ margin: '0 0 2px', fontSize: 15.5, fontWeight: 700, color: TX }}>Hiring Pipeline Health</h2>
-              <p style={{ margin: 0, fontSize: 12.5, color: TX3 }}>Quality snapshot across all active assessments.</p>
+              <h2 style={{ margin: '0 0 2px', fontSize: 15.5, fontWeight: 700, color: TX }}>{isAgency ? 'Placement Pipeline Health' : 'Hiring Pipeline Health'}</h2>
+              <p style={{ margin: 0, fontSize: 12.5, color: TX3 }}>{isAgency ? 'Quality snapshot across all active placements.' : 'Quality snapshot across all active assessments.'}</p>
             </div>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, background: TEALLT, border: `1px solid ${TEAL}55`, fontSize: 12, fontWeight: 700, color: TEALD }}>
               <Ic name="calendar" size={12} color={TEALD} />April 2026
@@ -333,7 +354,7 @@ export default function DemoDashboard() {
                     return (
                       <tr
                         key={c.id}
-                        onClick={() => { if (isCompleted) router.push(`/demo/candidate/${c.id}`) }}
+                        onClick={() => { if (isCompleted) router.push(`/demo/candidate/${c.id}?type=${demoType}`) }}
                         onMouseEnter={() => setHoveredRow(c.id)}
                         onMouseLeave={() => setHoveredRow(null)}
                         style={{ borderBottom: i < filtered.length - 1 ? `1px solid ${BD}` : 'none', background: isHovered && isCompleted ? '#f0fdfb' : CARD, cursor: isCompleted ? 'pointer' : 'default', transition: 'background 0.15s', boxShadow: isHovered && isCompleted ? `inset 3px 0 0 ${TEAL}` : 'none' }}
@@ -440,4 +461,8 @@ export default function DemoDashboard() {
       </main>
     </DemoLayout>
   )
+}
+
+export default function DemoDashboard() {
+  return <Suspense><DemoDashboardInner /></Suspense>
 }
