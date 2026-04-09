@@ -877,6 +877,43 @@ function DemoCandidateInner({ params }) {
                     </button>
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
                   </div>
+                  <div>
+                    <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                      <Ic name="file" size={14} color={TEALD} />
+                      Export Coaching Plan PDF
+                    </button>
+                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
+                  </div>
+                  <div>
+                    <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                      <Ic name="file" size={14} color={TEALD} />
+                      Export Compliance Certificate
+                    </button>
+                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
+                  </div>
+                  <div>
+                    <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                      <Ic name="sliders" size={14} color={TEALD} />
+                      Re-run Scenario
+                    </button>
+                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
+                  </div>
+                  <div>
+                    <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: AMBBG, border: `1.5px solid ${AMBBD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: AMB, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                      <Ic name="alert" size={14} color={AMB} />
+                      Offer Risk Confirmation
+                    </button>
+                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
+                  </div>
+                  {!isAgency && (
+                    <div>
+                      <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                        <Ic name="send" size={14} color={TEALD} />
+                        Send Development Feedback
+                      </button>
+                      <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
