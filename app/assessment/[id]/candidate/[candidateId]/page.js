@@ -3799,6 +3799,21 @@ export default function CandidateReportPage({ params }) {
                       </div>
                       {expandedSections.coachingPlan && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                          {Array.isArray(results.coaching_plan.key_stakeholders) && results.coaching_plan.key_stakeholders.length > 0 && (
+                            <div style={{ border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px', background: CARD }}>
+                              <div style={{ fontFamily: FM, fontSize: 13, fontWeight: 800, color: NAVY, letterSpacing: '0.03em', textTransform: 'uppercase', marginBottom: 10 }}>Key Stakeholders</div>
+                              <div style={{ fontSize: 12, color: TX3, marginBottom: 10 }}>The key relationships this hire will need to manage, and where the pressure points sit based on PRODICTA assessment findings.</div>
+                              {results.coaching_plan.key_stakeholders.map((s, i) => (
+                                <div key={i} style={{ padding: '10px 14px', borderLeft: `3px solid ${TEAL}`, background: '#f8fafc', borderRadius: '0 6px 6px 0', marginBottom: 8 }}>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: TX }}>{s.role}</div>
+                                  {s.what_hire_needs_from_them && <div style={{ fontSize: 12, color: TX2, marginTop: 2 }}>What the hire needs from them: {s.what_hire_needs_from_them}</div>}
+                                  {s.what_they_need_from_hire && <div style={{ fontSize: 12, color: TX2, marginTop: 2 }}>What they need from the hire: {s.what_they_need_from_hire}</div>}
+                                  {s.pressure_point && <div style={{ fontSize: 12, color: '#d97706', fontWeight: 600, marginTop: 2 }}>Pressure point: {s.pressure_point}</div>}
+                                  {s.watch_for && <div style={{ fontSize: 12, color: TX2, marginTop: 2, fontStyle: 'italic' }}>Watch for: {s.watch_for}</div>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           {['phase1','phase2','phase3'].map(pk => {
                             const p = results.coaching_plan[pk]
                             if (!p) return null

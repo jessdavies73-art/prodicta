@@ -111,6 +111,23 @@ export async function GET(request, { params }) {
     drawText('Coaching plan content developed by Liz Harris, Founder, Alchemy Training UK.', { size: 10, color: grey })
     drawText('Contact: liz@alchemytraininguk.com, alchemytraininguk.com', { size: 10, color: grey })
 
+    // Key Stakeholders
+    if (Array.isArray(cp.key_stakeholders) && cp.key_stakeholders.length) {
+      newPage()
+      heading('Key Stakeholders', 16)
+      drawText('The key relationships this hire will need to manage, and where the pressure points sit based on PRODICTA assessment findings.', { size: 10, color: grey })
+      y -= 4
+      cp.key_stakeholders.forEach((s, i) => {
+        ensure(60)
+        drawText(`${i + 1}. ${s.role || ''}`, { size: 11, font: helvB })
+        if (s.what_hire_needs_from_them) drawText(`What the hire needs from them: ${s.what_hire_needs_from_them}`, { size: 10 })
+        if (s.what_they_need_from_hire) drawText(`What they need from the hire: ${s.what_they_need_from_hire}`, { size: 10 })
+        if (s.pressure_point) drawText(`Pressure point: ${s.pressure_point}`, { size: 10 })
+        if (s.watch_for) drawText(`Watch for: ${s.watch_for}`, { size: 10 })
+        y -= 4
+      })
+    }
+
     // Phases
     const phaseKeys = ['phase1', 'phase2', 'phase3']
     for (const pk of phaseKeys) {

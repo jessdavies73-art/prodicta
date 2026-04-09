@@ -62,6 +62,22 @@ export default function CoachingPlanFullPage({ params }) {
           <div style={{ fontSize: 12, color: TX3, marginTop: 6, fontStyle: 'italic' }}>Coaching plan content developed by Liz Harris, Founder, Alchemy Training UK.</div>
         </div>
 
+        {Array.isArray(cp.key_stakeholders) && cp.key_stakeholders.length > 0 && (
+          <div style={{ marginBottom: 32, padding: 20, border: `1px solid ${BD}`, borderRadius: 10 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: NAVY, marginBottom: 4 }}>Key Stakeholders</div>
+            <div style={{ fontSize: 13, color: TX3, marginBottom: 14 }}>The key relationships this hire will need to manage, and where the pressure points sit based on PRODICTA assessment findings.</div>
+            {cp.key_stakeholders.map((s, i) => (
+              <div key={i} style={{ padding: '12px 16px', borderLeft: `3px solid ${TEAL}`, background: '#f8fafc', borderRadius: '0 6px 6px 0', marginBottom: 10 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: TX }}>{s.role}</div>
+                {s.what_hire_needs_from_them && <div style={{ fontSize: 13, color: TX2, marginTop: 3 }}>What the hire needs from them: {s.what_hire_needs_from_them}</div>}
+                {s.what_they_need_from_hire && <div style={{ fontSize: 13, color: TX2, marginTop: 3 }}>What they need from the hire: {s.what_they_need_from_hire}</div>}
+                {s.pressure_point && <div style={{ fontSize: 13, color: AMB, fontWeight: 600, marginTop: 3 }}>Pressure point: {s.pressure_point}</div>}
+                {s.watch_for && <div style={{ fontSize: 13, color: TX2, marginTop: 3, fontStyle: 'italic' }}>Watch for: {s.watch_for}</div>}
+              </div>
+            ))}
+          </div>
+        )}
+
         {phases.map((p, idx) => (
           <div key={idx} className="phase-block" style={{ marginBottom: 32, padding: 20, border: `1px solid ${BD}`, borderRadius: 10 }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: NAVY, marginBottom: 2 }}>{p.title}</div>
