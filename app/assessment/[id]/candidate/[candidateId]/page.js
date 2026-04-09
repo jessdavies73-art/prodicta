@@ -3965,8 +3965,11 @@ export default function CandidateReportPage({ params }) {
                                   </div>
                                 )}
                                 {p.alchemy_checkin && (
-                                  <div style={{ marginTop: 10, fontSize: 12, color: TX2 }}>
-                                    Alchemy check-in: {p.alchemy_checkin} Contact Liz at liz@alchemytraininguk.com or alchemytraininguk.com.
+                                  <div style={{ marginTop: 10, padding: '12px 14px', background: TEALLT, border: `1px solid ${TEAL}44`, borderRadius: 8, display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 12, flexDirection: isMobile ? 'column' : 'row' }}>
+                                    <div style={{ fontSize: 12.5, color: TX2, lineHeight: 1.55 }}>
+                                      Alchemy check-in: {p.alchemy_checkin}
+                                    </div>
+                                    <a href="https://tidycal.com/m57e7l3/30-minute-coaching-check-in" target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: F, fontSize: 12, fontWeight: 700, color: '#fff', background: TEAL, padding: '8px 16px', borderRadius: 7, textDecoration: 'none', whiteSpace: 'nowrap', width: isMobile ? '100%' : 'auto', justifyContent: 'center', boxSizing: 'border-box' }}>Book a Coaching Check-in with Liz</a>
                                   </div>
                                 )}
                               </div>
@@ -3975,7 +3978,7 @@ export default function CandidateReportPage({ params }) {
                           <div style={{ border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px' }}>
                             <div style={{ fontFamily: FM, fontSize: 12, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Alchemy Sign-Off Tracker</div>
                             {[1,2,3].map(n => (
-                              <div key={n} style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 1fr 1fr', gap: 8, alignItems: 'center', marginBottom: 6, fontSize: 12 }}>
+                              <div key={n} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '80px 1fr 1fr 1fr 1fr', gap: 8, alignItems: 'center', marginBottom: 6, fontSize: 12 }}>
                                 <div style={{ fontWeight: 700, color: NAVY }}>Phase {n}</div>
                                 <div>Completed: <input type="text" placeholder="Yes/No" style={{ width: '70%', fontSize: 12, padding: '3px 6px', border: `1px solid ${BD}`, borderRadius: 4 }} /></div>
                                 <div>Date: <input type="text" placeholder="dd/mm/yyyy" style={{ width: '70%', fontSize: 12, padding: '3px 6px', border: `1px solid ${BD}`, borderRadius: 4 }} /></div>
@@ -3983,6 +3986,35 @@ export default function CandidateReportPage({ params }) {
                                 <div />
                               </div>
                             ))}
+                          </div>
+
+                          {/* Coaching check-in booking CTA */}
+                          <div style={{ border: `1.5px solid ${TEAL}44`, borderRadius: 10, padding: '18px 20px', background: `linear-gradient(135deg, ${TEALLT} 0%, #f0fdf8 100%)`, textAlign: isMobile ? 'center' : 'left' }}>
+                            <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 4 }}>
+                              Need support implementing this coaching plan?
+                            </div>
+                            <div style={{ fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.6, marginBottom: 14 }}>
+                              Book a 30-minute coaching check-in with Liz Harris at Alchemy Training UK to review progress, address challenges, and stay on track through probation.
+                            </div>
+                            <a
+                              href="https://tidycal.com/m57e7l3/30-minute-coaching-check-in"
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                fontFamily: F, fontSize: 13.5, fontWeight: 700,
+                                color: '#fff', background: TEAL,
+                                padding: '11px 24px', borderRadius: 8,
+                                textDecoration: 'none',
+                                width: isMobile ? '100%' : 'auto',
+                                boxSizing: 'border-box',
+                                transition: 'background 0.15s, box-shadow 0.15s',
+                              }}
+                              onMouseEnter={e => { e.currentTarget.style.background = TEALD; e.currentTarget.style.boxShadow = `0 4px 16px ${TEAL}44` }}
+                              onMouseLeave={e => { e.currentTarget.style.background = TEAL; e.currentTarget.style.boxShadow = 'none' }}
+                            >
+                              Book a Coaching Check-in with Liz
+                            </a>
                           </div>
                         </div>
                       )}

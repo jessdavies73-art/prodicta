@@ -109,7 +109,7 @@ export async function GET(request, { params }) {
     if (candidate.assessments?.role_title) drawText(`Role: ${candidate.assessments.role_title}`, { size: 12 })
     y -= 8
     drawText('Coaching plan content developed by Liz Harris, Founder, Alchemy Training UK.', { size: 10, color: grey })
-    drawText('Contact: liz@alchemytraininguk.com, alchemytraininguk.com', { size: 10, color: grey })
+    drawText('Contact: liz@alchemytraininguk.com | Book a coaching check-in: tidycal.com/m57e7l3/30-minute-coaching-check-in', { size: 10, color: grey })
 
     // Key Stakeholders
     if (Array.isArray(cp.key_stakeholders) && cp.key_stakeholders.length) {
@@ -190,7 +190,7 @@ export async function GET(request, { params }) {
         drawText(p.alchemy_checkin)
       }
       y -= 8
-      drawText('Contact Liz Harris, Alchemy Training UK: liz@alchemytraininguk.com, alchemytraininguk.com', { size: 9, color: grey })
+      drawText('Contact Liz Harris, Alchemy Training UK: liz@alchemytraininguk.com | Book a check-in: tidycal.com/m57e7l3/30-minute-coaching-check-in', { size: 9, color: grey })
     }
 
     // Weekly check-in template
@@ -256,7 +256,7 @@ export async function GET(request, { params }) {
     // Footer on every page
     const pages = pdf.getPages()
     pages.forEach((pg, idx) => {
-      pg.drawText('PRODICTA x Alchemy Training UK, liz@alchemytraininguk.com', { x: MARGIN_L, y: 30, size: 8, font: helv, color: grey })
+      pg.drawText('PRODICTA x Alchemy Training UK | Book a coaching check-in: tidycal.com/m57e7l3/30-minute-coaching-check-in', { x: MARGIN_L, y: 30, size: 8, font: helv, color: grey })
       pg.drawText(`${idx + 1}`, { x: W - MARGIN_R, y: 30, size: 8, font: helv, color: grey })
     })
 

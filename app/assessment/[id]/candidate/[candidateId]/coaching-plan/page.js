@@ -159,8 +159,9 @@ export default function CoachingPlanFullPage({ params }) {
             )}
 
             {p.alchemy_checkin && (
-              <div style={{ fontSize: 13, color: TX2 }}>
-                Alchemy check-in: {p.alchemy_checkin} Contact Liz at liz@alchemytraininguk.com or alchemytraininguk.com.
+              <div style={{ fontSize: 13, color: TX2, padding: '10px 14px', background: TEALLT, border: `1px solid ${TEAL}44`, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <span>Alchemy check-in: {p.alchemy_checkin}</span>
+                <a href="https://tidycal.com/m57e7l3/30-minute-coaching-check-in" target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', fontFamily: F, fontSize: 12, fontWeight: 700, color: '#fff', background: TEAL, padding: '8px 16px', borderRadius: 7, textDecoration: 'none', whiteSpace: 'nowrap' }}>Book a Coaching Check-in with Liz</a>
               </div>
             )}
           </div>
@@ -207,8 +208,31 @@ export default function CoachingPlanFullPage({ params }) {
           ))}
         </div>
 
+        <div className="no-print" style={{ marginBottom: 24, padding: '20px 24px', background: `linear-gradient(135deg, ${TEALLT} 0%, #f0fdf8 100%)`, border: `1.5px solid ${TEAL}44`, borderRadius: 10, textAlign: 'center' }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: NAVY, marginBottom: 4 }}>
+            Need support implementing this coaching plan?
+          </div>
+          <div style={{ fontSize: 13, color: TX2, lineHeight: 1.6, marginBottom: 14, maxWidth: 520, marginLeft: 'auto', marginRight: 'auto' }}>
+            Book a 30-minute coaching check-in with Liz Harris at Alchemy Training UK to review progress, address challenges, and stay on track through probation.
+          </div>
+          <a
+            href="https://tidycal.com/m57e7l3/30-minute-coaching-check-in"
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: F, fontSize: 14, fontWeight: 700,
+              color: '#fff', background: TEAL,
+              padding: '11px 28px', borderRadius: 8,
+              textDecoration: 'none',
+            }}
+          >
+            Book a Coaching Check-in with Liz
+          </a>
+        </div>
+
         <div style={{ fontSize: 11, color: TX3, textAlign: 'center', borderTop: `1px solid ${BD}`, paddingTop: 14 }}>
-          Provided by PRODICTA in partnership with Alchemy Training UK. Coaching plan content developed by Liz Harris, Founder, Alchemy Training UK. Contact: liz@alchemytraininguk.com, alchemytraininguk.com
+          Provided by PRODICTA in partnership with Alchemy Training UK. Coaching plan content developed by Liz Harris, Founder, Alchemy Training UK. <a href="https://tidycal.com/m57e7l3/30-minute-coaching-check-in" target="_blank" rel="noreferrer" style={{ color: TEAL, textDecoration: 'none' }}>Book a coaching check-in</a> | liz@alchemytraininguk.com | alchemytraininguk.com
         </div>
       </div>
     </div>
