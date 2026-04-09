@@ -20,16 +20,6 @@ const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
 function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
-function WidthDebug() {
-  const [w, setW] = useState(null)
-  useEffect(() => { setW(window.innerWidth) }, [])
-  return (
-    <div style={{ background: w !== null && w <= 768 ? 'red' : 'blue', color: 'white', padding: '10px', textAlign: 'center', fontSize: '16px' }}>
-      Width: {w !== null ? w : 'SSR'} | Mobile: {w !== null && w <= 768 ? 'YES' : 'NO'} | Hook: {String(useIsMobile())}
-    </div>
-  )
-}
-
 const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
 
 const PURPLE = '#7C3AED'
@@ -745,8 +735,6 @@ export default function DashboardPage() {
         flex: 1,
         minWidth: 0,
       }}>
-
-        <WidthDebug />
 
         {/* ── Header ── */}
         <div style={{

@@ -18,16 +18,6 @@ import {
   riskBg, riskCol, riskBd,
 } from '@/lib/constants'
 
-function WidthDebug() {
-  const [w, setW] = useState(null)
-  useEffect(() => { setW(window.innerWidth) }, [])
-  return (
-    <div style={{ background: w !== null && w <= 768 ? 'red' : 'blue', color: 'white', padding: '10px', textAlign: 'center', fontSize: '16px' }}>
-      Width: {w !== null ? w : 'SSR'} | Mobile: {w !== null && w <= 768 ? 'YES' : 'NO'} | Hook: {String(useIsMobile())}
-    </div>
-  )
-}
-
 /* ─────────────────────────────────────────────────────────────
    Score colour helpers , updated thresholds
    <50 red · 50,69 amber · 70,84 jade · 85+ green
@@ -1497,8 +1487,6 @@ export default function CandidateReportPage({ params }) {
       <Sidebar active="assessment" />
 
       <main className="main-content" style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', maxWidth: 1000, boxSizing: 'border-box' }}>
-
-        <WidthDebug />
 
         {/* Back */}
         <button

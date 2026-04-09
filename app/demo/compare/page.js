@@ -1,13 +1,17 @@
 'use client'
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
 import { Ic } from '@/components/Icons'
 import InfoTooltip from '@/components/InfoTooltip'
 import Avatar from '@/components/Avatar'
 import { DEMO_ASSESSMENTS, DEMO_CANDIDATES, getDemoCandidatesFull } from '@/lib/demo-data'
-import useIsMobile from '@/hooks/useIsMobile'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, F, FM, riskBg, riskCol, riskBd } from '@/lib/constants'
+
+const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
+const _mSnap = () => window.innerWidth <= 768
+const _mServer = () => false
+function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
 const sc   = s => s >= 85 ? GRN  : s >= 70 ? TEAL : s >= 50 ? AMB  : RED
 const sbg  = s => s >= 85 ? GRNBG : s >= 70 ? TEALLT : s >= 50 ? AMBBG : REDBG

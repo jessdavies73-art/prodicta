@@ -1,17 +1,21 @@
 'use client'
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense, useSyncExternalStore } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import ProdictaLogo from '@/components/ProdictaLogo'
 import { DemoBanner, DemoSidebar, SignUpModal } from '@/components/DemoShell'
 import { DEMO_CANDIDATES, DEMO_RESULTS, DEMO_RESPONSES } from '@/lib/demo-data'
-import useIsMobile from '@/hooks/useIsMobile'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
   F, FM, riskBg, riskCol, riskBd, bs,
 } from '@/lib/constants'
+
+const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
+const _mSnap = () => window.innerWidth <= 768
+const _mServer = () => false
+function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
 /* ── Score colour helpers ─────────────────────────────────────────────────── */
 const sc   = s => s >= 85 ? GRN  : s >= 70 ? TEAL : s >= 50 ? AMB  : RED
@@ -799,7 +803,7 @@ function DemoCandidateInner({ params }) {
 
         {/* ── CANDIDATE HEADER ── */}
         <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', flexDirection: isMobile ? 'column' : 'row' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: 1, minWidth: 240 }}>
               <Avatar name={candidate.name} size={52} />
               <div>
@@ -837,7 +841,7 @@ function DemoCandidateInner({ params }) {
             </div>
 
             {results && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 28, flexShrink: 0, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 28, flexShrink: 0, flexWrap: 'wrap', flexDirection: isMobile ? 'column' : 'row', width: isMobile ? '100%' : 'auto' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>Overall Score <InfoTooltip text="Comprehensive performance score across all 4 scenarios. 50 is average, 75+ is strong. Calibrated to role seniority." /></div>
                   <ScoreRing score={score} size={130} strokeWidth={9} />
@@ -1016,7 +1020,7 @@ function DemoCandidateInner({ params }) {
 
             {/* ── SUMMARY ── */}
             <ScrollReveal id="summary">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 16, marginBottom: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 16, marginBottom: 20 }}>
                 <Card topColor={sc(passProbability ?? score)} style={{ textAlign: 'center', padding: '24px 20px', background: `linear-gradient(180deg, ${sbg(passProbability ?? score)} 0%, #fff 60%)` }}>
                   <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>Pass Probability <InfoTooltip text="The likelihood this candidate will successfully complete probation, based on scores, pressure-fit, and response quality." /></div>
                   <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 12px' }}>
@@ -1083,7 +1087,7 @@ function DemoCandidateInner({ params }) {
 
                 <div style={{ padding: '18px 28px' }}>
                   <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>Time per scenario</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${scenarioCount}, 1fr)`, gap: 10, marginBottom: 18 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${scenarioCount}, 1fr)`, gap: 10, marginBottom: 18 }}>
                     {scenarioIndices.map(i => {
                       const resp = responses.find(r => r.scenario_index === i)
                       const secs = resp?.time_taken_seconds ?? null
@@ -1192,7 +1196,7 @@ function DemoCandidateInner({ params }) {
                     )}
                   </div>
                   {/* 2×2 grid */}
-                  <div style={{ padding: '24px 28px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div style={{ padding: '24px 28px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
                     {DIMENSIONS.map(({ key, label, icon, desc }, idx) => {
                       const dim = dims[key] ?? {}
                       const s = dim.score ?? null
@@ -1259,7 +1263,7 @@ function DemoCandidateInner({ params }) {
                 <Card style={{ marginBottom: 20 }}>
                   <SectionHeading tooltip="Individual skill scores with detailed narratives referencing specific scenario responses.">Skills Breakdown</SectionHeading>
                   <RadarChart scores={results.scores} />
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 16 }}>
                     {Object.entries(results.scores).map(([skill, skillScore]) => {
                       const narrative = results.score_narratives?.[skill]
                       return (
@@ -1637,7 +1641,7 @@ function DemoCandidateInner({ params }) {
                 <Ic name="info" size={14} color={AMB} />
                 <span style={{ fontFamily: F, fontSize: 12.5, color: '#92400e' }}>Demo preview. Sign up to upload real documents and send candidate packs.</span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
                 {/* CV — shown as pre-uploaded to demo the filled state */}
                 <div style={{ border: `2px solid ${TEAL}`, borderRadius: 12, padding: '20px 20px', textAlign: 'center', background: TEALLT }}>
                   <Ic name="file" size={28} color={TEAL} />

@@ -1,9 +1,13 @@
 'use client'
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
 import { Ic } from '@/components/Icons'
-import useIsMobile from '@/hooks/useIsMobile'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, F, FM } from '@/lib/constants'
+
+const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
+const _mSnap = () => window.innerWidth <= 768
+const _mServer = () => false
+function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
 const SHADOW = '0 2px 12px rgba(15,33,55,0.08)'
 
@@ -99,6 +103,7 @@ function BillingTab({ onUpgrade }) {
 }
 
 function TeamTab({ onInvite }) {
+  const isMobile = useIsMobile()
   const members = [
     { name: 'Demo User', email: 'demo@prodicta.io', role: 'Owner', initials: 'D', since: 'Today' },
   ]
@@ -116,13 +121,13 @@ function TeamTab({ onInvite }) {
       </div>
 
       <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ padding: '10px 20px', borderBottom: `1px solid ${BD}`, background: BG, display: 'grid', gridTemplateColumns: '1fr 1fr auto auto' }}>
+        <div style={{ padding: '10px 20px', borderBottom: `1px solid ${BD}`, background: BG, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr auto auto' }}>
           {['Member', 'Email', 'Role', ''].map((h, i) => (
             <span key={i} style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</span>
           ))}
         </div>
         {members.map(m => (
-          <div key={m.email} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', padding: '14px 20px', alignItems: 'center', gap: 12 }}>
+          <div key={m.email} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr auto auto', padding: '14px 20px', alignItems: 'center', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: 9, background: `linear-gradient(135deg, ${TEAL}, #009688)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: NAVY }}>{m.initials}</div>
               <span style={{ fontFamily: F, fontSize: 14, fontWeight: 600, color: TX }}>{m.name}</span>

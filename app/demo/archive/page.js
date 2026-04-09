@@ -1,12 +1,16 @@
 'use client'
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
 import { Ic } from '@/components/Icons'
 import Avatar from '@/components/Avatar'
 import { DEMO_CANDIDATES } from '@/lib/demo-data'
-import useIsMobile from '@/hooks/useIsMobile'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, F, FM, riskBg, riskCol } from '@/lib/constants'
+
+const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
+const _mSnap = () => window.innerWidth <= 768
+const _mServer = () => false
+function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
 const SHADOW = '0 2px 12px rgba(15,33,55,0.08)'
 
@@ -54,7 +58,7 @@ export default function DemoArchivePage() {
           ) : (
             <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden', boxShadow: SHADOW }}>
               {/* Table header */}
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.4fr 1fr 1fr 1fr auto', gap: 0, padding: '10px 20px', borderBottom: `1px solid ${BD}`, background: BG }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1.4fr 1fr 1fr 1fr auto', gap: 0, padding: '10px 20px', borderBottom: `1px solid ${BD}`, background: BG }}>
                 {['Candidate', 'Role', 'Score', 'Rating', 'Archived', ''].map((h, i) => (
                   <span key={i} style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</span>
                 ))}
@@ -65,7 +69,7 @@ export default function DemoArchivePage() {
                   <div
                     key={c.id}
                     style={{
-                      display: 'grid', gridTemplateColumns: '2fr 1.4fr 1fr 1fr 1fr auto', gap: 0,
+                      display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1.4fr 1fr 1fr 1fr auto', gap: 0,
                       padding: '16px 20px', alignItems: 'center',
                       borderBottom: idx < archivedCandidates.length - 1 ? `1px solid ${BD}` : 'none',
                       background: idx % 2 === 0 ? CARD : '#fafbfc',

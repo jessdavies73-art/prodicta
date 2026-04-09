@@ -1,16 +1,20 @@
 'use client'
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense, useSyncExternalStore } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
-import useIsMobile from '@/hooks/useIsMobile'
 import { DEMO_CANDIDATES, DEMO_ASSESSMENTS } from '@/lib/demo-data'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
   F, FM, scolor, sbg, slabel, riskCol, riskBg, riskBd, cs, bs,
 } from '@/lib/constants'
+
+const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
+const _mSnap = () => window.innerWidth <= 768
+const _mServer = () => false
+function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
 function CountUp({ target }) {
   const [val, setVal] = useState(0)
@@ -378,7 +382,7 @@ function DemoDashboardInner() {
         <RiskCalculator isAgency={isAgency} />
 
         {/* Hiring Cost Saved + Cost of Vacancy */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
           <div style={{ background: NAVY, borderRadius: 14, padding: '22px 24px' }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Hiring cost saved</div>
             <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, color: TEAL, lineHeight: 1, marginBottom: 6 }}>£86,400</div>
@@ -421,7 +425,7 @@ function DemoDashboardInner() {
         </div>
 
         {/* Assessment Decline Insights + Speed to Offer + Prediction Accuracy */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 16, marginBottom: 24 }}>
           <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Assessment completion insights</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -543,7 +547,7 @@ function DemoDashboardInner() {
             </div>
 
             {/* Agency: Outcome Tracking + Red Flag Alerts */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Outcome tracking</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
@@ -644,7 +648,7 @@ function DemoDashboardInner() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Decision overrides</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
@@ -677,7 +681,7 @@ function DemoDashboardInner() {
             </div>
 
             {/* Employer: Probation Co-pilot + Probation Review Generator */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Probation co-pilot</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
@@ -715,7 +719,7 @@ function DemoDashboardInner() {
             </div>
 
             {/* Employer: Red Flag Alerts + Bulk Screening */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Red flag email alerts</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, marginBottom: 10 }}>
