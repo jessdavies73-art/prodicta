@@ -516,6 +516,46 @@ function SeniorityBadge({ score }) {
   return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: bg, color, border: `1px solid ${bd}` }}><Ic name={score >= 65 ? 'check' : 'alert'} size={11} color={color} /> {label}</span>
 }
 
+/* ── Locked / blurred premium section ────────────────────────────────────── */
+function LockedSection({ title, desc }) {
+  return (
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 14, marginBottom: 20 }}>
+      {/* Blurred placeholder content */}
+      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', padding: '24px 28px', background: CARD, border: `1px solid ${BD}` }}>
+        <div style={{ height: 14, width: '45%', background: '#d1d5db', borderRadius: 6, marginBottom: 14 }} />
+        <div style={{ height: 10, width: '90%', background: '#e5e7eb', borderRadius: 4, marginBottom: 8 }} />
+        <div style={{ height: 10, width: '75%', background: '#e5e7eb', borderRadius: 4, marginBottom: 8 }} />
+        <div style={{ height: 10, width: '82%', background: '#e5e7eb', borderRadius: 4, marginBottom: 14 }} />
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ height: 48, flex: 1, background: '#e5e7eb', borderRadius: 8 }} />
+          <div style={{ height: 48, flex: 1, background: '#e5e7eb', borderRadius: 8 }} />
+          <div style={{ height: 48, flex: 1, background: '#e5e7eb', borderRadius: 8 }} />
+        </div>
+      </div>
+      {/* Lock overlay */}
+      <div style={{
+        position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(2px)', zIndex: 2,
+      }}>
+        <div style={{ textAlign: 'center', maxWidth: 340, padding: '0 16px' }}>
+          <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 8, opacity: 0.7 }}>
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <div style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: NAVY, marginBottom: 4 }}>{title}</div>
+          <div style={{ fontFamily: F, fontSize: 12.5, color: TX3, lineHeight: 1.5, marginBottom: 12 }}>{desc}</div>
+          <a href="/login" style={{
+            display: 'inline-block', background: '#00BFA5', color: '#0f2137', fontFamily: F,
+            fontSize: 13, fontWeight: 800, padding: '10px 24px', borderRadius: 8, textDecoration: 'none',
+            boxShadow: '0 2px 8px rgba(0,191,165,0.3)',
+          }}>
+            Get started
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 /* ── Main page ────────────────────────────────────────────────────────────── */
 function DemoCandidateInner({ params }) {
@@ -725,38 +765,46 @@ function DemoCandidateInner({ params }) {
                     <Ic name="check" size={14} color={demoOutcome ? GRN : TEALD} />
                     {demoOutcome ? 'Update Outcome' : 'Log Outcome'}
                   </button>
-                  <button
-                    onClick={() => setSignupPrompt(true)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px' }}
-                  >
-                    <Ic name="file" size={14} color={TEAL} />
-                    {isAgency ? 'Export Client Report' : 'Export PDF'}
-                  </button>
-                  {isAgency && (
+                  <div>
                     <button
-                      onClick={() => setSendModal(true)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEAL, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px' }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}
                     >
-                      <Ic name="send" size={14} color={NAVY} />
-                      Send to Client
+                      <Ic name="file" size={14} color={TEAL} />
+                      {isAgency ? 'Export Client Report' : 'Export PDF'}
                     </button>
+                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
+                  </div>
+                  {isAgency && (
+                    <div>
+                      <button
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEAL, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}
+                      >
+                        <Ic name="send" size={14} color={NAVY} />
+                        Send to Client
+                      </button>
+                      <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
+                    </div>
                   )}
                   {!isAgency && (
-                    <button
-                      onClick={() => setSignupPrompt(true)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEAL, border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px' }}
-                    >
-                      <Ic name="bar" size={14} color={NAVY} />
-                      Probation Co-pilot
-                    </button>
+                    <div>
+                      <button
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEAL, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}
+                      >
+                        <Ic name="bar" size={14} color={NAVY} />
+                        Probation Co-pilot
+                      </button>
+                      <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
+                    </div>
                   )}
-                  <button
-                    onClick={() => setSignupPrompt(true)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px' }}
-                  >
-                    <Ic name="file" size={14} color={TEALD} />
-                    Interview Brief
-                  </button>
+                  <div>
+                    <button
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}
+                    >
+                      <Ic name="file" size={14} color={TEALD} />
+                      Interview Brief
+                    </button>
+                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -1524,142 +1572,46 @@ function DemoCandidateInner({ params }) {
               </div>
             </ScrollReveal>
 
-            {/* ── LOCKED FEATURES TEASER ── */}
-            <div style={{ marginBottom: 40, borderRadius: 14, overflow: 'hidden', boxShadow: SHADOW_LG }}>
-              {/* Blurred preview strip */}
-              <div style={{ position: 'relative', background: NAVY, overflow: 'hidden', padding: '28px 32px 0' }}>
-                <div style={{ filter: 'blur(4px)', opacity: 0.35, pointerEvents: 'none', userSelect: 'none' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
-                    {[
-                      { label: 'Probability of passing probation', val: 78, color: TEAL },
-                      { label: 'Top performer likelihood',         val: 42, color: AMB  },
-                      { label: 'Churn risk',                       val: 18, color: GRN  },
-                    ].map(({ label, val, color }) => (
-                      <div key={label} style={{ background: `${color}12`, border: `1px solid ${color}30`, borderRadius: 10, padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff' }}>{label}</span>
-                          <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 800, color }}>{val}%</span>
-                        </div>
-                        <div style={{ height: 6, background: `${color}22`, borderRadius: 3, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${val}%`, background: color, borderRadius: 3 }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* Fade overlay */}
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, background: `linear-gradient(to bottom, transparent, #0f2137)`, pointerEvents: 'none' }} />
-              </div>
+            {/* ── BLURRED / LOCKED PREMIUM SECTIONS ── */}
+            {[
+              { title: 'Predicted Outcomes', desc: 'See the probability of passing probation, churn risk, and top performer likelihood with dynamic colour-coded bars.' },
+              { title: '90-Day Reality Timeline', desc: 'See what the first three months will actually look like for this hire, phase by phase.' },
+              { title: 'Hiring Confidence Score', desc: 'A single go/stop number with detailed rationale and confidence tier breakdown.' },
+              { title: 'Decision Alerts', desc: 'Consequence predictions on every watch-out showing the real cost of ignoring each one.' },
+              { title: 'What the Assessment Revealed', desc: 'Side-by-side comparison of what the CV claimed versus what the candidate actually demonstrated.' },
+              { title: 'Candidate Responses', desc: 'Full scenario replay with every answer the candidate wrote, detailed timing, and integrity signals.' },
+              { title: 'Tuesday Reality', desc: 'What managing this person actually looks like on a normal day when everything is happening at once.' },
+              { title: '90-Day Hiring Manager Coaching Plan', desc: 'A structured probation guide with SMART objectives, weekly check-ins, and Alchemy Training UK coach sign-off at each phase.' },
+              { title: 'Key Stakeholder Mapping', desc: 'Who this hire will work with, the pressure points in each relationship, and what to watch for.' },
+              { title: 'Culture-Fit DNA', desc: 'Five-dimension working style analysis showing how this candidate\'s natural approach matches the role environment.' },
+              { title: 'Counter-Offer Resilience', desc: 'How likely this candidate is to accept a counter-offer from their current employer.' },
+              { title: 'Training Potential', desc: 'How quickly this candidate will develop with the right support.' },
+              { title: 'Why They Might Leave', desc: 'A specific prediction of what would cause this hire to leave within 6 months, with prevention actions.' },
+              { title: 'Simple View', desc: 'A plain English version of this report for line managers, with no jargon and no technical scoring language.' },
+            ].map(({ title, desc }) => (
+              <ScrollReveal key={title} delay={60}>
+                <LockedSection title={title} desc={desc} />
+              </ScrollReveal>
+            ))}
 
-              {/* Lock header */}
-              <div style={{ background: '#0f2137', padding: '24px 32px 28px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: `${TEAL}20`, border: `1px solid ${TEAL}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                  </div>
-                  <h3 style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.2px' }}>
-                    Included in your subscription
-                  </h3>
-                </div>
-                <p style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: '0 0 22px', lineHeight: 1.6 }}>
-                  The demo shows a sample of the PRODICTA report. A full subscription includes these additional features on every candidate.
-                </p>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 10, marginBottom: 28 }}>
-                  {(isAgency ? [
-                    { title: 'Predicted Outcome Panel', desc: 'Probability of passing probation, churn risk, and top performer likelihood.' },
-                    { title: '90-Day Reality Timeline', desc: 'What the first three months will actually look like for this placement.' },
-                    { title: 'Hiring Confidence Score', desc: 'A single go/stop number for your client, with supporting rationale.' },
-                    { title: 'Decision Alerts', desc: 'Consequence predictions on every watch-out so your client knows the real cost of ignoring each one.' },
-                    { title: 'What the Assessment Revealed', desc: 'A side-by-side view of what the CV claimed versus what the candidate actually demonstrated.' },
-                    { title: 'Candidate Responses', desc: 'Full scenario replay with every answer, timing, and integrity signal.' },
-                    { title: 'Tuesday Reality', desc: 'Plain English description of what managing this candidate actually looks like day-to-day.' },
-                    { title: 'Watch-outs with What Gets Tolerated framing', desc: 'Every risk reframed as what will happen if it is not addressed.' },
-                    { title: '90-Day Hiring Manager Coaching Plan', desc: 'A structured probation guide for your client\'s hiring manager, developed with Alchemy Training UK.' },
-                    { title: 'Key Stakeholder Mapping', desc: 'Identifies who the candidate will work with and the pressure points in each relationship.' },
-                    { title: 'Brief Health Check', desc: 'Analyses the job description before assessment and flags mismatches.' },
-                    { title: 'ERA 2025 Compliance Certificate', desc: 'Documenting the objective, evidence-based hiring decision.' },
-                    { title: 'Candidate Development Portal', desc: 'Professional feedback for candidates with strengths, development areas, and downloadable PDF. Even candidates you do not place get something useful.' },
-                    { title: 'Auto Shortlist', desc: 'AI-ranked top candidates with written justification for each.' },
-                    { title: 'Configurable Client Reports', desc: 'Choose exactly what your client sees.' },
-                    { title: 'Rebate Period Tracker', desc: 'Colour-coded milestones tracking placement through the rebate window.' },
-                    { title: 'Placement Risk Calculator', desc: 'Calculate your financial exposure on every placement.' },
-                    { title: 'Interview Brief', desc: 'One-page printable brief for your client\'s interview room.' },
-                    { title: 'Smart Role Context', desc: 'AI asks follow-up questions about the role for more accurate scenarios.' },
-                    { title: 'Rapid Assessment', desc: '15-minute compressed assessment for urgent placements.' },
-                    { title: 'Red Flag Email Alerts', desc: 'Automatic notifications when a candidate scores below your threshold.' },
-                    { title: 'Response Integrity Checks', desc: 'Detect AI-assisted or rushed answers before you present the candidate.' },
-                    { title: 'Bulk Screening Mode', desc: 'Ranked tiers across the full candidate pool for high-volume roles.' },
-                    { title: 'Culture-Fit DNA Matching', desc: 'Five-dimension working style analysis.' },
-                    { title: 'Counter-Offer Resilience Score', desc: 'Predicts how likely the candidate is to accept a counter-offer.' },
-                    { title: 'Execution Reliability Score', desc: 'Measures follow-through and consistency under pressure.' },
-                    { title: 'Training Potential Score', desc: 'For junior and mid-level candidates, predicts development speed.' },
-                    { title: 'Hiring Cost Saved Calculator', desc: 'Track the financial value of every placement PRODICTA informed.' },
-                    { title: 'Outcome Tracking 2.0', desc: 'Automatic check-ins at 3, 6, and 12 months tracking placement success.' },
-                    { title: 'Candidate Expectation Mismatch Detection', desc: 'Flags when expectations do not match the role reality.' },
-                    { title: 'Why They Might Leave Analysis', desc: 'Prediction of what would cause this placement to leave within 6 months.' },
-                    { title: 'Simple View Toggle', desc: 'Plain English report for clients who do not want technical scoring language.' },
-                  ] : [
-                    { title: 'Predicted Outcome Panel', desc: 'Probability of passing probation, churn risk, and top performer likelihood.' },
-                    { title: '90-Day Reality Timeline', desc: 'What the first three months will actually look like for this hire.' },
-                    { title: 'Hiring Confidence Score', desc: 'A single go/stop number for your hiring decision, with supporting rationale.' },
-                    { title: 'Decision Alerts', desc: 'Consequence predictions on every watch-out so you know the real cost of ignoring each one.' },
-                    { title: 'What the Assessment Revealed', desc: 'A side-by-side view of what the CV claimed versus what the candidate actually demonstrated.' },
-                    { title: 'Candidate Responses', desc: 'Full scenario replay with every answer, timing, and integrity signal.' },
-                    { title: 'Tuesday Reality', desc: 'Plain English description of what managing this person actually looks like day-to-day.' },
-                    { title: 'Watch-outs with What Gets Tolerated framing', desc: 'Every risk reframed as what will happen if you do not address it.' },
-                    { title: '90-Day Hiring Manager Coaching Plan', desc: 'A structured probation guide for your managers, developed with Alchemy Training UK. Three phases with SMART objectives, check-in templates, and Alchemy coach sign-off.' },
-                    { title: 'Key Stakeholder Mapping', desc: 'Identifies who the new hire will work with and the pressure points in each relationship.' },
-                    { title: 'Brief Health Check', desc: 'Analyses your job description before assessment and flags mismatches.' },
-                    { title: 'Probation Co-pilot', desc: 'Live dashboard tracking whether predictions are materialising. Traffic lights for each watch-out, manager notes, and exportable PDF evidence trail.' },
-                    { title: 'Outcome Tracking 2.0', desc: 'Automatic email check-ins at 3, 6, and 12 months asking how the hire is performing.' },
-                    { title: 'ERA 2025 Compliance Certificate', desc: 'Documenting the objective, evidence-based hiring decision. Tribunal-ready.' },
-                    { title: 'Rejected Candidate Development Plan', desc: 'Send candidates who were not hired a professional development plan with strengths and growth areas.' },
-                    { title: 'Candidate Development Portal', desc: 'Professional feedback for candidates with strengths, development areas, and downloadable PDF.' },
-                    { title: 'Probation Timeline Tracker', desc: 'Visual tracker with automated reminders throughout probation.' },
-                    { title: 'Probation Review Generator', desc: 'Auto-generated structured reviews at month 1, 3, and 5.' },
-                    { title: 'ERA 2025 Risk Calculator', desc: 'Calculate your tribunal exposure based on salary and hire volume.' },
-                    { title: 'Interview Brief', desc: 'One-page printable brief for the interview room.' },
-                    { title: 'Smart Role Context', desc: 'AI asks follow-up questions about your role for more accurate scenarios.' },
-                    { title: 'Rapid Assessment', desc: '15-minute compressed assessment for urgent hiring.' },
-                    { title: 'Red Flag Email Alerts', desc: 'Automatic notifications when a candidate scores below your threshold.' },
-                    { title: 'Response Integrity Checks', desc: 'Detect AI-assisted or rushed answers before you make a decision.' },
-                    { title: 'Bulk Screening Mode', desc: 'Ranked tiers across the full candidate pool for high-volume roles.' },
-                    { title: 'Culture-Fit DNA Matching', desc: 'Five-dimension working style analysis.' },
-                    { title: 'Counter-Offer Resilience Score', desc: 'Predicts how likely the candidate is to accept a counter-offer.' },
-                    { title: 'Execution Reliability Score', desc: 'Measures follow-through and consistency under pressure.' },
-                    { title: 'Training Potential Score', desc: 'For junior and mid-level candidates, predicts development speed.' },
-                    { title: 'Hiring Cost Saved Calculator', desc: 'Track the financial value of every hiring decision PRODICTA informed.' },
-                    { title: 'Cost of Wrong Hire Calculator', desc: 'Calculate what a failed hire would cost you.' },
-                    { title: 'Offer Risk Confirmation', desc: 'Risk summary before you confirm a hire.' },
-                    { title: 'Decision Override Tracking', desc: 'Documents when you hire against the recommendation.' },
-                    { title: 'Re-run Scenario', desc: 'Generate one additional scenario for deeper assessment.' },
-                    { title: 'Candidate Expectation Mismatch Detection', desc: 'Flags when expectations do not match the role reality.' },
-                    { title: 'Why They Might Leave Analysis', desc: 'Prediction of what would cause this hire to leave within 6 months.' },
-                    { title: 'Simple View Toggle', desc: 'Plain English report for line managers who do not want technical scoring language.' },
-                  ]).map(({ title, desc }) => (
-                    <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                      <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 3 }}>
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                      <div>
-                        <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{title}</div>
-                        <div style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 1.55 }}>{desc}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => router.push('/login')}
-                  style={{ background: TEAL, color: NAVY, border: 'none', borderRadius: 10, padding: '14px 32px', fontFamily: F, fontSize: 15, fontWeight: 800, cursor: 'pointer', boxShadow: `0 4px 18px ${TEAL}44` }}
-                >
-                  Get started
-                </button>
-              </div>
+            {/* ── DASHBOARD TEASER BANNER ── */}
+            <div style={{ background: '#0f2137', borderRadius: 16, padding: 40, textAlign: 'center', marginBottom: 20 }}>
+              <h3 style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: '#fff', margin: '0 0 12px' }}>
+                Plus more features on your dashboard
+              </h3>
+              <p style={{ fontFamily: F, fontSize: 14, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, margin: '0 auto 24px', maxWidth: 600 }}>
+                {isAgency
+                  ? 'Auto Shortlist with AI-ranked candidates. Configurable Client Reports. Rebate Period Tracker. Placement Risk Calculator. Outcome Tracking with automatic check-ins. Bulk Screening for high-volume roles. Hiring Cost Saved Calculator. Cost of Wrong Hire Calculator. Red Flag Email Alerts. Decision Override Tracking. Candidate Development Portal. And more.'
+                  : 'Probation Co-pilot with live monitoring. Probation Timeline Tracker. Probation Review Generator. ERA 2025 Risk Calculator. Outcome Tracking with automatic check-ins. Rejected Candidate Development Plan. Red Flag Email Alerts. Decision Override Tracking. Bulk Screening. Hiring Cost Saved Calculator. Cost of Wrong Hire Calculator. Candidate Development Portal. Configurable Reports. And more.'
+                }
+              </p>
+              <a href="/login" style={{
+                display: 'inline-block', background: '#00BFA5', color: '#0f2137', fontFamily: F,
+                fontWeight: 800, padding: '14px 32px', borderRadius: 10, fontSize: 15, textDecoration: 'none',
+                boxShadow: '0 4px 18px rgba(0,191,165,0.3)',
+              }}>
+                Get started
+              </a>
             </div>
           </>
         )}
