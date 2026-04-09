@@ -1727,7 +1727,7 @@ function DemoCandidateInner({ params }) {
               { title: 'Decision Alerts', desc: 'Consequence predictions on every watch-out showing the real cost of ignoring each one.', variant: 'grid' },
               { title: 'What the Assessment Revealed', desc: 'Side-by-side comparison of what the CV claimed versus what the candidate actually demonstrated.', variant: 'grid' },
               { title: 'Candidate Responses', desc: 'Full scenario replay with every answer the candidate wrote, detailed timing, and integrity signals.', variant: 'text' },
-              { title: 'Tuesday Reality', desc: 'What managing this person actually looks like on a normal day when everything is happening at once.', variant: 'text' },
+              { title: 'Monday Morning Reality', desc: 'What managing this person actually looks like on a normal Monday morning when everything is happening at once.', variant: 'text' },
               { title: '90-Day Hiring Manager Coaching Plan', desc: 'A structured probation guide with SMART objectives, weekly check-ins, and Alchemy Training UK coach sign-off at each phase.', variant: 'timeline' },
               { title: 'Key Stakeholder Mapping', desc: 'Who this hire will work with, the pressure points in each relationship, and what to watch for.', variant: 'grid' },
               { title: 'Culture-Fit DNA', desc: 'Five-dimension working style analysis showing how this candidate\'s natural approach matches the role environment.', variant: 'chart' },

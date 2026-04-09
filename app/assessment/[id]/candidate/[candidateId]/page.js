@@ -2298,14 +2298,14 @@ export default function CandidateReportPage({ params }) {
                 })()}
 
                 {/* ══════════════════════════════════════════════════
-                    TUESDAY REALITY
+                    MONDAY MORNING REALITY
                 ══════════════════════════════════════════════════ */}
                 {results?.tuesday_reality && (
                   <ScrollReveal delay={60}>
                     <Card style={{ marginBottom: 20 }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                         <SectionHeading tooltip="A plain English description of what the hiring manager will actually experience day to day with this candidate.">
-                          Tuesday Reality
+                          Monday Morning Reality
                         </SectionHeading>
                         <SectionToggle expanded={expandedSections.tuesdayReality} onToggle={() => toggleSection('tuesdayReality')} />
                       </div>

@@ -1265,7 +1265,7 @@ export default function LandingPage() {
                 body: 'Every candidate you present comes with a professional AI assessment showing exactly how they will perform on the job. You are not just submitting profiles. You are removing risk, proving value, and making the decision obvious.',
                 points: [
                   'Pressure-Fit Assessment: real work simulations that test how candidates handle pressure, not how they talk about it in an interview',
-                  'Tuesday Reality: plain English description of what managing this candidate actually looks like day-to-day, not the interview version',
+                  'Monday Morning Reality: plain English description of what managing this candidate actually looks like day-to-day, not the interview version',
                   'Watch-outs framed as what gets tolerated if your client does not address it, with specific triggers and timelines',
                   '90-Day Hiring Manager Coaching Plan developed with Alchemy Training UK, giving your client a structured probation guide for every hire',
                   'Predicted outcomes for the first 90 days with milestones your client can track',
@@ -1286,7 +1286,7 @@ export default function LandingPage() {
                 body: 'Every candidate is tested in real work scenarios tailored to your role. You get clear, evidence-backed insight into how they will actually perform, not how they interview.',
                 points: [
                   'Pressure-Fit Assessment: real work simulations built from your actual job description, testing how candidates handle conflict, deadlines, and competing priorities',
-                  'Tuesday Reality: what managing this person actually looks like day-to-day when everything is happening at once',
+                  'Monday Morning Reality: what managing this person actually looks like day-to-day when everything is happening at once',
                   'Watch-outs framed as what gets tolerated if you do not address it, so you know exactly what to act on and when',
                   '90-Day Hiring Manager Coaching Plan developed with Alchemy Training UK, telling your managers exactly how to support each new hire through probation with structured check-ins, SMART objectives, and Alchemy coach sign-off at each phase',
                   'Predicted outcomes for the first 90 days with specific milestones',
