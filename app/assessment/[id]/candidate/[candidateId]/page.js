@@ -291,10 +291,11 @@ function SmallRing({ score, size = 60, strokeWidth = 5 }) {
 }
 
 function RadarChart({ scores }) {
+  const mob = useIsMobile()
   const entries = Object.entries(scores)
   const n = entries.length
   if (n < 3) return null
-  const W = 460, H = 300, cx = 230, cy = 150, r = 85, labelR = 120
+  const W = 460, H = 300, cx = 230, cy = 150, r = mob ? 70 : 85, labelR = mob ? 100 : 120
   const angle = (i) => -Math.PI / 2 + i * (2 * Math.PI / n)
   const pt = (i, val) => {
     const a = angle(i)
@@ -335,8 +336,8 @@ function RadarChart({ scores }) {
         const nameY = sa > 0.25 ? ly : sa < -0.25 ? ly - 14 : ly - 6
         return (
           <g key={i}>
-            <text x={lx} y={nameY} textAnchor={anchor} fontSize={11} fontWeight="700" fontFamily="Outfit, system-ui, sans-serif" fill="#0f2137">{skill}</text>
-            <text x={lx} y={nameY + 14} textAnchor={anchor} fontSize={13} fontWeight="800" fontFamily="'IBM Plex Mono', monospace" fill="#00BFA5">{s}</text>
+            <text x={lx} y={nameY} textAnchor={anchor} fontSize={mob ? 9 : 11} fontWeight="700" fontFamily="Outfit, system-ui, sans-serif" fill="#0f2137">{skill}</text>
+            <text x={lx} y={nameY + (mob ? 12 : 14)} textAnchor={anchor} fontSize={mob ? 11 : 13} fontWeight="800" fontFamily="'IBM Plex Mono', monospace" fill="#00BFA5">{s}</text>
           </g>
         )
       })}
@@ -618,6 +619,7 @@ const NAV_SECTIONS = [
 ]
 
 function StickyNav({ active }) {
+  const mob = useIsMobile()
   function scrollTo(id) {
     const el = document.getElementById(id)
     if (!el) return
@@ -631,11 +633,11 @@ function StickyNav({ active }) {
       backdropFilter: 'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
       borderBottom: `1px solid ${BD}`,
-      marginLeft: -40, marginRight: -40,
-      paddingLeft: 40, paddingRight: 40,
+      marginLeft: mob ? -16 : -40, marginRight: mob ? -16 : -40,
+      paddingLeft: mob ? 16 : 40, paddingRight: mob ? 16 : 40,
       marginBottom: 20,
     }}>
-      <div style={{ display: 'flex', gap: 0, overflowX: 'auto', scrollbarWidth: 'none' }}>
+      <div style={{ display: 'flex', gap: 0, overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
         {NAV_SECTIONS.map(({ id, label }) => {
           const isActive = active === id
           return (
@@ -1509,9 +1511,9 @@ export default function CandidateReportPage({ params }) {
                 CANDIDATE HEADER
             ══════════════════════════════════════════════════ */}
             <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', flexDirection: isMobile ? 'column' : 'row' }}>
                 {/* Avatar + meta */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: 1, minWidth: 240 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: 1, minWidth: isMobile ? 0 : 240, width: isMobile ? '100%' : 'auto' }}>
                   <Avatar name={candidate.name || 'Candidate'} size={52} />
                   <div>
                     <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: '0 0 3px', letterSpacing: '-0.4px' }}>
@@ -1572,7 +1574,7 @@ export default function CandidateReportPage({ params }) {
                 </div>
 
                 {/* Score ring + actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 28, flexShrink: 0, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? 16 : 28, flexShrink: 0, flexWrap: 'wrap', width: isMobile ? '100%' : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
                   {results && (
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
@@ -1622,7 +1624,7 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   )}
 
-                  <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: 8, width: isMobile ? '100%' : 'auto' }}>
                     {existingOutcome && (
                       <button
                         onClick={() => router.push(`/assessment/${params.id}/candidate/${params.candidateId}/copilot`)}
@@ -2765,7 +2767,7 @@ export default function CandidateReportPage({ params }) {
                         <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
                           Time per scenario
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${scenarioCount}, 1fr)`, gap: 10, marginBottom: 18 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${scenarioCount}, 1fr)`, gap: 10, marginBottom: 18 }}>
                           {scenarioIndices.map(i => {
                             const resp = responses.find(r => r.scenario_index === i)
                             const secs = resp?.time_taken_seconds ?? null
@@ -2973,7 +2975,7 @@ export default function CandidateReportPage({ params }) {
                       </div>
 
                       {/* 2×2 Dimension grid */}
-                      <div style={{ padding: '24px 28px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                      <div style={{ padding: isMobile ? '16px' : '24px 28px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
                         {DIMENSIONS.map(({ key, label, icon, desc }, idx) => {
                           const dim = dims[key] ?? {}
                           const s = dim.score ?? null
@@ -3139,7 +3141,7 @@ export default function CandidateReportPage({ params }) {
                       Skills Breakdown
                     </SectionHeading>
                     <RadarChart scores={results.scores} />
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 16 }}>
                       {Object.entries(results.scores).map(([skill, skillScore]) => {
                         const narrative = results.score_narratives?.[skill]
                         const bmThreshold = bmMap[skill.toLowerCase()]
@@ -4051,9 +4053,9 @@ export default function CandidateReportPage({ params }) {
                               <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: '#fff', flex: 1 }}>{scenario.title}</span>
                               <span style={{ fontFamily: F, fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{scenario.timeMinutes}min</span>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 0 }}>
                               {/* Scenario prompt */}
-                              <div style={{ padding: '16px 18px', borderRight: `1px solid ${BD}`, background: BG }}>
+                              <div style={{ padding: '16px 18px', borderRight: isMobile ? 'none' : `1px solid ${BD}`, borderBottom: isMobile ? `1px solid ${BD}` : 'none', background: BG }}>
                                 <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Scenario</div>
                                 <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '0 0 12px', lineHeight: 1.65 }}>{scenario.context}</p>
                                 <div style={{ background: TEALLT, border: `1px solid ${TEAL}40`, borderRadius: 6, padding: '10px 12px' }}>

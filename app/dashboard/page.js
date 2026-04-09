@@ -1026,10 +1026,10 @@ export default function DashboardPage() {
         <CostOfVacancyCard profile={profile} />
 
         {/* ── Bottom grid: table + assessments panel ── */}
-        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
 
           {/* ── Candidates table ── */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : 'auto' }}>
             <div style={{
               ...cs,
               padding: 0,
@@ -1279,7 +1279,7 @@ export default function DashboardPage() {
           </div>
 
           {/* ── Assessments sidebar panel ── */}
-          <div style={{ width: 268, flexShrink: 0 }}>
+          <div style={{ width: isMobile ? '100%' : 268, flexShrink: 0 }}>
             <div style={{ ...cs, padding: 0, overflow: 'hidden' }}>
               <div style={{
                 padding: '18px 20px',
