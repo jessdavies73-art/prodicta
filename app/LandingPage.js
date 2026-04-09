@@ -97,6 +97,8 @@ function Nav() {
           onMouseEnter={e => e.target.style.color='#fff'} onMouseLeave={e => e.target.style.color='rgba(255,255,255,0.6)'}>Demo</a>
         <a href="/audit" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, transition: 'color 0.15s' }}
           onMouseEnter={e => e.target.style.color='#fff'} onMouseLeave={e => e.target.style.color='rgba(255,255,255,0.6)'}>Free audit</a>
+        <a href="/pressure-fit" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, transition: 'color 0.15s' }}
+          onMouseEnter={e => e.target.style.color='#fff'} onMouseLeave={e => e.target.style.color='rgba(255,255,255,0.6)'}>Pressure-Fit</a>
         <a href="/blog" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, transition: 'color 0.15s' }}
           onMouseEnter={e => e.target.style.color='#fff'} onMouseLeave={e => e.target.style.color='rgba(255,255,255,0.6)'}>Blog</a>
         <a href="/login" style={{ fontFamily: F, fontSize: 13.5, fontWeight: 500, color: 'rgba(255,255,255,0.65)', textDecoration: 'none', padding: '8px 14px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.14)', marginLeft: 4, transition: 'border-color 0.15s' }}
@@ -930,6 +932,16 @@ export default function LandingPage() {
             }}>
               Interviews test how someone talks about pressure. PRODICTA tests whether they can actually hold up under it.
             </p>
+          </Reveal>
+          <Reveal delay={200}>
+            <a href="/pressure-fit" style={{
+              display: 'inline-block', marginTop: 20,
+              fontFamily: F, fontSize: 14, fontWeight: 600, color: TEAL,
+              textDecoration: 'none', borderBottom: `1px solid ${TEAL}40`,
+              paddingBottom: 2, transition: 'border-color 0.2s',
+            }}
+              onMouseEnter={e => e.target.style.borderColor=TEAL} onMouseLeave={e => e.target.style.borderColor=`${TEAL}40`}
+            >See how PRODICTA tests pressure-fit for every role.</a>
           </Reveal>
         </div>
       </section>
