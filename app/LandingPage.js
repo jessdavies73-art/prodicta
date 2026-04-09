@@ -741,7 +741,7 @@ export default function LandingPage() {
               {
                 stat: '87%',
                 label: 'of hiring decisions are based on interview performance',
-                body: 'But interviews test confidence, not competence. PRODICTA tests pressure-fit.',
+                body: 'But confidence in an interview is not the same as competence in the role. PRODICTA tests what actually matters: how they handle pressure, make decisions, and perform when nobody is watching.',
                 accent: '#F59E0B',
               },
               {
