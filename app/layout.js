@@ -10,6 +10,11 @@ const ibmPlexMono = IBM_Plex_Mono({
   variable: '--font-mono'
 })
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
+
 export const metadata = {
   title: 'PRODICTA',
   description: 'Prodicta helps UK businesses identify whether candidates will succeed through probation using AI-powered work simulations.',
