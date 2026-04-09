@@ -381,28 +381,20 @@ export default function LandingPage() {
           fontSize: 'clamp(36px, 5.5vw, 66px)', letterSpacing: '-2px', lineHeight: 1.05,
           maxWidth: 820, marginBottom: 24,
         }}>
-          We test{' '}
-          <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>pressure-fit</span>
-          , not{' '}
-          <span style={{ color: GOLD, textShadow: '0 0 40px rgba(232,184,75,0.35)' }}>interview polish.</span>
+          Understand likely{' '}
+          <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>probation outcomes</span>
+          {' '}before you{' '}
+          <span style={{ color: GOLD, textShadow: '0 0 40px rgba(232,184,75,0.35)' }}>hire.</span>
         </h1>
 
         {/* Subheadline */}
         <p style={{
           fontFamily: F, fontSize: 'clamp(16px, 1.8vw, 20px)', fontWeight: 400,
           color: 'rgba(255,255,255,0.6)', lineHeight: 1.75,
-          maxWidth: 620, marginBottom: 16, position: 'relative', zIndex: 1,
+          maxWidth: 620, marginBottom: 44, position: 'relative', zIndex: 1,
         }}>
           Your next hire is either your best decision or your most expensive. Know which.
         </p>
-        <p style={{
-          fontFamily: F, fontSize: 'clamp(15px, 1.6vw, 18px)', fontWeight: 500,
-          color: 'rgba(255,255,255,0.78)', lineHeight: 1.7,
-          maxWidth: 640, marginBottom: 44, position: 'relative', zIndex: 1,
-        }}>
-          Interviews test how someone talks about pressure. PRODICTA tests whether they can actually hold up under it.
-        </p>
-
         {/* CTA buttons */}
         <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 56, position: 'relative', zIndex: 1 }}>
           <a href="/login" style={{
@@ -908,6 +900,36 @@ export default function LandingPage() {
                 From just £49/month. No long setup. First assessment in 5 minutes.
               </div>
             </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          PRESSURE-FIT MANIFESTO
+      ════════════════════════════════════════════════════════════════════ */}
+      <section style={{
+        position: 'relative', overflow: 'hidden',
+        background: NAVY,
+        padding: '80px 24px',
+      }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 500, height: 500, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}08 0%, transparent 65%)`, pointerEvents: 'none' }} />
+        <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative', textAlign: 'center' }}>
+          <Reveal>
+            <div style={{ fontFamily: F, fontSize: 'clamp(48px, 6vw, 72px)', fontWeight: 900, color: TEAL, lineHeight: 1, marginBottom: 8 }}>&ldquo;</div>
+            <h2 style={{
+              fontFamily: F, fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900,
+              color: '#fff', letterSpacing: '-1.5px', lineHeight: 1.15, marginBottom: 24,
+            }}>
+              We test <span style={{ color: TEAL }}>pressure-fit</span>, not interview polish.
+            </h2>
+          </Reveal>
+          <Reveal delay={100}>
+            <p style={{
+              fontFamily: F, fontSize: 'clamp(15px, 1.6vw, 19px)', fontWeight: 400,
+              color: 'rgba(255,255,255,0.55)', lineHeight: 1.75, maxWidth: 600, margin: '0 auto',
+            }}>
+              Interviews test how someone talks about pressure. PRODICTA tests whether they can actually hold up under it.
+            </p>
           </Reveal>
         </div>
       </section>
