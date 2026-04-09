@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
@@ -13,7 +13,12 @@ import {
   F, FM, scolor, sbg, slabel, dL, dC, riskCol, riskBg, riskBd, cs, ps, bs
 } from '@/lib/constants'
 import OnboardingWizard from '@/components/OnboardingWizard'
-import useIsMobile from '@/hooks/useIsMobile'
+
+/* Inline mobile detection — no external hook dependency */
+const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
+const _mSnap = () => window.innerWidth <= 768
+const _mServer = () => false
+function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
 const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
 
@@ -55,14 +60,15 @@ function initials(name = '') {
 // ── sub-components ────────────────────────────────────────────────────────────
 
 function StatCard({ icon, label, value, sub, accent = TEAL }) {
+  const isMob = useIsMobile()
   const [hovered, setHovered] = useState(false)
   return (
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        flex: 1,
-        minWidth: 0,
+        flex: isMob ? '1 1 100%' : 1,
+        minWidth: isMob ? '100%' : 0,
         background: '#fff',
         border: `1px solid ${BD}`,
         borderTop: `3px solid ${accent}`,

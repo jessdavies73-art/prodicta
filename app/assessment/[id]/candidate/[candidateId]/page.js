@@ -1,11 +1,16 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
-import useIsMobile from '@/hooks/useIsMobile'
+
+/* Inline mobile detection — no external hook dependency */
+const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
+const _mSnap = () => window.innerWidth <= 768
+const _mServer = () => false
+function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -2447,7 +2452,7 @@ export default function CandidateReportPage({ params }) {
                     <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 20px', lineHeight: 1.6 }}>
                       Attach the candidate's CV and cover letter. Uploaded files are included when you use <strong>Send to Client</strong>.
                     </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
                       {['cv', 'cover_letter'].map(docType => {
                         const doc = documents[docType]
                         const label = docType === 'cv' ? 'CV / Résumé' : 'Cover Letter'
@@ -3312,7 +3317,7 @@ export default function CandidateReportPage({ params }) {
                         A side-by-side view of typical CV claims versus what this candidate actually demonstrated.
                       </p>
                       {/* Column headers */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 36px 1fr', marginBottom: 10 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 36px 1fr', marginBottom: 10 }}>
                         <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 5 }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
@@ -3342,7 +3347,7 @@ export default function CandidateReportPage({ params }) {
                             : finding.score != null ? sc(finding.score)
                             : TEAL
                           return (
-                            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 36px 1fr', alignItems: 'center', gap: 0, marginBottom: i < n - 1 ? 8 : 0 }}>
+                            <div key={i} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 36px 1fr', alignItems: 'center', gap: isMobile ? 4 : 0, marginBottom: i < n - 1 ? 8 : 0 }}>
                               <div style={{ background: CARD, border: '1.5px solid #e2e8f0', borderRadius: 8, padding: '10px 13px', minHeight: 38 }}>
                                 {cv && (
                                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
@@ -4515,7 +4520,7 @@ export default function CandidateReportPage({ params }) {
                     Rebate % per week
                     <span style={{ fontWeight: 400, marginLeft: 6, color: TX3 }}>Edit to match your contract</span>
                   </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 6 }}>
                     {rebateSchedule.map((pct, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, background: BG, border: `1px solid ${BD}`, borderRadius: 7, padding: '6px 10px' }}>
                         <span style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX3, minWidth: 46 }}>Week {i + 1}</span>
