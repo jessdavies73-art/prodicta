@@ -471,35 +471,135 @@ function DemoDashboardInner() {
           </div>
         </div>
 
-        {/* Agency-only: Auto Shortlist */}
+        {/* Agency-only sections */}
         {isAgency && (
-          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
-            <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Ic name="award" size={16} color={TEAL} />
-                <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Auto Shortlist</h2>
+          <>
+            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+              <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Ic name="award" size={16} color={TEAL} />
+                  <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Auto Shortlist</h2>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: 12.5, color: TX3 }}>AI-ranked top candidates for Marketing Manager</p>
               </div>
-              <p style={{ margin: '4px 0 0', fontSize: 12.5, color: TX3 }}>AI-ranked top candidates for Marketing Manager</p>
-            </div>
-            <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[
-                { rank: 1, name: 'Sophie Chen', score: 92, reason: 'Strongest pressure-fit. Handled every scenario with clear priorities and structured responses. Top performer likelihood 94%.' },
-                { rank: 2, name: 'David Park', score: 81, reason: 'Strong communication and stakeholder management. Slight hesitation under time pressure but self-corrected effectively.' },
-                { rank: 3, name: 'Rachel Adams', score: 74, reason: 'Solid technical skills. Development area around delegation, but high training potential score suggests rapid improvement.' },
-              ].map(c => (
-                <div key={c.rank} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '12px 16px', background: c.rank === 1 ? TEALLT : BG, border: `1px solid ${c.rank === 1 ? `${TEAL}55` : BD}`, borderRadius: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: c.rank === 1 ? TEAL : BD, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 14, fontWeight: 800, color: c.rank === 1 ? NAVY : TX3, flexShrink: 0 }}>{c.rank}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: TX }}>{c.name}</span>
-                      <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: scolor(c.score) }}>{c.score}/100</span>
+              <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  { rank: 1, name: 'Sophie Chen', score: 92, reason: 'Strongest pressure-fit. Handled every scenario with clear priorities and structured responses. Top performer likelihood 94%.' },
+                  { rank: 2, name: 'David Park', score: 81, reason: 'Strong communication and stakeholder management. Slight hesitation under time pressure but self-corrected effectively.' },
+                  { rank: 3, name: 'Rachel Adams', score: 74, reason: 'Solid technical skills. Development area around delegation, but high training potential score suggests rapid improvement.' },
+                ].map(c => (
+                  <div key={c.rank} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '12px 16px', background: c.rank === 1 ? TEALLT : BG, border: `1px solid ${c.rank === 1 ? `${TEAL}55` : BD}`, borderRadius: 10 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: c.rank === 1 ? TEAL : BD, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 14, fontWeight: 800, color: c.rank === 1 ? NAVY : TX3, flexShrink: 0 }}>{c.rank}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: TX }}>{c.name}</span>
+                        <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: scolor(c.score) }}>{c.score}/100</span>
+                      </div>
+                      <p style={{ fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>{c.reason}</p>
                     </div>
-                    <p style={{ fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>{c.reason}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Rebate Period Tracker */}
+            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+              <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Ic name="clock" size={16} color={TEAL} />
+                  <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Rebate Period Tracker</h2>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: 12.5, color: TX3 }}>Active placements tracked through their rebate window</p>
+              </div>
+              <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {[
+                  { name: 'Sophie Chen', client: 'Acme Corp', role: 'Marketing Manager', week: 6, total: 12, status: 'On track' },
+                  { name: 'David Park', client: 'Nexus Ltd', role: 'Sales Executive', week: 10, total: 12, status: 'Nearing end' },
+                  { name: 'Tom Walsh', client: 'Bright HR', role: 'Customer Service Team Leader', week: 12, total: 12, status: 'Rebate cleared' },
+                ].map(p => {
+                  const pct = Math.round((p.week / p.total) * 100)
+                  const col = p.status === 'Rebate cleared' ? GRN : p.status === 'Nearing end' ? AMB : TEAL
+                  return (
+                    <div key={p.name} style={{ padding: '12px 16px', background: BG, border: `1px solid ${BD}`, borderRadius: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+                        <div>
+                          <span style={{ fontSize: 13.5, fontWeight: 700, color: TX }}>{p.name}</span>
+                          <span style={{ fontSize: 12, color: TX3, marginLeft: 8 }}>{p.role} at {p.client}</span>
+                        </div>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, color: col, background: `${col}18`, padding: '2px 10px', borderRadius: 20 }}>{p.status}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+                        <div style={{ flex: 1, height: 8, background: `${col}22`, borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: col, borderRadius: 4 }} />
+                        </div>
+                        <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: TX3, flexShrink: 0 }}>Week {p.week}/{p.total}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Agency: Outcome Tracking + Red Flag Alerts */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Outcome tracking</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
+                  <span style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: TEAL }}>3</span>
+                  <span style={{ fontSize: 13, color: TX2 }}>check-ins pending</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    { name: 'Sophie Chen', due: '3-month check-in', client: 'Acme Corp' },
+                    { name: 'David Park', due: '6-month check-in', client: 'Nexus Ltd' },
+                    { name: 'Rachel Adams', due: '12-month check-in', client: 'Bright HR' },
+                  ].map(c => (
+                    <div key={c.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 8 }}>
+                      <div>
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: TX }}>{c.name}</div>
+                        <div style={{ fontSize: 11, color: TX3 }}>{c.due} at {c.client}</div>
+                      </div>
+                      <Ic name="chevron-right" size={14} color={TEALD} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Red flag email alerts</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, marginBottom: 10 }}>
+                  <Ic name="alert" size={16} color={RED} />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: TX }}>1 candidate scored below threshold this week</div>
+                    <div style={{ fontSize: 11.5, color: TX3 }}>Tom Walsh, Customer Service Team Leader, scored 47/100</div>
                   </div>
                 </div>
-              ))}
+                <p style={{ fontSize: 12, color: TX3, margin: 0, lineHeight: 1.5 }}>Automatic notifications when a candidate scores below your threshold. Configure thresholds in Settings.</p>
+              </div>
             </div>
-          </div>
+
+            {/* Agency: Bulk Screening */}
+            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+              <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Ic name="sliders" size={16} color={TEAL} />
+                  <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Bulk Screening Mode</h2>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: 12.5, color: TX3 }}>5 candidates assessed for Customer Service Advisor</p>
+              </div>
+              <div style={{ padding: '16px 24px', display: 'flex', gap: 12 }}>
+                {[
+                  { tier: 'Recommended', count: 2, color: GRN, bg: GRNBG, bd: GRNBD },
+                  { tier: 'Review', count: 2, color: AMB, bg: AMBBG, bd: AMBBD },
+                  { tier: 'Not Recommended', count: 1, color: RED, bg: REDBG, bd: REDBD },
+                ].map(t => (
+                  <div key={t.tier} style={{ flex: 1, padding: '14px 16px', background: t.bg, border: `1.5px solid ${t.bd}`, borderRadius: 10, textAlign: 'center' }}>
+                    <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: t.color, lineHeight: 1, marginBottom: 4 }}>{t.count}</div>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: t.color }}>{t.tier}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
         {/* Employer-only: Probation Tracker + Decision Overrides + Pending Check-ins */}
@@ -568,6 +668,75 @@ function DemoDashboardInner() {
                         <div style={{ fontSize: 11, color: TX3 }}>{c.role}</div>
                       </div>
                       <Ic name="chevron-right" size={14} color={TEALD} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Employer: Probation Co-pilot + Probation Review Generator */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Probation co-pilot</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
+                  <span style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: TEALD }}>2</span>
+                  <span style={{ fontSize: 13, color: TX2 }}>hires being monitored</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: GRNBG, border: `1px solid ${GRNBD}`, borderRadius: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: TX }}>Sophie Chen</div>
+                      <div style={{ fontSize: 11, color: TX3 }}>Marketing Manager</div>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: GRN, background: `${GRN}18`, padding: '2px 10px', borderRadius: 20 }}>On track</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: TX }}>Tom Walsh</div>
+                      <div style={{ fontSize: 11, color: TX3 }}>Customer Service Team Leader</div>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: AMB, background: `${AMB}18`, padding: '2px 10px', borderRadius: 20 }}>At risk</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Probation review generator</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, marginBottom: 10 }}>
+                  <Ic name="calendar" size={16} color={AMB} />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: TX }}>Month 1 review due for Sophie Chen</div>
+                    <div style={{ fontSize: 11.5, color: TX3 }}>Marketing Manager, started 12 Mar 2026</div>
+                  </div>
+                </div>
+                <p style={{ fontSize: 12, color: TX3, margin: 0, lineHeight: 1.5 }}>Auto-generated structured reviews at month 1, 3, and 5, cross-checked against the original PRODICTA assessment.</p>
+              </div>
+            </div>
+
+            {/* Employer: Red Flag Alerts + Bulk Screening */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Red flag email alerts</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, marginBottom: 10 }}>
+                  <Ic name="alert" size={16} color={RED} />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: TX }}>1 candidate scored below threshold this week</div>
+                    <div style={{ fontSize: 11.5, color: TX3 }}>Tom Walsh, Customer Service Team Leader, scored 47/100</div>
+                  </div>
+                </div>
+                <p style={{ fontSize: 12, color: TX3, margin: 0, lineHeight: 1.5 }}>Automatic notifications when a candidate scores below your threshold. Configure thresholds in Settings.</p>
+              </div>
+              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Bulk screening mode</div>
+                <p style={{ fontSize: 12.5, color: TX2, margin: '0 0 12px' }}>5 candidates assessed for Customer Service Advisor</p>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  {[
+                    { tier: 'Recommended', count: 2, color: GRN, bg: GRNBG, bd: GRNBD },
+                    { tier: 'Review', count: 2, color: AMB, bg: AMBBG, bd: AMBBD },
+                    { tier: 'Not Recommended', count: 1, color: RED, bg: REDBG, bd: REDBD },
+                  ].map(t => (
+                    <div key={t.tier} style={{ flex: 1, padding: '10px 12px', background: t.bg, border: `1.5px solid ${t.bd}`, borderRadius: 8, textAlign: 'center' }}>
+                      <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: t.color, lineHeight: 1, marginBottom: 2 }}>{t.count}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: t.color }}>{t.tier}</div>
                     </div>
                   ))}
                 </div>
