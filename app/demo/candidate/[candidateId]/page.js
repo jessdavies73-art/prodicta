@@ -1600,6 +1600,10 @@ function DemoCandidateInner({ params }) {
                       { title: 'Rebate Period Tracker', desc: 'Track rebate windows for every placement. Automated reminders before rebate periods expire.' },
                       { title: 'Placement Risk Calculator', desc: 'Calculate the financial risk of each placement based on salary, rebate terms, and assessment results.' },
                       { title: 'Bulk Screening Mode', desc: 'Ranked Recommended, Review, and Not Recommended tiers across the full candidate pool for high-volume roles.' },
+                      { title: 'Offer Risk Confirmation', desc: 'Risk summary before confirming a placement.' },
+                      { title: 'Decision Override Tracking', desc: 'Documents when you present a candidate against the recommendation.' },
+                      { title: 'Re-run Scenario', desc: 'Generate one additional scenario for deeper assessment on a specific area.' },
+                      { title: 'Cost of Wrong Hire Calculator', desc: 'Calculate what a failed placement would cost your client.' },
                     ] : [
                       { title: 'Probation Co-pilot', desc: 'Live dashboard tracking whether predictions are materialising during probation. Traffic lights for each watch-out, manager notes, and exportable PDF evidence trail.' },
                       { title: 'Probation Timeline Tracker', desc: 'Visual tracker with automated reminders throughout the probation period.' },
@@ -1613,6 +1617,7 @@ function DemoCandidateInner({ params }) {
                       { title: 'Offer Risk Confirmation', desc: 'Shows a risk summary before you confirm your decision, so you hire with full awareness.' },
                       { title: 'Decision Override Tracking', desc: 'Documents when you hire against the assessment recommendation, creating an evidence trail.' },
                       { title: 'Document This Assessment', desc: 'One-click compliance record ready for Fair Work Agency audit or employment tribunal.' },
+                      { title: 'Configurable Reports', desc: 'Choose exactly what your hiring managers see.' },
                     ]),
                   ].map(({ title, desc }) => (
                     <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
