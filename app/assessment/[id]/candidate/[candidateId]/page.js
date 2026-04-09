@@ -972,7 +972,7 @@ export default function CandidateReportPage({ params }) {
   const [noteSaving, setNoteSaving] = useState(false)
   const [activeSection, setActiveSection] = useState('summary')
   const [expandedWeeks, setExpandedWeeks] = useState({})
-  const [expandedSections, setExpandedSections] = useState({ aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false })
+  const [expandedSections, setExpandedSections] = useState({ aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false, coachingPlan: false })
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
 
@@ -3746,6 +3746,158 @@ export default function CandidateReportPage({ params }) {
                       })}
                     </div>
                   </Card>
+                  </ScrollReveal>
+                )}
+
+                {/* ══════════════════════════════════════════════════
+                    90-DAY HIRING MANAGER COACHING PLAN
+                    PRODICTA x Alchemy Training UK
+                ══════════════════════════════════════════════════ */}
+                {results?.coaching_plan && (
+                  <ScrollReveal id="coaching-plan" delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                        <SectionHeading tooltip="A structured 90-day coaching plan for the hiring manager, developed by Liz Harris at Alchemy Training UK.">
+                          90-Day Hiring Manager Coaching Plan
+                        </SectionHeading>
+                        <SectionToggle expanded={expandedSections.coachingPlan} onToggle={() => toggleSection('coachingPlan')} />
+                      </div>
+                      <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '-4px 0 14px', lineHeight: 1.6 }}>
+                        Provided by PRODICTA in partnership with Alchemy Training UK. Coaching plan content developed by Liz Harris, Founder, Alchemy Training UK.
+                      </p>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+                        <a href={`/assessment/${params.id}/candidate/${params.candidateId}/coaching-plan`} target="_blank" rel="noreferrer" style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: '#fff', background: NAVY, padding: '9px 14px', borderRadius: 8, textDecoration: 'none' }}>View Full Coaching Plan</a>
+                        <a href={`/api/assessment/${params.id}/candidate/${params.candidateId}/coaching-plan-pdf`} style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: NAVY, background: '#fff', border: `1.5px solid ${NAVY}`, padding: '9px 14px', borderRadius: 8, textDecoration: 'none' }}>Export Coaching Plan PDF</a>
+                      </div>
+                      {expandedSections.coachingPlan && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                          {['phase1','phase2','phase3'].map(pk => {
+                            const p = results.coaching_plan[pk]
+                            if (!p) return null
+                            return (
+                              <div key={pk} style={{ border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px', background: CARD }}>
+                                <div style={{ fontFamily: FM, fontSize: 13, fontWeight: 800, color: NAVY, letterSpacing: '0.03em', textTransform: 'uppercase', marginBottom: 4 }}>{p.title}</div>
+                                <div style={{ fontSize: 11, color: TX3, marginBottom: 10 }}>{p.days}</div>
+                                {Array.isArray(p.smart_objectives) && p.smart_objectives.length > 0 && (
+                                  <div style={{ marginBottom: 12 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>SMART Objectives</div>
+                                    {p.smart_objectives.map((o, i) => (
+                                      <div key={i} style={{ padding: '8px 12px', borderLeft: `3px solid ${TEAL}`, background: '#f8fafc', borderRadius: '0 6px 6px 0', marginBottom: 6 }}>
+                                        <div style={{ fontSize: 13, fontWeight: 700, color: TX }}>{o.objective}</div>
+                                        {o.measure && <div style={{ fontSize: 12, color: TX2 }}>Measure: {o.measure}</div>}
+                                        {o.deadline && <div style={{ fontSize: 12, color: TX2 }}>Deadline: {o.deadline}</div>}
+                                        {o.linked_to && <div style={{ fontSize: 11.5, color: TX3, fontStyle: 'italic' }}>Linked to: {o.linked_to}</div>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {p.weekly_checkin_structure && (
+                                  <div style={{ marginBottom: 10 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', marginBottom: 4 }}>Weekly Check-in Structure</div>
+                                    <div style={{ fontSize: 12.5, color: TX2, lineHeight: 1.6 }}>{p.weekly_checkin_structure}</div>
+                                  </div>
+                                )}
+                                {Array.isArray(p.watch_out_guides) && p.watch_out_guides.length > 0 && (
+                                  <div style={{ marginBottom: 10 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', marginBottom: 6 }}>Watch-out Guides</div>
+                                    {p.watch_out_guides.map((w, i) => (
+                                      <div key={i} style={{ padding: '8px 12px', border: `1px solid ${BD}`, borderRadius: 6, marginBottom: 6 }}>
+                                        <div style={{ fontSize: 12.5, fontWeight: 700, color: TX }}>{w.watch_out}</div>
+                                        {w.what_to_look_for && <div style={{ fontSize: 12, color: TX2 }}>Look for: {w.what_to_look_for}</div>}
+                                        {w.when_likely && <div style={{ fontSize: 12, color: TX2 }}>When likely: {w.when_likely}</div>}
+                                        {w.what_to_do && <div style={{ fontSize: 12, color: TX2 }}>What to do: {w.what_to_do}</div>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {p.key_reviews && (
+                                  <div style={{ marginBottom: 10 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', marginBottom: 4 }}>Key Reviews</div>
+                                    <div style={{ fontSize: 12.5, color: TX2, lineHeight: 1.6 }}>{p.key_reviews}</div>
+                                  </div>
+                                )}
+                                {Array.isArray(p.prediction_checks) && p.prediction_checks.length > 0 && (
+                                  <div style={{ marginBottom: 10 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', marginBottom: 6 }}>Prediction Checks</div>
+                                    {p.prediction_checks.map((pc, i) => (
+                                      <div key={i} style={{ marginBottom: 4, fontSize: 12.5, color: TX2 }}>
+                                        <strong>{pc.prediction}:</strong> {pc.question}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {Array.isArray(p.sbi_feedback_prompts) && p.sbi_feedback_prompts.length > 0 && (
+                                  <div style={{ marginBottom: 10 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', marginBottom: 6 }}>SBI Feedback Prompts</div>
+                                    {p.sbi_feedback_prompts.map((s, i) => (
+                                      <div key={i} style={{ fontSize: 12.5, color: TX2, marginBottom: 3 }}>, {s}</div>
+                                    ))}
+                                  </div>
+                                )}
+                                {Array.isArray(p.warning_signs) && p.warning_signs.length > 0 && (
+                                  <div style={{ marginBottom: 10 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', marginBottom: 6 }}>Warning Signs</div>
+                                    {p.warning_signs.map((s, i) => (
+                                      <div key={i} style={{ fontSize: 12.5, color: TX2, marginBottom: 3 }}>, {s}</div>
+                                    ))}
+                                  </div>
+                                )}
+                                {p.decision_framework && (
+                                  <div style={{ marginBottom: 10 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', marginBottom: 4 }}>Decision Framework</div>
+                                    <div style={{ fontSize: 12.5, color: TX2, lineHeight: 1.6 }}>{p.decision_framework}</div>
+                                  </div>
+                                )}
+                                {Array.isArray(p.legal_defensibility_checklist) && p.legal_defensibility_checklist.length > 0 && (
+                                  <div style={{ marginBottom: 10 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', marginBottom: 6 }}>Legal Defensibility Checklist</div>
+                                    {p.legal_defensibility_checklist.map((s, i) => (
+                                      <div key={i} style={{ fontSize: 12.5, color: TX2, marginBottom: 3 }}>[ ] {s}</div>
+                                    ))}
+                                  </div>
+                                )}
+                                {p.managers_declaration && (
+                                  <div style={{ marginBottom: 10 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', marginBottom: 4 }}>Manager&apos;s Declaration</div>
+                                    <div style={{ fontSize: 12.5, color: TX2, lineHeight: 1.6, fontStyle: 'italic' }}>{p.managers_declaration}</div>
+                                  </div>
+                                )}
+                                {p.era_2025_note && (
+                                  <div style={{ marginBottom: 10, padding: '8px 12px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 6, fontSize: 12, color: TX2 }}>
+                                    ERA 2025: {p.era_2025_note}
+                                  </div>
+                                )}
+                                {p.recommended_training && (
+                                  <div style={{ marginTop: 10, padding: '10px 14px', background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 8 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: TEALD, textTransform: 'uppercase', marginBottom: 4 }}>Recommended Training</div>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>{p.recommended_training.workshop}</div>
+                                    {p.recommended_training.why && <div style={{ fontSize: 12, color: TX2, marginTop: 2 }}>Why: {p.recommended_training.why}</div>}
+                                    {p.recommended_training.contents && <div style={{ fontSize: 12, color: TX2, marginTop: 2 }}>Contents: {p.recommended_training.contents}</div>}
+                                  </div>
+                                )}
+                                {p.alchemy_checkin && (
+                                  <div style={{ marginTop: 10, fontSize: 12, color: TX2 }}>
+                                    Alchemy check-in: {p.alchemy_checkin} Contact Liz at liz@alchemytraininguk.com or alchemytraininguk.com.
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                          <div style={{ border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px' }}>
+                            <div style={{ fontFamily: FM, fontSize: 12, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Alchemy Sign-Off Tracker</div>
+                            {[1,2,3].map(n => (
+                              <div key={n} style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 1fr 1fr', gap: 8, alignItems: 'center', marginBottom: 6, fontSize: 12 }}>
+                                <div style={{ fontWeight: 700, color: NAVY }}>Phase {n}</div>
+                                <div>Completed: <input type="text" placeholder="Yes/No" style={{ width: '70%', fontSize: 12, padding: '3px 6px', border: `1px solid ${BD}`, borderRadius: 4 }} /></div>
+                                <div>Date: <input type="text" placeholder="dd/mm/yyyy" style={{ width: '70%', fontSize: 12, padding: '3px 6px', border: `1px solid ${BD}`, borderRadius: 4 }} /></div>
+                                <div>Signed off by: <input type="text" style={{ width: '60%', fontSize: 12, padding: '3px 6px', border: `1px solid ${BD}`, borderRadius: 4 }} /></div>
+                                <div />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </Card>
                   </ScrollReveal>
                 )}
 
