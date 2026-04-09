@@ -736,6 +736,12 @@ export default function DashboardPage() {
         minWidth: 0,
       }}>
 
+        {isMobile && (
+          <div style={{ background: 'red', color: 'white', padding: '20px', fontSize: '20px', textAlign: 'center', width: '100%', zIndex: 9999 }}>
+            MOBILE MODE ACTIVE
+          </div>
+        )}
+
         {/* ── Header ── */}
         <div style={{
           display: 'flex', alignItems: 'center',

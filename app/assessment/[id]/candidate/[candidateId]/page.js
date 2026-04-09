@@ -1488,6 +1488,12 @@ export default function CandidateReportPage({ params }) {
 
       <main className="main-content" style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', maxWidth: 1000, boxSizing: 'border-box' }}>
 
+        {isMobile && (
+          <div style={{ background: 'red', color: 'white', padding: '20px', fontSize: '20px', textAlign: 'center', width: '100%', zIndex: 9999 }}>
+            MOBILE MODE ACTIVE
+          </div>
+        )}
+
         {/* Back */}
         <button
           className="no-print"
