@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ProdictaLogo from '@/components/ProdictaLogo'
 import useIsMobile from '@/hooks/useIsMobile'
 
@@ -24,9 +24,11 @@ function Nav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const isMobile = useIsMobile()
 
-  if (typeof window !== 'undefined') {
-    window.addEventListener('scroll', () => setScrolled(window.scrollY > 20), { passive: true })
-  }
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', fn, { passive: true })
+    return () => window.removeEventListener('scroll', fn)
+  }, [])
 
   const navLinks = [
     { href: '/#how-it-works', label: 'How it works' },

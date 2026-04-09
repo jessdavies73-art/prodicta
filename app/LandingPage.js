@@ -75,11 +75,10 @@ function Nav() {
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', fn, { passive: true })
-    const mq = window.matchMedia('(max-width: 768px)')
-    setIsMobile(mq.matches)
-    const mqHandler = e => setIsMobile(e.matches)
-    mq.addEventListener('change', mqHandler)
-    return () => { window.removeEventListener('scroll', fn); mq.removeEventListener('change', mqHandler) }
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => { window.removeEventListener('scroll', fn); window.removeEventListener('resize', checkMobile) }
   }, [])
 
   const navLinks = [
