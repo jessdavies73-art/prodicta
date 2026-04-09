@@ -972,7 +972,7 @@ export default function CandidateReportPage({ params }) {
   const [noteSaving, setNoteSaving] = useState(false)
   const [activeSection, setActiveSection] = useState('summary')
   const [expandedWeeks, setExpandedWeeks] = useState({})
-  const [expandedSections, setExpandedSections] = useState({ aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false, coachingPlan: false })
+  const [expandedSections, setExpandedSections] = useState({ aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false, coachingPlan: false, tuesdayReality: true })
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
 
@@ -2252,6 +2252,34 @@ export default function CandidateReportPage({ params }) {
                     </ScrollReveal>
                   )
                 })()}
+
+                {/* ══════════════════════════════════════════════════
+                    TUESDAY REALITY
+                ══════════════════════════════════════════════════ */}
+                {results?.tuesday_reality && (
+                  <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                        <SectionHeading tooltip="A plain English description of what the hiring manager will actually experience day to day with this candidate.">
+                          Tuesday Reality
+                        </SectionHeading>
+                        <SectionToggle expanded={expandedSections.tuesdayReality} onToggle={() => toggleSection('tuesdayReality')} />
+                      </div>
+                      {expandedSections.tuesdayReality && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                          {String(results.tuesday_reality).split(/\n\n+/).map(p => p.trim()).filter(Boolean).map((para, i) => (
+                            <p key={i} style={{
+                              fontFamily: F, fontSize: 14.5, color: i === 0 ? TX : TX2,
+                              lineHeight: 1.8, margin: 0, fontWeight: i === 0 ? 500 : 400,
+                            }}>
+                              {para}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </Card>
+                  </ScrollReveal>
+                )}
 
                 {/* ══════════════════════════════════════════════════
                     EXPECTATION ALIGNMENT
