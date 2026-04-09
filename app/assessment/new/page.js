@@ -182,6 +182,32 @@ export default function NewAssessmentPage() {
   const [smartLoading, setSmartLoading] = useState(false)
   const smartCacheRef = useRef({ key: '', questions: null })
 
+  // Brief Health Check
+  const [briefFlags, setBriefFlags] = useState(null) // null = not checked, [] = clean, [...] = issues
+  const [briefChecking, setBriefChecking] = useState(false)
+  const briefCheckedRef = useRef('')
+
+  const handleBriefCheck = async () => {
+    const key = `${roleTitle.trim()}||${jd.trim()}`
+    if (key === briefCheckedRef.current) return
+    setBriefChecking(true)
+    setBriefFlags(null)
+    try {
+      const res = await fetch('/api/assessment/brief-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role_title: roleTitle.trim(), job_description: jd.trim() }),
+      })
+      const data = await res.json()
+      setBriefFlags(Array.isArray(data.flags) ? data.flags : [])
+      briefCheckedRef.current = key
+    } catch {
+      setBriefFlags([])
+    } finally {
+      setBriefChecking(false)
+    }
+  }
+
   useEffect(() => {
     const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
     const init = async () => {
@@ -496,7 +522,7 @@ export default function NewAssessmentPage() {
             <textarea
               rows={8}
               value={jd}
-              onChange={e => setJd(e.target.value)}
+              onChange={e => { setJd(e.target.value); if (briefFlags !== null) { setBriefFlags(null); briefCheckedRef.current = '' } }}
               placeholder="Paste the job description here…"
               style={{
                 width: '100%', boxSizing: 'border-box', padding: '10px 14px',
@@ -856,6 +882,64 @@ export default function NewAssessmentPage() {
             })}
           </div>
         </div>
+
+        {/* Brief Health Check */}
+        {jd.length >= 50 && roleTitle.trim().length > 0 && (
+          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0', padding: '24px 32px', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: briefFlags !== null ? 16 : 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#0f2137', fontFamily: F }}>Brief Health Check</span>
+              </div>
+              <button
+                onClick={handleBriefCheck}
+                disabled={briefChecking}
+                style={{
+                  padding: '7px 18px', borderRadius: 8, border: '1px solid #e4e9f0',
+                  background: briefChecking ? '#f7f9fb' : '#fff',
+                  color: briefChecking ? '#94a1b3' : '#0f2137',
+                  fontSize: 13, fontWeight: 600, fontFamily: F,
+                  cursor: briefChecking ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {briefChecking ? 'Checking...' : briefFlags !== null ? 'Re-check Brief' : 'Check Brief'}
+              </button>
+            </div>
+
+            {briefFlags !== null && briefFlags.length === 0 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '12px 16px', borderRadius: 8,
+                background: '#f0fdf4', border: '1px solid #bbf7d0',
+              }}>
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <span style={{ fontSize: 13.5, fontWeight: 600, color: '#16a34a', fontFamily: F }}>Brief looks strong. No issues found.</span>
+              </div>
+            )}
+
+            {briefFlags !== null && briefFlags.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {briefFlags.map((f, i) => (
+                  <div key={i} style={{
+                    padding: '14px 16px', borderRadius: 8,
+                    background: '#fffbeb', border: '1px solid #fde68a',
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', fontFamily: F, marginBottom: 4 }}>
+                      {f.flag}
+                    </div>
+                    <div style={{ fontSize: 13, color: '#78350f', fontFamily: F, lineHeight: 1.6 }}>
+                      {f.detail}
+                    </div>
+                  </div>
+                ))}
+                <div style={{ fontSize: 12, color: '#94a1b3', fontFamily: F, marginTop: 4 }}>
+                  You can update your job description above based on these suggestions, or continue with the original.
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Generate button */}
         {error && (
