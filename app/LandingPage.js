@@ -741,10 +741,11 @@ export default function LandingPage() {
                 accent: '#EF4444',
               },
               {
-                stat: '77%',
-                label: 'Employers say probation reveals more than interviews',
-                body: 'Yet most organisations still rely on interviews alone to make hiring decisions. PRODICTA changes that.',
+                stat: '87%',
+                label: 'of hiring decisions are based on interview performance',
+                body: 'But interviews test confidence, not competence. PRODICTA tests pressure-fit.',
                 accent: '#F59E0B',
+                link: { text: 'See how pressure-fit testing works', href: '/pressure-fit' },
               },
               {
                 stat: 'Jan 2027',
@@ -774,6 +775,11 @@ export default function LandingPage() {
                   <div style={{ fontFamily: FM, fontSize: 32, fontWeight: 700, color: card.accent, letterSpacing: '-0.5px', marginBottom: 8, lineHeight: 1.1 }}>{card.stat}</div>
                   <div style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: NAVY, marginBottom: 12 }}>{card.label}</div>
                   <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', lineHeight: 1.7 }}>{card.body}</p>
+                  {card.link && (
+                    <a href={card.link.href} style={{ display: 'inline-block', marginTop: 10, fontFamily: F, fontSize: 13, fontWeight: 600, color: TEAL, textDecoration: 'none', borderBottom: `1px solid ${TEAL}40`, paddingBottom: 1, transition: 'border-color 0.2s' }}
+                      onMouseEnter={e => e.target.style.borderColor=TEAL} onMouseLeave={e => e.target.style.borderColor=`${TEAL}40`}
+                    >{card.link.text}</a>
+                  )}
                 </div>
               </Reveal>
             ))}
