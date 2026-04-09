@@ -1,11 +1,15 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import { NAVY, TEAL, TEALD, TX2, TX3, F } from '../lib/constants'
 import { Ic } from './Icons'
 import { createClient } from '../lib/supabase'
 import ProdictaLogo from './ProdictaLogo'
-import useIsMobile from '../hooks/useIsMobile'
+
+const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
+const _mSnap = () => window.innerWidth <= 768
+const _mServer = () => false
+function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
 const BASE_NAV_TOP = [
   { key: 'dashboard',    label: 'Dashboard',     icon: 'grid',    href: '/dashboard' },
