@@ -38,6 +38,7 @@ export default function BlogIndex() {
           <Link href="/" style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Home</Link>
           <Link href="/blog" style={{ fontSize: 13, color: TEAL, textDecoration: 'none', fontWeight: 700 }}>Blog</Link>
           <Link href="/demo" style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Demo</Link>
+          <Link href="/roadmap" style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>What's Coming</Link>
           <Link href="/login" style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Sign in</Link>
         </nav>
       </header>

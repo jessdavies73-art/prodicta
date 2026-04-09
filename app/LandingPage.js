@@ -88,6 +88,7 @@ function Nav() {
     { href: '/demo', label: 'Demo' },
     { href: '/audit', label: 'Free audit' },
     { href: '/blog', label: 'Blog' },
+    { href: '/roadmap', label: "What's Coming" },
   ]
 
   return (

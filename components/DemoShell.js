@@ -54,6 +54,7 @@ const NAV = [
   { key: 'benchmarks',   label: 'Benchmarks',      icon: 'layers',   href: '/demo/benchmarks' },
   { key: 'archive',      label: 'Archive',         icon: 'archive',  href: '/demo/archive' },
   { key: 'how-it-works', label: 'How It Works',    icon: 'info',     href: '/how-it-works' },
+  { key: 'roadmap',      label: "What's Coming",   icon: 'zap',      href: '/roadmap' },
   { key: 'settings',     label: 'Settings',        icon: 'settings', href: '/demo/settings' },
   { key: 'outcomes',     label: 'Outcomes',         icon: 'target',   restricted: true },
 ]

@@ -15,9 +15,10 @@ const BASE_NAV_TOP = [
 ]
 
 const BASE_NAV_BOTTOM = [
-  { key: 'archive',      label: 'Archive',        icon: 'archive',  href: '/archive' },
-  { key: 'how-it-works', label: 'How It Works',   icon: 'info',     href: '/how-it-works' },
-  { key: 'settings',     label: 'Settings',       icon: 'settings', href: '/settings' },
+  { key: 'archive',      label: 'Archive',          icon: 'archive',  href: '/archive' },
+  { key: 'how-it-works', label: 'How It Works',     icon: 'info',     href: '/how-it-works' },
+  { key: 'roadmap',      label: "What's Coming",    icon: 'zap',      href: '/roadmap' },
+  { key: 'settings',     label: 'Settings',         icon: 'settings', href: '/settings' },
 ]
 
 function timeAgo(dateStr) {
