@@ -168,9 +168,13 @@ export default function SettingsPage() {
   const [savingAlerts, setSavingAlerts] = useState(false)
   const [alertsToast, setAlertsToast] = useState(null)
   const [alertThresholdFocused, setAlertThresholdFocused] = useState(false)
-  const [candidateFeedbackEnabled, setCandidateFeedbackEnabled] = useState(true)
+  const [candidateFeedbackEnabled, setCandidateFeedbackEnabled] = useState(false)
   const [savingFeedback, setSavingFeedback] = useState(false)
   const [feedbackToast, setFeedbackToast] = useState(null)
+  // Logo upload (agency only)
+  const [companyLogoUrl, setCompanyLogoUrl] = useState('')
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [logoToast, setLogoToast] = useState(null)
 
   // Password state
   const [newPassword, setNewPassword] = useState('')
@@ -199,7 +203,8 @@ export default function SettingsPage() {
         setCompanySize(prof?.company_size || '')
         setWeights({ ...DEFAULT_WEIGHTS, ...(prof?.default_weightings || {}) })
         setAlertThreshold(prof?.alert_threshold ?? 50)
-        setCandidateFeedbackEnabled(prof?.candidate_feedback_enabled !== false)
+        setCandidateFeedbackEnabled(prof?.candidate_feedback_enabled === true)
+        setCompanyLogoUrl(prof?.company_logo_url || '')
 
         // Monthly assessment count for billing tab
         const now = new Date()
@@ -297,6 +302,27 @@ export default function SettingsPage() {
       setCandidateFeedbackEnabled(!next)
     } finally {
       setSavingFeedback(false)
+    }
+  }
+
+  async function handleLogoUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingLogo(true)
+    setLogoToast(null)
+    try {
+      const formData = new FormData()
+      formData.append('logo', file)
+      const res = await fetch('/api/upload-logo', { method: 'POST', body: formData })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Upload failed')
+      setCompanyLogoUrl(json.url)
+      setLogoToast({ type: 'success', message: 'Logo uploaded successfully.' })
+      setTimeout(() => setLogoToast(null), 3500)
+    } catch (err) {
+      setLogoToast({ type: 'error', message: err.message })
+    } finally {
+      setUploadingLogo(false)
     }
   }
 
@@ -513,6 +539,42 @@ export default function SettingsPage() {
                 {companyToast && <Toast message={companyToast.message} type={companyToast.type} />}
               </div>
             </div>
+
+            {/* Agency logo upload */}
+            {profile?.account_type === 'agency' && (
+              <div style={{ ...cs }}>
+                <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX }}>
+                  Company logo
+                </h2>
+                <p style={{ margin: '0 0 18px', fontSize: 13, color: TX2, lineHeight: 1.65 }}>
+                  Upload your company logo to brand candidate development reports and feedback pages. Accepted formats: PNG, JPEG. Maximum 2MB.
+                </p>
+                {companyLogoUrl && (
+                  <div style={{ marginBottom: 16, padding: 12, background: BG, border: `1px solid ${BD}`, borderRadius: 8, display: 'inline-block' }}>
+                    <img src={companyLogoUrl} alt="Company logo" style={{ maxWidth: 200, maxHeight: 80, display: 'block' }} />
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <label style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '9px 16px', borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: F,
+                    background: TEALLT, border: `1.5px solid ${TEAL}`, color: TEALD,
+                    cursor: uploadingLogo ? 'wait' : 'pointer', opacity: uploadingLogo ? 0.65 : 1,
+                  }}>
+                    <Ic name="upload" size={14} color={TEALD} />
+                    {uploadingLogo ? 'Uploading...' : companyLogoUrl ? 'Replace logo' : 'Upload logo'}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg"
+                      onChange={handleLogoUpload}
+                      disabled={uploadingLogo}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                  {logoToast && <Toast message={logoToast.message} type={logoToast.type} />}
+                </div>
+              </div>
+            )}
 
             {/* Account security */}
             <div style={{ ...cs }}>
@@ -935,10 +997,10 @@ export default function SettingsPage() {
             <div style={{ ...cs }}>
               <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX, display: 'flex', alignItems: 'center', gap: 8 }}>
                 Candidate feedback page
-                <InfoTooltip text="When enabled, candidates can view a development-focused feedback page after their assessment. It shows three strengths and two positive development suggestions. It never shows scores, watch-outs, or hiring decisions." />
+                <InfoTooltip text="When enabled, candidates will see their strengths and development areas after completing the assessment. They will never see scores, risk levels, or hiring decisions." />
               </h2>
               <p style={{ margin: '0 0 18px', fontSize: 13, color: TX2, lineHeight: 1.65 }}>
-                Give every candidate a positive, development-focused feedback page after they complete their assessment. They see three strengths and two suggestions for further development. They never see scores, watch-outs, or any hint of the hiring decision.
+                When enabled, candidates will see their strengths and development areas after completing the assessment. They will never see scores, risk levels, or hiring decisions.
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 18px' }}>
                 <button
@@ -960,7 +1022,7 @@ export default function SettingsPage() {
                   }} />
                 </button>
                 <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX }}>
-                  {candidateFeedbackEnabled ? 'Enabled (default)' : 'Disabled'}
+                  {candidateFeedbackEnabled ? 'Enabled' : 'Disabled (default)'}
                 </div>
                 {feedbackToast && <Toast message={feedbackToast.message} type={feedbackToast.type} />}
               </div>

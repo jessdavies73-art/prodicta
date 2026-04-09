@@ -997,6 +997,10 @@ export default function CandidateReportPage({ params }) {
   const [outcomeError, setOutcomeError] = useState(null)
   const [existingOutcome, setExistingOutcome] = useState(null)
   const [simpleView, setSimpleView] = useState(false)
+  // Development feedback (employer, rejected candidates)
+  const [sendingDevFeedback, setSendingDevFeedback] = useState(false)
+  const [devFeedbackSent, setDevFeedbackSent] = useState(false)
+  const [devFeedbackError, setDevFeedbackError] = useState(null)
 
   // Accountability Trail (agency only)
   const [accountRecord, setAccountRecord] = useState(null)
@@ -1080,6 +1084,7 @@ export default function CandidateReportPage({ params }) {
           supabase.from('accountability_records').select('*').eq('candidate_id', params.candidateId).eq('user_id', u.id).maybeSingle(),
         ])
         setExistingOutcome(outcome || null)
+        if (outcome?.sent_development_feedback) setDevFeedbackSent(true)
         if (outcome) {
           setSelectedOutcome(outcome.outcome)
           setOutcomeDate(outcome.outcome_date || '')
@@ -1842,6 +1847,45 @@ export default function CandidateReportPage({ params }) {
                         <Ic name="clipboard" size={15} color={TEAL} />
                         Generate Probation Review
                       </button>
+                    )}
+                    {results && profile?.account_type === 'employer' && existingOutcome && ['rejected', 'failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
+                      <button
+                        onClick={async () => {
+                          if (sendingDevFeedback || devFeedbackSent) return
+                          setSendingDevFeedback(true)
+                          setDevFeedbackError(null)
+                          try {
+                            const res = await fetch(`/api/candidates/${candidate?.id}/development-feedback`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                            })
+                            const json = await res.json()
+                            if (!res.ok) throw new Error(json.error || 'Failed to send')
+                            setDevFeedbackSent(true)
+                          } catch (err) {
+                            setDevFeedbackError(err.message)
+                          } finally {
+                            setSendingDevFeedback(false)
+                          }
+                        }}
+                        disabled={sendingDevFeedback || devFeedbackSent}
+                        className="no-print"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: devFeedbackSent ? GRNBG : TEALLT,
+                          border: `1.5px solid ${devFeedbackSent ? GRNBD : TEAL}`,
+                          borderRadius: 8, cursor: sendingDevFeedback || devFeedbackSent ? 'default' : 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700,
+                          color: devFeedbackSent ? GRN : TEALD, padding: '9px 16px',
+                          opacity: sendingDevFeedback ? 0.65 : 1,
+                        }}
+                      >
+                        <Ic name={devFeedbackSent ? 'check' : 'mail'} size={15} color={devFeedbackSent ? GRN : TEALD} />
+                        {sendingDevFeedback ? 'Sending...' : devFeedbackSent ? 'Development feedback sent' : 'Send Development Feedback'}
+                      </button>
+                    )}
+                    {devFeedbackError && (
+                      <span style={{ fontSize: 12, color: RED, fontFamily: F }}>{devFeedbackError}</span>
                     )}
                   </div>
                 </div>
