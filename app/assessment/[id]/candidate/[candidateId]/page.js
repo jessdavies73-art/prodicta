@@ -1511,7 +1511,7 @@ export default function CandidateReportPage({ params }) {
                 CANDIDATE HEADER
             ══════════════════════════════════════════════════ */}
             <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', flexDirection: isMobile ? 'column' : 'row' }}>
+              <div className="report-header" style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', flexDirection: isMobile ? 'column' : 'row' }}>
                 {/* Avatar + meta */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: 1, minWidth: isMobile ? 0 : 240, width: isMobile ? '100%' : 'auto' }}>
                   <Avatar name={candidate.name || 'Candidate'} size={52} />
@@ -1574,7 +1574,7 @@ export default function CandidateReportPage({ params }) {
                 </div>
 
                 {/* Score ring + actions */}
-                <div style={{ display: 'flex', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? 16 : 28, flexShrink: 0, flexWrap: 'wrap', width: isMobile ? '100%' : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
+                <div className="report-score-actions" style={{ display: 'flex', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? 16 : 28, flexShrink: 0, flexWrap: 'wrap', width: isMobile ? '100%' : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
                   {results && (
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
@@ -1624,7 +1624,7 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   )}
 
-                  <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: 8, width: isMobile ? '100%' : 'auto' }}>
+                  <div className="no-print report-action-buttons" style={{ display: 'flex', flexDirection: 'column', gap: 8, width: isMobile ? '100%' : 'auto' }}>
                     {existingOutcome && (
                       <button
                         onClick={() => router.push(`/assessment/${params.id}/candidate/${params.candidateId}/copilot`)}
@@ -2767,7 +2767,7 @@ export default function CandidateReportPage({ params }) {
                         <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
                           Time per scenario
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${scenarioCount}, 1fr)`, gap: 10, marginBottom: 18 }}>
+                        <div className="scenario-cards" style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${scenarioCount}, 1fr)`, gap: 10, marginBottom: 18 }}>
                           {scenarioIndices.map(i => {
                             const resp = responses.find(r => r.scenario_index === i)
                             const secs = resp?.time_taken_seconds ?? null
@@ -2975,7 +2975,7 @@ export default function CandidateReportPage({ params }) {
                       </div>
 
                       {/* 2×2 Dimension grid */}
-                      <div style={{ padding: isMobile ? '16px' : '24px 28px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
+                      <div className="pressure-fit-cards" style={{ padding: isMobile ? '16px' : '24px 28px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
                         {DIMENSIONS.map(({ key, label, icon, desc }, idx) => {
                           const dim = dims[key] ?? {}
                           const s = dim.score ?? null
@@ -3141,7 +3141,7 @@ export default function CandidateReportPage({ params }) {
                       Skills Breakdown
                     </SectionHeading>
                     <RadarChart scores={results.scores} />
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 16 }}>
+                    <div className="skills-detail-cards" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 16 }}>
                       {Object.entries(results.scores).map(([skill, skillScore]) => {
                         const narrative = results.score_narratives?.[skill]
                         const bmThreshold = bmMap[skill.toLowerCase()]
@@ -4053,7 +4053,7 @@ export default function CandidateReportPage({ params }) {
                               <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: '#fff', flex: 1 }}>{scenario.title}</span>
                               <span style={{ fontFamily: F, fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{scenario.timeMinutes}min</span>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 0 }}>
+                            <div className="response-columns" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 0 }}>
                               {/* Scenario prompt */}
                               <div style={{ padding: '16px 18px', borderRight: isMobile ? 'none' : `1px solid ${BD}`, borderBottom: isMobile ? `1px solid ${BD}` : 'none', background: BG }}>
                                 <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Scenario</div>
