@@ -518,29 +518,48 @@ function SeniorityBadge({ score }) {
 
 /* ── Locked / blurred premium section ────────────────────────────────────── */
 function LockedSection({ title, desc, variant = 'text' }) {
+  const B1 = '#b0b8c4'
+  const B2 = '#c4cad2'
+  const B3 = '#d4d9e0'
+  const B4 = '#e2e6ec'
+  const BG1 = '#edf0f4'
+  const T1 = '#00BFA5'
+  const R1 = '#ef4444'
+  const A1 = '#f59e0b'
+
   const blurContent = {
     score: (
       <>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 16 }}>
-          <div style={{ width: 72, height: 72, borderRadius: '50%', border: '6px solid #d1d5db', background: '#f3f4f6' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
+          <div style={{ width: 90, height: 90, borderRadius: '50%', border: `8px solid ${T1}55`, background: `${T1}15`, position: 'relative' }}>
+            <div style={{ position: 'absolute', inset: 12, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ height: 24, width: 40, background: B1, borderRadius: 4 }} />
+            </div>
+          </div>
           <div style={{ flex: 1 }}>
-            <div style={{ height: 22, width: '30%', background: '#d1d5db', borderRadius: 6, marginBottom: 8 }} />
-            <div style={{ height: 10, width: '60%', background: '#e5e7eb', borderRadius: 4 }} />
+            <div style={{ height: 18, width: '40%', background: B1, borderRadius: 6, marginBottom: 10 }} />
+            <div style={{ height: 10, width: '65%', background: B2, borderRadius: 4, marginBottom: 8 }} />
+            <div style={{ height: 8, width: '100%', background: B4, borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
+              <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: '72%', background: T1, borderRadius: 4, opacity: 0.5 }} />
+            </div>
           </div>
         </div>
-        <div style={{ height: 8, width: '100%', background: '#e5e7eb', borderRadius: 4, marginBottom: 10 }} />
-        <div style={{ height: 10, width: '85%', background: '#e5e7eb', borderRadius: 4 }} />
+        <div style={{ height: 11, width: '90%', background: B3, borderRadius: 4, marginBottom: 8 }} />
+        <div style={{ height: 11, width: '75%', background: B4, borderRadius: 4 }} />
       </>
     ),
     timeline: (
       <>
-        <div style={{ height: 14, width: '40%', background: '#d1d5db', borderRadius: 6, marginBottom: 16 }} />
-        {[1,2,3].map(i => (
-          <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 14 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e5e7eb', flexShrink: 0 }} />
-            <div style={{ flex: 1 }}>
-              <div style={{ height: 12, width: `${50 + i * 10}%`, background: '#e5e7eb', borderRadius: 4, marginBottom: 6 }} />
-              <div style={{ height: 9, width: `${65 + i * 5}%`, background: '#f3f4f6', borderRadius: 4 }} />
+        <div style={{ height: 16, width: '45%', background: B1, borderRadius: 6, marginBottom: 20 }} />
+        {[1,2,3,4].map(i => (
+          <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16, paddingLeft: 4 }}>
+            <div style={{ width: 40, height: 40, borderRadius: '50%', background: i <= 2 ? `${T1}40` : B4, border: `3px solid ${i <= 2 ? T1 : B3}`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ height: 14, width: 14, background: i <= 2 ? T1 : B2, borderRadius: 3 }} />
+            </div>
+            <div style={{ flex: 1, borderLeft: `2px solid ${B4}`, paddingLeft: 14, paddingBottom: 4 }}>
+              <div style={{ height: 13, width: `${40 + i * 12}%`, background: B2, borderRadius: 4, marginBottom: 8 }} />
+              <div style={{ height: 10, width: `${55 + i * 8}%`, background: B3, borderRadius: 4, marginBottom: 6 }} />
+              <div style={{ height: 10, width: `${45 + i * 10}%`, background: B4, borderRadius: 4 }} />
             </div>
           </div>
         ))}
@@ -548,13 +567,16 @@ function LockedSection({ title, desc, variant = 'text' }) {
     ),
     cards: (
       <>
-        <div style={{ height: 14, width: '35%', background: '#d1d5db', borderRadius: 6, marginBottom: 14 }} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-          {[1,2,3].map(i => (
-            <div key={i} style={{ background: '#f3f4f6', borderRadius: 10, padding: '16px 14px', border: '1px solid #e5e7eb' }}>
-              <div style={{ height: 28, width: 28, borderRadius: '50%', background: '#d1d5db', marginBottom: 10 }} />
-              <div style={{ height: 10, width: '70%', background: '#e5e7eb', borderRadius: 4, marginBottom: 6 }} />
-              <div style={{ height: 8, width: '90%', background: '#f3f4f6', borderRadius: 3 }} />
+        <div style={{ height: 16, width: '38%', background: B1, borderRadius: 6, marginBottom: 16 }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+          {[{ c: T1 }, { c: A1 }, { c: R1 }].map((d, i) => (
+            <div key={i} style={{ background: `${d.c}10`, borderRadius: 12, padding: '18px 16px', border: `2px solid ${d.c}30` }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: `${d.c}25`, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ height: 20, width: 20, background: `${d.c}50`, borderRadius: 4 }} />
+              </div>
+              <div style={{ height: 20, width: '50%', background: d.c, borderRadius: 4, marginBottom: 8, opacity: 0.4 }} />
+              <div style={{ height: 10, width: '80%', background: B3, borderRadius: 4, marginBottom: 6 }} />
+              <div style={{ height: 10, width: '60%', background: B4, borderRadius: 4 }} />
             </div>
           ))}
         </div>
@@ -562,37 +584,53 @@ function LockedSection({ title, desc, variant = 'text' }) {
     ),
     chart: (
       <>
-        <div style={{ height: 14, width: '50%', background: '#d1d5db', borderRadius: 6, marginBottom: 16 }} />
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 80, marginBottom: 14 }}>
-          {[45,70,55,80,35,65].map((h, i) => (
-            <div key={i} style={{ flex: 1, height: `${h}%`, background: '#e5e7eb', borderRadius: '4px 4px 0 0' }} />
+        <div style={{ height: 16, width: '50%', background: B1, borderRadius: 6, marginBottom: 18 }} />
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 100, marginBottom: 16, padding: '0 8px' }}>
+          {[40,72,55,85,30,68,48].map((h, i) => (
+            <div key={i} style={{ flex: 1, height: `${h}%`, background: i % 2 === 0 ? `${T1}50` : `${A1}40`, borderRadius: '5px 5px 0 0', position: 'relative' }}>
+              <div style={{ position: 'absolute', top: -18, left: '50%', transform: 'translateX(-50%)', height: 12, width: 24, background: B2, borderRadius: 3 }} />
+            </div>
           ))}
         </div>
-        <div style={{ height: 10, width: '80%', background: '#e5e7eb', borderRadius: 4 }} />
+        <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
+          <div style={{ height: 10, flex: 1, background: B3, borderRadius: 4 }} />
+          <div style={{ height: 10, flex: 1, background: B4, borderRadius: 4 }} />
+        </div>
       </>
     ),
     text: (
       <>
-        <div style={{ height: 14, width: '45%', background: '#d1d5db', borderRadius: 6, marginBottom: 14 }} />
-        <div style={{ height: 10, width: '92%', background: '#e5e7eb', borderRadius: 4, marginBottom: 8 }} />
-        <div style={{ height: 10, width: '78%', background: '#e5e7eb', borderRadius: 4, marginBottom: 8 }} />
-        <div style={{ height: 10, width: '85%', background: '#e5e7eb', borderRadius: 4, marginBottom: 8 }} />
-        <div style={{ height: 10, width: '60%', background: '#e5e7eb', borderRadius: 4, marginBottom: 14 }} />
-        <div style={{ display: 'flex', gap: 12 }}>
-          <div style={{ height: 48, flex: 1, background: '#f3f4f6', borderRadius: 8, border: '1px solid #e5e7eb' }} />
-          <div style={{ height: 48, flex: 1, background: '#f3f4f6', borderRadius: 8, border: '1px solid #e5e7eb' }} />
+        <div style={{ height: 16, width: '50%', background: B1, borderRadius: 6, marginBottom: 16 }} />
+        <div style={{ borderLeft: `4px solid ${T1}55`, paddingLeft: 16, marginBottom: 16 }}>
+          <div style={{ height: 11, width: '95%', background: B2, borderRadius: 4, marginBottom: 8 }} />
+          <div style={{ height: 11, width: '88%', background: B3, borderRadius: 4, marginBottom: 8 }} />
+          <div style={{ height: 11, width: '92%', background: B2, borderRadius: 4, marginBottom: 8 }} />
+          <div style={{ height: 11, width: '70%', background: B3, borderRadius: 4 }} />
+        </div>
+        <div style={{ borderLeft: `4px solid ${A1}55`, paddingLeft: 16, marginBottom: 16 }}>
+          <div style={{ height: 11, width: '90%', background: B3, borderRadius: 4, marginBottom: 8 }} />
+          <div style={{ height: 11, width: '80%', background: B4, borderRadius: 4, marginBottom: 8 }} />
+          <div style={{ height: 11, width: '85%', background: B3, borderRadius: 4 }} />
+        </div>
+        <div style={{ display: 'flex', gap: 14 }}>
+          <div style={{ height: 52, flex: 1, background: BG1, borderRadius: 10, border: `1px solid ${B4}` }} />
+          <div style={{ height: 52, flex: 1, background: BG1, borderRadius: 10, border: `1px solid ${B4}` }} />
         </div>
       </>
     ),
     grid: (
       <>
-        <div style={{ height: 14, width: '40%', background: '#d1d5db', borderRadius: 6, marginBottom: 14 }} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {[1,2,3,4].map(i => (
-            <div key={i} style={{ background: '#f3f4f6', borderRadius: 8, padding: '14px 16px', border: '1px solid #e5e7eb' }}>
-              <div style={{ height: 10, width: '55%', background: '#d1d5db', borderRadius: 4, marginBottom: 8 }} />
-              <div style={{ height: 8, width: '80%', background: '#e5e7eb', borderRadius: 3, marginBottom: 6 }} />
-              <div style={{ height: 8, width: '65%', background: '#e5e7eb', borderRadius: 3 }} />
+        <div style={{ height: 16, width: '42%', background: B1, borderRadius: 6, marginBottom: 16 }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {[T1, A1, B1, T1].map((c, i) => (
+            <div key={i} style={{ background: `${c}08`, borderRadius: 10, padding: '16px 18px', border: `1.5px solid ${c}25` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 7, background: `${c}30` }} />
+                <div style={{ height: 12, width: '55%', background: B2, borderRadius: 4 }} />
+              </div>
+              <div style={{ height: 10, width: '85%', background: B3, borderRadius: 4, marginBottom: 6 }} />
+              <div style={{ height: 10, width: '70%', background: B4, borderRadius: 4, marginBottom: 6 }} />
+              <div style={{ height: 10, width: '60%', background: B4, borderRadius: 4 }} />
             </div>
           ))}
         </div>
@@ -601,15 +639,15 @@ function LockedSection({ title, desc, variant = 'text' }) {
   }
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 14, marginBottom: 20, border: `1px solid ${BD}` }}>
-      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', padding: '24px 28px', background: CARD }}>
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 14, marginBottom: 20, border: `1px solid ${BD}`, minHeight: 180 }}>
+      <div style={{ filter: 'blur(5px)', WebkitFilter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none', padding: '28px 32px', background: '#fff' }}>
         {blurContent[variant] || blurContent.text}
       </div>
       <div style={{
         position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(2px)', zIndex: 2,
+        background: 'rgba(255,255,255,0.45)', zIndex: 2,
       }}>
-        <div style={{ textAlign: 'center', maxWidth: 340, padding: '0 16px' }}>
+        <div style={{ textAlign: 'center', maxWidth: 360, padding: '20px 24px', background: 'rgba(255,255,255,0.92)', borderRadius: 14, boxShadow: '0 4px 24px rgba(15,33,55,0.1)', border: `1px solid ${BD}` }}>
           <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 8, opacity: 0.7 }}>
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
