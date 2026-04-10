@@ -397,7 +397,7 @@ function ActivePage({ candidate, assessment, onSubmit }) {
     return () => clearInterval(intervalRef.current)
   }, [scenarioIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function handleNext() {
+  async function handleNext() {
     // Snapshot current time taken before switching
     const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000)
     setTimeTakens(prev => {

@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResend() { return new Resend(process.env.RESEND_API_KEY) }
 
 export async function POST(request, { params }) {
   try {
@@ -101,7 +101,7 @@ Return JSON only. UK English. No emoji. No em dashes.
 
         if (!existingCopilot?.redline_alerted) {
           try {
-            await resend.emails.send({
+            await getResend().emails.send({
               from: 'PRODICTA Alerts <alerts@prodicta.co.uk>',
               to: user.email,
               subject: `Redline Alert: ${candidate.name} - Immediate Action Required`,
