@@ -258,6 +258,7 @@ export default function DashboardPage() {
   const isMobile = useIsMobile()
   const [pendingCheckins, setPendingCheckins] = useState([])
   const [selectedCandidates, setSelectedCandidates] = useState(new Set())
+  const [assessmentCredits, setAssessmentCredits] = useState([])
   const [redlineCandidates, setRedlineCandidates] = useState(new Set())
 
   // Close ⋯ menu when clicking anywhere outside
@@ -417,6 +418,15 @@ export default function DashboardPage() {
 
         // Show onboarding wizard for new users
         if (prof && !prof.onboarding_complete) setShowOnboarding(true)
+
+        // Load assessment credits (pay-per-assessment users)
+        try {
+          const { data: credits } = await supabase
+            .from('assessment_credits')
+            .select('credit_type, credits_remaining')
+            .eq('user_id', u.id)
+          if (credits && credits.length > 0) setAssessmentCredits(credits)
+        } catch {}
 
         // Load redline statuses from probation_copilot
         try {
@@ -907,6 +917,41 @@ export default function DashboardPage() {
                     >
                       View report
                     </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Assessment Credits (pay-per-assessment users) ── */}
+        {assessmentCredits.length > 0 && !profile?.plan && (
+          <div style={{
+            background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+            borderTop: `3px solid ${TEAL}`, padding: '20px 24px', marginBottom: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Ic name="award" size={14} color={TEAL} />
+                <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>Your Assessment Credits</span>
+              </div>
+              <a href="/#pricing" style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD, textDecoration: 'none' }}>
+                Buy more credits
+              </a>
+            </div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              {[
+                { type: 'speed-fit', label: 'Speed-Fit' },
+                { type: 'depth-fit', label: 'Depth-Fit' },
+                { type: 'strategy-fit', label: 'Strategy-Fit' },
+                { type: 'immersive', label: 'Immersive' },
+              ].map(ct => {
+                const credit = assessmentCredits.find(c => c.credit_type === ct.type)
+                const remaining = credit?.credits_remaining || 0
+                return (
+                  <div key={ct.type} style={{ flex: 1, minWidth: 100, background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '10px 14px', textAlign: 'center' }}>
+                    <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: remaining > 0 ? TEAL : TX3 }}>{remaining}</div>
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 600, color: TX3 }}>{ct.label}</div>
                   </div>
                 )
               })}

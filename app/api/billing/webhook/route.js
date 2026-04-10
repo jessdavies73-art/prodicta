@@ -55,9 +55,66 @@ export async function POST(request) {
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object
         if (invoice.subscription && invoice.billing_reason !== 'subscription_create') {
-          // subscription_create is handled at sign-up; only process renewals here
           await updateSubscriptionStatus(adminClient, invoice.subscription, 'active')
           console.log('[webhook] payment succeeded for subscription:', invoice.subscription)
+        }
+        break
+      }
+
+      case 'checkout.session.completed': {
+        const session = event.data.object
+        const { user_id, credit_type, quantity, add_immersive } = session.metadata || {}
+        if (user_id && credit_type && quantity) {
+          const qty = parseInt(quantity) || 1
+          // Upsert assessment credits
+          const { data: existing } = await adminClient
+            .from('assessment_credits')
+            .select('credits_remaining, credits_purchased')
+            .eq('user_id', user_id)
+            .eq('credit_type', credit_type)
+            .maybeSingle()
+
+          if (existing) {
+            await adminClient.from('assessment_credits').update({
+              credits_remaining: existing.credits_remaining + qty,
+              credits_purchased: existing.credits_purchased + qty,
+              last_purchased_at: new Date().toISOString(),
+            }).eq('user_id', user_id).eq('credit_type', credit_type)
+          } else {
+            await adminClient.from('assessment_credits').insert({
+              user_id, credit_type,
+              credits_remaining: qty,
+              credits_purchased: qty,
+              last_purchased_at: new Date().toISOString(),
+            })
+          }
+
+          // Handle immersive add-on credits
+          if (add_immersive === 'true') {
+            const { data: immExisting } = await adminClient
+              .from('assessment_credits')
+              .select('credits_remaining, credits_purchased')
+              .eq('user_id', user_id)
+              .eq('credit_type', 'immersive')
+              .maybeSingle()
+
+            if (immExisting) {
+              await adminClient.from('assessment_credits').update({
+                credits_remaining: immExisting.credits_remaining + qty,
+                credits_purchased: immExisting.credits_purchased + qty,
+                last_purchased_at: new Date().toISOString(),
+              }).eq('user_id', user_id).eq('credit_type', 'immersive')
+            } else {
+              await adminClient.from('assessment_credits').insert({
+                user_id, credit_type: 'immersive',
+                credits_remaining: qty,
+                credits_purchased: qty,
+                last_purchased_at: new Date().toISOString(),
+              })
+            }
+          }
+
+          console.log(`[webhook] credits added: ${qty}x ${credit_type} for user ${user_id}`)
         }
         break
       }

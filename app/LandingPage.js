@@ -318,6 +318,7 @@ function StatNumber({ to, suffix = '', display }) {
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState(null)
+  const [pricingMode, setPricingMode] = useState('subscription') // 'subscription' | 'payg'
   const [riskJd, setRiskJd] = useState('')
   const [riskLoading, setRiskLoading] = useState(false)
   const [riskResults, setRiskResults] = useState(null)
@@ -968,9 +969,71 @@ export default function LandingPage() {
                 Simple, transparent pricing
               </h2>
               <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7 }}>Transparent pricing. No hidden fees.</p>
+
+              {/* Pricing toggle */}
+              <div style={{ display: 'inline-flex', background: '#f1f5f9', borderRadius: 10, padding: 3, marginTop: 20 }}>
+                {['subscription', 'payg'].map(m => (
+                  <button key={m} onClick={() => setPricingMode(m)} style={{
+                    padding: '8px 22px', borderRadius: 8, fontFamily: F, fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+                    background: pricingMode === m ? NAVY : 'transparent', color: pricingMode === m ? '#fff' : '#5e6b7f',
+                    border: 'none', transition: 'all 0.2s',
+                  }}>
+                    {m === 'subscription' ? 'Monthly subscription' : 'Pay as you go'}
+                  </button>
+                ))}
+              </div>
             </div>
           </Reveal>
 
+          {/* Pay as you go */}
+          {pricingMode === 'payg' && (
+            <>
+              <Reveal>
+                <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                  <h3 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: NAVY, margin: '0 0 8px' }}>No commitment. Pay per assessment.</h3>
+                  <p style={{ fontFamily: F, fontSize: 15, color: '#5e6b7f', margin: 0 }}>Perfect for occasional hiring or trying PRODICTA before subscribing.</p>
+                </div>
+              </Reveal>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, alignItems: 'start', marginBottom: 20 }}>
+                {[
+                  { name: 'Speed-Fit', price: '£18', time: '15 minutes, 2 scenarios', desc: 'For urgent hires and high volume roles' },
+                  { name: 'Depth-Fit', price: '£35', time: '25 minutes, 3 scenarios', desc: 'For most roles', highlight: true },
+                  { name: 'Strategy-Fit', price: '£65', time: '45 minutes, 4 scenarios + Workspace', desc: 'For senior and high stakes hires' },
+                ].map((p, i) => (
+                  <Reveal key={p.name} delay={i * 80}>
+                    <div style={{
+                      background: p.highlight ? NAVY : '#fff', borderRadius: 18, padding: '36px 30px',
+                      border: p.highlight ? `2px solid ${TEAL}` : '1px solid #e4e9f0',
+                      boxShadow: p.highlight ? `0 16px 48px ${TEAL}22` : '0 2px 8px rgba(15,33,55,0.05)',
+                    }}>
+                      <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TEAL, marginBottom: 6 }}>{p.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 6 }}>
+                        <span style={{ fontFamily: FM, fontSize: 40, fontWeight: 700, color: p.highlight ? '#fff' : NAVY, letterSpacing: '-1px' }}>{p.price}</span>
+                        <span style={{ fontFamily: F, fontSize: 13, color: p.highlight ? 'rgba(255,255,255,0.45)' : '#94a1b3' }}>per assessment</span>
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 12.5, color: TEAL, fontWeight: 600, marginBottom: 10 }}>{p.time}</div>
+                      <p style={{ fontFamily: F, fontSize: 13, color: p.highlight ? 'rgba(255,255,255,0.5)' : '#6b7280', lineHeight: 1.55, marginBottom: 26 }}>{p.desc}</p>
+                      <a href="/login" style={{
+                        display: 'block', width: '100%', padding: '13px 0', borderRadius: 10, boxSizing: 'border-box',
+                        background: p.highlight ? TEAL : 'transparent', border: p.highlight ? 'none' : `1.5px solid ${TEAL}`,
+                        color: p.highlight ? NAVY : TEAL, fontFamily: F, fontSize: 14, fontWeight: 700,
+                        textDecoration: 'none', textAlign: 'center',
+                      }}>
+                        Buy credits
+                      </a>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+              <Reveal>
+                <p style={{ textAlign: 'center', fontFamily: F, fontSize: 14, color: '#5e6b7f', lineHeight: 1.6 }}>
+                  Add <strong style={{ color: NAVY }}>Immersive</strong> (Workspace + Highlight Reel) to any assessment for <strong style={{ color: TEAL }}>£25 extra</strong>.
+                </p>
+              </Reveal>
+            </>
+          )}
+
+          {pricingMode === 'subscription' && <>
           {/* Founding callout */}
           <Reveal>
             <div style={{
@@ -1067,6 +1130,7 @@ export default function LandingPage() {
               </Reveal>
             ))}
           </div>
+          </>}
         </div>
       </section>
 
