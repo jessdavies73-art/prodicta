@@ -993,6 +993,10 @@ export default function CandidateReportPage({ params }) {
   const [overrideReason, setOverrideReason] = useState('')
   const [overrideSaved, setOverrideSaved] = useState(false)
   const [rerunPending, setRerunPending] = useState(false)
+  const [reanalyseModal, setReanalyseModal] = useState(false)
+  const [reanalyseContext, setReanalyseContext] = useState('')
+  const [reanalysing, setReanalysing] = useState(false)
+  const [reanalyseView, setReanalyseView] = useState('updated') // 'original' | 'updated'
   const [managerDna, setManagerDna] = useState(null)
   const [briefModal, setBriefModal] = useState(false)
   const [briefEmail, setBriefEmail] = useState('')
@@ -1752,6 +1756,21 @@ export default function CandidateReportPage({ params }) {
                         {results.additional_scenario ? 'Re-run already used' : rerunPending ? 'Sending...' : 'Re-run Scenario'}
                       </button>
                     )}
+                    {results && (
+                      <button
+                        onClick={() => setReanalyseModal(true)}
+                        disabled={reanalysing}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: '#fff', border: `1.5px solid ${TEAL}55`, borderRadius: 8,
+                          cursor: reanalysing ? 'wait' : 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px',
+                        }}
+                      >
+                        <Ic name="sliders" size={15} color={TEALD} />
+                        {reanalysing ? 'Re-analysing...' : 'Re-run with Context'}
+                      </button>
+                    )}
                     {results && profile?.account_type === 'agency' && (
                       <button onClick={() => setSendModal(true)} style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -1952,6 +1971,63 @@ export default function CandidateReportPage({ params }) {
             )}
 
             {!results && <PendingState candidate={candidate} />}
+
+            {/* Reanalysis banner */}
+            {results?.rerun_at && results?.previous_results && (
+              <div className="no-print" style={{
+                background: TEALLT, border: `1.5px solid ${TEAL}55`, borderRadius: 12,
+                padding: '14px 20px', marginBottom: 16,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                  <div>
+                    <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TEALD }}>
+                      Report re-analysed on {new Date(results.rerun_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </div>
+                    {results.rerun_context && (
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX2, marginTop: 4 }}>
+                        Context: "{results.rerun_context.length > 100 ? results.rerun_context.slice(0, 100) + '...' : results.rerun_context}"
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {['updated', 'original'].map(v => (
+                      <button key={v} onClick={() => setReanalyseView(v)} style={{
+                        padding: '5px 14px', borderRadius: 6, fontFamily: F, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                        background: reanalyseView === v ? TEAL : '#fff',
+                        color: reanalyseView === v ? '#fff' : TX2,
+                        border: `1px solid ${reanalyseView === v ? TEAL : BD}`,
+                      }}>
+                        {v === 'updated' ? 'Updated Analysis' : 'Original Analysis'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {reanalyseView === 'original' && (
+                  <div style={{ marginTop: 12, background: '#fff', border: `1px solid ${BD}`, borderRadius: 8, padding: '14px 18px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Original analysis snapshot</div>
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 10 }}>
+                      <div>
+                        <div style={{ fontSize: 10, color: TX3 }}>Score</div>
+                        <div style={{ fontFamily: FM, fontSize: 20, fontWeight: 800, color: TX }}>{results.previous_results.overall_score ?? '-'}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, color: TX3 }}>Risk</div>
+                        <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{results.previous_results.risk_level ?? '-'}</div>
+                      </div>
+                      {results.previous_results.hiring_confidence?.score != null && (
+                        <div>
+                          <div style={{ fontSize: 10, color: TX3 }}>Confidence</div>
+                          <div style={{ fontFamily: FM, fontSize: 20, fontWeight: 800, color: TX }}>{results.previous_results.hiring_confidence.score}%</div>
+                        </div>
+                      )}
+                    </div>
+                    {results.previous_results.ai_summary && (
+                      <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.6 }}>{results.previous_results.ai_summary}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {results && (
               <>
@@ -4966,6 +5042,88 @@ export default function CandidateReportPage({ params }) {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── REANALYSE MODAL ── */}
+      {reanalyseModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 20 }} onClick={() => setReanalyseModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, maxWidth: 500, width: '100%', boxShadow: '0 20px 60px rgba(15,33,55,0.35)' }}>
+            <div style={{ padding: '24px 28px 16px', borderBottom: `1px solid ${BD}` }}>
+              <h2 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: NAVY, margin: '0 0 6px' }}>Re-run with New Context</h2>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.55 }}>
+                Add additional context to refine the analysis. Only the scoring analysis is re-processed — candidate responses stay the same.
+              </p>
+            </div>
+            <div style={{ padding: '20px 28px' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Additional context (optional)</div>
+              <textarea
+                rows={4}
+                value={reanalyseContext}
+                onChange={e => { if (e.target.value.length <= 500) setReanalyseContext(e.target.value) }}
+                placeholder="e.g. This candidate will report to a very hands-off manager. The team is currently under significant pressure to hit Q2 targets."
+                style={{
+                  width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8,
+                  border: `1px solid ${reanalyseContext ? TEAL : BD}`, fontFamily: F, fontSize: 13,
+                  color: TX, background: BG, outline: 'none', resize: 'vertical', lineHeight: 1.6,
+                }}
+              />
+              <div style={{ textAlign: 'right', fontFamily: FM, fontSize: 11, color: TX3, marginTop: 4 }}>{reanalyseContext.length}/500</div>
+              <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: '8px 0 16px' }}>Re-processing takes approximately 30 seconds.</p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  onClick={async () => {
+                    setReanalyseModal(false)
+                    setReanalysing(true)
+                    try {
+                      const res = await fetch(`/api/candidates/${params.candidateId}/reanalyse`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ additional_context: reanalyseContext.trim() || null }),
+                      })
+                      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Re-analysis failed') }
+                      window.location.reload()
+                    } catch (e) {
+                      alert(e.message)
+                    } finally {
+                      setReanalysing(false)
+                    }
+                  }}
+                  style={{
+                    flex: 1, padding: '12px 0', borderRadius: 9, border: 'none',
+                    background: TEAL, color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                  }}
+                >
+                  Re-run with context
+                </button>
+                <button
+                  onClick={async () => {
+                    setReanalyseModal(false)
+                    setReanalysing(true)
+                    try {
+                      const res = await fetch(`/api/candidates/${params.candidateId}/reanalyse`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ additional_context: null }),
+                      })
+                      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Re-analysis failed') }
+                      window.location.reload()
+                    } catch (e) {
+                      alert(e.message)
+                    } finally {
+                      setReanalysing(false)
+                    }
+                  }}
+                  style={{
+                    flex: 1, padding: '12px 0', borderRadius: 9, border: `1.5px solid ${BD}`,
+                    background: 'transparent', color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  Re-run without context
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -1019,6 +1019,16 @@ function DemoCandidateInner({ params }) {
                   </div>
                   <div>
                     <button
+                      onClick={() => setSignupPrompt(true)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${TEAL}55`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', cursor: 'pointer', width: '100%' }}
+                    >
+                      <Ic name="sliders" size={14} color={TEALD} />
+                      Re-run with Context
+                    </button>
+                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Add context and re-analyse</span>
+                  </div>
+                  <div>
+                    <button
                       onClick={() => setCandidatePreview(true)}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', cursor: 'pointer', width: '100%' }}
                     >
