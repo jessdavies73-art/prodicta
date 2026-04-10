@@ -558,16 +558,44 @@ export default function AssessmentPage({ params }) {
                   </div>
                 )}
 
-                <button
-                  onClick={() => handleGenerateAiShortlist()}
-                  style={{
-                    marginTop: 20, width: '100%', padding: '10px 0', borderRadius: 8,
-                    border: `1.5px solid #c4b5fd`, background: 'transparent',
-                    color: '#7C3AED', fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  }}
-                >
-                  Regenerate
-                </button>
+                <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                  <button
+                    onClick={() => handleGenerateAiShortlist()}
+                    style={{
+                      flex: 1, padding: '10px 0', borderRadius: 8,
+                      border: `1.5px solid #c4b5fd`, background: 'transparent',
+                      color: '#7C3AED', fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                    }}
+                  >
+                    Regenerate
+                  </button>
+                  <button
+                    onClick={() => {
+                      const lines = ['AI SHORTLIST — ' + (assessment?.role_title || ''), '']
+                      ;(aiShortlistResult.shortlist || []).forEach(item => {
+                        lines.push(`#${item.rank} ${item.candidate_name}`)
+                        lines.push(item.justification)
+                        if (item.key_strength) lines.push(`  Strength: ${item.key_strength}`)
+                        if (item.key_risk) lines.push(`  Risk: ${item.key_risk}`)
+                        lines.push('')
+                      })
+                      if ((aiShortlistResult.not_shortlisted || []).length > 0) {
+                        lines.push('NOT SHORTLISTED')
+                        aiShortlistResult.not_shortlisted.forEach(item => {
+                          lines.push(`${item.candidate_name} — ${item.reason}`)
+                        })
+                      }
+                      navigator.clipboard.writeText(lines.join('\n'))
+                    }}
+                    style={{
+                      flex: 1, padding: '10px 0', borderRadius: 8,
+                      border: `1.5px solid ${BD}`, background: '#fff',
+                      color: TX2, fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                    }}
+                  >
+                    Export Shortlist
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -672,7 +700,7 @@ export default function AssessmentPage({ params }) {
           </div>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {accountType === 'agency' && candidates.filter(c => c.status === 'completed').length >= 2 && (
+            {candidates.filter(c => c.status === 'completed').length >= 2 && (
               <button
                 onClick={() => { setAiShortlistModal(true); if (!aiShortlistResult) handleGenerateAiShortlist() }}
                 style={{
@@ -742,23 +770,21 @@ export default function AssessmentPage({ params }) {
             <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0f172a', fontFamily: F }}>
               Invite Candidates
             </h2>
-            {accountType === 'agency' && (
-              <button
-                onClick={() => setBulkModal(true)}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 7,
-                  padding: '8px 18px', borderRadius: 8, border: `1px solid ${TEAL}`,
-                  background: TEALLT, color: TEALD,
-                  fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                }}
-              >
-                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-                Bulk Invite
-              </button>
-            )}
+            <button
+              onClick={() => setBulkModal(true)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                padding: '8px 18px', borderRadius: 8, border: `1px solid ${TEAL}`,
+                background: TEALLT, color: TEALD,
+                fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              Bulk Invite
+            </button>
           </div>
           {/* Add candidate form */}
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 16 }}>
@@ -978,7 +1004,7 @@ export default function AssessmentPage({ params }) {
                 const r = Array.isArray(c.results) ? c.results[0] : c.results
                 return (c.status === 'Completed' || c.status === 'completed') && r?.overall_score != null
               })
-              if (completedList.length < 5) return null
+              if (completedList.length < 2) return null
               return (
                 <div style={{ padding: '14px 28px 0' }}>
                   <button

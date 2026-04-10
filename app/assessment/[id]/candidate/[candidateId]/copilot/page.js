@@ -26,6 +26,7 @@ const AMB = '#f59e0b'
 const AMBBG = '#fffbeb'
 const RED = '#dc2626'
 const REDBG = '#fef2f2'
+const REDBD = '#fecaca'
 const F = "'Outfit', system-ui, sans-serif"
 const FM = "'IBM Plex Mono', monospace"
 
@@ -63,6 +64,13 @@ export default function ProbationCopilotPage({ params }) {
   const [managerNotes, setManagerNotes] = useState({})
   const [savedAt, setSavedAt] = useState(null)
   const [savingFlag, setSavingFlag] = useState(false)
+
+  // Probation Review Generator
+  const [reviewMilestone, setReviewMilestone] = useState('month1')
+  const [reviewLoading, setReviewLoading] = useState(false)
+  const [reviewResult, setReviewResult] = useState(null)
+  const [reviewError, setReviewError] = useState(null)
+  const [reviewCopied, setReviewCopied] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -152,6 +160,32 @@ export default function ProbationCopilotPage({ params }) {
     }
   }
 
+  async function generateReview() {
+    setReviewLoading(true)
+    setReviewError(null)
+    setReviewResult(null)
+    setReviewCopied(false)
+    try {
+      const res = await fetch('/api/probation-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidate_id: params.candidateId,
+          review_month: reviewMilestone,
+          predictions_checked: predictionResponses,
+          manager_notes: managerNotes,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to generate review')
+      setReviewResult(data.review)
+    } catch (e) {
+      setReviewError(e.message)
+    } finally {
+      setReviewLoading(false)
+    }
+  }
+
   function setLight(idx, val) {
     setWatchoutStatuses(prev => ({ ...prev, [idx]: val }))
   }
@@ -191,6 +225,7 @@ export default function ProbationCopilotPage({ params }) {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: BG, fontFamily: F, color: TX }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <Sidebar active="dashboard" companyName={profile?.company_name} />
       <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '32px 40px', flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22, gap: 16, flexWrap: 'wrap' }}>
@@ -377,6 +412,94 @@ export default function ProbationCopilotPage({ params }) {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Probation Review Generator */}
+        <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '22px 24px', marginBottom: 20 }}>
+          <h2 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 800, color: NAVY }}>Probation Review Generator</h2>
+          <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 16px', lineHeight: 1.55 }}>
+            Generate a structured probation review document based on the co-pilot data collected so far.
+          </p>
+
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Milestone</div>
+            {[
+              { key: 'month1', label: '1 month' },
+              { key: 'month3', label: '3 month' },
+              { key: 'month6', label: '6 month' },
+            ].map(m => (
+              <button
+                key={m.key}
+                onClick={() => setReviewMilestone(m.key)}
+                style={{
+                  padding: '6px 14px', borderRadius: 7, fontFamily: F, fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer',
+                  background: reviewMilestone === m.key ? TEALLT : BG,
+                  border: `1.5px solid ${reviewMilestone === m.key ? TEAL : BD}`,
+                  color: reviewMilestone === m.key ? TEALD : TX2,
+                }}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={generateReview}
+            disabled={reviewLoading}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              padding: '10px 20px', borderRadius: 8, border: 'none',
+              background: reviewLoading ? BD : TEAL, color: reviewLoading ? TX3 : NAVY,
+              fontFamily: F, fontSize: 13.5, fontWeight: 700,
+              cursor: reviewLoading ? 'wait' : 'pointer',
+            }}
+          >
+            {reviewLoading ? (
+              <>
+                <div style={{ width: 14, height: 14, border: '2px solid #ccc', borderTopColor: NAVY, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                Generating...
+              </>
+            ) : 'Generate Probation Review'}
+          </button>
+
+          {reviewError && (
+            <div style={{ marginTop: 14, padding: '10px 14px', background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, fontFamily: F, fontSize: 13, color: RED }}>
+              {reviewError}
+            </div>
+          )}
+
+          {reviewResult && (
+            <div style={{ marginTop: 16, background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '18px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Generated review — {reviewMilestone === 'month1' ? '1 month' : reviewMilestone === 'month3' ? '3 month' : '6 month'}
+                </div>
+                <button
+                  onClick={() => {
+                    const text = JSON.stringify(reviewResult, null, 2)
+                    navigator.clipboard.writeText(text)
+                    setReviewCopied(true)
+                    setTimeout(() => setReviewCopied(false), 2000)
+                  }}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    padding: '5px 12px', borderRadius: 6, border: `1px solid ${BD}`,
+                    background: reviewCopied ? GRNBG : '#fff', color: reviewCopied ? GRN : TX2,
+                    fontFamily: F, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  {reviewCopied ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+              <pre style={{
+                fontFamily: FM, fontSize: 12.5, color: TX, lineHeight: 1.65,
+                whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0,
+              }}>
+                {typeof reviewResult === 'string' ? reviewResult : JSON.stringify(reviewResult, null, 2)}
+              </pre>
+            </div>
+          )}
         </div>
 
         {savedAt && (

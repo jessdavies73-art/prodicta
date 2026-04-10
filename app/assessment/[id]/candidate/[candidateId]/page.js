@@ -990,6 +990,8 @@ export default function CandidateReportPage({ params }) {
   const [outcomeModal, setOutcomeModal] = useState(false)
   const [selectedOutcome, setSelectedOutcome] = useState('')
   const [confirmHireModal, setConfirmHireModal] = useState(false)
+  const [overrideReason, setOverrideReason] = useState('')
+  const [overrideSaved, setOverrideSaved] = useState(false)
   const [rerunPending, setRerunPending] = useState(false)
   const [outcomeDate, setOutcomeDate] = useState('')
   const [outcomeNoteText, setOutcomeNoteText] = useState('')
@@ -1654,6 +1656,17 @@ export default function CandidateReportPage({ params }) {
                       }}>
                         <Ic name="check" size={15} color={existingOutcome ? GRN : TEALD} />
                         {existingOutcome ? 'Update Outcome' : 'Log Outcome'}
+                      </button>
+                    )}
+                    {results && !existingOutcome && (
+                      <button onClick={() => setConfirmHireModal(true)} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: AMBBG, border: `1.5px solid ${AMBBD}`,
+                        borderRadius: 8, cursor: 'pointer',
+                        fontFamily: F, fontSize: 13, fontWeight: 700, color: AMB, padding: '9px 16px',
+                      }}>
+                        <Ic name="alert" size={15} color={AMB} />
+                        Offer Risk Confirmation
                       </button>
                     )}
                     {results && (
@@ -3527,6 +3540,59 @@ export default function CandidateReportPage({ params }) {
                 )}
 
                 {/* ══════════════════════════════════════════════════
+                    DECISION ALERTS
+                ══════════════════════════════════════════════════ */}
+                {results.watchouts?.some(w => w.if_ignored) && (
+                  <ScrollReveal id="decision-alerts" delay={60}>
+                  <Card style={{ marginBottom: 20 }} topColor={AMB}>
+                    <SectionHeading tooltip="Consequence predictions for each watch-out. These show the real cost of ignoring each concern during the first 6 months.">
+                      Decision Alerts
+                    </SectionHeading>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+                      Each watch-out carries a predicted consequence if left unmanaged. Review these before making your hiring decision.
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {results.watchouts.filter(w => w.if_ignored).map((w, i) => {
+                        const sev = (w.severity || 'medium').toLowerCase()
+                        const sevC = sev === 'high' ? RED : sev === 'medium' ? AMB : TEALD
+                        const sevBg = sev === 'high' ? REDBG : sev === 'medium' ? AMBBG : TEALLT
+                        const sevBd = sev === 'high' ? REDBD : sev === 'medium' ? AMBBD : `${TEAL}55`
+                        return (
+                          <div key={i} style={{
+                            background: sevBg, border: `1px solid ${sevBd}`,
+                            borderLeft: `4px solid ${sevC}`, borderRadius: '0 10px 10px 0',
+                            padding: '14px 18px',
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                              <Ic name="alert" size={14} color={sevC} />
+                              <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX }}>
+                                {w.watchout || w.title || w.text}
+                              </span>
+                              <span style={{
+                                marginLeft: 'auto', fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
+                                letterSpacing: '0.06em', color: sevC, background: `${sevC}18`,
+                                padding: '2px 8px', borderRadius: 4,
+                              }}>
+                                {sev} risk
+                              </span>
+                            </div>
+                            <div style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.65 }}>
+                              <strong style={{ color: sevC }}>If unmanaged:</strong> {w.if_ignored}
+                            </div>
+                            {w.action && (
+                              <div style={{ fontFamily: F, fontSize: 12.5, color: TEALD, marginTop: 8, lineHeight: 1.55 }}>
+                                <strong>Mitigation:</strong> {w.action}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </Card>
+                  </ScrollReveal>
+                )}
+
+                {/* ══════════════════════════════════════════════════
                     ONBOARDING PLAN , structured week cards
                 ══════════════════════════════════════════════════ */}
                 {results.onboarding_plan?.length > 0 && (
@@ -4729,15 +4795,52 @@ export default function CandidateReportPage({ params }) {
                 </div>
 
                 {isOverride && (
-                  <p style={{ fontFamily: F, fontSize: 12, color: RED, marginTop: 12, lineHeight: 1.55 }}>
-                    By confirming, you are overriding a high-risk warning. PRODICTA will record this as an override outcome.
-                  </p>
+                  <div style={{ marginTop: 14 }}>
+                    <p style={{ fontFamily: F, fontSize: 12, color: RED, marginBottom: 10, lineHeight: 1.55 }}>
+                      By confirming, you are overriding a high-risk warning. PRODICTA will record this as a decision override.
+                    </p>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+                      Reason for override (required)
+                    </div>
+                    <textarea
+                      rows={3}
+                      value={overrideReason}
+                      onChange={e => setOverrideReason(e.target.value)}
+                      placeholder="Explain why you are proceeding despite the high-risk recommendation..."
+                      style={{
+                        width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8,
+                        border: `1px solid ${overrideReason.trim() ? TEAL : REDBD}`,
+                        fontFamily: F, fontSize: 13, color: TX, background: BG, outline: 'none', resize: 'vertical',
+                      }}
+                    />
+                    {overrideSaved && (
+                      <div style={{ marginTop: 8, padding: '8px 12px', background: GRNBG, border: `1px solid ${GRNBD}`, borderRadius: 6, fontFamily: F, fontSize: 12.5, color: GRN, fontWeight: 600 }}>
+                        Decision override recorded successfully.
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
               <div style={{ padding: '16px 28px 22px', borderTop: `1px solid ${BD}`, display: 'flex', gap: 10 }}>
                 <button
-                  onClick={() => logOutcome(true)}
-                  disabled={savingOutcome}
+                  onClick={async () => {
+                    if (isOverride && !overrideReason.trim()) return
+                    if (isOverride) {
+                      try {
+                        const supabase = createClient()
+                        await supabase.from('candidate_outcomes').upsert({
+                          candidate_id: params.candidateId,
+                          user_id: user.id,
+                          override_warning: true,
+                          override_reason: overrideReason.trim(),
+                          override_date: new Date().toISOString(),
+                        }, { onConflict: 'candidate_id' })
+                        setOverrideSaved(true)
+                      } catch {}
+                    }
+                    logOutcome(true)
+                  }}
+                  disabled={savingOutcome || (isOverride && !overrideReason.trim())}
                   style={{
                     flex: 1, padding: '12px 0', borderRadius: 9, border: 'none',
                     background: TEAL, color: NAVY,
