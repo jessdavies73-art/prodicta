@@ -592,13 +592,13 @@ function DemoDashboardInner() {
                 </div>
                 <p style={{ margin: '4px 0 0', fontSize: 12.5, color: TX3 }}>5 candidates assessed for Customer Service Advisor</p>
               </div>
-              <div style={{ padding: '16px 24px', display: 'flex', gap: 12 }}>
+              <div style={{ padding: '16px 24px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 {[
                   { tier: 'Recommended', count: 2, color: GRN, bg: GRNBG, bd: GRNBD },
                   { tier: 'Review', count: 2, color: AMB, bg: AMBBG, bd: AMBBD },
                   { tier: 'Not Recommended', count: 1, color: RED, bg: REDBG, bd: REDBD },
                 ].map(t => (
-                  <div key={t.tier} style={{ flex: 1, padding: '14px 16px', background: t.bg, border: `1.5px solid ${t.bd}`, borderRadius: 10, textAlign: 'center' }}>
+                  <div key={t.tier} style={{ flex: 1, minWidth: 100, padding: '14px 16px', background: t.bg, border: `1.5px solid ${t.bd}`, borderRadius: 10, textAlign: 'center' }}>
                     <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: t.color, lineHeight: 1, marginBottom: 4 }}>{t.count}</div>
                     <div style={{ fontSize: 12.5, fontWeight: 700, color: t.color }}>{t.tier}</div>
                   </div>
@@ -734,13 +734,13 @@ function DemoDashboardInner() {
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Bulk screening mode</div>
                 <p style={{ fontSize: 12.5, color: TX2, margin: '0 0 12px' }}>5 candidates assessed for Customer Service Advisor</p>
-                <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {[
                     { tier: 'Recommended', count: 2, color: GRN, bg: GRNBG, bd: GRNBD },
                     { tier: 'Review', count: 2, color: AMB, bg: AMBBG, bd: AMBBD },
                     { tier: 'Not Recommended', count: 1, color: RED, bg: REDBG, bd: REDBD },
                   ].map(t => (
-                    <div key={t.tier} style={{ flex: 1, padding: '10px 12px', background: t.bg, border: `1.5px solid ${t.bd}`, borderRadius: 8, textAlign: 'center' }}>
+                    <div key={t.tier} style={{ flex: 1, minWidth: 80, padding: '10px 12px', background: t.bg, border: `1.5px solid ${t.bd}`, borderRadius: 8, textAlign: 'center' }}>
                       <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: t.color, lineHeight: 1, marginBottom: 2 }}>{t.count}</div>
                       <div style={{ fontSize: 11, fontWeight: 700, color: t.color }}>{t.tier}</div>
                     </div>
@@ -773,13 +773,26 @@ function DemoDashboardInner() {
 
               <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                 <colgroup>
-                  <col style={{ width: '24%' }} /><col style={{ width: '18%' }} /><col style={{ width: '11%' }} />
-                  <col style={{ width: '8%' }} /><col style={{ width: '8%' }} /><col style={{ width: '9%' }} /><col style={{ width: '9%' }} />
+                  <col style={{ width: isMobile ? '45%' : '24%' }} />
+                  <col style={{ width: '18%', display: isMobile ? 'none' : undefined }} />
+                  <col style={{ width: isMobile ? '25%' : '11%' }} />
+                  <col style={{ width: isMobile ? '30%' : '8%' }} />
+                  <col style={{ width: '8%', display: isMobile ? 'none' : undefined }} />
+                  <col style={{ width: '9%', display: isMobile ? 'none' : undefined }} />
+                  <col style={{ width: '9%', display: isMobile ? 'none' : undefined }} />
                 </colgroup>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${BD}` }}>
-                    {['Candidate', 'Role', 'Status', 'Score', 'Pressure', 'Risk', 'Date'].map(h => (
-                      <th key={h} style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', background: BG }}>{h}</th>
+                    {[
+                      { h: 'Candidate', hide: false },
+                      { h: 'Role', hide: true },
+                      { h: 'Status', hide: false },
+                      { h: 'Score', hide: false },
+                      { h: 'Pressure', hide: true },
+                      { h: 'Risk', hide: true },
+                      { h: 'Date', hide: true },
+                    ].map(({ h, hide }) => (
+                      <th key={h} style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', background: BG, display: hide && isMobile ? 'none' : 'table-cell' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -808,7 +821,7 @@ function DemoDashboardInner() {
                             </div>
                           </div>
                         </td>
-                        <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
+                        <td style={{ padding: '10px 8px', overflow: 'hidden', display: isMobile ? 'none' : 'table-cell' }}>
                           <span style={{ fontSize: 12, color: TX2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{c.assessments?.role_title || '-'}</span>
                         </td>
                         <td style={{ padding: '10px 8px' }}><StatusBadge status={c.status} /></td>
@@ -820,7 +833,7 @@ function DemoDashboardInner() {
                             </div>
                           ) : <span style={{ color: TX3, fontSize: 12 }}>-</span>}
                         </td>
-                        <td style={{ padding: '10px 8px' }}>
+                        <td style={{ padding: '10px 8px', display: isMobile ? 'none' : 'table-cell' }}>
                           {isCompleted && pf !== null ? (
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
                               <span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, lineHeight: 1, color: pf >= 75 ? GRN : pf >= 55 ? TEALD : pf >= 40 ? AMB : RED }}>{pf}</span>
@@ -828,10 +841,10 @@ function DemoDashboardInner() {
                             </div>
                           ) : <span style={{ color: TX3, fontSize: 12 }}>-</span>}
                         </td>
-                        <td style={{ padding: '10px 8px' }}>
+                        <td style={{ padding: '10px 8px', display: isMobile ? 'none' : 'table-cell' }}>
                           {isCompleted ? <RiskBadge risk={risk} /> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}
                         </td>
-                        <td style={{ padding: '10px 8px' }}>
+                        <td style={{ padding: '10px 8px', display: isMobile ? 'none' : 'table-cell' }}>
                           <span style={{ fontSize: 11.5, color: TX3, whiteSpace: 'nowrap' }}>{isCompleted ? fmt(c.completed_at) : fmt(c.invited_at)}</span>
                         </td>
                       </tr>
