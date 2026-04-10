@@ -993,6 +993,7 @@ export default function CandidateReportPage({ params }) {
   const [overrideReason, setOverrideReason] = useState('')
   const [overrideSaved, setOverrideSaved] = useState(false)
   const [rerunPending, setRerunPending] = useState(false)
+  const [managerDna, setManagerDna] = useState(null)
   const [outcomeDate, setOutcomeDate] = useState('')
   const [outcomeNoteText, setOutcomeNoteText] = useState('')
   const [outcomeClientName, setOutcomeClientName] = useState('')
@@ -1118,6 +1119,14 @@ export default function CandidateReportPage({ params }) {
         }
         setAccountRecord(acRec || null)
         if (acRec?.shared_with_client_at) setRecordSharedDate(acRec.shared_with_client_at)
+        // Load manager DNA if available
+        try {
+          const dnaRes = await fetch(`/api/assessment/${params.id}/manager-dna`)
+          if (dnaRes.ok) {
+            const dnaData = await dnaRes.json()
+            if (dnaData.dna) setManagerDna(dnaData.dna)
+          }
+        } catch {}
       } catch (e) {
         setError(e.message)
       } finally {
@@ -3148,6 +3157,78 @@ export default function CandidateReportPage({ params }) {
                     </ScrollReveal>
                   )
                 })()}
+
+                {/* ══════════════════════════════════════════════════
+                    MANAGER ALIGNMENT (from Manager DNA)
+                ══════════════════════════════════════════════════ */}
+                {managerDna && managerDna.alignment_dimensions && (
+                  <ScrollReveal delay={60}>
+                  <Card style={{ marginBottom: 20 }} topColor={TEAL}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <Ic name="zap" size={15} color={TEAL} />
+                      <SectionHeading tooltip="Based on the hiring manager's own Management DNA assessment. Shows where this candidate aligns with and where they may clash with the manager's actual style.">
+                        Manager Alignment
+                      </SectionHeading>
+                    </div>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+                      Compared against <strong style={{ color: TEAL }}>{managerDna.management_style}</strong> management style.
+                    </p>
+
+                    {/* Alignment bars */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+                      {Object.entries(managerDna.alignment_dimensions).map(([key, managerVal]) => {
+                        const labels = { autonomy_vs_guidance: 'Autonomy vs Guidance', pace_tolerance: 'Pace Tolerance', structure_preference: 'Structure Preference', conflict_comfort: 'Conflict Comfort', detail_orientation: 'Detail Orientation' }
+                        const candidateVal = results.pressure_fit_score ?? results.overall_score ?? 50
+                        const diff = Math.abs(managerVal - candidateVal)
+                        const alignColor = diff < 20 ? GRN : diff < 40 ? AMB : RED
+                        const alignLabel = diff < 20 ? 'Strong fit' : diff < 40 ? 'Moderate fit' : 'Potential clash'
+                        return (
+                          <div key={key}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                              <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 600, color: TX }}>{labels[key] || key}</span>
+                              <span style={{ fontSize: 10.5, fontWeight: 700, color: alignColor, background: `${alignColor}18`, padding: '2px 8px', borderRadius: 4 }}>{alignLabel}</span>
+                            </div>
+                            <div style={{ position: 'relative', height: 8, background: BG, borderRadius: 4, border: `1px solid ${BD}` }}>
+                              <div style={{ position: 'absolute', left: `${managerVal}%`, top: -2, width: 3, height: 12, background: NAVY, borderRadius: 2 }} title={`Manager: ${managerVal}`} />
+                              <div style={{ position: 'absolute', left: `${candidateVal}%`, top: -2, width: 3, height: 12, background: TEAL, borderRadius: 2 }} title={`Candidate: ${candidateVal}`} />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+                              <span style={{ fontSize: 10, color: TX3 }}>Low</span>
+                              <span style={{ fontSize: 10, color: TX3 }}>High</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div style={{ width: 10, height: 10, background: NAVY, borderRadius: 2 }} />
+                        <span style={{ fontSize: 11, color: TX3 }}>Manager</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div style={{ width: 10, height: 10, background: TEAL, borderRadius: 2 }} />
+                        <span style={{ fontSize: 11, color: TX3 }}>Candidate</span>
+                      </div>
+                    </div>
+
+                    {/* Ideal vs clash */}
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
+                      <div style={{ background: GRNBG, border: `1px solid ${GRNBD}`, borderRadius: 8, padding: '12px 14px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: GRN, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Manager values</div>
+                        {(managerDna.ideal_candidate_traits || []).map((t, i) => (
+                          <div key={i} style={{ fontSize: 12.5, color: TX, marginBottom: 3 }}>+ {t}</div>
+                        ))}
+                      </div>
+                      <div style={{ background: REDBG, border: `1px solid #fecaca`, borderRadius: 8, padding: '12px 14px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Clash risks</div>
+                        {(managerDna.clash_risk_traits || []).map((t, i) => (
+                          <div key={i} style={{ fontSize: 12.5, color: TX, marginBottom: 3 }}>- {t}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+                  </ScrollReveal>
+                )}
 
                 {/* ══════════════════════════════════════════════════
                     SKILLS BREAKDOWN , 2×2 grid with small rings
