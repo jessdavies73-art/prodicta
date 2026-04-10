@@ -46,7 +46,7 @@ function StatCard({ icon, label, value, sub, accent = TEAL }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         flex: 1,
-        minWidth: 0,
+        minWidth: 140,
         background: '#fff',
         border: `1.5px solid ${BD}`,
         borderStyle: 'solid',
@@ -272,22 +272,6 @@ function DemoDashboardInner() {
 
   return (
     <DemoLayout active="dashboard">
-      {true && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 9999,
-          background: isMobile ? 'red' : 'blue',
-          color: 'white',
-          padding: '12px',
-          fontSize: '14px',
-          textAlign: 'center'
-        }}>
-          isMobile: {String(isMobile)} | width: {typeof window !== 'undefined' ? window.innerWidth : 'ssr'}
-        </div>
-      )}
       {modal && <SignUpModal onClose={() => setModal(false)} />}
 
       <main style={{ marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 96 : 46, padding: isMobile ? '16px 16px 32px' : '32px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
@@ -333,7 +317,7 @@ function DemoDashboardInner() {
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 28 }}>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
           <StatCard icon="check" label="Completed" value={completed.length} sub="Completed assessments" accent={TEAL} />
           <StatCard icon="clock" label="Pending" value={pendingCandidates.length} sub="Awaiting completion" accent={AMB} />
           <StatCard icon="bar" label="Avg score" value={avgScore !== null ? avgScore : '-'} sub={avgScore !== null ? slabel(avgScore) : 'No data yet'} accent={avgScore !== null ? (avgScore >= 75 ? GRN : avgScore >= 50 ? AMB : RED) : TX3} />
@@ -768,8 +752,8 @@ function DemoDashboardInner() {
         )}
 
         {/* Candidates table + assessments panel */}
-        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 20, alignItems: 'flex-start' }}>
+          <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined, order: isMobile ? 2 : 1 }}>
             <div style={{ ...cs, padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div>
@@ -859,7 +843,7 @@ function DemoDashboardInner() {
           </div>
 
           {/* Assessments panel */}
-          <div style={{ width: 268, flexShrink: 0 }}>
+          <div style={{ width: isMobile ? '100%' : 268, flexShrink: 0, order: isMobile ? 1 : 2 }}>
             <div style={{ ...cs, padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '18px 20px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <h2 style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: TX }}>Active Assessments</h2>
