@@ -1840,6 +1840,63 @@ function DemoCandidateInner({ params }) {
               </ScrollReveal>
             )}
 
+            {/* ── DAY ONE PLANNING (demo for Sophie Chen) ── */}
+            {params.candidateId === 'demo-c1' && (
+              <ScrollReveal delay={60}>
+                <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '24px 28px', marginBottom: 20, borderTop: `3px solid ${TEAL}` }}>
+                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>Day One Planning</h2>
+                  <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+                    How this candidate structured their first Monday
+                  </p>
+                  <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 24, flexDirection: isMobile ? 'column' : 'row', marginBottom: 18 }}>
+                    <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+                      <svg width={72} height={72} viewBox="0 0 72 72">
+                        <circle cx={36} cy={36} r={30} fill="none" stroke={BD} strokeWidth={6} />
+                        <circle cx={36} cy={36} r={30} fill="none" stroke={TEAL} strokeWidth={6}
+                          strokeDasharray={`${0.82 * 2 * Math.PI * 30} ${2 * Math.PI * 30}`}
+                          strokeLinecap="round" transform="rotate(-90 36 36)"
+                        />
+                      </svg>
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: TEAL }}>82</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.65, margin: '0 0 10px' }}>
+                        Sophie demonstrated strong deadline awareness, scheduling the campaign report task with 45 minutes of buffer before the 2pm deadline. She batched her email responses into a single focused block rather than scattering them across the day. The unexpected budget update was handled pragmatically by shortening her lunch break rather than disrupting fixed commitments.
+                      </p>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {['Deadline-aware', 'Focused blocks', 'Pragmatic'].map(t => (
+                          <span key={t} style={{ fontSize: 11.5, fontWeight: 700, color: TEALD, background: TEALLT, border: `1px solid ${TEAL}44`, padding: '3px 10px', borderRadius: 20 }}>{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Read-only timeline */}
+                  <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '12px 16px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Her planned day</div>
+                    {[
+                      { time: '08:30', title: 'Review team briefing documents', note: 'Want to be prepared before standup' },
+                      { time: '09:00', title: 'Team standup', fixed: true },
+                      { time: '09:30', title: 'Respond to 3 urgent client emails', note: 'Batching emails into one block' },
+                      { time: '10:30', title: 'Client strategy call', fixed: true },
+                      { time: '11:00', title: 'MD budget update', fixed: true },
+                      { time: '11:30', title: 'Prepare agenda for planning session' },
+                      { time: '13:15', title: 'Campaign report deadline task', note: '45 min buffer before 2pm deadline' },
+                      { time: '14:00', title: 'Campaign report deadline', fixed: true },
+                      { time: '15:30', title: '1-to-1 with line manager', fixed: true },
+                    ].map((e, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '5px 0', borderBottom: `1px solid ${BD}` }}>
+                        <span style={{ fontFamily: FM, fontSize: 11, color: TX3, width: 40, flexShrink: 0 }}>{e.time}</span>
+                        <span style={{ fontFamily: F, fontSize: 13, color: TX, fontWeight: e.fixed ? 600 : 500 }}>{e.title}</span>
+                        {e.note && <span style={{ fontFamily: F, fontSize: 11, color: TEALD, fontStyle: 'italic' }}>"{e.note}"</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ScrollReveal>
+            )}
+
             {/* ── BLURRED / LOCKED PREMIUM SECTIONS ── */}
             {[
               { title: 'Predicted Outcomes', desc: 'See the probability of passing probation, churn risk, and top performer likelihood with dynamic colour-coded bars.', variant: 'cards' },

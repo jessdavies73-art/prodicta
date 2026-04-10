@@ -1046,15 +1046,223 @@ function CompletePage({ candidateName }) {
   )
 }
 
+// ─── Calendar: Plan Your First Monday ─────────────────────────────────────────
+const TIME_SLOTS = []
+for (let h = 8; h <= 17; h++) {
+  TIME_SLOTS.push(`${String(h).padStart(2, '0')}:00`)
+  TIME_SLOTS.push(`${String(h).padStart(2, '0')}:30`)
+}
+
+function CalendarPage({ assessment, candidate, onSubmit, onSkip }) {
+  const calEvents = assessment.calendar_events || {}
+  const fixedEvents = [
+    ...(calEvents.fixed_events || []),
+    ...(calEvents.interruption ? [calEvents.interruption] : []),
+    ...(calEvents.deadline ? [calEvents.deadline] : []),
+  ]
+  const unscheduled = (calEvents.unscheduled_tasks || []).map((t, i) => ({ ...t, id: `task-${i}` }))
+
+  const [taskSlots, setTaskSlots] = useState({})
+  const [taskNotes, setTaskNotes] = useState({})
+  const [timeLeft, setTimeLeft] = useState(8 * 60)
+  const [editingNote, setEditingNote] = useState(null)
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) { clearInterval(timerRef.current); return 0 }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(timerRef.current)
+  }, [])
+
+  function handleSubmit() {
+    clearInterval(timerRef.current)
+    const scheduled_tasks = unscheduled.map(t => ({
+      title: t.title,
+      type: t.type,
+      scheduled_time: taskSlots[t.id] || null,
+      note: taskNotes[t.id] || null,
+    }))
+    onSubmit({
+      fixed_events: fixedEvents,
+      scheduled_tasks,
+      event_notes: taskNotes,
+    })
+  }
+
+  const allScheduled = unscheduled.every(t => taskSlots[t.id])
+  const mins = Math.floor(timeLeft / 60)
+  const secs = timeLeft % 60
+  const isLow = timeLeft < 120
+
+  return (
+    <div style={{ minHeight: '100vh', background: BG, fontFamily: F, padding: '24px 20px 80px' }}>
+      <div style={{ maxWidth: 680, margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Day One Planning</div>
+          <h1 style={{ fontFamily: F, fontSize: 26, fontWeight: 800, color: NAVY, margin: '0 0 8px' }}>Plan Your First Monday</h1>
+          <p style={{ fontFamily: F, fontSize: 15, color: TX2, margin: 0, lineHeight: 1.6 }}>
+            Based on this role, here is what your first Monday looks like. Organise your day.
+          </p>
+        </div>
+
+        {/* Timer */}
+        <div style={{
+          textAlign: 'center', marginBottom: 24,
+          fontFamily: FM, fontSize: 20, fontWeight: 700,
+          color: isLow ? '#dc2626' : TX,
+        }}>
+          {mins}:{String(secs).padStart(2, '0')} remaining
+        </div>
+
+        {/* Calendar timeline */}
+        <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden', marginBottom: 20 }}>
+          <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BD}`, background: NAVY }}>
+            <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TEAL }}>Monday Schedule</span>
+            <span style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.5)', marginLeft: 8 }}>8:00am - 6:00pm</span>
+          </div>
+
+          <div style={{ padding: '12px 0' }}>
+            {TIME_SLOTS.map(slot => {
+              const fixedHere = fixedEvents.filter(e => e.time === slot)
+              const tasksHere = unscheduled.filter(t => taskSlots[t.id] === slot)
+              const isEmpty = fixedHere.length === 0 && tasksHere.length === 0
+
+              return (
+                <div key={slot} style={{
+                  display: 'flex', gap: 12, padding: '4px 18px', minHeight: 36,
+                  alignItems: 'center',
+                  borderBottom: slot.endsWith(':00') ? `1px solid ${BD}` : 'none',
+                }}>
+                  <div style={{ width: 48, fontFamily: FM, fontSize: 11.5, color: TX3, flexShrink: 0 }}>{slot}</div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {fixedHere.map((e, i) => (
+                      <div key={i} style={{
+                        padding: '6px 12px', borderRadius: 6, fontSize: 13, fontWeight: 600,
+                        background: e.type === 'interruption' ? '#FEF3C7' : e.type === 'deadline' ? REDBG : TEALLT,
+                        color: e.type === 'interruption' ? '#92400E' : e.type === 'deadline' ? '#dc2626' : TEALD,
+                        border: `1px solid ${e.type === 'interruption' ? '#FCD34D' : e.type === 'deadline' ? '#fecaca' : `${TEAL}55`}`,
+                      }}>
+                        {e.title}
+                        {e.type === 'interruption' && <span style={{ fontSize: 10, marginLeft: 6, fontWeight: 800 }}>UNEXPECTED</span>}
+                        {e.type === 'deadline' && <span style={{ fontSize: 10, marginLeft: 6, fontWeight: 800 }}>DEADLINE</span>}
+                      </div>
+                    ))}
+                    {tasksHere.map(t => (
+                      <div key={t.id} style={{
+                        padding: '6px 12px', borderRadius: 6, fontSize: 13, fontWeight: 600,
+                        background: '#EDE9FE', color: '#5B21B6', border: '1px solid #C4B5FD',
+                      }}>
+                        {t.title}
+                        {taskNotes[t.id] && <span style={{ fontSize: 11, color: '#7C3AED', marginLeft: 6 }}>({taskNotes[t.id]})</span>}
+                      </div>
+                    ))}
+                    {isEmpty && <div style={{ height: 1 }} />}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Unscheduled tasks */}
+        <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '18px 20px', marginBottom: 20 }}>
+          <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14 }}>
+            Schedule these tasks into your day
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {unscheduled.map(task => (
+              <div key={task.id} style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '12px 14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX, flex: 1 }}>{task.title}</span>
+                  <select
+                    value={taskSlots[task.id] || ''}
+                    onChange={e => setTaskSlots(prev => ({ ...prev, [task.id]: e.target.value || null }))}
+                    style={{
+                      padding: '6px 10px', borderRadius: 6, border: `1px solid ${taskSlots[task.id] ? TEAL : BD}`,
+                      fontFamily: F, fontSize: 12.5, color: taskSlots[task.id] ? TEALD : TX3,
+                      background: taskSlots[task.id] ? TEALLT : '#fff', cursor: 'pointer',
+                    }}
+                  >
+                    <option value="">When?</option>
+                    {TIME_SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <button
+                    onClick={() => setEditingNote(editingNote === task.id ? null : task.id)}
+                    style={{
+                      padding: '4px 10px', borderRadius: 5, border: `1px solid ${BD}`,
+                      background: taskNotes[task.id] ? TEALLT : '#fff',
+                      color: taskNotes[task.id] ? TEALD : TX3,
+                      fontFamily: F, fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
+                    }}
+                  >
+                    {taskNotes[task.id] ? 'Edit note' : 'Add note'}
+                  </button>
+                </div>
+                {editingNote === task.id && (
+                  <input
+                    type="text"
+                    value={taskNotes[task.id] || ''}
+                    onChange={e => setTaskNotes(prev => ({ ...prev, [task.id]: e.target.value }))}
+                    placeholder="Why did you schedule it here?"
+                    style={{
+                      width: '100%', boxSizing: 'border-box', marginTop: 8,
+                      padding: '8px 12px', borderRadius: 6, border: `1px solid ${BD}`,
+                      fontFamily: F, fontSize: 13, color: TX, outline: 'none',
+                    }}
+                    onFocus={e => e.target.style.borderColor = TEAL}
+                    onBlur={e => e.target.style.borderColor = BD}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          <button
+            onClick={handleSubmit}
+            style={{
+              padding: '14px 32px', borderRadius: 10, border: 'none',
+              background: allScheduled ? TEAL : BD,
+              color: allScheduled ? '#fff' : TX3,
+              fontFamily: F, fontSize: 15, fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            This is my day
+          </button>
+          <button
+            onClick={onSkip}
+            style={{
+              padding: '14px 24px', borderRadius: 10, border: `1.5px solid ${BD}`,
+              background: 'transparent', color: TX3,
+              fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            Skip
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function AssessPage({ params }) {
   const { uniqueToken } = params
 
-  const [uiState, setUiState] = useState('loading') // loading | error | already_complete | intro | active | submitting | rating | complete
+  const [uiState, setUiState] = useState('loading') // loading | error | already_complete | intro | active | calendar | submitting | rating | complete
   const [errorMessage, setErrorMessage] = useState('')
   const [candidate, setCandidate] = useState(null)
   const [assessment, setAssessment] = useState(null)
   const [companyName, setCompanyName] = useState('')
+  const [pendingResponses, setPendingResponses] = useState(null) // stored between active→calendar→submit
 
   useEffect(() => {
     async function load() {
@@ -1088,7 +1296,17 @@ export default function AssessPage({ params }) {
     load()
   }, [uniqueToken])
 
-  async function handleSubmit(responses) {
+  function handleScenariosComplete(responses) {
+    setPendingResponses(responses)
+    // Show calendar step if calendar events exist, otherwise submit directly
+    if (assessment?.calendar_events) {
+      setUiState('calendar')
+    } else {
+      doSubmit(responses)
+    }
+  }
+
+  async function doSubmit(responses) {
     setUiState('submitting')
     const controller = new AbortController()
     const timeoutId = setTimeout(() => {
@@ -1161,7 +1379,23 @@ export default function AssessPage({ params }) {
     <ActivePage
       candidate={candidate}
       assessment={assessment}
-      onSubmit={handleSubmit}
+      onSubmit={handleScenariosComplete}
+    />
+  )
+  if (uiState === 'calendar') return (
+    <CalendarPage
+      assessment={assessment}
+      candidate={candidate}
+      onSubmit={(calendarData) => {
+        // Score calendar async after submit
+        doSubmit(pendingResponses)
+        fetch(`/api/assessment/${assessment.id}/calendar-score`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ candidate_id: candidate.id, calendar_layout: calendarData }),
+        }).catch(() => {})
+      }}
+      onSkip={() => doSubmit(pendingResponses)}
     />
   )
   if (uiState === 'submitting') return <SubmittingPage candidateName={candidate?.name} />

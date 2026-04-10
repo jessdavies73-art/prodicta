@@ -492,6 +492,46 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
 
     if (error) throw error
 
+    // -- ALTER TABLE assessments ADD COLUMN calendar_events JSONB;
+    // Generate calendar events for Day One Planning (async, non-blocking)
+    try {
+      const calMsg = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 800,
+        messages: [{
+          role: 'user',
+          content: `Generate realistic first-Monday calendar events for a "${role_title}" role (${roleLevel} level).
+
+Return JSON only. UK English. No emoji. No em dashes.
+{
+  "fixed_events": [
+    {"time": "09:00", "title": "string", "type": "meeting"},
+    {"time": "10:30", "title": "string", "type": "meeting"},
+    {"time": "15:30", "title": "string", "type": "meeting"}
+  ],
+  "interruption": {"time": "11:00", "title": "string", "type": "interruption"},
+  "deadline": {"time": "14:00", "title": "string", "type": "deadline"},
+  "unscheduled_tasks": [
+    {"title": "string", "type": "task"},
+    {"title": "string", "type": "task"},
+    {"title": "string", "type": "task"},
+    {"title": "string", "type": "task"}
+  ]
+}
+
+${roleLevel === 'OPERATIONAL' ? 'Use simple practical events: team briefing, floor walk, safety check, stock count. Tasks: check equipment, read safety notices, shadow experienced colleague, complete induction form.' : roleLevel === 'LEADERSHIP' ? 'Use board-level events: exec team meeting, board strategy session, investor call. Tasks: review board papers, prepare stakeholder map, draft 90-day priorities, schedule direct report introductions.' : 'Use mid-level events: team standup, client call, 1-to-1 with manager. Tasks: review team briefing docs, respond to client emails, prepare agenda for planning session, update project tracker.'}`
+        }],
+      })
+      const calText = calMsg.content[0]?.text || ''
+      const calMatch = calText.match(/\{[\s\S]*\}/)
+      if (calMatch) {
+        const calEvents = JSON.parse(calMatch[0].replace(/[\u2014\u2013]/g, ', '))
+        await adminClient.from('assessments').update({ calendar_events: calEvents }).eq('id', assessment.id)
+      }
+    } catch (calErr) {
+      console.error('Calendar events generation error:', calErr)
+    }
+
     return NextResponse.json({ id: assessment.id, scenarios })
   } catch (err) {
     console.error('Generate error:', err)

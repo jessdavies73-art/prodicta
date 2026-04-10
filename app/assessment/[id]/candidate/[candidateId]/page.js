@@ -3531,6 +3531,55 @@ export default function CandidateReportPage({ params }) {
                 )}
 
                 {/* ══════════════════════════════════════════════════
+                    DAY ONE PLANNING
+                ══════════════════════════════════════════════════ */}
+                {results.day_planning_score != null && (
+                  <ScrollReveal delay={60}>
+                  <Card style={{ marginBottom: 20 }} topColor={TEAL}>
+                    <SectionHeading tooltip="How this candidate structured their simulated first Monday. Tests time management, prioritisation, and planning under realistic conditions.">
+                      Day One Planning
+                    </SectionHeading>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+                      How this candidate structured their first Monday
+                    </p>
+                    <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 24, flexDirection: isMobile ? 'column' : 'row', marginBottom: 18 }}>
+                      <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+                        <svg width={72} height={72} viewBox="0 0 72 72">
+                          <circle cx={36} cy={36} r={30} fill="none" stroke={BD} strokeWidth={6} />
+                          <circle cx={36} cy={36} r={30} fill="none" stroke={TEAL} strokeWidth={6}
+                            strokeDasharray={`${(results.day_planning_score / 100) * 2 * Math.PI * 30} ${2 * Math.PI * 30}`}
+                            strokeLinecap="round" transform="rotate(-90 36 36)"
+                          />
+                        </svg>
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: TEAL }}>{results.day_planning_score}</span>
+                        </div>
+                      </div>
+                      <div>
+                        {results.day_planning_narrative && (
+                          <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.65, margin: 0 }}>{results.day_planning_narrative}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Read-only day timeline */}
+                    {results.calendar_data && (
+                      <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '12px 16px', marginBottom: 14 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Their planned day</div>
+                        {[...(results.calendar_data.fixed_events || []), ...(results.calendar_data.scheduled_tasks || []).filter(t => t.scheduled_time)].sort((a, b) => (a.time || a.scheduled_time || '').localeCompare(b.time || b.scheduled_time || '')).map((event, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '5px 0', borderBottom: `1px solid ${BD}` }}>
+                            <span style={{ fontFamily: FM, fontSize: 11, color: TX3, width: 40, flexShrink: 0 }}>{event.time || event.scheduled_time}</span>
+                            <span style={{ fontFamily: F, fontSize: 13, color: TX, fontWeight: event.type === 'meeting' || event.type === 'deadline' ? 600 : 500 }}>{event.title}</span>
+                            {event.note && <span style={{ fontFamily: F, fontSize: 11, color: TEALD, fontStyle: 'italic' }}>"{event.note}"</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                  </ScrollReveal>
+                )}
+
+                {/* ══════════════════════════════════════════════════
                     STRENGTHS
                 ══════════════════════════════════════════════════ */}
                 {results.strengths?.length > 0 && (
