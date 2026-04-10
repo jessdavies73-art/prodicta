@@ -1,3 +1,4 @@
+// cache-bust: mobile fix v2
 'use client'
 import { useState, useEffect, useRef, Suspense, useSyncExternalStore } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
