@@ -203,11 +203,6 @@ function Section({ label, title, features, accent = TEAL }) {
 
 const COMING_NEXT = [
   {
-    title: 'Team Dynamics Modelling',
-    teaser: 'See how a new hire fits your existing team before day one.',
-    date: 'Q3 2026',
-  },
-  {
     title: 'Live AI Simulation',
     teaser: 'Real-time adaptive scenarios. Multiple AI characters. The next level of assessment.',
     date: 'Q4 2026',
