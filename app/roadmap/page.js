@@ -1,8 +1,12 @@
 'use client'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useSyncExternalStore } from 'react'
 import ProdictaLogo from '@/components/ProdictaLogo'
-import useIsMobile from '@/hooks/useIsMobile'
+
+const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
+const _mSnap = () => window.innerWidth <= 768
+const _mServer = () => false
+function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
 const NAVY   = '#0f2137'
 const TEAL   = '#00BFA5'
