@@ -1000,6 +1000,16 @@ function DemoCandidateInner({ params }) {
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
                   </div>
                   <div>
+                    <button
+                      onClick={() => setSignupPrompt(true)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px', cursor: 'pointer', width: '100%' }}
+                    >
+                      <Ic name="file" size={14} color={TEAL} />
+                      Manager Brief PDF
+                    </button>
+                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>2-page summary with QR code</span>
+                  </div>
+                  <div>
                     <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                       <Ic name="sliders" size={14} color={TEALD} />
                       Re-run Scenario

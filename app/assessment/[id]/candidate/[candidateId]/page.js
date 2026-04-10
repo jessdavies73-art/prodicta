@@ -994,6 +994,10 @@ export default function CandidateReportPage({ params }) {
   const [overrideSaved, setOverrideSaved] = useState(false)
   const [rerunPending, setRerunPending] = useState(false)
   const [managerDna, setManagerDna] = useState(null)
+  const [briefModal, setBriefModal] = useState(false)
+  const [briefEmail, setBriefEmail] = useState('')
+  const [briefSending, setBriefSending] = useState(false)
+  const [briefSent, setBriefSent] = useState(false)
   const [outcomeDate, setOutcomeDate] = useState('')
   const [outcomeNoteText, setOutcomeNoteText] = useState('')
   const [outcomeClientName, setOutcomeClientName] = useState('')
@@ -1699,6 +1703,19 @@ export default function CandidateReportPage({ params }) {
                       >
                         <Ic name="shield" size={15} color={TEALD} />
                         Export Compliance Certificate
+                      </button>
+                    )}
+                    {results && (
+                      <button
+                        onClick={() => setBriefModal(true)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px',
+                        }}
+                      >
+                        <Ic name="file" size={15} color={TEAL} />
+                        Manager Brief PDF
                       </button>
                     )}
                     {results && (
@@ -4948,6 +4965,82 @@ export default function CandidateReportPage({ params }) {
                 }}
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MANAGER BRIEF MODAL ── */}
+      {briefModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 20 }} onClick={() => setBriefModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, maxWidth: 440, width: '100%', boxShadow: '0 20px 60px rgba(15,33,55,0.35)' }}>
+            <div style={{ padding: '24px 28px 16px', borderBottom: `1px solid ${BD}` }}>
+              <h2 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: NAVY, margin: 0 }}>Manager Brief PDF</h2>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '6px 0 0', lineHeight: 1.5 }}>
+                A 2-page branded summary with QR code for the hiring manager.
+              </p>
+            </div>
+            <div style={{ padding: '20px 28px' }}>
+              <button
+                onClick={() => window.open(`/api/assessment/${params.id}/candidate/${params.candidateId}/manager-brief-pdf`, '_blank')}
+                style={{
+                  width: '100%', padding: '12px 0', borderRadius: 9, border: 'none',
+                  background: TEAL, color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer', marginBottom: 12,
+                }}
+              >
+                Download PDF
+              </button>
+
+              <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                Or email to hiring manager
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="email"
+                  value={briefEmail}
+                  onChange={e => setBriefEmail(e.target.value)}
+                  placeholder="manager@company.com"
+                  style={{
+                    flex: 1, padding: '10px 14px', borderRadius: 8, border: `1.5px solid ${briefEmail ? TEAL : BD}`,
+                    fontFamily: F, fontSize: 13, color: TX, outline: 'none',
+                  }}
+                />
+                <button
+                  onClick={async () => {
+                    if (!briefEmail.trim() || briefSending) return
+                    setBriefSending(true)
+                    try {
+                      const res = await fetch(`/api/assessment/${params.id}/candidate/${params.candidateId}/manager-brief-pdf`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: briefEmail.trim() }),
+                      })
+                      if (!res.ok) throw new Error('Failed to send')
+                      setBriefSent(true)
+                    } catch {} finally { setBriefSending(false) }
+                  }}
+                  disabled={!briefEmail.trim() || briefSending}
+                  style={{
+                    padding: '10px 18px', borderRadius: 8, border: 'none',
+                    background: briefEmail.trim() && !briefSending ? NAVY : BD,
+                    color: briefEmail.trim() && !briefSending ? '#fff' : TX3,
+                    fontFamily: F, fontSize: 13, fontWeight: 700,
+                    cursor: briefEmail.trim() && !briefSending ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  {briefSending ? 'Sending...' : briefSent ? 'Sent' : 'Send'}
+                </button>
+              </div>
+              {briefSent && (
+                <div style={{ marginTop: 10, padding: '8px 12px', background: GRNBG, border: `1px solid ${GRNBD}`, borderRadius: 6, fontFamily: F, fontSize: 12.5, color: GRN, fontWeight: 600 }}>
+                  Manager brief sent to {briefEmail}
+                </div>
+              )}
+            </div>
+            <div style={{ padding: '12px 28px 20px', borderTop: `1px solid ${BD}` }}>
+              <button onClick={() => { setBriefModal(false); setBriefSent(false); setBriefEmail('') }} style={{ width: '100%', padding: '10px 0', borderRadius: 9, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}>
+                Close
               </button>
             </div>
           </div>
