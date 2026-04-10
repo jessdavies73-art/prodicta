@@ -1723,6 +1723,22 @@ export default function CandidateReportPage({ params }) {
                       </button>
                     )}
                     {results && (
+                      <a
+                        href={`/assessment/${params.id}/candidate/${params.candidateId}/highlight-reel`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: TEAL, border: 'none', borderRadius: 8,
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px',
+                          textDecoration: 'none', cursor: 'pointer',
+                        }}
+                      >
+                        <Ic name="zap" size={15} color="#fff" />
+                        Highlight Reel
+                      </a>
+                    )}
+                    {results && (
                       <button
                         disabled={!!results.additional_scenario || rerunPending}
                         onClick={async () => {
