@@ -208,9 +208,19 @@ const COMING_NEXT = [
     date: 'Q3 2026',
   },
   {
+    title: 'Virtual Job Tryout Workspace',
+    teaser: 'Experience the role before you accept it. The closest thing to being there.',
+    date: 'Q3 2026',
+  },
+  {
     title: 'Live AI Simulation',
-    teaser: 'The next level of assessment. Coming Q4 2026.',
+    teaser: 'Real-time adaptive scenarios. Multiple AI characters. The next level of assessment.',
     date: 'Q4 2026',
+  },
+  {
+    title: 'Immersive Assessment Tier',
+    teaser: 'Strategy-Fit, Workspace, and Live Simulation combined. For hires where getting it wrong is not an option.',
+    date: 'Coming 2026',
   },
 ]
 
@@ -231,6 +241,14 @@ const IN_DEVELOPMENT = [
     title: 'Predictive Retention',
     teaser: 'Know who stays before you place them.',
   },
+  {
+    title: 'Hiring Manager Video Briefing',
+    teaser: 'Let candidates hear from the manager before they start.',
+  },
+  {
+    title: 'Sector-Specific Modules',
+    teaser: 'Deep skill assessment built for your sector.',
+  },
 ]
 
 const ON_THE_HORIZON = [
@@ -244,15 +262,23 @@ const ON_THE_HORIZON = [
   },
   {
     title: 'ATS Integrations',
-    teaser: 'Connect PRODICTA to the tools you already use.',
+    teaser: 'Connect PRODICTA to the tools you already use. Bullhorn first.',
   },
   {
     title: 'Enterprise API',
     teaser: 'Built for scale.',
   },
   {
+    title: 'Compliance Shield',
+    teaser: 'The secure hiring guarantee. Built for ERA 2025.',
+  },
+  {
     title: 'International',
     teaser: 'Coming to Ireland, Australia and beyond.',
+  },
+  {
+    title: 'AI Benchmarking vs Your Manager',
+    teaser: 'How does this candidate compare to the way you actually work?',
   },
 ]
 
