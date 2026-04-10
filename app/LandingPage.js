@@ -537,7 +537,6 @@ export default function LandingPage() {
         {/* Stats bar */}
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 40, flexWrap: 'wrap', justifyContent: 'center', padding: '20px 32px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14 }}>
           {[
-            { to: 500, suffix: '+', label: 'Candidates assessed' },
             { to: 4,   suffix: '',  label: 'Scenario types' },
             { to: 45,  suffix: ' min', label: 'Assessment time' },
             { to: null, display: 'UK-built', label: 'For ERA 2025 compliance' },
@@ -564,203 +563,6 @@ export default function LandingPage() {
             <polyline points="6 9 12 15 18 9"/>
           </svg>
         </div>
-      </section>
-
-      {/* ════════════════════════════════════════════════════════════════════
-          PRE-HIRE RISK REPORT
-      ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#fff', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 720, margin: '0 auto' }}>
-          <Reveal>
-            <div style={{ textAlign: 'center', marginBottom: 40 }}>
-              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Free tool</div>
-              <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.2vw, 40px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 16 }}>
-                See your hiring risks in seconds
-              </h2>
-              <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7, maxWidth: 520, margin: '0 auto' }}>
-                Paste any job description and PRODICTA will instantly show you the top 3 risks this role creates in hiring.
-              </p>
-            </div>
-          </Reveal>
-
-          <Reveal delay={80}>
-            <div style={{
-              background: '#f8f9fb',
-              border: `1.5px solid ${TEAL}33`,
-              borderRadius: 16,
-              padding: '32px',
-              boxShadow: '0 4px 24px rgba(15,33,55,0.06)',
-            }}>
-              <textarea
-                value={riskJd}
-                onChange={e => setRiskJd(e.target.value)}
-                placeholder="Paste a job description here..."
-                rows={7}
-                style={{
-                  width: '100%',
-                  fontFamily: F,
-                  fontSize: 14,
-                  color: NAVY,
-                  background: '#fff',
-                  border: '1.5px solid #e4e9f0',
-                  borderRadius: 10,
-                  padding: '14px 16px',
-                  resize: 'vertical',
-                  outline: 'none',
-                  lineHeight: 1.65,
-                  marginBottom: 16,
-                  boxSizing: 'border-box',
-                  transition: 'border-color 0.2s',
-                }}
-                onFocus={e => { e.target.style.borderColor = TEAL }}
-                onBlur={e => { e.target.style.borderColor = '#e4e9f0' }}
-              />
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-                <span style={{ fontFamily: F, fontSize: 12.5, color: '#94a1b3' }}>
-                  No account needed. Up to 3 free analyses per session.
-                </span>
-                <button
-                  onClick={handleRiskAnalysis}
-                  disabled={riskLoading || !riskJd.trim()}
-                  style={{
-                    fontFamily: F,
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: NAVY,
-                    background: riskLoading || !riskJd.trim() ? '#b2dfdb' : TEAL,
-                    border: 'none',
-                    borderRadius: 9,
-                    padding: '12px 28px',
-                    cursor: riskLoading || !riskJd.trim() ? 'not-allowed' : 'pointer',
-                    transition: 'background 0.2s, transform 0.15s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                  onMouseEnter={e => { if (!riskLoading && riskJd.trim()) e.currentTarget.style.transform = 'translateY(-1px)' }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
-                >
-                  {riskLoading ? (
-                    <>
-                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 0.8s linear infinite' }}>
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                      </svg>
-                      Analysing...
-                    </>
-                  ) : 'Analyse risks'}
-                </button>
-              </div>
-
-              {riskError && (
-                <div style={{ marginTop: 20, padding: '12px 16px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 9 }}>
-                  <p style={{ fontFamily: F, fontSize: 13.5, color: '#dc2626', margin: 0 }}>{riskError}</p>
-                </div>
-              )}
-
-              {riskResults && (
-                <div style={{ marginTop: 28 }}>
-                  {/* Results header */}
-                  <div style={{ marginBottom: 22 }}>
-                    <div style={{
-                      fontFamily: F, fontSize: 11, fontWeight: 800, color: TEAL,
-                      textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8,
-                    }}>
-                      Risk report
-                    </div>
-                    <h3 style={{
-                      fontFamily: F, fontSize: 20, fontWeight: 800, color: NAVY,
-                      letterSpacing: '-0.4px', lineHeight: 1.3, margin: '0 0 8px',
-                    }}>
-                      {riskResults.length} hiring risks identified for: {riskRoleTitle}
-                    </h3>
-                    <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', lineHeight: 1.6, margin: 0 }}>
-                      These are the risks built into this role that your hiring process needs to test for.
-                    </p>
-                  </div>
-
-                  {/* Risk cards */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    {riskResults.map((risk, i) => {
-                      const severityColors = {
-                        High:   { bar: '#EF4444', tint: 'rgba(239,68,68,0.06)',  border: 'rgba(239,68,68,0.18)',  badge: '#DC2626', icon: '#EF4444' },
-                        Medium: { bar: '#F59E0B', tint: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.18)', badge: '#D97706', icon: '#F59E0B' },
-                        Low:    { bar: '#22C55E', tint: 'rgba(34,197,94,0.06)',  border: 'rgba(34,197,94,0.18)',  badge: '#16A34A', icon: '#22C55E' },
-                      }
-                      const c = severityColors[risk.severity] || severityColors.Medium
-                      return (
-                        <div key={i} style={{
-                          background: c.tint,
-                          border: `1px solid ${c.border}`,
-                          borderLeft: `6px solid ${c.bar}`,
-                          borderRadius: 12,
-                          padding: '20px 22px',
-                          position: 'relative',
-                          boxShadow: '0 2px 10px rgba(15,33,55,0.04)',
-                        }}>
-                          {/* Severity badge top right */}
-                          <span style={{
-                            position: 'absolute', top: 16, right: 18,
-                            fontFamily: F, fontSize: 10.5, fontWeight: 800, color: '#fff',
-                            background: c.badge, borderRadius: 5, padding: '4px 10px',
-                            textTransform: 'uppercase', letterSpacing: '0.08em',
-                          }}>
-                            {risk.severity}
-                          </span>
-
-                          {/* Title row with shield icon */}
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10, paddingRight: 80 }}>
-                            <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c.icon} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
-                              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                              <line x1="12" y1="9" x2="12" y2="13" />
-                              <line x1="12" y1="17" x2="12.01" y2="17" />
-                            </svg>
-                            <h4 style={{
-                              fontFamily: F, fontSize: 18, fontWeight: 800, color: NAVY,
-                              letterSpacing: '-0.2px', lineHeight: 1.35, margin: 0,
-                            }}>
-                              {risk.title}
-                            </h4>
-                          </div>
-                          <p style={{
-                            fontFamily: F, fontSize: 15, color: '#374151',
-                            lineHeight: 1.75, margin: 0, paddingLeft: 34,
-                          }}>
-                            {risk.explanation}
-                          </p>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Closing context + CTA */}
-                  <div style={{ marginTop: 28, padding: '24px 24px 22px', background: '#fff', border: `1px solid ${TEAL}33`, borderRadius: 12, textAlign: 'center' }}>
-                    <p style={{ fontFamily: F, fontSize: 14.5, color: '#374151', lineHeight: 1.65, margin: '0 0 6px' }}>
-                      PRODICTA's work simulations are designed to test candidates against exactly these risks.
-                    </p>
-                    <p style={{ fontFamily: F, fontSize: 13.5, color: '#5e6b7f', lineHeight: 1.6, margin: '0 0 18px' }}>
-                      Every scenario is built from your job description.
-                    </p>
-                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 14 }}>
-                      See how PRODICTA tests for these exact risks
-                    </div>
-                    <a href="/login" style={{
-                      fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY,
-                      background: TEAL, textDecoration: 'none',
-                      padding: '13px 32px', borderRadius: 10, display: 'inline-block',
-                      transition: 'transform 0.15s, box-shadow 0.15s',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,191,165,0.35)' }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
-                      Start assessing candidates
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
-          </Reveal>
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
@@ -1154,138 +956,112 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
-          BUILT FOR EVERY ROLE
+          PRICING
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#f8f9fb', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+      <section id="pricing" style={{ background: '#fff', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <Reveal>
-            <div style={{ textAlign: 'center', marginBottom: 36 }}>
-              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Every level, every role</div>
-              <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.2vw, 40px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.18, marginBottom: 14 }}>
-                Built for every role, not just senior hires.
+            <div style={{ textAlign: 'center', marginBottom: 56 }}>
+              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Pricing</div>
+              <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 14 }}>
+                Simple, transparent pricing
               </h2>
+              <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7 }}>Transparent pricing. No hidden fees.</p>
             </div>
           </Reveal>
 
-          <Reveal delay={80}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center', marginBottom: 32 }}>
-              {[
-                { label: 'Customer Service Advisor', icon: 'headphones' },
-                { label: 'Care Worker',              icon: 'heart' },
-                { label: 'Accounts Assistant',       icon: 'calculator' },
-                { label: 'Sales Executive',          icon: 'trending' },
-                { label: 'Operations Manager',       icon: 'settings' },
-                { label: 'Finance Director',         icon: 'briefcase' },
-              ].map(role => (
-                <div key={role.label} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  background: '#fff', border: `1.5px solid ${TEAL}33`,
-                  borderRadius: 50, padding: '10px 18px',
-                  boxShadow: '0 2px 8px rgba(15,33,55,0.04)',
-                }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: TEAL, display: 'inline-block' }} />
-                  <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY }}>{role.label}</span>
-                </div>
-              ))}
-            </div>
-          </Reveal>
-
-          <Reveal delay={140}>
-            <p style={{
-              fontFamily: F, fontSize: 16, color: '#5e6b7f', lineHeight: 1.75,
-              maxWidth: 780, margin: '0 auto', textAlign: 'center',
+          {/* Founding callout */}
+          <Reveal>
+            <div style={{
+              background: `linear-gradient(135deg, ${NAVY} 0%, #0d2a43 100%)`,
+              borderRadius: 16, padding: '24px 32px', marginBottom: 32,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              flexWrap: 'wrap', gap: 20,
+              border: `1.5px solid ${GOLD}66`,
+              boxShadow: `0 8px 32px ${GOLD}22`,
             }}>
-              Every role gets scenarios built from the actual job description. A care worker gets a safeguarding scenario. A receptionist gets a multitasking scenario. A director gets a strategic scenario. PRODICTA adapts to the role, not the other way around.
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════════════════════════════════════
-          FEATURES — 2×3 grid
-      ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)', padding: '72px 24px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)', width: 800, height: 800, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}0a 0%, transparent 65%)`, pointerEvents: 'none' }} />
-        <div style={{ maxWidth: 1080, margin: '0 auto', position: 'relative' }}>
-          <Reveal>
-            <div style={{ textAlign: 'center', marginBottom: 64 }}>
-              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Features</div>
-              <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: '#fff', letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 14 }}>
-                Test how they work. Not how they interview.
-              </h2>
-              <p style={{ fontFamily: F, fontSize: 17, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, maxWidth: 500, margin: '0 auto' }}>
-                Designed for UK employers and recruitment agencies.
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ background: `${GOLD}22`, border: `1px solid ${GOLD}66`, borderRadius: 10, padding: '8px 14px', fontFamily: FM, fontSize: 13, fontWeight: 700, color: GOLD, whiteSpace: 'nowrap' }}>OFFER</div>
+                <div>
+                  <div style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Founding Member: £79/month</div>
+                  <div style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.55)' }}>Limited time offer. Unlimited assessments for the first 3 months, then 20 per month. Price locked in for 12 months.</div>
+                </div>
+              </div>
+              <a href="/login" style={{
+                fontFamily: F, fontSize: 14, fontWeight: 700, color: NAVY,
+                background: GOLD, textDecoration: 'none',
+                padding: '11px 24px', borderRadius: 9, whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}>
+                Claim founding price →
+              </a>
             </div>
           </Reveal>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, alignItems: 'start' }}>
             {[
               {
-                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
-                title: 'How they handle the hard days',
-                body: "Find out how candidates handle conflicting priorities, difficult conversations, and tight deadlines. The number one predictor of whether someone will pass probation.",
+                name: 'Starter',
+                price: '£49',
+                limit: '10 assessments/mo',
+                desc: 'For small teams getting started with AI assessment.',
+                features: ['10 assessments per month', 'AI scenario generation', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs and interview questions', 'Onboarding plans'],
+                highlight: false,
               },
               {
-                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx={12} cy={12} r={3}/></svg>,
-                title: 'Are their answers genuine?',
-                body: 'Know whether candidates wrote their own answers or had help. Timing analysis, consistency checks, and authenticity scoring give you confidence before you invest further.',
+                name: 'Professional',
+                price: '£120',
+                limit: '30 assessments/mo',
+                desc: 'For growing teams hiring at volume.',
+                features: ['30 assessments per month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking tools', 'Archive and outcomes tracking', 'Priority email support'],
+                highlight: false,
               },
               {
-                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><circle cx={12} cy={12} r={10}/><path d="M12 8v4l3 3"/></svg>,
-                title: 'Scored across the skills that matter',
-                body: 'Four skill dimensions scored with detailed evidence. Every strength and concern is traced back to what the candidate actually wrote.',
+                name: 'Unlimited',
+                price: '£159',
+                limit: 'Unlimited assessments',
+                desc: 'For high-volume hiring with no limits.',
+                features: ['Unlimited assessments', 'Everything in Professional', 'Agency features', 'Placement risk scores', 'Document upload and send', 'Accountability records'],
+                highlight: true,
+                badge: 'BEST VALUE',
               },
-              {
-                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><line x1={18} y1={20} x2={18} y2={10}/><line x1={12} y1={20} x2={12} y2={4}/><line x1={6} y1={20} x2={6} y2={14}/></svg>,
-                title: 'Compare Candidates',
-                body: 'See your candidates side by side. Who scores highest, who handles pressure best, who is the strongest fit for this specific role.',
-              },
-              {
-                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-                title: 'Equality Act Compliant',
-                body: 'Scenario-based assessments that are fair, objective, and anonymous. No candidate is penalised for spelling, grammar, or writing style. Documented and defensible.',
-              },
-              {
-                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx={9} cy={7} r={4}/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-                title: 'A plan for their first six weeks',
-                body: "Every report includes a structured onboarding plan tailored to this candidate's specific gaps. Hand it to the line manager on day one.",
-              },
-              {
-                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x={5} y={2} width={14} height={20} rx={2} ry={2}/><line x1={12} y1={18} x2={12} y2={18}/></svg>,
-                title: 'Mobile Optimised',
-                body: 'Candidates complete assessments on any device. No app to download. Perfect for sectors where candidates are rarely at a desk, from care workers to site managers.',
-              },
-            ].map((f, i) => (
-              <Reveal key={f.title} delay={i * 60}>
+            ].map((p, i) => (
+              <Reveal key={p.name} delay={i * 80}>
                 <div style={{
-                  padding: '32px 30px', borderRadius: 12,
-                  border: '1px solid rgba(0,191,165,0.15)',
-                  background: 'rgba(255,255,255,0.03)',
-                  transition: 'background 0.3s, border-color 0.3s, box-shadow 0.3s, transform 0.3s',
-                  height: '100%',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
-                  e.currentTarget.style.borderColor = 'rgba(0,191,165,0.4)'
-                  e.currentTarget.style.boxShadow = '0 0 20px rgba(0,191,165,0.08)'
-                  e.currentTarget.style.transform = 'translateY(-3px)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
-                  e.currentTarget.style.borderColor = 'rgba(0,191,165,0.15)'
-                  e.currentTarget.style.boxShadow = 'none'
-                  e.currentTarget.style.transform = 'translateY(0)'
+                  background: p.highlight ? NAVY : '#fff',
+                  borderRadius: 18, padding: '36px 30px',
+                  border: p.highlight ? `2px solid ${TEAL}` : '1px solid #e4e9f0',
+                  position: 'relative',
+                  boxShadow: p.highlight ? `0 16px 48px ${TEAL}22` : '0 2px 8px rgba(15,33,55,0.05)',
                 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 11, marginBottom: 20,
-                    background: `${TEAL}28`, border: `1px solid ${TEAL}50`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    {f.icon}
+                  {p.badge && (
+                    <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: TEAL, color: NAVY, fontFamily: F, fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', padding: '4px 14px', borderRadius: 50, whiteSpace: 'nowrap' }}>{p.badge}</div>
+                  )}
+                  <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TEAL, marginBottom: 6 }}>{p.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 6 }}>
+                    <span style={{ fontFamily: FM, fontSize: 40, fontWeight: 700, color: p.highlight ? '#fff' : NAVY, letterSpacing: '-1px' }}>{p.price}</span>
+                    <span style={{ fontFamily: F, fontSize: 13, color: p.highlight ? 'rgba(255,255,255,0.45)' : '#94a1b3' }}>/mo</span>
                   </div>
-                  <h3 style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 10, letterSpacing: '-0.1px' }}>{f.title}</h3>
-                  <p style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7 }}>{f.body}</p>
+                  <div style={{ fontFamily: F, fontSize: 12.5, color: TEAL, fontWeight: 600, marginBottom: 10 }}>{p.limit}</div>
+                  <p style={{ fontFamily: F, fontSize: 13, color: p.highlight ? 'rgba(255,255,255,0.5)' : '#6b7280', lineHeight: 1.55, marginBottom: 26 }}>{p.desc}</p>
+                  <div style={{ height: 1, background: p.highlight ? 'rgba(255,255,255,0.08)' : '#f1f5f9', marginBottom: 22 }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 30 }}>
+                    {p.features.map(f => (
+                      <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                        <Check color={TEAL} size={14} />
+                        <span style={{ fontFamily: F, fontSize: 13.5, color: p.highlight ? 'rgba(255,255,255,0.75)' : '#374151', lineHeight: 1.4 }}>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <a href="/login" style={{
+                    display: 'block', width: '100%', padding: '13px 0', borderRadius: 10, boxSizing: 'border-box',
+                    background: p.highlight ? TEAL : 'transparent',
+                    border: p.highlight ? 'none' : `1.5px solid ${TEAL}`,
+                    color: p.highlight ? NAVY : TEAL, fontFamily: F, fontSize: 14, fontWeight: 700,
+                    textDecoration: 'none', textAlign: 'center',
+                  }}>
+                    Get started →
+                  </a>
                 </div>
               </Reveal>
             ))}
@@ -1391,6 +1167,146 @@ export default function LandingPage() {
               </Reveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          FEATURES — 2×3 grid
+      ════════════════════════════════════════════════════════════════════ */}
+      <section style={{ background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)', padding: '72px 24px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)', width: 800, height: 800, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}0a 0%, transparent 65%)`, pointerEvents: 'none' }} />
+        <div style={{ maxWidth: 1080, margin: '0 auto', position: 'relative' }}>
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: 64 }}>
+              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Features</div>
+              <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: '#fff', letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 14 }}>
+                Test how they work. Not how they interview.
+              </h2>
+              <p style={{ fontFamily: F, fontSize: 17, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, maxWidth: 500, margin: '0 auto' }}>
+                Designed for UK employers and recruitment agencies.
+              </p>
+            </div>
+          </Reveal>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+            {[
+              {
+                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+                title: 'How they handle the hard days',
+                body: "Find out how candidates handle conflicting priorities, difficult conversations, and tight deadlines. The number one predictor of whether someone will pass probation.",
+              },
+              {
+                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx={12} cy={12} r={3}/></svg>,
+                title: 'Are their answers genuine?',
+                body: 'Know whether candidates wrote their own answers or had help. Timing analysis, consistency checks, and authenticity scoring give you confidence before you invest further.',
+              },
+              {
+                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><circle cx={12} cy={12} r={10}/><path d="M12 8v4l3 3"/></svg>,
+                title: 'Scored across the skills that matter',
+                body: 'Four skill dimensions scored with detailed evidence. Every strength and concern is traced back to what the candidate actually wrote.',
+              },
+              {
+                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><line x1={18} y1={20} x2={18} y2={10}/><line x1={12} y1={20} x2={12} y2={4}/><line x1={6} y1={20} x2={6} y2={14}/></svg>,
+                title: 'Compare Candidates',
+                body: 'See your candidates side by side. Who scores highest, who handles pressure best, who is the strongest fit for this specific role.',
+              },
+              {
+                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+                title: 'Equality Act Compliant',
+                body: 'Scenario-based assessments that are fair, objective, and anonymous. No candidate is penalised for spelling, grammar, or writing style. Documented and defensible.',
+              },
+              {
+                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx={9} cy={7} r={4}/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+                title: 'A plan for their first six weeks',
+                body: "Every report includes a structured onboarding plan tailored to this candidate's specific gaps. Hand it to the line manager on day one.",
+              },
+              {
+                icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x={5} y={2} width={14} height={20} rx={2} ry={2}/><line x1={12} y1={18} x2={12} y2={18}/></svg>,
+                title: 'Mobile Optimised',
+                body: 'Candidates complete assessments on any device. No app to download. Perfect for sectors where candidates are rarely at a desk, from care workers to site managers.',
+              },
+            ].map((f, i) => (
+              <Reveal key={f.title} delay={i * 60}>
+                <div style={{
+                  padding: '32px 30px', borderRadius: 12,
+                  border: '1px solid rgba(0,191,165,0.15)',
+                  background: 'rgba(255,255,255,0.03)',
+                  transition: 'background 0.3s, border-color 0.3s, box-shadow 0.3s, transform 0.3s',
+                  height: '100%',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+                  e.currentTarget.style.borderColor = 'rgba(0,191,165,0.4)'
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(0,191,165,0.08)'
+                  e.currentTarget.style.transform = 'translateY(-3px)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
+                  e.currentTarget.style.borderColor = 'rgba(0,191,165,0.15)'
+                  e.currentTarget.style.boxShadow = 'none'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 11, marginBottom: 20,
+                    background: `${TEAL}28`, border: `1px solid ${TEAL}50`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {f.icon}
+                  </div>
+                  <h3 style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 10, letterSpacing: '-0.1px' }}>{f.title}</h3>
+                  <p style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7 }}>{f.body}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          BUILT FOR EVERY ROLE
+      ════════════════════════════════════════════════════════════════════ */}
+      <section style={{ background: '#f8f9fb', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: 36 }}>
+              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Every level, every role</div>
+              <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.2vw, 40px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.18, marginBottom: 14 }}>
+                Built for every role, not just senior hires.
+              </h2>
+            </div>
+          </Reveal>
+
+          <Reveal delay={80}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center', marginBottom: 32 }}>
+              {[
+                { label: 'Customer Service Advisor', icon: 'headphones' },
+                { label: 'Care Worker',              icon: 'heart' },
+                { label: 'Accounts Assistant',       icon: 'calculator' },
+                { label: 'Sales Executive',          icon: 'trending' },
+                { label: 'Operations Manager',       icon: 'settings' },
+                { label: 'Finance Director',         icon: 'briefcase' },
+              ].map(role => (
+                <div key={role.label} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  background: '#fff', border: `1.5px solid ${TEAL}33`,
+                  borderRadius: 50, padding: '10px 18px',
+                  boxShadow: '0 2px 8px rgba(15,33,55,0.04)',
+                }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: TEAL, display: 'inline-block' }} />
+                  <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY }}>{role.label}</span>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+
+          <Reveal delay={140}>
+            <p style={{
+              fontFamily: F, fontSize: 16, color: '#5e6b7f', lineHeight: 1.75,
+              maxWidth: 780, margin: '0 auto', textAlign: 'center',
+            }}>
+              Every role gets scenarios built from the actual job description. A care worker gets a safeguarding scenario. A receptionist gets a multitasking scenario. A director gets a strategic scenario. PRODICTA adapts to the role, not the other way around.
+            </p>
+          </Reveal>
         </div>
       </section>
 
@@ -1530,120 +1446,6 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
-          PRICING
-      ════════════════════════════════════════════════════════════════════ */}
-      <section id="pricing" style={{ background: '#fff', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
-          <Reveal>
-            <div style={{ textAlign: 'center', marginBottom: 56 }}>
-              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Pricing</div>
-              <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 14 }}>
-                Simple, transparent pricing
-              </h2>
-              <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7 }}>Transparent pricing. No hidden fees.</p>
-            </div>
-          </Reveal>
-
-          {/* Founding callout */}
-          <Reveal>
-            <div style={{
-              background: `linear-gradient(135deg, ${NAVY} 0%, #0d2a43 100%)`,
-              borderRadius: 16, padding: '24px 32px', marginBottom: 32,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              flexWrap: 'wrap', gap: 20,
-              border: `1.5px solid ${GOLD}66`,
-              boxShadow: `0 8px 32px ${GOLD}22`,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ background: `${GOLD}22`, border: `1px solid ${GOLD}66`, borderRadius: 10, padding: '8px 14px', fontFamily: FM, fontSize: 13, fontWeight: 700, color: GOLD, whiteSpace: 'nowrap' }}>OFFER</div>
-                <div>
-                  <div style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Founding Member: £79/month</div>
-                  <div style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.55)' }}>Limited time offer. Unlimited assessments for the first 3 months, then 20 per month. Price locked in for 12 months.</div>
-                </div>
-              </div>
-              <a href="/login" style={{
-                fontFamily: F, fontSize: 14, fontWeight: 700, color: NAVY,
-                background: GOLD, textDecoration: 'none',
-                padding: '11px 24px', borderRadius: 9, whiteSpace: 'nowrap',
-                flexShrink: 0,
-              }}>
-                Claim founding price →
-              </a>
-            </div>
-          </Reveal>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, alignItems: 'start' }}>
-            {[
-              {
-                name: 'Starter',
-                price: '£49',
-                limit: '10 assessments/mo',
-                desc: 'For small teams getting started with AI assessment.',
-                features: ['10 assessments per month', 'AI scenario generation', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs and interview questions', 'Onboarding plans'],
-                highlight: false,
-              },
-              {
-                name: 'Professional',
-                price: '£120',
-                limit: '30 assessments/mo',
-                desc: 'For growing teams hiring at volume.',
-                features: ['30 assessments per month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking tools', 'Archive and outcomes tracking', 'Priority email support'],
-                highlight: false,
-              },
-              {
-                name: 'Unlimited',
-                price: '£159',
-                limit: 'Unlimited assessments',
-                desc: 'For high-volume hiring with no limits.',
-                features: ['Unlimited assessments', 'Everything in Professional', 'Agency features', 'Placement risk scores', 'Document upload and send', 'Accountability records'],
-                highlight: true,
-                badge: 'BEST VALUE',
-              },
-            ].map((p, i) => (
-              <Reveal key={p.name} delay={i * 80}>
-                <div style={{
-                  background: p.highlight ? NAVY : '#fff',
-                  borderRadius: 18, padding: '36px 30px',
-                  border: p.highlight ? `2px solid ${TEAL}` : '1px solid #e4e9f0',
-                  position: 'relative',
-                  boxShadow: p.highlight ? `0 16px 48px ${TEAL}22` : '0 2px 8px rgba(15,33,55,0.05)',
-                }}>
-                  {p.badge && (
-                    <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: TEAL, color: NAVY, fontFamily: F, fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', padding: '4px 14px', borderRadius: 50, whiteSpace: 'nowrap' }}>{p.badge}</div>
-                  )}
-                  <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TEAL, marginBottom: 6 }}>{p.name}</div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 6 }}>
-                    <span style={{ fontFamily: FM, fontSize: 40, fontWeight: 700, color: p.highlight ? '#fff' : NAVY, letterSpacing: '-1px' }}>{p.price}</span>
-                    <span style={{ fontFamily: F, fontSize: 13, color: p.highlight ? 'rgba(255,255,255,0.45)' : '#94a1b3' }}>/mo</span>
-                  </div>
-                  <div style={{ fontFamily: F, fontSize: 12.5, color: TEAL, fontWeight: 600, marginBottom: 10 }}>{p.limit}</div>
-                  <p style={{ fontFamily: F, fontSize: 13, color: p.highlight ? 'rgba(255,255,255,0.5)' : '#6b7280', lineHeight: 1.55, marginBottom: 26 }}>{p.desc}</p>
-                  <div style={{ height: 1, background: p.highlight ? 'rgba(255,255,255,0.08)' : '#f1f5f9', marginBottom: 22 }} />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 30 }}>
-                    {p.features.map(f => (
-                      <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                        <Check color={TEAL} size={14} />
-                        <span style={{ fontFamily: F, fontSize: 13.5, color: p.highlight ? 'rgba(255,255,255,0.75)' : '#374151', lineHeight: 1.4 }}>{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <a href="/login" style={{
-                    display: 'block', width: '100%', padding: '13px 0', borderRadius: 10, boxSizing: 'border-box',
-                    background: p.highlight ? TEAL : 'transparent',
-                    border: p.highlight ? 'none' : `1.5px solid ${TEAL}`,
-                    color: p.highlight ? NAVY : TEAL, fontFamily: F, fontSize: 14, fontWeight: 700,
-                    textDecoration: 'none', textAlign: 'center',
-                  }}>
-                    Get started →
-                  </a>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════════════════════════════════════
           TESTIMONIALS
       ════════════════════════════════════════════════════════════════════ */}
       <section style={{ background: '#f8f9fb', padding: '72px 24px' }}>
@@ -1698,6 +1500,72 @@ export default function LandingPage() {
               </Reveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          ROI CALCULATOR
+      ════════════════════════════════════════════════════════════════════ */}
+      <RoiCalculator />
+
+      {/* ════════════════════════════════════════════════════════════════════
+          THE 6-MONTH TRAP
+      ════════════════════════════════════════════════════════════════════ */}
+      <SixMonthTrap />
+
+      {/* ════════════════════════════════════════════════════════════════════
+          ERA 2025
+      ════════════════════════════════════════════════════════════════════ */}
+      <section style={{
+        position: 'relative', overflow: 'hidden',
+        background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)',
+        padding: '72px 24px',
+      }}>
+        <div style={{ position: 'absolute', top: '50%', left: '30%', transform: 'translate(-50%,-50%)', width: 600, height: 600, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}10 0%, transparent 65%)`, pointerEvents: 'none' }} />
+        <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative', textAlign: 'center' }}>
+          <Reveal>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 50, padding: '6px 16px', marginBottom: 28 }}>
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1={12} y1={9} x2={12} y2={13}/><line x1={12} y1={17} x2="12.01" y2={17}/></svg>
+              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: '#FCA5A5' }}>Employment Rights Act 2025</span>
+            </div>
+
+            <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: '#fff', letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 24 }}>
+              The Employment Rights Act 2025 changes everything
+            </h2>
+
+            <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '28px 32px', marginBottom: 32, textAlign: 'left' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {[
+                  { label: 'From January 2027', body: 'Employees will have unfair dismissal protection from their first day of employment, with no qualifying period.' },
+                  { label: 'No compensation cap', body: "The upper limit on unfair dismissal compensation will be removed, exposing employers to significantly larger awards." },
+                  { label: 'Probationary periods tightened', body: "You'll still be able to dismiss during a defined probation period, but only with a clear, fair process. You'll need to evidence it." },
+                ].map(({ label, body }) => (
+                  <div key={label} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#EF4444', marginTop: 7, flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{label}</div>
+                      <div style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.65 }}>{body}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <p style={{ fontFamily: F, fontSize: 16, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: 24 }}>
+              You would not sign a contract without legal advice. Why would you make a hire without PRODICTA?
+            </p>
+            <p style={{ fontFamily: F, fontSize: 18, fontWeight: 700, color: 'rgba(255,255,255,0.85)', marginBottom: 36 }}>
+              Are you ready?
+            </p>
+            <a href="/login" style={{
+              display: 'inline-block', fontFamily: F, fontSize: 16, fontWeight: 800, color: NAVY,
+              background: TEAL, textDecoration: 'none',
+              padding: '16px 44px', borderRadius: 12,
+              boxShadow: `0 8px 32px ${TEAL}55`,
+            }}>
+              Start assessing candidates →
+            </a>
+          </Reveal>
         </div>
       </section>
 
@@ -1795,69 +1663,200 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
-          ROI CALCULATOR
+          PRE-HIRE RISK REPORT
       ════════════════════════════════════════════════════════════════════ */}
-      <RoiCalculator />
-
-      {/* ════════════════════════════════════════════════════════════════════
-          THE 6-MONTH TRAP
-      ════════════════════════════════════════════════════════════════════ */}
-      <SixMonthTrap />
-
-      {/* ════════════════════════════════════════════════════════════════════
-          ERA 2025
-      ════════════════════════════════════════════════════════════════════ */}
-      <section style={{
-        position: 'relative', overflow: 'hidden',
-        background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)',
-        padding: '72px 24px',
-      }}>
-        <div style={{ position: 'absolute', top: '50%', left: '30%', transform: 'translate(-50%,-50%)', width: 600, height: 600, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}10 0%, transparent 65%)`, pointerEvents: 'none' }} />
-        <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative', textAlign: 'center' }}>
+      <section style={{ background: '#fff', padding: '72px 24px' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
           <Reveal>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 50, padding: '6px 16px', marginBottom: 28 }}>
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1={12} y1={9} x2={12} y2={13}/><line x1={12} y1={17} x2="12.01" y2={17}/></svg>
-              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: '#FCA5A5' }}>Employment Rights Act 2025</span>
+            <div style={{ textAlign: 'center', marginBottom: 40 }}>
+              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Free tool</div>
+              <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.2vw, 40px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 16 }}>
+                See your hiring risks in seconds
+              </h2>
+              <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7, maxWidth: 520, margin: '0 auto' }}>
+                Paste any job description and PRODICTA will instantly show you the top 3 risks this role creates in hiring.
+              </p>
             </div>
+          </Reveal>
 
-            <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: '#fff', letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 24 }}>
-              The Employment Rights Act 2025 changes everything
-            </h2>
-
-            <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '28px 32px', marginBottom: 32, textAlign: 'left' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {[
-                  { label: 'From January 2027', body: 'Employees will have unfair dismissal protection from their first day of employment, with no qualifying period.' },
-                  { label: 'No compensation cap', body: "The upper limit on unfair dismissal compensation will be removed, exposing employers to significantly larger awards." },
-                  { label: 'Probationary periods tightened', body: "You'll still be able to dismiss during a defined probation period, but only with a clear, fair process. You'll need to evidence it." },
-                ].map(({ label, body }) => (
-                  <div key={label} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#EF4444', marginTop: 7, flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{label}</div>
-                      <div style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.65 }}>{body}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <p style={{ fontFamily: F, fontSize: 16, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: 24 }}>
-              You would not sign a contract without legal advice. Why would you make a hire without PRODICTA?
-            </p>
-            <p style={{ fontFamily: F, fontSize: 18, fontWeight: 700, color: 'rgba(255,255,255,0.85)', marginBottom: 36 }}>
-              Are you ready?
-            </p>
-            <a href="/login" style={{
-              display: 'inline-block', fontFamily: F, fontSize: 16, fontWeight: 800, color: NAVY,
-              background: TEAL, textDecoration: 'none',
-              padding: '16px 44px', borderRadius: 12,
-              boxShadow: `0 8px 32px ${TEAL}55`,
+          <Reveal delay={80}>
+            <div style={{
+              background: '#f8f9fb',
+              border: `1.5px solid ${TEAL}33`,
+              borderRadius: 16,
+              padding: '32px',
+              boxShadow: '0 4px 24px rgba(15,33,55,0.06)',
             }}>
-              Start assessing candidates →
-            </a>
+              <textarea
+                value={riskJd}
+                onChange={e => setRiskJd(e.target.value)}
+                placeholder="Paste a job description here..."
+                rows={7}
+                style={{
+                  width: '100%',
+                  fontFamily: F,
+                  fontSize: 14,
+                  color: NAVY,
+                  background: '#fff',
+                  border: '1.5px solid #e4e9f0',
+                  borderRadius: 10,
+                  padding: '14px 16px',
+                  resize: 'vertical',
+                  outline: 'none',
+                  lineHeight: 1.65,
+                  marginBottom: 16,
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s',
+                }}
+                onFocus={e => { e.target.style.borderColor = TEAL }}
+                onBlur={e => { e.target.style.borderColor = '#e4e9f0' }}
+              />
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                <span style={{ fontFamily: F, fontSize: 12.5, color: '#94a1b3' }}>
+                  No account needed. Up to 3 free analyses per session.
+                </span>
+                <button
+                  onClick={handleRiskAnalysis}
+                  disabled={riskLoading || !riskJd.trim()}
+                  style={{
+                    fontFamily: F,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: NAVY,
+                    background: riskLoading || !riskJd.trim() ? '#b2dfdb' : TEAL,
+                    border: 'none',
+                    borderRadius: 9,
+                    padding: '12px 28px',
+                    cursor: riskLoading || !riskJd.trim() ? 'not-allowed' : 'pointer',
+                    transition: 'background 0.2s, transform 0.15s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                  onMouseEnter={e => { if (!riskLoading && riskJd.trim()) e.currentTarget.style.transform = 'translateY(-1px)' }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
+                >
+                  {riskLoading ? (
+                    <>
+                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 0.8s linear infinite' }}>
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                      </svg>
+                      Analysing...
+                    </>
+                  ) : 'Analyse risks'}
+                </button>
+              </div>
+
+              {riskError && (
+                <div style={{ marginTop: 20, padding: '12px 16px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 9 }}>
+                  <p style={{ fontFamily: F, fontSize: 13.5, color: '#dc2626', margin: 0 }}>{riskError}</p>
+                </div>
+              )}
+
+              {riskResults && (
+                <div style={{ marginTop: 28 }}>
+                  {/* Results header */}
+                  <div style={{ marginBottom: 22 }}>
+                    <div style={{
+                      fontFamily: F, fontSize: 11, fontWeight: 800, color: TEAL,
+                      textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8,
+                    }}>
+                      Risk report
+                    </div>
+                    <h3 style={{
+                      fontFamily: F, fontSize: 20, fontWeight: 800, color: NAVY,
+                      letterSpacing: '-0.4px', lineHeight: 1.3, margin: '0 0 8px',
+                    }}>
+                      {riskResults.length} hiring risks identified for: {riskRoleTitle}
+                    </h3>
+                    <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', lineHeight: 1.6, margin: 0 }}>
+                      These are the risks built into this role that your hiring process needs to test for.
+                    </p>
+                  </div>
+
+                  {/* Risk cards */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {riskResults.map((risk, i) => {
+                      const severityColors = {
+                        High:   { bar: '#EF4444', tint: 'rgba(239,68,68,0.06)',  border: 'rgba(239,68,68,0.18)',  badge: '#DC2626', icon: '#EF4444' },
+                        Medium: { bar: '#F59E0B', tint: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.18)', badge: '#D97706', icon: '#F59E0B' },
+                        Low:    { bar: '#22C55E', tint: 'rgba(34,197,94,0.06)',  border: 'rgba(34,197,94,0.18)',  badge: '#16A34A', icon: '#22C55E' },
+                      }
+                      const c = severityColors[risk.severity] || severityColors.Medium
+                      return (
+                        <div key={i} style={{
+                          background: c.tint,
+                          border: `1px solid ${c.border}`,
+                          borderLeft: `6px solid ${c.bar}`,
+                          borderRadius: 12,
+                          padding: '20px 22px',
+                          position: 'relative',
+                          boxShadow: '0 2px 10px rgba(15,33,55,0.04)',
+                        }}>
+                          {/* Severity badge top right */}
+                          <span style={{
+                            position: 'absolute', top: 16, right: 18,
+                            fontFamily: F, fontSize: 10.5, fontWeight: 800, color: '#fff',
+                            background: c.badge, borderRadius: 5, padding: '4px 10px',
+                            textTransform: 'uppercase', letterSpacing: '0.08em',
+                          }}>
+                            {risk.severity}
+                          </span>
+
+                          {/* Title row with shield icon */}
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10, paddingRight: 80 }}>
+                            <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c.icon} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                              <line x1="12" y1="9" x2="12" y2="13" />
+                              <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            <h4 style={{
+                              fontFamily: F, fontSize: 18, fontWeight: 800, color: NAVY,
+                              letterSpacing: '-0.2px', lineHeight: 1.35, margin: 0,
+                            }}>
+                              {risk.title}
+                            </h4>
+                          </div>
+                          <p style={{
+                            fontFamily: F, fontSize: 15, color: '#374151',
+                            lineHeight: 1.75, margin: 0, paddingLeft: 34,
+                          }}>
+                            {risk.explanation}
+                          </p>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Closing context + CTA */}
+                  <div style={{ marginTop: 28, padding: '24px 24px 22px', background: '#fff', border: `1px solid ${TEAL}33`, borderRadius: 12, textAlign: 'center' }}>
+                    <p style={{ fontFamily: F, fontSize: 14.5, color: '#374151', lineHeight: 1.65, margin: '0 0 6px' }}>
+                      PRODICTA's work simulations are designed to test candidates against exactly these risks.
+                    </p>
+                    <p style={{ fontFamily: F, fontSize: 13.5, color: '#5e6b7f', lineHeight: 1.6, margin: '0 0 18px' }}>
+                      Every scenario is built from your job description.
+                    </p>
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 14 }}>
+                      See how PRODICTA tests for these exact risks
+                    </div>
+                    <a href="/login" style={{
+                      fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY,
+                      background: TEAL, textDecoration: 'none',
+                      padding: '13px 32px', borderRadius: 10, display: 'inline-block',
+                      transition: 'transform 0.15s, box-shadow 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,191,165,0.35)' }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
+                      Start assessing candidates
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
           </Reveal>
         </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
