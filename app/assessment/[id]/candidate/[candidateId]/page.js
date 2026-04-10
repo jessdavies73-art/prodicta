@@ -3340,6 +3340,94 @@ export default function CandidateReportPage({ params }) {
                 )}
 
                 {/* ══════════════════════════════════════════════════
+                    TEAM FIT
+                ══════════════════════════════════════════════════ */}
+                {results.team_fit_score != null && results.team_fit_data && (
+                  <ScrollReveal delay={60}>
+                  <Card style={{ marginBottom: 20 }} topColor={TEAL}>
+                    <SectionHeading tooltip="How this candidate will work with your existing team based on the team profile you built. Analyses conflict compatibility, pace alignment, decision-making fit, and identifies friction risks.">
+                      Team Fit
+                    </SectionHeading>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+                      How this candidate will work with your existing team
+                    </p>
+
+                    <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 24, flexDirection: isMobile ? 'column' : 'row', marginBottom: 20 }}>
+                      <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+                        <svg width={72} height={72} viewBox="0 0 72 72">
+                          <circle cx={36} cy={36} r={30} fill="none" stroke={BD} strokeWidth={6} />
+                          <circle cx={36} cy={36} r={30} fill="none" stroke={TEAL} strokeWidth={6}
+                            strokeDasharray={`${(results.team_fit_score / 100) * 2 * Math.PI * 30} ${2 * Math.PI * 30}`}
+                            strokeLinecap="round" transform="rotate(-90 36 36)"
+                          />
+                        </svg>
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: TEAL }}>{results.team_fit_score}</span>
+                        </div>
+                      </div>
+                      <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.65, margin: 0 }}>
+                        {results.team_fit_narrative || results.team_fit_data.team_fit_narrative}
+                      </p>
+                    </div>
+
+                    {/* Three cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 12, marginBottom: 18 }}>
+                      {results.team_fit_data.top_compatibility && (
+                        <div style={{ background: GRNBG, border: `1px solid ${GRNBD}`, borderRadius: 10, padding: '14px 16px' }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: GRN, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Best match</div>
+                          <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: 4 }}>{results.team_fit_data.top_compatibility.member}</div>
+                          <div style={{ fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.5 }}>{results.team_fit_data.top_compatibility.reason}</div>
+                        </div>
+                      )}
+                      {results.team_fit_data.friction_risk && (
+                        <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 10, padding: '14px 16px' }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Watch this relationship</div>
+                          <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: 4 }}>{results.team_fit_data.friction_risk.member}</div>
+                          <div style={{ fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.5 }}>{results.team_fit_data.friction_risk.reason}</div>
+                        </div>
+                      )}
+                      {results.team_fit_data.gap_filled && (
+                        <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px', borderTop: `3px solid ${NAVY}` }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Gap filled</div>
+                          <div style={{ fontFamily: F, fontSize: 12.5, color: TX, lineHeight: 1.5 }}>{results.team_fit_data.gap_filled}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Management advice */}
+                    {results.team_fit_data.management_advice && (
+                      <div style={{ background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 10, padding: '14px 18px', marginBottom: 16 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>First 30 days management advice</div>
+                        {results.team_fit_data.management_advice.map((a, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: TEALD, flexShrink: 0 }}>{i + 1}.</span>
+                            <span style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.55 }}>{a}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Per-member scores */}
+                    {results.team_fit_data.member_fit_scores && (
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Per-member compatibility</div>
+                        {results.team_fit_data.member_fit_scores.map((m, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: `1px solid ${BD}` }}>
+                            <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, minWidth: 100 }}>{m.name}</span>
+                            <div style={{ flex: 1, height: 6, background: BG, borderRadius: 3 }}>
+                              <div style={{ height: '100%', width: `${m.score}%`, background: m.score >= 70 ? TEAL : m.score >= 50 ? AMB : RED, borderRadius: 3 }} />
+                            </div>
+                            <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: m.score >= 70 ? TEAL : m.score >= 50 ? AMB : RED, minWidth: 30 }}>{m.score}</span>
+                            <span style={{ fontFamily: F, fontSize: 12, color: TX3, flex: 2 }}>{m.note}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                  </ScrollReveal>
+                )}
+
+                {/* ══════════════════════════════════════════════════
                     SKILLS BREAKDOWN , 2×2 grid with small rings
                 ══════════════════════════════════════════════════ */}
                 {results.scores && Object.keys(results.scores).length > 0 && (
