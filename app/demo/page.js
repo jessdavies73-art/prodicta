@@ -272,6 +272,22 @@ function DemoDashboardInner() {
 
   return (
     <DemoLayout active="dashboard">
+      {true && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+          background: isMobile ? 'red' : 'blue',
+          color: 'white',
+          padding: '12px',
+          fontSize: '14px',
+          textAlign: 'center'
+        }}>
+          isMobile: {String(isMobile)} | width: {typeof window !== 'undefined' ? window.innerWidth : 'ssr'}
+        </div>
+      )}
       {modal && <SignUpModal onClose={() => setModal(false)} />}
 
       <main style={{ marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 96 : 46, padding: isMobile ? '16px 16px 32px' : '32px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
