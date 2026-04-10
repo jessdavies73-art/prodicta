@@ -537,8 +537,9 @@ export default function LandingPage() {
         {/* Stats bar */}
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 40, flexWrap: 'wrap', justifyContent: 'center', padding: '20px 32px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14 }}>
           {[
+            { to: null, display: 'From £49', label: 'Per month' },
             { to: 4,   suffix: '',  label: 'Scenario types' },
-            { to: 45,  suffix: ' min', label: 'Assessment time' },
+            { to: null, display: '15–45 min', label: 'Assessment time' },
             { to: null, display: 'UK-built', label: 'For ERA 2025 compliance' },
           ].map((item) => (
             <div key={item.label} style={{ textAlign: 'center', minWidth: 90 }}>
