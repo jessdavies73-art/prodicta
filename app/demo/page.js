@@ -248,6 +248,7 @@ function DemoDashboardInner() {
   const [searchFocused, setSearchFocused] = useState(false)
   const [filterAssessmentId, setFilterAssessmentId] = useState(null)
   const [modal, setModal] = useState(false)
+  const [selectedCandidates, setSelectedCandidates] = useState(new Set())
 
   // Exclude archived from main view
   const activeCandidates = DEMO_CANDIDATES.filter(c => c.status !== 'archived')
@@ -269,6 +270,11 @@ function DemoDashboardInner() {
 
   const passRate = completed.length ? Math.round((recommendedCount / completed.length) * 100) : null
   const highRisk = completed.filter(c => (c.results?.[0]?.risk_level ?? '').toLowerCase().includes('high'))
+  const flaggedCandidates = activeCandidates.filter(c => {
+    const r = Array.isArray(c.results) ? c.results[0] : c.results
+    if (!r) return false
+    return (r.overall_score != null && r.overall_score < 55) || r.risk_level === 'High'
+  })
 
   return (
     <DemoLayout active="dashboard">
@@ -323,6 +329,56 @@ function DemoDashboardInner() {
           <StatCard icon="bar" label="Avg score" value={avgScore !== null ? avgScore : '-'} sub={avgScore !== null ? slabel(avgScore) : 'No data yet'} accent={avgScore !== null ? (avgScore >= 75 ? GRN : avgScore >= 50 ? AMB : RED) : TX3} />
           <StatCard icon="award" label="Recommended" value={recommendedCount} sub="Scoring 70 or above" accent={TEAL} />
         </div>
+
+        {/* Red flag banner */}
+        {flaggedCandidates.length > 0 && (
+          <div style={{
+            background: 'linear-gradient(135deg, #fef2f2, #fff5f5)', border: `1.5px solid #fecaca`,
+            borderLeft: `4px solid ${RED}`, borderRadius: '0 12px 12px 0',
+            padding: isMobile ? '14px 16px' : '16px 24px', marginBottom: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <Ic name="alert" size={16} color={RED} />
+              <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: RED }}>
+                {flaggedCandidates.length} candidate{flaggedCandidates.length !== 1 ? 's' : ''} flagged for review
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {flaggedCandidates.map(c => {
+                const r = Array.isArray(c.results) ? c.results[0] : c.results
+                return (
+                  <div key={c.id} style={{
+                    display: 'flex', alignItems: isMobile ? 'flex-start' : 'center',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: isMobile ? 6 : 12, padding: '10px 14px',
+                    background: '#fff', border: `1px solid #fecaca`, borderRadius: 8,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                      <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{c.name}</span>
+                      <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: RED }}>{r?.overall_score ?? '-'}/100</span>
+                      {r?.risk_level === 'High' && (
+                        <span style={{ fontSize: 10, fontWeight: 800, color: RED, background: REDBG, border: `1px solid #fecaca`, padding: '1px 7px', borderRadius: 4, textTransform: 'uppercase' }}>High risk</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/demo/candidate/${c.id}?type=${demoType}`)
+                      }}
+                      style={{
+                        padding: '5px 12px', borderRadius: 6, border: `1px solid ${BD}`,
+                        background: '#fff', color: TX2, fontFamily: F, fontSize: 12, fontWeight: 600,
+                        cursor: 'pointer', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      View report
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Pipeline health */}
         <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
@@ -773,6 +829,7 @@ function DemoDashboardInner() {
 
               <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                 <colgroup>
+                  <col style={{ width: isMobile ? '8%' : '4%' }} />
                   <col style={{ width: isMobile ? '45%' : '24%' }} />
                   <col style={{ width: '18%', display: isMobile ? 'none' : undefined }} />
                   <col style={{ width: isMobile ? '25%' : '11%' }} />
@@ -783,6 +840,17 @@ function DemoDashboardInner() {
                 </colgroup>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${BD}` }}>
+                    <th style={{ padding: '10px 4px', width: 32, background: BG }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedCandidates.size > 0 && filtered.every(c => selectedCandidates.has(c.id))}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedCandidates(new Set(filtered.map(c => c.id)))
+                          else setSelectedCandidates(new Set())
+                        }}
+                        style={{ cursor: 'pointer', accentColor: TEAL }}
+                      />
+                    </th>
                     {[
                       { h: 'Candidate', hide: false },
                       { h: 'Role', hide: true },
@@ -812,6 +880,21 @@ function DemoDashboardInner() {
                         onMouseLeave={() => setHoveredRow(null)}
                         style={{ borderBottom: i < filtered.length - 1 ? `1px solid ${BD}` : 'none', background: isHovered && isCompleted ? '#f0fdfb' : CARD, cursor: isCompleted ? 'pointer' : 'default', transition: 'background 0.15s', boxShadow: isHovered && isCompleted ? `inset 3px 0 0 ${TEAL}` : 'none' }}
                       >
+                        <td style={{ padding: '10px 4px', width: 32 }} onClick={e => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedCandidates.has(c.id)}
+                            onChange={() => {
+                              setSelectedCandidates(prev => {
+                                const next = new Set(prev)
+                                if (next.has(c.id)) next.delete(c.id)
+                                else next.add(c.id)
+                                return next
+                              })
+                            }}
+                            style={{ cursor: 'pointer', accentColor: TEAL }}
+                          />
+                        </td>
                         <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <Avatar name={c.name} size={28} />
@@ -911,6 +994,84 @@ function DemoDashboardInner() {
             </div>
           </div>
         </div>
+        {/* Prediction Accuracy */}
+        <div style={{
+          background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+          borderTop: `3px solid ${TEAL}`, padding: '20px 24px', marginTop: 20,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <Ic name="shield" size={14} color={TEAL} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Prediction Accuracy
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 24, flexDirection: isMobile ? 'column' : 'row' }}>
+            <div style={{ position: 'relative', width: 64, height: 64, flexShrink: 0 }}>
+              <svg width={64} height={64} viewBox="0 0 64 64">
+                <circle cx={32} cy={32} r={28} fill="none" stroke={BD} strokeWidth={6} />
+                <circle cx={32} cy={32} r={28} fill="none" stroke={TEAL} strokeWidth={6}
+                  strokeDasharray={`${0.8 * 2 * Math.PI * 28} ${2 * Math.PI * 28}`}
+                  strokeDashoffset={0} strokeLinecap="round"
+                  transform="rotate(-90 32 32)"
+                />
+              </svg>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: TEAL }}>80%</span>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: TX, marginBottom: 4 }}>
+                4 of your last 5 hires matched our prediction
+              </div>
+              <div style={{ fontFamily: F, fontSize: 13, color: TX3, lineHeight: 1.55 }}>
+                PRODICTA tracks whether your actual hire outcomes align with our initial assessment predictions.
+              </div>
+              <a href="/demo" onClick={e => { e.preventDefault(); setModal(true) }} style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD, textDecoration: 'none', marginTop: 8, display: 'inline-block' }}>
+                Update outcomes
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Bulk action toolbar */}
+        {selectedCandidates.size > 0 && (
+          <div style={{
+            position: 'fixed', bottom: 0, left: isMobile ? 0 : 220, right: 0,
+            background: NAVY, padding: isMobile ? '12px 16px' : '14px 32px',
+            display: 'flex', alignItems: isMobile ? 'stretch' : 'center',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: 12, zIndex: 200,
+            boxShadow: '0 -4px 24px rgba(15,33,55,0.25)',
+            borderTop: `2px solid ${TEAL}`,
+          }}>
+            <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+              {selectedCandidates.size} selected
+            </span>
+            <div style={{ display: 'flex', gap: 10, flex: 1, justifyContent: isMobile ? 'stretch' : 'flex-end', flexDirection: isMobile ? 'column' : 'row' }}>
+              <button
+                onClick={() => setModal(true)}
+                style={{
+                  padding: '9px 18px', borderRadius: 8, border: 'none',
+                  background: TEAL, color: NAVY, opacity: 0.5, cursor: 'default',
+                  fontFamily: F, fontSize: 13, fontWeight: 700,
+                }}
+                disabled
+              >
+                Copy Shortlist — Available with subscription
+              </button>
+              <button
+                onClick={() => setSelectedCandidates(new Set())}
+                style={{
+                  padding: '9px 18px', borderRadius: 8, border: `1.5px solid rgba(255,255,255,0.25)`,
+                  background: 'transparent', color: '#fff',
+                  fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Clear selection
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </DemoLayout>
   )

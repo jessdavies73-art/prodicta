@@ -257,6 +257,7 @@ export default function DashboardPage() {
   const [overrideStats, setOverrideStats] = useState(null)
   const isMobile = useIsMobile()
   const [pendingCheckins, setPendingCheckins] = useState([])
+  const [selectedCandidates, setSelectedCandidates] = useState(new Set())
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -522,6 +523,12 @@ export default function DashboardPage() {
     return score < 70 && (!outcome || !POSITIVE_OUTCOMES.has(outcome))
   })
   const costSaved = avoidedBadHires.length * BAD_HIRE_COST
+
+  const flaggedCandidates = candidates.filter(c => {
+    const r = c.results?.[0]
+    if (!r) return false
+    return (r.overall_score != null && r.overall_score < 55) || r.risk_level === 'High'
+  })
 
   // ── filtered candidates ─────────────────────────────────────────────────────
 
@@ -845,6 +852,55 @@ export default function DashboardPage() {
           />
         </div>
 
+        {flaggedCandidates.length > 0 && (
+          <div style={{
+            background: 'linear-gradient(135deg, #fef2f2, #fff5f5)', border: `1.5px solid #fecaca`,
+            borderLeft: `4px solid ${RED}`, borderRadius: '0 12px 12px 0',
+            padding: isMobile ? '14px 16px' : '16px 24px', marginBottom: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <Ic name="alert" size={16} color={RED} />
+              <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: RED }}>
+                {flaggedCandidates.length} candidate{flaggedCandidates.length !== 1 ? 's' : ''} flagged for review
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {flaggedCandidates.slice(0, 5).map(c => {
+                const r = c.results?.[0]
+                return (
+                  <div key={c.id} style={{
+                    display: 'flex', alignItems: isMobile ? 'flex-start' : 'center',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: isMobile ? 6 : 12, padding: '10px 14px',
+                    background: '#fff', border: `1px solid #fecaca`, borderRadius: 8,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                      <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{c.name}</span>
+                      <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: RED }}>{r?.overall_score ?? '-'}/100</span>
+                      {r?.risk_level === 'High' && (
+                        <span style={{ fontSize: 10, fontWeight: 800, color: RED, background: REDBG, border: `1px solid #fecaca`, padding: '1px 7px', borderRadius: 4, textTransform: 'uppercase' }}>High risk</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/assessment/${c.assessments?.id}/candidate/${c.id}`)
+                      }}
+                      style={{
+                        padding: '5px 12px', borderRadius: 6, border: `1px solid ${BD}`,
+                        background: '#fff', color: TX2, fontFamily: F, fontSize: 12, fontWeight: 600,
+                        cursor: 'pointer', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      View report
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ── Secondary stats row ── */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
           {/* Time to insight */}
@@ -952,6 +1008,26 @@ export default function DashboardPage() {
                 <div style={{ fontSize: 22, fontWeight: 800, color: TX2, fontFamily: FM }}>{accuracyData.pending}</div>
               </div>
             </div>
+          </div>
+        )}
+
+        {!accuracyData && candidateOutcomes.length < 3 && (
+          <div style={{
+            ...cs, marginBottom: 20, padding: '20px 24px',
+            borderTop: `3px solid ${BD}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <Ic name="shield" size={14} color={TX3} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Prediction Accuracy
+              </span>
+            </div>
+            <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.6 }}>
+              Track your first hire outcomes to see prediction accuracy. Log outcomes on at least 3 candidates to unlock this insight.
+            </p>
+            <a href="/outcomes" style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD, textDecoration: 'none', marginTop: 10, display: 'inline-block' }}>
+              Update outcomes
+            </a>
           </div>
         )}
 
@@ -1077,8 +1153,9 @@ export default function DashboardPage() {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: isMobile ? 700 : undefined }}>
                     <colgroup>
-                      <col style={{ width: '24%' }} />
-                      <col style={{ width: '17%' }} />
+                      <col style={{ width: '4%' }} />
+                      <col style={{ width: '21%' }} />
+                      <col style={{ width: '16%' }} />
                       <col style={{ width: '10%' }} />
                       <col style={{ width: '8%' }} />
                       <col style={{ width: '8%' }} />
@@ -1088,6 +1165,20 @@ export default function DashboardPage() {
                     </colgroup>
                     <thead>
                       <tr style={{ borderBottom: `1px solid ${BD}` }}>
+                        <th style={{ padding: '10px 4px', width: 32, background: BG }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedCandidates.size > 0 && filtered.every(c => selectedCandidates.has(c.id))}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedCandidates(new Set(filtered.map(c => c.id)))
+                              } else {
+                                setSelectedCandidates(new Set())
+                              }
+                            }}
+                            style={{ cursor: 'pointer', accentColor: TEAL }}
+                          />
+                        </th>
                         {['Candidate', 'Role', 'Status', 'Score', 'Pressure', 'Risk', 'Date', ''].map(h => (
                           <th key={h} style={{
                             padding: '10px 8px',
@@ -1137,6 +1228,21 @@ export default function DashboardPage() {
                               boxShadow: isHovered && isClickable ? `inset 3px 0 0 #00BFA5` : 'none',
                             }}
                           >
+                            <td style={{ padding: '10px 4px', width: 32 }} onClick={e => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={selectedCandidates.has(c.id)}
+                                onChange={() => {
+                                  setSelectedCandidates(prev => {
+                                    const next = new Set(prev)
+                                    if (next.has(c.id)) next.delete(c.id)
+                                    else next.add(c.id)
+                                    return next
+                                  })
+                                }}
+                                style={{ cursor: 'pointer', accentColor: TEAL }}
+                              />
+                            </td>
                             {/* Candidate name + email */}
                             <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1364,6 +1470,51 @@ export default function DashboardPage() {
           </div>
 
         </div>
+        {selectedCandidates.size > 0 && (
+          <div style={{
+            position: 'fixed', bottom: 0, left: isMobile ? 0 : 220, right: 0,
+            background: NAVY, padding: isMobile ? '12px 16px' : '14px 32px',
+            display: 'flex', alignItems: isMobile ? 'stretch' : 'center',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: 12, zIndex: 200,
+            boxShadow: '0 -4px 24px rgba(15,33,55,0.25)',
+            borderTop: `2px solid ${TEAL}`,
+          }}>
+            <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+              {selectedCandidates.size} selected
+            </span>
+            <div style={{ display: 'flex', gap: 10, flex: 1, justifyContent: isMobile ? 'stretch' : 'flex-end', flexDirection: isMobile ? 'column' : 'row' }}>
+              <button
+                onClick={() => {
+                  const selected = candidates.filter(c => selectedCandidates.has(c.id))
+                  const lines = ['CANDIDATE SHORTLIST', '', ...selected.map(c => {
+                    const r = c.results?.[0]
+                    return `${c.name} | Score: ${r?.overall_score ?? '-'} | Risk: ${r?.risk_level ?? '-'} | ${c.assessments?.role_title ?? ''}`
+                  })]
+                  navigator.clipboard.writeText(lines.join('\n'))
+                  if (toast) toast({ title: 'Shortlist copied to clipboard', type: 'success' })
+                }}
+                style={{
+                  padding: '9px 18px', borderRadius: 8, border: 'none',
+                  background: TEAL, color: NAVY,
+                  fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Copy Shortlist
+              </button>
+              <button
+                onClick={() => setSelectedCandidates(new Set())}
+                style={{
+                  padding: '9px 18px', borderRadius: 8, border: `1.5px solid rgba(255,255,255,0.25)`,
+                  background: 'transparent', color: '#fff',
+                  fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Clear selection
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )
