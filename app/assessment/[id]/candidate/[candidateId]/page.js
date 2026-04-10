@@ -1047,7 +1047,7 @@ export default function CandidateReportPage({ params }) {
         setUser(u)
 
         const [{ data: cand, error: cErr }, { data: res }, { data: bm }, { data: resps }, { data: prof }] = await Promise.all([
-          supabase.from('candidates').select('*, assessments(role_title, job_description, skill_weights, scenarios, assessment_mode, detected_role_type)').eq('id', params.candidateId).single(),
+          supabase.from('candidates').select('*, assessments(role_title, job_description, skill_weights, scenarios, assessment_mode, detected_role_type, role_level)').eq('id', params.candidateId).single(),
           supabase.from('results').select('*').eq('candidate_id', params.candidateId).maybeSingle(),
           supabase.from('benchmarks').select('*').eq('user_id', u.id),
           supabase.from('responses').select('scenario_index, time_taken_seconds, response_text').eq('candidate_id', params.candidateId).order('scenario_index'),
@@ -2982,9 +2982,9 @@ export default function CandidateReportPage({ params }) {
                               <Ic name="sliders" size={15} color={TEAL} />
                             </div>
                             <span style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                              Pressure-Fit Assessment
+                              {candidate?.assessments?.role_level === 'OPERATIONAL' ? 'Operational Pressure Fit' : candidate?.assessments?.role_level === 'LEADERSHIP' ? 'Leadership Pressure Fit' : 'Mid-Level Pressure Fit'}
                             </span>
-                            <InfoTooltip text="How this candidate performs under realistic workplace pressure across four dimensions." light />
+                            <InfoTooltip text={candidate?.assessments?.role_level === 'OPERATIONAL' ? 'Tests immediate reliability, safety awareness, and speed of response under real-world pressure.' : candidate?.assessments?.role_level === 'LEADERSHIP' ? 'Tests political intelligence, strategic thinking, and stakeholder navigation under ambiguity.' : 'Tests resourcefulness, resilience, and problem-solving under competing priorities.'} light />
                           </div>
                           <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 12px', lineHeight: 1.25 }}>
                             How this candidate performs<br />when it matters most
@@ -5068,8 +5068,21 @@ export default function CandidateReportPage({ params }) {
           )}
 
           <div style={{ marginBottom: 28 }}>
-            <h1 style={{ margin: '0 0 5px', fontSize: 28, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px' }}>{candidate.name || 'Candidate'}</h1>
-            {candidate.assessments?.role_title && <div style={{ fontSize: 14, color: TX2, fontWeight: 600 }}>{candidate.assessments.role_title}</div>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px' }}>{candidate.name || 'Candidate'}</h1>
+              {candidate.assessments?.role_level && (
+                <span style={{
+                  fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em',
+                  padding: '3px 10px', borderRadius: 6,
+                  background: candidate.assessments.role_level === 'OPERATIONAL' ? TEALLT : candidate.assessments.role_level === 'LEADERSHIP' ? '#E8B84B22' : BG,
+                  color: candidate.assessments.role_level === 'OPERATIONAL' ? TEALD : candidate.assessments.role_level === 'LEADERSHIP' ? '#B8860B' : TX3,
+                  border: `1px solid ${candidate.assessments.role_level === 'OPERATIONAL' ? `${TEAL}55` : candidate.assessments.role_level === 'LEADERSHIP' ? '#E8B84B55' : BD}`,
+                }}>
+                  {candidate.assessments.role_level === 'OPERATIONAL' ? 'Operational Role' : candidate.assessments.role_level === 'LEADERSHIP' ? 'Leadership Role' : 'Mid-Level Role'}
+                </span>
+              )}
+            </div>
+            {candidate.assessments?.role_title && <div style={{ fontSize: 14, color: TX2, fontWeight: 600, marginTop: 5 }}>{candidate.assessments.role_title}</div>}
           </div>
 
           {/* Feature 6: Conditional sections */}

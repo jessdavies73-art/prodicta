@@ -308,9 +308,12 @@ function ActivePage({ candidate, assessment, onSubmit }) {
   const [timeLefts, setTimeLefts] = useState(scenarios.map(s => (s.timeMinutes || 10) * 60))
   const [timeTakens, setTimeTakens] = useState(scenarios.map(() => 0))
 
-  // Voice recording state
+  // Role level and voice recording state
   const mode = (assessment.assessment_mode || 'standard').toLowerCase()
-  const showRecordToggle = mode !== 'quick'
+  const roleLevel = assessment.role_level || 'MID_LEVEL'
+  const isOperational = roleLevel === 'OPERATIONAL'
+  const isLeadership = roleLevel === 'LEADERSHIP'
+  const showRecordToggle = mode !== 'quick' && !isOperational
   const [inputModes, setInputModes] = useState(scenarios.map(() => 'type')) // 'type' or 'record'
   const [audioBlobs, setAudioBlobs] = useState(scenarios.map(() => null))
   const [audioUrls, setAudioUrls] = useState(scenarios.map(() => null))
@@ -490,59 +493,67 @@ function ActivePage({ candidate, assessment, onSubmit }) {
         </div>
 
         <div style={{ maxWidth: 780, margin: '0 auto', padding: '32px 20px 80px' }}>
-          <Card>
-            {/* Type badge + title */}
-            <div style={{ marginBottom: 20 }}>
-              <span style={typeBadgeStyle(scenario.type)}>{scenario.type}</span>
-              <h2 style={{
-                fontFamily: F,
-                fontWeight: 700,
-                fontSize: 22,
-                color: TX,
-                margin: '12px 0 0',
-              }}>
-                {scenario.title}
-              </h2>
-            </div>
+          <Card style={isOperational ? { background: '#f8f9fb', border: 'none', boxShadow: 'none', padding: '16px' } : {}}>
+            {isOperational ? (
+              <>
+                {/* Chat-style scenario display for operational roles */}
+                <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                    background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 800, color: TEAL,
+                  }}>Mgr</div>
+                  <div style={{
+                    background: CARD, border: `1px solid ${BD}`, borderRadius: '4px 16px 16px 16px',
+                    padding: '14px 18px', flex: 1,
+                  }}>
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, marginBottom: 6 }}>Your manager</div>
+                    <p style={{ fontFamily: F, fontSize: 15, color: TX, margin: '0 0 10px', lineHeight: 1.65 }}>{scenario.context}</p>
+                    <div style={{ background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 10, padding: '10px 14px' }}>
+                      <p style={{ fontFamily: F, fontSize: 14, color: TX, margin: 0, lineHeight: 1.6, fontWeight: 600 }}>{scenario.task}</p>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ fontFamily: F, fontSize: 12, color: TX3, textAlign: 'center', marginBottom: 8 }}>
+                  Aim for 50-100 words. Be direct.
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Standard / Leadership scenario display */}
+                <div style={{ marginBottom: 20 }}>
+                  {isLeadership && (
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: NAVY, background: '#E8B84B22', border: '1px solid #E8B84B55', padding: '4px 12px', borderRadius: 6, display: 'inline-block', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                      Boardroom Context
+                    </div>
+                  )}
+                  <span style={typeBadgeStyle(scenario.type)}>{scenario.type}</span>
+                  <h2 style={{ fontFamily: F, fontWeight: 700, fontSize: 22, color: TX, margin: '12px 0 0' }}>
+                    {scenario.title}
+                  </h2>
+                </div>
+                <div style={{
+                  background: BG, border: `1px solid ${BD}`, borderRadius: 10,
+                  padding: '18px 20px', marginBottom: 20,
+                }}>
+                  <div style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>
+                    {isLeadership ? 'Situation' : 'Context'}
+                  </div>
+                  <p style={{ fontFamily: F, fontSize: 15, color: TX2, margin: 0, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                    {scenario.context}
+                  </p>
+                </div>
+              </>
+            )}
 
-            {/* Context */}
-            <div style={{
-              background: BG,
-              border: `1px solid ${BD}`,
-              borderRadius: 10,
-              padding: '18px 20px',
-              marginBottom: 20,
-            }}>
-              <div style={{
-                fontFamily: F,
-                fontSize: 12,
-                fontWeight: 600,
-                color: TX3,
-                textTransform: 'uppercase',
-                letterSpacing: 0.8,
-                marginBottom: 10,
-              }}>
-                Context
-              </div>
-              <p style={{
-                fontFamily: F,
-                fontSize: 15,
-                color: TX2,
-                margin: 0,
-                lineHeight: 1.7,
-                whiteSpace: 'pre-wrap',
-              }}>
-                {scenario.context}
-              </p>
-            </div>
-
-            {/* Task */}
+            {/* Task (hidden for operational — already in chat bubble) */}
             <div style={{
               background: TEALLT,
               border: `1px solid ${TEAL}55`,
               borderRadius: 10,
               padding: '16px 20px',
               marginBottom: 24,
+              display: isOperational ? 'none' : 'block',
             }}>
               <div style={{
                 fontFamily: F,
@@ -740,7 +751,7 @@ function ActivePage({ candidate, assessment, onSubmit }) {
                 onMouseEnter={e => e.currentTarget.style.background = TEALD}
                 onMouseLeave={e => e.currentTarget.style.background = TEAL}
               >
-                {isLast ? 'Submit Assessment' : 'Next Scenario →'}
+                {isLast ? (isOperational ? 'Send Reply' : 'Submit Assessment') : (isOperational ? 'Next' : 'Next Scenario →')}
               </button>
             </div>
           </Card>

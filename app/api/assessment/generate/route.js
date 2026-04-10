@@ -135,21 +135,25 @@ Avoid clinical, classroom, or shop-floor framing.`,
       : ''
 
     // ── Seniority detection (drives scenario complexity) ────────────────────────
+    // -- ALTER TABLE assessments ADD COLUMN role_level TEXT DEFAULT 'MID_LEVEL';
     const seniorityText = `${role_title} ${job_description}`.toLowerCase()
     let seniorityTier = 'mid'
-    if (/\b(junior|jr\.?|graduate|trainee|entry.?level|apprentice|assistant|intern)\b/.test(seniorityText)) seniorityTier = 'junior'
-    else if (/\b(director|head of|vp|vice president|chief|cxo|ceo|cto|cfo|coo|managing director|md\b|partner)\b/.test(seniorityText)) seniorityTier = 'senior'
-    else if (/\b(senior|sr\.?|principal|lead|staff engineer|head)\b/.test(seniorityText)) seniorityTier = 'senior'
+    if (/\b(junior|jr\.?|graduate|trainee|entry.?level|apprentice|assistant|intern|care worker|receptionist|driver|operative|coordinator|support worker|cleaner|porter|carer)\b/.test(seniorityText)) seniorityTier = 'junior'
+    else if (/\b(director|head of|vp|vice president|chief|cxo|ceo|cto|cfo|coo|managing director|md\b|partner|principal)\b/.test(seniorityText)) seniorityTier = 'senior'
+    else if (/\b(senior|sr\.?|lead|staff engineer|head)\b/.test(seniorityText)) seniorityTier = 'senior'
+
+    // Map to role_level for Pressure Gauge tiers
+    const roleLevel = seniorityTier === 'junior' ? 'OPERATIONAL' : seniorityTier === 'senior' ? 'LEADERSHIP' : 'MID_LEVEL'
 
     const SENIORITY_GUIDANCE = {
-      junior: `SENIORITY: JUNIOR / ENTRY LEVEL.
-Keep scenarios practical, task-based and straightforward. Test whether they can follow instructions, communicate clearly, handle a busy moment, ask for help when needed, and stay reliable. Do NOT expect strategic thinking, leadership, commercial awareness, or P&L framing. A junior nurse gets a handover scenario, not a ward management crisis. A junior accounts assistant gets a reconciliation task, not a board report. A receptionist gets a busy front desk scenario, not a stakeholder management challenge. Avoid scenarios that require managing other people, owning a budget, or making organisation-wide decisions.`,
+      junior: `SENIORITY: OPERATIONAL / ENTRY LEVEL.
+ASSESSMENT STYLE: Rapid-Fire Prioritisation. Create short, punchy, real-world situations. "The delivery is late, a customer is shouting, and the floor is wet. What do you do first?" Keep scenarios practical and task-based. Test immediate reliability, safety awareness, basic communication, and following process under pressure. Expect short answers (50-100 words). Speed of response matters more than depth. Do NOT expect strategic thinking, leadership, commercial awareness, or budget decisions. A care worker gets a patient safety scenario, not a ward management crisis. A receptionist gets a busy front desk scenario, not a stakeholder management challenge. Avoid scenarios requiring managing people, owning budgets, or organisation-wide decisions. Frame scenarios conversationally as if coming from a supervisor.`,
 
       mid: `SENIORITY: MID LEVEL.
-Build scenarios that involve managing competing priorities, handling difficult conversations, and making independent decisions. Test whether they can prioritise, communicate under pressure, take ownership, manage relationships, and deliver consistently. Expect some problem solving and judgment but not strategic vision. A mid-level nurse gets a staffing crisis requiring escalation decisions. A mid-level accountant gets a month-end pressure scenario with stakeholder pushback. A mid-level developer gets a production incident with competing priorities. Avoid framing as either pure task execution or pure strategic vision.`,
+ASSESSMENT STYLE: Resource Constraint Scenarios. Give them a task then add a constraint mid-scenario. "You need to deliver the project by Friday, but the budget was just cut by 20% and your best team member called in sick." Build scenarios that involve managing competing priorities, handling difficult conversations, and making independent decisions. Test resourcefulness, problem-solving, prioritisation, and resilience. Expect 150-250 word responses with structured thinking. A mid-level nurse gets a staffing crisis requiring escalation decisions. A mid-level accountant gets a month-end pressure scenario with stakeholder pushback. Avoid framing as either pure task execution or pure strategic vision.`,
 
-      senior: `SENIORITY: SENIOR / LEADERSHIP.
-Build scenarios that involve strategy, trade-offs, team leadership, commercial awareness, and high-stakes decisions. Test whether they can think strategically, lead through ambiguity, make tough calls, manage up and down, and own outcomes. Expect nuanced stakeholder management, commercial reasoning, and organisational awareness. A senior nurse gets a ward restructuring scenario with budget and staffing implications. A finance director gets a board presentation with conflicting data and political pressure. A senior developer gets an architecture decision with technical debt versus delivery trade-offs. Do NOT reduce these scenarios to simple task execution.`,
+      senior: `SENIORITY: LEADERSHIP.
+ASSESSMENT STYLE: Stakeholder Conflict Navigation. Present two conflicting but equally valid opinions from senior stakeholders. "The CFO wants to cut the marketing budget by 40%. The CMO says this will destroy the brand. You are the MD. What do you do?" Build scenarios involving strategy, trade-offs, political intelligence, and high-stakes decisions. Test strategic thinking, stakeholder management, decision-making under ambiguity, and ability to lead through conflicting priorities. Expect detailed 250-400 word responses with nuanced reasoning. Frame scenarios in a boardroom context with named stakeholders holding opposing positions. A finance director gets a board presentation with conflicting data. A senior developer gets an architecture decision with trade-offs. Do NOT reduce these scenarios to simple task execution.`,
     }
 
     const seniorityGuidanceBlock = `\n\nSENIORITY GUIDANCE (you MUST follow this in addition to the sector guidance):\n${SENIORITY_GUIDANCE[seniorityTier]}\nThis applies regardless of sector. Combine the sector framing with this seniority calibration. A junior in any sector should never get a leadership scenario. A senior in any sector should never get a pure task-execution scenario.\n`
@@ -470,6 +474,7 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         role_title,
         job_description,
         detected_role_type,
+        role_level: roleLevel,
         scenarios,
         skill_weights: skill_weights || { Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 },
         status: 'active',
