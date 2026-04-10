@@ -782,6 +782,21 @@ function DemoCandidateInner({ params }) {
         @media print { .ob-detail { display: flex !important; } }
       `}</style>
 
+      {/* DEBUG: mobile detection test – remove after confirming */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        background: isMobile ? 'red' : 'blue',
+        color: 'white',
+        padding: '12px',
+        fontSize: '14px',
+      }}>
+        isMobile={String(isMobile)} | window.innerWidth={typeof window !== 'undefined' ? window.innerWidth : 'SSR'}
+      </div>
+
       {/* Demo banner fixed at top */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 300 }}>
         <DemoBanner />
