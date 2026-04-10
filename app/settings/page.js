@@ -165,6 +165,9 @@ export default function SettingsPage() {
   const [companyFocused, setCompanyFocused] = useState(false)
   const [industryFocused, setIndustryFocused] = useState(false)
   const [companySizeFocused, setCompanySizeFocused] = useState(false)
+  // Credits (pay-per-assessment)
+  const [assessmentCredits, setAssessmentCredits] = useState([])
+
   // Weightings tab (employer only)
   const [weights, setWeights] = useState(DEFAULT_WEIGHTS)
   const [savingWeights, setSavingWeights] = useState(false)
@@ -221,6 +224,12 @@ export default function SettingsPage() {
           .eq('user_id', user.id)
           .gte('created_at', startOfMonth)
         setMonthlyCount(count || 0)
+
+        // Load assessment credits
+        const { data: credits } = await supabase.from('assessment_credits')
+          .select('credit_type, credits_remaining, credits_purchased, last_purchased_at')
+          .eq('user_id', user.id)
+        if (credits && credits.length > 0) setAssessmentCredits(credits)
       } catch (err) {
         setError(err.message)
       } finally {
@@ -823,6 +832,61 @@ export default function SettingsPage() {
                 >
                   Contact us →
                 </a>
+              </div>
+            )}
+            {/* ── Assessment Credits (pay-per-assessment) ── */}
+            {assessmentCredits.length > 0 && (
+              <div style={{ ...cs, marginBottom: 16 }}>
+                <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: TX }}>Assessment Credits</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                  {[
+                    { type: 'speed-fit', label: 'Speed-Fit' },
+                    { type: 'depth-fit', label: 'Depth-Fit' },
+                    { type: 'strategy-fit', label: 'Strategy-Fit' },
+                    { type: 'immersive', label: 'Immersive Add-on' },
+                  ].map(ct => {
+                    const credit = assessmentCredits.find(c => c.credit_type === ct.type)
+                    if (!credit) return null
+                    return (
+                      <div key={ct.type} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: BG, border: `1px solid ${BD}`, borderRadius: 8 }}>
+                        <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX }}>{ct.label}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: credit.credits_remaining > 0 ? TEAL : TX3 }}>{credit.credits_remaining}</span>
+                          <span style={{ fontFamily: F, fontSize: 11, color: TX3 }}>remaining</span>
+                        </div>
+                      </div>
+                    )
+                  }).filter(Boolean)}
+                </div>
+                {(() => {
+                  const lastPurchase = assessmentCredits.reduce((latest, c) => {
+                    if (!c.last_purchased_at) return latest
+                    return !latest || new Date(c.last_purchased_at) > new Date(latest) ? c.last_purchased_at : latest
+                  }, null)
+                  return lastPurchase ? (
+                    <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: '0 0 14px' }}>
+                      Last purchase: {new Date(lastPurchase).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                  ) : null
+                })()}
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <a href="/#pricing" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '10px 20px', borderRadius: 8, border: 'none',
+                    background: TEAL, color: NAVY, fontFamily: F, fontSize: 13, fontWeight: 700,
+                    textDecoration: 'none',
+                  }}>
+                    Buy more credits
+                  </a>
+                  <a href="/login" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '10px 20px', borderRadius: 8, border: `1.5px solid ${BD}`,
+                    background: 'transparent', color: TX2, fontFamily: F, fontSize: 13, fontWeight: 600,
+                    textDecoration: 'none',
+                  }}>
+                    Switch to monthly subscription
+                  </a>
+                </div>
               </div>
             )}
           </div>

@@ -464,8 +464,55 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
     else if (has('director', 'head of', 'chief', 'managing director', 'general manager')) detected_role_type = 'management'
     else if (has('office manager', 'office', 'admin', 'administrator', 'receptionist', 'secretary', 'personal assistant', ' pa ', 'executive assistant')) detected_role_type = 'office'
 
-    // Save assessment to Supabase (use service role to bypass RLS for the insert)
+    // ── Plan / credit check ──────────────────────────────────────────────────
     const adminClient = createServiceClient()
+
+    const { data: userProfile } = await adminClient
+      .from('users')
+      .select('plan, subscription_status')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
+    const activeSub = userProfile?.subscription_status === 'active'
+    const planKey = (userProfile?.plan || 'starter').toLowerCase()
+    const planLimit = PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter
+
+    // Map mode to credit type
+    const creditTypeMap = { quick: 'speed-fit', standard: 'depth-fit', advanced: 'strategy-fit' }
+    const creditType = creditTypeMap[mode] || 'depth-fit'
+
+    if (activeSub && planLimit !== null) {
+      // Check monthly usage against plan limit
+      const now = new Date()
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+      const { count } = await adminClient.from('assessments')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', startOfMonth)
+      if ((count || 0) >= planLimit) {
+        return NextResponse.json({ error: 'limit_reached', message: `Monthly assessment limit reached (${planLimit}). Upgrade your plan or purchase individual credits.` }, { status: 403 })
+      }
+    } else if (!activeSub) {
+      // Pay-per-assessment: check credits
+      const { data: credit } = await adminClient
+        .from('assessment_credits')
+        .select('credits_remaining')
+        .eq('user_id', user.id)
+        .eq('credit_type', creditType)
+        .maybeSingle()
+
+      if (!credit || credit.credits_remaining <= 0) {
+        return NextResponse.json({ error: 'no_credits', message: 'No credits remaining. Purchase more at prodicta.co.uk/pricing' }, { status: 403 })
+      }
+
+      // Deduct one credit
+      await adminClient.from('assessment_credits').update({
+        credits_remaining: credit.credits_remaining - 1,
+      }).eq('user_id', user.id).eq('credit_type', creditType)
+    }
+
+    // Save assessment to Supabase
 
     const { data: assessment, error } = await adminClient
       .from('assessments')

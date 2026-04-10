@@ -224,10 +224,12 @@ export default function NewAssessmentPage() {
       if (profile?.company_name) setCompanyName(profile.company_name)
       if (profile?.account_type) setAccountType(profile.account_type)
 
-      // Check monthly usage limit
+      // Check monthly usage limit or credits
       const planKey = (profile?.plan || 'starter').toLowerCase()
       const planLimit = PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter
-      if (planLimit !== null) {
+      const isActiveSub = profile?.subscription_status === 'active'
+
+      if (isActiveSub && planLimit !== null) {
         const now = new Date()
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
         const { count } = await supabase.from('assessments')
@@ -237,6 +239,14 @@ export default function NewAssessmentPage() {
         const used = count || 0
         setLimitInfo({ used, limit: planLimit })
         if (used >= planLimit) setAtLimit(true)
+      } else if (!isActiveSub) {
+        // Check pay-per-assessment credits
+        const { data: credits } = await supabase.from('assessment_credits')
+          .select('credit_type, credits_remaining')
+          .eq('user_id', user.id)
+        const totalCredits = (credits || []).reduce((sum, c) => sum + (c.credits_remaining || 0), 0)
+        if (totalCredits <= 0) setAtLimit(true)
+        setLimitInfo({ used: 0, limit: totalCredits, isCredits: true })
       }
 
       // Load saved templates
