@@ -3476,6 +3476,61 @@ export default function CandidateReportPage({ params }) {
                 })()}
 
                 {/* ══════════════════════════════════════════════════
+                    SPOKEN DELIVERY (only if voice recordings exist)
+                ══════════════════════════════════════════════════ */}
+                {results.spoken_delivery_score != null && (
+                  <ScrollReveal delay={60}>
+                  <Card style={{ marginBottom: 20 }} topColor={TEAL}>
+                    <SectionHeading tooltip="This candidate chose to respond by voice on one or more scenarios. This section analyses their spoken delivery quality, confidence, and clarity.">
+                      Spoken Delivery
+                    </SectionHeading>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+                      How this candidate communicates under pressure in their own voice
+                    </p>
+
+                    <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 24, flexDirection: isMobile ? 'column' : 'row', marginBottom: 18 }}>
+                      {/* Score ring */}
+                      <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+                        <svg width={72} height={72} viewBox="0 0 72 72">
+                          <circle cx={36} cy={36} r={30} fill="none" stroke={BD} strokeWidth={6} />
+                          <circle cx={36} cy={36} r={30} fill="none" stroke={TEAL} strokeWidth={6}
+                            strokeDasharray={`${(results.spoken_delivery_score / 100) * 2 * Math.PI * 30} ${2 * Math.PI * 30}`}
+                            strokeLinecap="round" transform="rotate(-90 36 36)"
+                          />
+                        </svg>
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: TEAL }}>{results.spoken_delivery_score}</span>
+                        </div>
+                      </div>
+                      <div>
+                        {results.spoken_delivery_narrative && (
+                          <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.65, margin: '0 0 10px' }}>
+                            {results.spoken_delivery_narrative}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Audio playback widgets */}
+                    {results.audio_recording_urls && Object.entries(results.audio_recording_urls).map(([key, url]) => (
+                      <div key={key} style={{
+                        background: BG, border: `1px solid ${BD}`, borderRadius: 8,
+                        padding: '10px 14px', marginBottom: 8,
+                      }}>
+                        <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                          {key.replace('_', ' ')}
+                        </div>
+                        <audio src={url} controls style={{ width: '100%' }} />
+                      </div>
+                    ))}
+                    <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: '8px 0 0', fontStyle: 'italic' }}>
+                      This candidate chose to respond by voice. The recordings are available to replay above.
+                    </p>
+                  </Card>
+                  </ScrollReveal>
+                )}
+
+                {/* ══════════════════════════════════════════════════
                     STRENGTHS
                 ══════════════════════════════════════════════════ */}
                 {results.strengths?.length > 0 && (

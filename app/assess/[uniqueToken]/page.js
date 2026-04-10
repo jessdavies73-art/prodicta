@@ -308,6 +308,61 @@ function ActivePage({ candidate, assessment, onSubmit }) {
   const [timeLefts, setTimeLefts] = useState(scenarios.map(s => (s.timeMinutes || 10) * 60))
   const [timeTakens, setTimeTakens] = useState(scenarios.map(() => 0))
 
+  // Voice recording state
+  const mode = (assessment.assessment_mode || 'standard').toLowerCase()
+  const showRecordToggle = mode !== 'quick'
+  const [inputModes, setInputModes] = useState(scenarios.map(() => 'type')) // 'type' or 'record'
+  const [audioBlobs, setAudioBlobs] = useState(scenarios.map(() => null))
+  const [audioUrls, setAudioUrls] = useState(scenarios.map(() => null))
+  const [recording, setRecording] = useState(false)
+  const [recordTime, setRecordTime] = useState(0)
+  const [audioPlaying, setAudioPlaying] = useState(false)
+  const mediaRecorderRef = useRef(null)
+  const recordTimerRef = useRef(null)
+  const audioChunksRef = useRef([])
+
+  function startRecording() {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      audioChunksRef.current = []
+      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+      mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
+      mr.onstop = () => {
+        stream.getTracks().forEach(t => t.stop())
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        const url = URL.createObjectURL(blob)
+        setAudioBlobs(prev => { const n = [...prev]; n[scenarioIndex] = blob; return n })
+        setAudioUrls(prev => { const n = [...prev]; n[scenarioIndex] = url; return n })
+        setRecording(false)
+        clearInterval(recordTimerRef.current)
+      }
+      mediaRecorderRef.current = mr
+      mr.start()
+      setRecording(true)
+      setRecordTime(0)
+      recordTimerRef.current = setInterval(() => {
+        setRecordTime(prev => {
+          if (prev >= 59) { mr.stop(); return 60 }
+          return prev + 1
+        })
+      }, 1000)
+    }).catch(() => {
+      alert('Microphone access is required for voice recording. Please allow access and try again.')
+    })
+  }
+
+  function stopRecording() {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop()
+    }
+  }
+
+  function clearRecording() {
+    if (audioUrls[scenarioIndex]) URL.revokeObjectURL(audioUrls[scenarioIndex])
+    setAudioBlobs(prev => { const n = [...prev]; n[scenarioIndex] = null; return n })
+    setAudioUrls(prev => { const n = [...prev]; n[scenarioIndex] = null; return n })
+    setRecordTime(0)
+  }
+
   const intervalRef = useRef(null)
   const startTimeRef = useRef(Date.now())
 
@@ -350,10 +405,31 @@ function ActivePage({ candidate, assessment, onSubmit }) {
 
     if (isLast) {
       clearInterval(intervalRef.current)
+      // Upload any audio recordings to Supabase Storage
+      const uploadedAudioUrls = [...audioUrls]
+      for (let idx = 0; idx < scenarios.length; idx++) {
+        if (audioBlobs[idx]) {
+          try {
+            const { createClient } = await import('@/lib/supabase')
+            const supabase = createClient()
+            const path = `recordings/${assessment.id}/${candidate.id}/scenario_${idx}.webm`
+            const { error: upErr } = await supabase.storage.from('recordings').upload(path, audioBlobs[idx], {
+              contentType: 'audio/webm', upsert: true,
+            })
+            if (!upErr) {
+              const { data: urlData } = supabase.storage.from('recordings').getPublicUrl(path)
+              uploadedAudioUrls[idx] = urlData?.publicUrl || null
+            }
+          } catch {}
+        }
+      }
+
       const payload = scenarios.map((_, i) => ({
         scenario_index: i,
-        response_text: responses[i],
+        response_text: responses[i] || (audioBlobs[i] ? '[Voice response recorded]' : ''),
         time_taken_seconds: i === scenarioIndex ? elapsed : timeTakens[i],
+        audio_url: uploadedAudioUrls[i] || null,
+        input_mode: inputModes[i],
       }))
       onSubmit(payload)
     } else {
@@ -503,49 +579,144 @@ function ActivePage({ candidate, assessment, onSubmit }) {
               }}>
                 Your Response
               </label>
-              <textarea
-                value={responses[scenarioIndex]}
-                onChange={e => {
-                  const val = e.target.value
-                  setResponses(prev => {
-                    const next = [...prev]
-                    next[scenarioIndex] = val
-                    return next
-                  })
-                  // Auto-grow
-                  e.target.style.height = 'auto'
-                  e.target.style.height = Math.max(200, e.target.scrollHeight) + 'px'
-                }}
-                placeholder="Write your response here..."
-                rows={8}
-                style={{
-                  width: '100%',
-                  minHeight: 200,
-                  fontFamily: F,
-                  fontSize: 15,
-                  color: TX,
-                  background: CARD,
-                  border: `1.5px solid ${BD}`,
-                  borderRadius: 10,
-                  padding: '14px 16px',
-                  resize: 'vertical',
-                  outline: 'none',
-                  lineHeight: 1.7,
-                  boxSizing: 'border-box',
-                  transition: 'border-color 0.15s',
-                }}
-                onFocus={e => e.currentTarget.style.borderColor = TEAL}
-                onBlur={e => e.currentTarget.style.borderColor = BD}
-              />
-              <div style={{
-                fontFamily: FM,
-                fontSize: 13,
-                color: TX3,
-                marginTop: 6,
-                textAlign: 'right',
-              }}>
-                {wordCount(responses[scenarioIndex])} words
-              </div>
+
+              {/* Voice recording toggle */}
+              {showRecordToggle && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  {['type', 'record'].map(m => (
+                    <button
+                      key={m}
+                      onClick={() => setInputModes(prev => { const n = [...prev]; n[scenarioIndex] = m; return n })}
+                      style={{
+                        padding: '6px 14px', borderRadius: 7, fontFamily: F, fontSize: 13, fontWeight: 600,
+                        cursor: 'pointer', border: `1.5px solid ${inputModes[scenarioIndex] === m ? TEAL : BD}`,
+                        background: inputModes[scenarioIndex] === m ? TEALLT : '#fff',
+                        color: inputModes[scenarioIndex] === m ? TEALD : TX2,
+                      }}
+                    >
+                      {m === 'type' ? 'Type your response' : 'Record a voice note'}
+                    </button>
+                  ))}
+                  {mode === 'advanced' && (
+                    <span style={{ fontSize: 11, color: TEALD, fontFamily: F, fontWeight: 600 }}>Recommended for senior roles</span>
+                  )}
+                </div>
+              )}
+
+              {/* Text input (default) */}
+              {inputModes[scenarioIndex] === 'type' && (
+                <>
+                  <textarea
+                    value={responses[scenarioIndex]}
+                    onChange={e => {
+                      const val = e.target.value
+                      setResponses(prev => {
+                        const next = [...prev]
+                        next[scenarioIndex] = val
+                        return next
+                      })
+                      e.target.style.height = 'auto'
+                      e.target.style.height = Math.max(200, e.target.scrollHeight) + 'px'
+                    }}
+                    placeholder="Write your response here..."
+                    rows={8}
+                    style={{
+                      width: '100%', minHeight: 200, fontFamily: F, fontSize: 15, color: TX,
+                      background: CARD, border: `1.5px solid ${BD}`, borderRadius: 10,
+                      padding: '14px 16px', resize: 'vertical', outline: 'none',
+                      lineHeight: 1.7, boxSizing: 'border-box', transition: 'border-color 0.15s',
+                    }}
+                    onFocus={e => e.currentTarget.style.borderColor = TEAL}
+                    onBlur={e => e.currentTarget.style.borderColor = BD}
+                  />
+                  <div style={{ fontFamily: FM, fontSize: 13, color: TX3, marginTop: 6, textAlign: 'right' }}>
+                    {wordCount(responses[scenarioIndex])} words
+                  </div>
+                </>
+              )}
+
+              {/* Voice recording interface */}
+              {inputModes[scenarioIndex] === 'record' && (
+                <div style={{ background: CARD, border: `1.5px solid ${BD}`, borderRadius: 12, padding: '24px', textAlign: 'center' }}>
+                  {!audioUrls[scenarioIndex] && !recording && (
+                    <div>
+                      <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: '0 0 16px' }}>
+                        Click record and speak your response clearly. Maximum 60 seconds.
+                      </p>
+                      <button
+                        onClick={startRecording}
+                        style={{
+                          width: 64, height: 64, borderRadius: '50%', border: 'none',
+                          background: '#dc2626', cursor: 'pointer', position: 'relative',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff' }} />
+                      </button>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 8 }}>Tap to record</div>
+                    </div>
+                  )}
+
+                  {recording && (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 16 }}>
+                        <div style={{
+                          width: 12, height: 12, borderRadius: '50%', background: '#dc2626',
+                          animation: 'pulse 1s ease infinite',
+                        }} />
+                        <span style={{ fontFamily: FM, fontSize: 24, fontWeight: 700, color: TX }}>{formatTime(recordTime)}</span>
+                        <span style={{ fontFamily: F, fontSize: 12, color: TX3 }}>/ 1:00</span>
+                      </div>
+                      {/* Simple bars animation */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, height: 40, marginBottom: 16 }}>
+                        {Array.from({ length: 20 }).map((_, i) => (
+                          <div key={i} style={{
+                            width: 3, borderRadius: 2, background: TEAL,
+                            height: `${15 + Math.random() * 25}px`,
+                            animation: `pulse ${0.3 + Math.random() * 0.5}s ease infinite`,
+                            animationDelay: `${i * 0.05}s`,
+                          }} />
+                        ))}
+                      </div>
+                      <button
+                        onClick={stopRecording}
+                        style={{
+                          width: 56, height: 56, borderRadius: '50%', border: 'none',
+                          background: '#dc2626', cursor: 'pointer',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        <div style={{ width: 18, height: 18, borderRadius: 3, background: '#fff' }} />
+                      </button>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 8 }}>Tap to stop</div>
+                    </div>
+                  )}
+
+                  {audioUrls[scenarioIndex] && !recording && (
+                    <div>
+                      <div style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD, marginBottom: 12 }}>
+                        Recording complete ({formatTime(recordTime)})
+                      </div>
+                      <audio
+                        src={audioUrls[scenarioIndex]}
+                        controls
+                        style={{ width: '100%', maxWidth: 400, marginBottom: 12 }}
+                      />
+                      <div>
+                        <button
+                          onClick={clearRecording}
+                          style={{
+                            padding: '8px 18px', borderRadius: 8, border: `1.5px solid ${BD}`,
+                            background: '#fff', color: TX2, fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                          }}
+                        >
+                          Re-record
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Next / Submit */}

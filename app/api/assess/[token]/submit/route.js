@@ -33,10 +33,19 @@ export async function POST(request, { params }) {
           scenario_index: r.scenario_index,
           response_text: r.response_text,
           time_taken_seconds: r.time_taken_seconds || 0,
+          audio_url: r.audio_url || null,
+          input_mode: r.input_mode || 'type',
         }))
       )
 
     if (respError) throw respError
+
+    // Store audio recording URLs on results if any exist
+    // -- ALTER TABLE responses ADD COLUMN audio_url TEXT;
+    // -- ALTER TABLE responses ADD COLUMN input_mode TEXT DEFAULT 'type';
+    // -- ALTER TABLE results ADD COLUMN spoken_delivery_score INTEGER;
+    // -- ALTER TABLE results ADD COLUMN spoken_delivery_narrative TEXT;
+    // -- ALTER TABLE results ADD COLUMN audio_recording_urls JSONB;
 
     // Mark candidate as completed
     const { error: updateError } = await adminClient

@@ -1789,6 +1789,57 @@ function DemoCandidateInner({ params }) {
               </div>
             </ScrollReveal>
 
+            {/* ── SPOKEN DELIVERY (demo for Sophie Chen) ── */}
+            {params.candidateId === 'demo-c1' && (
+              <ScrollReveal delay={60}>
+                <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '24px 28px', marginBottom: 20, borderTop: `3px solid ${TEAL}` }}>
+                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>Spoken Delivery</h2>
+                  <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+                    How this candidate communicates under pressure in their own voice
+                  </p>
+                  <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 24, flexDirection: isMobile ? 'column' : 'row', marginBottom: 18 }}>
+                    <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+                      <svg width={72} height={72} viewBox="0 0 72 72">
+                        <circle cx={36} cy={36} r={30} fill="none" stroke={BD} strokeWidth={6} />
+                        <circle cx={36} cy={36} r={30} fill="none" stroke={TEAL} strokeWidth={6}
+                          strokeDasharray={`${0.87 * 2 * Math.PI * 30} ${2 * Math.PI * 30}`}
+                          strokeLinecap="round" transform="rotate(-90 36 36)"
+                        />
+                      </svg>
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: TEAL }}>87</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.65, margin: '0 0 10px' }}>
+                        Sophie's spoken delivery was assured and well-paced. Her tone remained calm and authoritative throughout, and she structured her verbal response with clear signposting. No hesitation patterns detected.
+                      </p>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {['Confident', 'Measured', 'Clear', 'Authoritative'].map(t => (
+                          <span key={t} style={{ fontSize: 11.5, fontWeight: 700, color: TEALD, background: TEALLT, border: `1px solid ${TEAL}44`, padding: '3px 10px', borderRadius: 20 }}>{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ position: 'relative', background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '14px', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, borderRadius: 8, backdropFilter: 'blur(3px)' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX2, display: 'block', marginBottom: 8 }}>Voice recording available with subscription</span>
+                        <button
+                          onClick={() => setSignupPrompt(true)}
+                          style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                        >
+                          Get started
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Scenario 1</div>
+                    <div style={{ height: 40, background: BD, borderRadius: 4, opacity: 0.5 }} />
+                  </div>
+                </div>
+              </ScrollReveal>
+            )}
+
             {/* ── BLURRED / LOCKED PREMIUM SECTIONS ── */}
             {[
               { title: 'Predicted Outcomes', desc: 'See the probability of passing probation, churn risk, and top performer likelihood with dynamic colour-coded bars.', variant: 'cards' },
