@@ -480,30 +480,8 @@ function DemoDashboardInner() {
           </div>
         </div>
 
-        {/* Assessment Decline Insights + Speed to Offer + Prediction Accuracy */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 16, marginBottom: 24 }}>
-          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Assessment completion insights</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TX2 }}>Completion rate</span>
-                  <span style={{ fontFamily: FM, fontSize: 15, fontWeight: 800, color: GRN }}>89%</span>
-                </div>
-                <div style={{ height: 6, background: `${GRN}22`, borderRadius: 3, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: '89%', background: GRN, borderRadius: 3 }} />
-                </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <span style={{ fontSize: 12.5, color: TX2 }}>Average time to complete</span>
-                <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 700, color: TEALD }}>23 min</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <span style={{ fontSize: 12.5, color: TX2 }}>Started but not finished</span>
-                <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 700, color: AMB }}>3</span>
-              </div>
-            </div>
-          </div>
+        {/* Speed to Offer + Prediction Accuracy */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
           <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Speed to offer</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
