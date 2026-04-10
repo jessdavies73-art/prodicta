@@ -452,7 +452,7 @@ const NAV_SECTIONS = [
   { id: 'skills',        label: 'Skills' },
   { id: 'strengths',     label: 'Strengths' },
   { id: 'watchouts',     label: 'Watch-outs' },
-  { id: 'onboarding',    label: 'Onboarding' },
+  { id: 'onboarding',    label: 'Success Plan' },
   { id: 'questions',     label: 'Questions' },
 ]
 
@@ -1550,7 +1550,7 @@ function DemoCandidateInner({ params }) {
               <ScrollReveal id="onboarding" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-                    <SectionHeading tooltip="A structured 6-week plan tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.">Personalised Onboarding Plan</SectionHeading>
+                    <SectionHeading tooltip="A structured 90-day success plan with milestones, stakeholder introductions, and early wins.">90-Day Success Plan</SectionHeading>
                     <SectionToggle expanded={expandedSections.onboarding} onToggle={() => toggleSection('onboarding')} />
                   </div>
                   {expandedSections.onboarding && <>

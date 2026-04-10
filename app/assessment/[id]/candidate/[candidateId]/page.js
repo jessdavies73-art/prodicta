@@ -3735,8 +3735,8 @@ export default function CandidateReportPage({ params }) {
                   <ScrollReveal id="onboarding" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 0 }}>
-                      <SectionHeading tooltip="A structured 6-week plan tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.">
-                        Personalised Onboarding Plan
+                      <SectionHeading tooltip={candidate?.assessments?.role_level === 'OPERATIONAL' ? 'A practical daily management guide for the first 6 weeks, focused on reliability, safety, and process adherence.' : candidate?.assessments?.role_level === 'LEADERSHIP' ? 'A strategic onboarding brief covering stakeholder landscape, listening tour, and 90-day priorities.' : 'A structured 90-day success plan with milestones, stakeholder introductions, and early wins.'}>
+                        {candidate?.assessments?.role_level === 'OPERATIONAL' ? 'Day One Management Guide' : candidate?.assessments?.role_level === 'LEADERSHIP' ? 'Strategic Onboarding Brief' : '90-Day Success Plan'}
                       </SectionHeading>
                       <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                       <button
@@ -3747,7 +3747,8 @@ export default function CandidateReportPage({ params }) {
                           let html = `<div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;padding:32px;color:#0f2137">`
                           html += `<div style="border-bottom:3px solid #00BFA5;padding-bottom:12px;margin-bottom:24px">`
                           html += `<div style="font-size:11px;font-weight:700;color:#00BFA5;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px">PRODICTA</div>`
-                          html += `<h1 style="font-size:22px;font-weight:800;margin:0 0 4px">Personalised Onboarding Plan</h1>`
+                          const obHeading = candidate?.assessments?.role_level === 'OPERATIONAL' ? 'Day One Management Guide' : candidate?.assessments?.role_level === 'LEADERSHIP' ? 'Strategic Onboarding Brief' : '90-Day Success Plan'
+                          html += `<h1 style="font-size:22px;font-weight:800;margin:0 0 4px">${obHeading}</h1>`
                           html += `<p style="margin:0;font-size:14px;color:#64748b">${candidateName}${roleName ? ` &nbsp;|&nbsp; ${roleName}` : ''}</p></div>`
                           plan.forEach(item => {
                             if (typeof item !== 'object' || !item.objective) return
