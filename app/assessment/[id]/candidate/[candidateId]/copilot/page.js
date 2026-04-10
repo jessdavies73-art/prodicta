@@ -65,6 +65,13 @@ export default function ProbationCopilotPage({ params }) {
   const [savedAt, setSavedAt] = useState(null)
   const [savingFlag, setSavingFlag] = useState(false)
 
+  // Redline Alerts
+  const [redlineStatus, setRedlineStatus] = useState(null) // { deviation_status, reason, deviating_dimension, assessment_prediction, actual_signal, urgency }
+  const [redlineLoading, setRedlineLoading] = useState(false)
+  const [interventionPlan, setInterventionPlan] = useState(null)
+  const [interventionLoading, setInterventionLoading] = useState(false)
+  const [interventionCopied, setInterventionCopied] = useState(false)
+
   // Probation Review Generator
   const [reviewMilestone, setReviewMilestone] = useState('month1')
   const [reviewLoading, setReviewLoading] = useState(false)
@@ -95,6 +102,21 @@ export default function ProbationCopilotPage({ params }) {
           setPredictionResponses(cop.prediction_responses || {})
           setManagerNotes(cop.manager_notes || {})
           setSavedAt(cop.last_updated)
+        }
+
+        // Run redline deviation analysis if we have check-in data
+        if (cop && (Object.keys(cop.watchout_statuses || {}).length > 0 || Object.values(cop.manager_notes || {}).some(n => n && n.trim()))) {
+          try {
+            const rlRes = await fetch(`/api/candidates/${params.candidateId}/redline`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'analyse' }),
+            })
+            if (rlRes.ok) {
+              const rlData = await rlRes.json()
+              setRedlineStatus(rlData)
+            }
+          } catch {}
         }
       } catch (e) {
         console.error(e)
@@ -186,6 +208,25 @@ export default function ProbationCopilotPage({ params }) {
     }
   }
 
+  async function generateInterventionPlan() {
+    setInterventionLoading(true)
+    setInterventionCopied(false)
+    try {
+      const res = await fetch(`/api/candidates/${params.candidateId}/redline`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'intervene', deviation_reason: redlineStatus?.reason }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setInterventionPlan(data.plan)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setInterventionLoading(false)
+    }
+  }
+
   function setLight(idx, val) {
     setWatchoutStatuses(prev => ({ ...prev, [idx]: val }))
   }
@@ -261,6 +302,203 @@ export default function ProbationCopilotPage({ params }) {
             </button>
           </div>
         </div>
+
+        {/* Redline Alert Banner */}
+        {redlineStatus && redlineStatus.deviation_status === 'REDLINE' && (
+          <div style={{
+            background: 'linear-gradient(135deg, #fef2f2, #fff5f5)', border: `1.5px solid #fecaca`,
+            borderLeft: `5px solid ${RED}`, borderRadius: '0 12px 12px 0',
+            padding: isMobile ? '16px 18px' : '20px 24px', marginBottom: 16,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: RED, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Ic name="alert" size={16} color="#fff" />
+              </div>
+              <span style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: RED }}>Redline Alert</span>
+              {redlineStatus.urgency === 'immediate' && (
+                <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: RED, padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>Immediate</span>
+              )}
+            </div>
+            <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.65, margin: '0 0 6px' }}>
+              {redlineStatus.deviating_dimension && (
+                <><strong>{redlineStatus.deviating_dimension}</strong>{' '}</>
+              )}
+              {redlineStatus.assessment_prediction && (
+                <>scored at assessment as: {redlineStatus.assessment_prediction}. </>
+              )}
+              {redlineStatus.actual_signal && (
+                <>Check-ins now showing: {redlineStatus.actual_signal}. </>
+              )}
+            </p>
+            <p style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55, margin: '0 0 14px' }}>
+              {redlineStatus.reason}
+            </p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                onClick={generateInterventionPlan}
+                disabled={interventionLoading}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '10px 20px', borderRadius: 8, border: 'none',
+                  background: interventionLoading ? BD : RED, color: interventionLoading ? TX3 : '#fff',
+                  fontFamily: F, fontSize: 13, fontWeight: 700, cursor: interventionLoading ? 'wait' : 'pointer',
+                }}
+              >
+                {interventionLoading ? 'Generating...' : 'Generate Intervention Plan'}
+              </button>
+            </div>
+
+            {/* Intervention Plan Display */}
+            {interventionPlan && (
+              <div style={{ marginTop: 16, background: '#fff', border: `1px solid ${BD}`, borderRadius: 10, padding: '18px 22px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Intervention Plan</span>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => {
+                        const text = [
+                          `INTERVENTION PLAN: ${candidate?.name}`,
+                          `Role: ${candidate?.assessments?.role_title}`,
+                          '',
+                          'DIAGNOSIS',
+                          interventionPlan.diagnosis,
+                          '',
+                          'WEEK 1 ACTIONS',
+                          ...interventionPlan.week1_actions.map((a, i) => `${i + 1}. ${a}`),
+                          '',
+                          'WEEK 2 ACTIONS',
+                          ...interventionPlan.week2_actions.map((a, i) => `${i + 1}. ${a}`),
+                          '',
+                          'MONITORING',
+                          interventionPlan.monitoring,
+                          '',
+                          `RECOMMENDATION: ${(interventionPlan.recommendation || '').replace(/_/g, ' ')}`,
+                          interventionPlan.recommendation_reason,
+                        ].join('\n')
+                        navigator.clipboard.writeText(text)
+                        setInterventionCopied(true)
+                        setTimeout(() => setInterventionCopied(false), 2000)
+                      }}
+                      style={{
+                        padding: '5px 12px', borderRadius: 6, border: `1px solid ${BD}`,
+                        background: interventionCopied ? GRNBG : '#fff', color: interventionCopied ? GRN : TX2,
+                        fontFamily: F, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      }}
+                    >
+                      {interventionCopied ? 'Copied' : 'Copy plan'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        const subject = encodeURIComponent(`Intervention Plan: ${candidate?.name} - ${candidate?.assessments?.role_title}`)
+                        const body = encodeURIComponent([
+                          `Intervention Plan: ${candidate?.name}`,
+                          `Role: ${candidate?.assessments?.role_title}`,
+                          '',
+                          'Diagnosis:',
+                          interventionPlan.diagnosis,
+                          '',
+                          'Week 1 Actions:',
+                          ...interventionPlan.week1_actions.map((a, i) => `${i + 1}. ${a}`),
+                          '',
+                          'Week 2 Actions:',
+                          ...interventionPlan.week2_actions.map((a, i) => `${i + 1}. ${a}`),
+                          '',
+                          'Monitoring:',
+                          interventionPlan.monitoring,
+                          '',
+                          `Recommendation: ${(interventionPlan.recommendation || '').replace(/_/g, ' ')}`,
+                          interventionPlan.recommendation_reason,
+                        ].join('\n'))
+                        window.open(`mailto:?subject=${subject}&body=${body}`)
+                      }}
+                      style={{
+                        padding: '5px 12px', borderRadius: 6, border: `1px solid ${BD}`,
+                        background: '#fff', color: TX2,
+                        fontFamily: F, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      }}
+                    >
+                      Email to HR
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Diagnosis</div>
+                  <p style={{ fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.65, margin: 0 }}>{interventionPlan.diagnosis}</p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                  <div style={{ background: REDBG, border: `1px solid #fecaca`, borderRadius: 8, padding: '14px 16px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Week 1 Actions</div>
+                    {interventionPlan.week1_actions.map((a, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: RED, flexShrink: 0 }}>{i + 1}.</span>
+                        <span style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.55 }}>{a}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, padding: '14px 16px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Week 2 Actions</div>
+                    {interventionPlan.week2_actions.map((a, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: AMB, flexShrink: 0 }}>{i + 1}.</span>
+                        <span style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.55 }}>{a}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Monitoring</div>
+                  <p style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.6, margin: 0 }}>{interventionPlan.monitoring}</p>
+                </div>
+
+                <div style={{
+                  background: interventionPlan.recommendation === 'managed_exit' ? REDBG : interventionPlan.recommendation === 'extend_probation' ? AMBBG : TEALLT,
+                  border: `1px solid ${interventionPlan.recommendation === 'managed_exit' ? '#fecaca' : interventionPlan.recommendation === 'extend_probation' ? AMBBD : `${TEAL}55`}`,
+                  borderRadius: 8, padding: '12px 16px',
+                }}>
+                  <div style={{
+                    fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4,
+                    color: interventionPlan.recommendation === 'managed_exit' ? RED : interventionPlan.recommendation === 'extend_probation' ? AMB : TEALD,
+                  }}>
+                    Recommendation: {(interventionPlan.recommendation || '').replace(/_/g, ' ')}
+                  </div>
+                  <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0, lineHeight: 1.55 }}>{interventionPlan.recommendation_reason}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Watch Status Banner */}
+        {redlineStatus && redlineStatus.deviation_status === 'WATCH' && (
+          <div style={{
+            background: AMBBG, border: `1.5px solid ${AMBBD}`,
+            borderLeft: `5px solid ${AMB}`, borderRadius: '0 12px 12px 0',
+            padding: '14px 20px', marginBottom: 16,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <Ic name="alert" size={14} color={AMB} />
+              <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: AMB }}>Watch</span>
+            </div>
+            <p style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.55, margin: 0 }}>{redlineStatus.reason}</p>
+          </div>
+        )}
+
+        {/* On Track Indicator */}
+        {redlineStatus && redlineStatus.deviation_status === 'ON_TRACK' && redlineStatus.reason !== 'Insufficient data for analysis.' && redlineStatus.reason !== 'No check-in data recorded yet.' && (
+          <div style={{
+            background: GRNBG, border: `1px solid ${GRN}55`,
+            borderLeft: `5px solid ${GRN}`, borderRadius: '0 12px 12px 0',
+            padding: '12px 18px', marginBottom: 16,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Ic name="check" size={14} color={GRN} />
+              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: GRN }}>On track — performing as predicted</span>
+            </div>
+          </div>
+        )}
 
         {/* Timeline bar */}
         {timeline && (

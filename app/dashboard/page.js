@@ -258,6 +258,7 @@ export default function DashboardPage() {
   const isMobile = useIsMobile()
   const [pendingCheckins, setPendingCheckins] = useState([])
   const [selectedCandidates, setSelectedCandidates] = useState(new Set())
+  const [redlineCandidates, setRedlineCandidates] = useState(new Set())
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -416,6 +417,18 @@ export default function DashboardPage() {
 
         // Show onboarding wizard for new users
         if (prof && !prof.onboarding_complete) setShowOnboarding(true)
+
+        // Load redline statuses from probation_copilot
+        try {
+          const { data: copilotRows } = await supabase
+            .from('probation_copilot')
+            .select('candidate_id, overall_status')
+            .eq('user_id', u.id)
+            .in('overall_status', ['Critical', 'At Risk'])
+          if (copilotRows && copilotRows.length > 0) {
+            setRedlineCandidates(new Set(copilotRows.filter(r => r.overall_status === 'Critical').map(r => r.candidate_id)))
+          }
+        } catch {}
       } catch (err) {
         console.error(err)
         setError(err.message || 'Failed to load dashboard')
@@ -1251,8 +1264,22 @@ export default function DashboardPage() {
                                   <div style={{
                                     fontSize: 12.5, fontWeight: 600, color: TX,
                                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                    display: 'flex', alignItems: 'center', gap: 6,
                                   }}>
                                     {c.name}
+                                    {redlineCandidates.has(c.id) && (
+                                      <a
+                                        href={`/assessment/${c.assessments?.id}/candidate/${c.id}/copilot`}
+                                        onClick={e => e.stopPropagation()}
+                                        style={{
+                                          fontSize: 9, fontWeight: 800, color: '#fff', background: RED,
+                                          padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase',
+                                          letterSpacing: '0.04em', textDecoration: 'none', flexShrink: 0,
+                                        }}
+                                      >
+                                        Redline
+                                      </a>
+                                    )}
                                   </div>
                                   <div style={{
                                     fontSize: 11, color: TX3,

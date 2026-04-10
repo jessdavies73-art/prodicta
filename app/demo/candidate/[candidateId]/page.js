@@ -801,6 +801,70 @@ function DemoCandidateInner({ params }) {
           Back to dashboard
         </button>
 
+        {/* Demo Redline Alert for James O'Brien */}
+        {params.candidateId === 'demo-c4' && (
+          <div style={{
+            background: 'linear-gradient(135deg, #fef2f2, #fff5f5)', border: `1.5px solid #fecaca`,
+            borderLeft: `5px solid ${RED}`, borderRadius: '0 12px 12px 0',
+            padding: isMobile ? '16px 18px' : '20px 24px', marginBottom: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: RED, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Ic name="alert" size={16} color="#fff" />
+              </div>
+              <span style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: RED }}>Redline Alert</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: RED, padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>Immediate</span>
+            </div>
+            <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.65, margin: '0 0 6px' }}>
+              <strong>Execution Reliability</strong> scored 58 at assessment but check-ins show missed deadlines and task avoidance in the first two weeks.
+            </p>
+            <p style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55, margin: '0 0 14px' }}>
+              Assessment predicted high underperformance risk (74%) and low probation pass probability (27%). Early check-in signals confirm the predicted pattern of accountability avoidance is materialising faster than expected.
+            </p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+              <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 8, border: 'none', background: RED, color: '#fff', fontFamily: F, fontSize: 13, fontWeight: 700, opacity: 0.5, cursor: 'default', pointerEvents: 'none' }}>
+                Generate Intervention Plan — Available with subscription
+              </button>
+            </div>
+
+            {/* Sample intervention plan */}
+            <div style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 10, padding: '18px 22px' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Sample Intervention Plan</div>
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Diagnosis</div>
+                <p style={{ fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.65, margin: 0 }}>
+                  James is displaying the accountability avoidance pattern flagged in his assessment. His tendency to deflect responsibility is manifesting as missed deadlines and vague status updates, consistent with the "Confident Talker who Avoids Accountability" profile identified during scoring.
+                </p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                <div style={{ background: REDBG, border: `1px solid #fecaca`, borderRadius: 8, padding: '14px 16px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Week 1 Actions</div>
+                  <div style={{ fontSize: 13, color: TX, lineHeight: 1.55, marginBottom: 4 }}>1. Set three specific, measurable deliverables with hard deadlines</div>
+                  <div style={{ fontSize: 13, color: TX, lineHeight: 1.55, marginBottom: 4 }}>2. Daily 10-minute check-in requiring written progress updates</div>
+                  <div style={{ fontSize: 13, color: TX, lineHeight: 1.55 }}>3. Direct conversation about accountability expectations with documented outcomes</div>
+                </div>
+                <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, padding: '14px 16px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Week 2 Actions</div>
+                  <div style={{ fontSize: 13, color: TX, lineHeight: 1.55, marginBottom: 4 }}>1. Review week 1 deliverables against agreed standards</div>
+                  <div style={{ fontSize: 13, color: TX, lineHeight: 1.55, marginBottom: 4 }}>2. Introduce client-facing task with clear ownership and reporting line</div>
+                  <div style={{ fontSize: 13, color: TX, lineHeight: 1.55 }}>3. Document any further avoidance behaviour for probation review file</div>
+                </div>
+              </div>
+              <div style={{
+                background: REDBG, border: `1px solid #fecaca`, borderRadius: 8, padding: '12px 16px',
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Recommendation: Managed exit</div>
+                <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0, lineHeight: 1.55 }}>Given the assessment score of 35/100 and the early materialisation of predicted risks, begin preparing a structured exit plan alongside the intervention. If week 2 targets are not met, proceed to formal probation review.</p>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <button style={{ padding: '5px 12px', borderRadius: 6, border: `1px solid ${BD}`, background: '#fff', color: TX2, fontFamily: F, fontSize: 12, fontWeight: 600, opacity: 0.5, cursor: 'default', pointerEvents: 'none' }}>
+                  Email to HR — Available with subscription
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── CANDIDATE HEADER ── */}
         <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', flexDirection: isMobile ? 'column' : 'row' }}>
