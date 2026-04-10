@@ -1415,6 +1415,264 @@ function CompletePage({ candidateName }) {
   )
 }
 
+// ─── Virtual Workspace: Day 1 Simulation ─────────────────────────────────────
+function WorkspacePage({ assessment, candidate, onSubmit, onSkip }) {
+  const [content, setContent] = useState(null)
+  const [loadingContent, setLoadingContent] = useState(true)
+  const [emailOpen, setEmailOpen] = useState(null)
+  const [emailReplies, setEmailReplies] = useState({})
+  const [emailRead, setEmailRead] = useState({})
+  const [msgReplies, setMsgReplies] = useState({})
+  const [taskActions, setTaskActions] = useState({})
+  const [taskNotes, setTaskNotes] = useState({})
+  const [gapPlans, setGapPlans] = useState({})
+  const [surpriseShown, setSurpriseShown] = useState(false)
+  const [surpriseReply, setSurpriseReply] = useState('')
+  const [timeLeft, setTimeLeft] = useState(15 * 60)
+  const timerRef = useRef(null)
+  const surpriseRef = useRef(null)
+
+  useEffect(() => {
+    fetch(`/api/assessment/${assessment.id}/workspace-content`)
+      .then(r => r.json())
+      .then(data => { if (!data.error) setContent(data) })
+      .finally(() => setLoadingContent(false))
+  }, [assessment.id])
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setTimeLeft(p => { if (p <= 1) { clearInterval(timerRef.current); return 0 }; return p - 1 })
+    }, 1000)
+    surpriseRef.current = setTimeout(() => setSurpriseShown(true), 180000) // 3 minutes
+    return () => { clearInterval(timerRef.current); clearTimeout(surpriseRef.current) }
+  }, [])
+
+  const emailsReplied = Object.keys(emailReplies).filter(k => emailReplies[k]?.trim()).length
+  const tasksHandled = Object.keys(taskActions).length
+  const msgsReplied = Object.keys(msgReplies).filter(k => msgReplies[k]?.trim()).length
+  const canSubmit = emailsReplied >= 2 && tasksHandled >= 3
+  const mins = Math.floor(timeLeft / 60)
+  const secs = timeLeft % 60
+
+  function handleSubmit() {
+    clearInterval(timerRef.current)
+    onSubmit({
+      email_replies: emailReplies,
+      email_read: emailRead,
+      message_replies: msgReplies,
+      task_actions: taskActions,
+      task_notes: taskNotes,
+      gap_plans: gapPlans,
+      surprise_reply: surpriseReply,
+      time_remaining: timeLeft,
+    })
+  }
+
+  if (loadingContent) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f3f5f8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: F }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: 32, height: 32, border: `3px solid ${BD}`, borderTopColor: TEAL, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <div style={{ color: TX2, fontSize: 14 }}>Preparing your workspace...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!content) return <div style={{ minHeight: '100vh', background: '#f3f5f8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: F, color: TX2 }}>Unable to load workspace.</div>
+
+  const emails = content.emails || []
+  const messages = content.messages || []
+  const tasks = content.tasks || []
+  const gaps = content.calendar_gaps || []
+  const fixed = content.fixed_meetings || []
+  const surprise = content.surprise_message
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#f3f5f8', fontFamily: F }}>
+      {/* Header */}
+      <div style={{ background: NAVY, padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 14, fontWeight: 800, color: TEAL }}>PRODICTA</span>
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>{assessment.role_title} — Day 1, 9:00am</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 700, color: timeLeft < 120 ? '#dc2626' : '#fff' }}>{mins}:{String(secs).padStart(2, '0')}</span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Emails {emailsReplied}/{emails.length} | Tasks {tasksHandled}/{tasks.length} | Messages {msgsReplied}/{messages.length}</span>
+        </div>
+      </div>
+
+      {/* Surprise notification */}
+      {surpriseShown && surprise && !surpriseReply && (
+        <div style={{ position: 'fixed', top: 60, right: 20, zIndex: 500, width: 320, background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, boxShadow: '0 8px 32px rgba(15,33,55,0.18)', padding: '14px 16px', animation: 'slideIn 0.3s ease' }}>
+          <style>{`@keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }`}</style>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: TEAL, flexShrink: 0 }}>{surprise.from?.[0]}</div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: TX }}>{surprise.from} <span style={{ fontWeight: 500, color: TX3 }}>({surprise.role})</span></div>
+              <div style={{ fontSize: 13, color: TX2 }}>{surprise.text}</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input type="text" placeholder="Quick reply..." onKeyDown={e => { if (e.key === 'Enter' && e.target.value.trim()) setSurpriseReply(e.target.value.trim()) }} style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 12, outline: 'none' }} />
+            <button onClick={() => setSurpriseReply('noted')} style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${BD}`, background: '#fff', color: TX2, fontFamily: F, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Dismiss</button>
+          </div>
+        </div>
+      )}
+
+      {/* Main workspace grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, padding: 16, maxWidth: 1200, margin: '0 auto' }}>
+
+        {/* Email Inbox */}
+        <div style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: TX }}>Email Inbox</span>
+            <span style={{ fontSize: 11, color: TX3 }}>{emailsReplied}/{emails.length} replied</span>
+          </div>
+          <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+            {emails.map(email => (
+              <div key={email.id}>
+                <div
+                  onClick={() => { setEmailOpen(emailOpen === email.id ? null : email.id); setEmailRead(p => ({ ...p, [email.id]: true })) }}
+                  style={{ padding: '12px 18px', borderBottom: `1px solid ${BD}`, cursor: 'pointer', background: emailRead[email.id] ? '#fff' : '#f0fdfb' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <span style={{ fontSize: 12.5, fontWeight: emailRead[email.id] ? 500 : 700, color: TX }}>{email.from}</span>
+                    {emailReplies[email.id] && <span style={{ fontSize: 10, color: TEAL, fontWeight: 700 }}>REPLIED</span>}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: TX, marginBottom: 2 }}>{email.subject}</div>
+                  <div style={{ fontSize: 12, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email.preview}</div>
+                </div>
+                {emailOpen === email.id && (
+                  <div style={{ padding: '14px 18px', background: BG, borderBottom: `1px solid ${BD}` }}>
+                    <p style={{ fontSize: 13, color: TX, lineHeight: 1.65, margin: '0 0 10px', whiteSpace: 'pre-wrap' }}>{email.body}</p>
+                    <textarea
+                      rows={3}
+                      value={emailReplies[email.id] || ''}
+                      onChange={e => setEmailReplies(p => ({ ...p, [email.id]: e.target.value }))}
+                      placeholder="Type your reply..."
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 12px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, outline: 'none', resize: 'vertical' }}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Task List */}
+        <div style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: TX }}>Tasks</span>
+            <span style={{ fontSize: 11, color: TX3 }}>{tasksHandled}/{tasks.length} actioned</span>
+          </div>
+          <div style={{ padding: '8px 0', maxHeight: 360, overflowY: 'auto' }}>
+            {tasks.map(task => {
+              const action = taskActions[task.id]
+              const pColor = task.priority === 'high' ? '#dc2626' : task.priority === 'medium' ? '#E8B84B' : TX3
+              return (
+                <div key={task.id} style={{ padding: '10px 18px', borderBottom: `1px solid ${BD}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: pColor, textTransform: 'uppercase' }}>{task.priority}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: TX }}>{task.title}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: TX3, marginBottom: 6 }}>{task.context}</div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {['do_now', 'delegate', 'defer'].map(a => (
+                      <button key={a} onClick={() => setTaskActions(p => ({ ...p, [task.id]: a }))} style={{
+                        padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: F,
+                        background: action === a ? (a === 'do_now' ? TEALLT : a === 'delegate' ? '#EDE9FE' : '#FEF3C7') : '#fff',
+                        border: `1px solid ${action === a ? (a === 'do_now' ? TEAL : a === 'delegate' ? '#C4B5FD' : '#FCD34D') : BD}`,
+                        color: action === a ? (a === 'do_now' ? TEALD : a === 'delegate' ? '#5B21B6' : '#92400E') : TX3,
+                      }}>
+                        {a === 'do_now' ? 'Do now' : a === 'delegate' ? 'Delegate' : 'Defer'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BD}` }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: TX }}>Messages</span>
+          </div>
+          <div style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 300, overflowY: 'auto' }}>
+            {messages.map(msg => (
+              <div key={msg.id}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: TEAL, flexShrink: 0 }}>{msg.from?.[0]}</div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: TX }}>{msg.from} <span style={{ fontWeight: 500, color: TX3 }}>{msg.time}</span></div>
+                    <div style={{ fontSize: 13, color: TX2 }}>{msg.text}</div>
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  value={msgReplies[msg.id] || ''}
+                  onChange={e => setMsgReplies(p => ({ ...p, [msg.id]: e.target.value }))}
+                  placeholder="Reply..."
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 12, color: TX, outline: 'none' }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Calendar */}
+        <div style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BD}` }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: TX }}>Today's Schedule</span>
+          </div>
+          <div style={{ padding: '12px 18px' }}>
+            {fixed.map((m, i) => (
+              <div key={i} style={{ display: 'flex', gap: 10, padding: '6px 0', borderBottom: `1px solid ${BD}` }}>
+                <span style={{ fontFamily: FM, fontSize: 11, color: TX3, width: 44, flexShrink: 0 }}>{m.time}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: TX }}>{m.title}</span>
+              </div>
+            ))}
+            {gaps.map((g, i) => (
+              <div key={`gap-${i}`} style={{ padding: '8px 0', borderBottom: `1px solid ${BD}` }}>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 4 }}>
+                  <span style={{ fontFamily: FM, fontSize: 11, color: TEAL, width: 44, flexShrink: 0 }}>{g.time}</span>
+                  <span style={{ fontSize: 12, color: TEAL, fontWeight: 600 }}>{g.context}</span>
+                </div>
+                <input
+                  type="text"
+                  value={gapPlans[i] || ''}
+                  onChange={e => setGapPlans(p => ({ ...p, [i]: e.target.value }))}
+                  placeholder="What will you do in this slot?"
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 12, color: TX, outline: 'none', marginLeft: 54 }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Submit bar */}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: NAVY, padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderTop: `2px solid ${TEAL}` }}>
+        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontFamily: F }}>
+          Reply to at least 2 emails and action at least 3 tasks to submit
+        </span>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={handleSubmit} disabled={!canSubmit} style={{
+            padding: '10px 24px', borderRadius: 8, border: 'none',
+            background: canSubmit ? TEAL : 'rgba(255,255,255,0.1)',
+            color: canSubmit ? NAVY : 'rgba(255,255,255,0.3)',
+            fontFamily: F, fontSize: 14, fontWeight: 700, cursor: canSubmit ? 'pointer' : 'not-allowed',
+          }}>Submit my morning</button>
+          <button onClick={onSkip} style={{ padding: '10px 18px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Skip</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Calendar: Plan Your First Monday ─────────────────────────────────────────
 const TIME_SLOTS = []
 for (let h = 8; h <= 17; h++) {
@@ -1626,7 +1884,7 @@ function CalendarPage({ assessment, candidate, onSubmit, onSkip }) {
 export default function AssessPage({ params }) {
   const { uniqueToken } = params
 
-  const [uiState, setUiState] = useState('loading') // loading | error | already_complete | intro | active | calendar | submitting | rating | complete
+  const [uiState, setUiState] = useState('loading') // loading | error | already_complete | intro | active | calendar | workspace | submitting | rating | preview | complete
   const [errorMessage, setErrorMessage] = useState('')
   const [candidate, setCandidate] = useState(null)
   const [assessment, setAssessment] = useState(null)
@@ -1756,12 +2014,32 @@ export default function AssessPage({ params }) {
       assessment={assessment}
       candidate={candidate}
       onSubmit={(calendarData) => {
-        // Score calendar async after submit
-        doSubmit(pendingResponses)
         fetch(`/api/assessment/${assessment.id}/calendar-score`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ candidate_id: candidate.id, calendar_layout: calendarData }),
+        }).catch(() => {})
+        // Route to workspace for Strategy-Fit, otherwise submit
+        const isAdvanced = (assessment.assessment_mode || '').toLowerCase() === 'advanced'
+        if (isAdvanced) { setUiState('workspace') } else { doSubmit(pendingResponses) }
+      }}
+      onSkip={() => {
+        const isAdvanced = (assessment.assessment_mode || '').toLowerCase() === 'advanced'
+        if (isAdvanced) { setUiState('workspace') } else { doSubmit(pendingResponses) }
+      }}
+    />
+  )
+  if (uiState === 'workspace') return (
+    <WorkspacePage
+      assessment={assessment}
+      candidate={candidate}
+      onSubmit={(workspaceData) => {
+        doSubmit(pendingResponses)
+        // Score workspace async
+        fetch(`/api/assessment/${assessment.id}/calendar-score`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ candidate_id: candidate.id, calendar_layout: { workspace_data: workspaceData } }),
         }).catch(() => {})
       }}
       onSkip={() => doSubmit(pendingResponses)}

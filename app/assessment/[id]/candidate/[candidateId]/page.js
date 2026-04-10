@@ -3740,6 +3740,63 @@ export default function CandidateReportPage({ params }) {
                 )}
 
                 {/* ══════════════════════════════════════════════════
+                    WORKSPACE PERFORMANCE
+                ══════════════════════════════════════════════════ */}
+                {results.workspace_score != null && (
+                  <ScrollReveal delay={60}>
+                  <Card style={{ marginBottom: 20 }} topColor={NAVY}>
+                    <SectionHeading tooltip="How this candidate handled a simulated first morning on the job. Tests email handling, task prioritisation, delegation judgment, and response to unexpected interruptions.">
+                      Workspace Performance
+                    </SectionHeading>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+                      How this candidate handled their first morning on the job
+                    </p>
+                    <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 24, flexDirection: isMobile ? 'column' : 'row', marginBottom: 18 }}>
+                      <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+                        <svg width={72} height={72} viewBox="0 0 72 72">
+                          <circle cx={36} cy={36} r={30} fill="none" stroke={BD} strokeWidth={6} />
+                          <circle cx={36} cy={36} r={30} fill="none" stroke={TEAL} strokeWidth={6}
+                            strokeDasharray={`${(results.workspace_score / 100) * 2 * Math.PI * 30} ${2 * Math.PI * 30}`}
+                            strokeLinecap="round" transform="rotate(-90 36 36)"
+                          />
+                        </svg>
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: TEAL }}>{results.workspace_score}</span>
+                        </div>
+                      </div>
+                      <div>
+                        {results.workspace_narrative && (
+                          <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.65, margin: '0 0 10px' }}>{results.workspace_narrative}</p>
+                        )}
+                        {results.workspace_signals && (
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {(Array.isArray(results.workspace_signals) ? results.workspace_signals : []).map((s, i) => {
+                              const isWarn = /over.?commit|unfocused|missed|reactive/i.test(s)
+                              return (
+                                <span key={i} style={{
+                                  fontSize: 11.5, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                                  color: isWarn ? RED : TEALD,
+                                  background: isWarn ? REDBG : TEALLT,
+                                  border: `1px solid ${isWarn ? '#fecaca' : `${TEAL}44`}`,
+                                }}>{s}</span>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {results.workspace_watch_out && (
+                      <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderLeft: `4px solid ${AMB}`, borderRadius: '0 8px 8px 0', padding: '10px 14px' }}>
+                        <div style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.55 }}>
+                          <strong style={{ color: AMB }}>Watch-out:</strong> {results.workspace_watch_out}
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                  </ScrollReveal>
+                )}
+
+                {/* ══════════════════════════════════════════════════
                     STRENGTHS
                 ══════════════════════════════════════════════════ */}
                 {results.strengths?.length > 0 && (

@@ -1023,6 +1023,18 @@ function DemoCandidateInner({ params }) {
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>60-second visual summary</span>
                   </div>
                   <div>
+                    <a
+                      href="/demo/workspace"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px', textDecoration: 'none', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}
+                    >
+                      <Ic name="grid" size={14} color={TEAL} />
+                      Workspace Demo
+                    </a>
+                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Immersive assessment available</span>
+                  </div>
+                  <div>
                     <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                       <Ic name="sliders" size={14} color={TEALD} />
                       Re-run Scenario
@@ -1995,6 +2007,43 @@ function DemoCandidateInner({ params }) {
                     <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Interruption handling</div>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0 }}>Manager asked for a quick budget update mid-scenario. Sophie chose <strong>Note for later</strong> — maintained focus on the current task.</p>
                   </div>
+                </div>
+              </ScrollReveal>
+            )}
+
+            {/* ── WORKSPACE PERFORMANCE (demo for Sophie Chen) ── */}
+            {params.candidateId === 'demo-c1' && (
+              <ScrollReveal delay={60}>
+                <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '24px 28px', marginBottom: 20, borderTop: `3px solid ${NAVY}` }}>
+                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>Workspace Performance</h2>
+                  <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>How this candidate handled their first morning on the job</p>
+                  <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 24, flexDirection: isMobile ? 'column' : 'row', marginBottom: 14 }}>
+                    <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+                      <svg width={72} height={72} viewBox="0 0 72 72">
+                        <circle cx={36} cy={36} r={30} fill="none" stroke={BD} strokeWidth={6} />
+                        <circle cx={36} cy={36} r={30} fill="none" stroke={TEAL} strokeWidth={6}
+                          strokeDasharray={`${0.84 * 2 * Math.PI * 30} ${2 * Math.PI * 30}`}
+                          strokeLinecap="round" transform="rotate(-90 36 36)"
+                        />
+                      </svg>
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: TEAL }}>84</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.65, margin: '0 0 10px' }}>
+                        Sophie handled her morning inbox with clear prioritisation, addressing the client escalation first and delegating the internal budget query to her finance contact. Her task management showed strong strategic awareness, deferring the agency briefing to the afternoon to protect her focus for the high-priority stakeholder update. When the unexpected message from the MD arrived she responded promptly with a clear status update rather than ignoring it or over-explaining.
+                      </p>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {['Client-first', 'Strategic delegator', 'Deadline-aware', 'Clear communicator'].map(s => (
+                          <span key={s} style={{ fontSize: 11.5, fontWeight: 700, color: TEALD, background: TEALLT, border: `1px solid ${TEAL}44`, padding: '3px 10px', borderRadius: 20 }}>{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <a href="/demo/workspace" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD, textDecoration: 'none' }}>
+                    Try the workspace demo
+                  </a>
                 </div>
               </ScrollReveal>
             )}
