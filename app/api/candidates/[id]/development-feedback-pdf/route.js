@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
-import { createServiceClient } from '@/lib/supabase-server'
+import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import Anthropic from '@anthropic-ai/sdk'
 
 function safe(text) {
@@ -32,7 +32,22 @@ function wrap(text, font, size, maxWidth) {
 
 export async function GET(request, { params }) {
   try {
+    const supabase = createServerSupabaseClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+
     const adminClient = createServiceClient()
+
+    // Verify requesting user is an employer
+    const { data: profile } = await adminClient
+      .from('users')
+      .select('account_type')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.account_type !== 'employer') {
+      return NextResponse.json({ error: 'Employer accounts only' }, { status: 403 })
+    }
 
     const { data: candidate } = await adminClient
       .from('candidates')
@@ -40,7 +55,7 @@ export async function GET(request, { params }) {
       .eq('id', params.id)
       .single()
 
-    if (!candidate) {
+    if (!candidate || candidate.user_id !== user.id) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
