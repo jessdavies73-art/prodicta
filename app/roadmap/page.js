@@ -208,11 +208,6 @@ const COMING_NEXT = [
     date: 'Q3 2026',
   },
   {
-    title: 'Virtual Job Tryout Workspace',
-    teaser: 'Experience the role before you accept it. The closest thing to being there.',
-    date: 'Q3 2026',
-  },
-  {
     title: 'Live AI Simulation',
     teaser: 'Real-time adaptive scenarios. Multiple AI characters. The next level of assessment.',
     date: 'Q4 2026',
