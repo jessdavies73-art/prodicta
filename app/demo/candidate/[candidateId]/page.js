@@ -687,6 +687,7 @@ function DemoCandidateInner({ params }) {
     return s >= 80 ? 'passed_probation' : s >= 70 ? 'still_in_probation' : null
   })
   const [signupPrompt, setSignupPrompt] = useState(false)
+  const [candidatePreview, setCandidatePreview] = useState(false)
   const [sendModal, setSendModal] = useState(false)
   const [sendEmail, setSendEmail] = useState('')
   const [expandedSections, setExpandedSections] = useState({ aiSummary: false, candidateDocs: false, onboarding: false, fairWork: false })
@@ -1015,6 +1016,16 @@ function DemoCandidateInner({ params }) {
                       Re-run Scenario
                     </button>
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => setCandidatePreview(true)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', cursor: 'pointer', width: '100%' }}
+                    >
+                      <Ic name="users" size={14} color={TEALD} />
+                      See candidate view
+                    </button>
+                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>What the candidate sees</span>
                   </div>
                   <div>
                     <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: AMBBG, border: `1.5px solid ${AMBBD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: AMB, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
@@ -2066,6 +2077,56 @@ function DemoCandidateInner({ params }) {
       </main>
 
       {signupPrompt && <SignUpModal onClose={() => setSignupPrompt(false)} />}
+
+      {/* Candidate Self-Preview Modal */}
+      {candidatePreview && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.6)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1200, padding: '32px 20px', overflowY: 'auto' }} onClick={() => setCandidatePreview(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, maxWidth: 600, width: '100%', boxShadow: '0 24px 72px rgba(15,33,55,0.3)', overflow: 'hidden' }}>
+            <div style={{ background: NAVY, padding: '24px 28px', textAlign: 'center' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', margin: '0 auto 12px', background: `linear-gradient(135deg, ${TEAL}, #009688)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 4px' }}>Your Assessment is Complete</h2>
+              <p style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: 0 }}>This is what {candidate?.name || 'the candidate'} sees after submitting</p>
+            </div>
+            <div style={{ padding: '24px 28px' }}>
+              <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Your Strengths</div>
+              {(results?.strengths || []).slice(0, 3).map((s, i) => (
+                <div key={i} style={{ background: BG, borderLeft: `4px solid ${TEAL}`, borderRadius: '0 8px 8px 0', padding: '12px 16px', marginBottom: 8 }}>
+                  <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: 4 }}>{s.strength || s.text || s.title}</div>
+                  {s.evidence && <div style={{ fontFamily: F, fontSize: 12, color: TEALD, fontStyle: 'italic' }}>"{s.evidence}"</div>}
+                </div>
+              ))}
+
+              <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: '#E8B84B', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '16px 0 10px' }}>One area to develop</div>
+              <div style={{ position: 'relative', background: BG, borderLeft: '4px solid #E8B84B', borderRadius: '0 8px 8px 0', padding: '12px 16px', marginBottom: 16, overflow: 'hidden' }}>
+                <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: 4 }}>
+                  {results?.watchouts?.[0]?.watchout || 'Growth opportunity identified'}
+                </div>
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0 8px 8px 0', backdropFilter: 'blur(2px)' }}>
+                  <span style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX2 }}>Available with subscription</span>
+                </div>
+              </div>
+
+              <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>What to expect in this role</div>
+              <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '12px 16px', marginBottom: 20 }}>
+                <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0, lineHeight: 1.65 }}>
+                  Your responses showed how you approach real work situations. The hiring team uses this alongside the rest of their process to understand how you are likely to perform.
+                </p>
+              </div>
+
+              <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: '0 0 16px', textAlign: 'center', lineHeight: 1.6 }}>
+                Thank you for completing your assessment. The hiring team will be in touch.
+              </p>
+            </div>
+            <div style={{ padding: '12px 28px 20px', borderTop: `1px solid ${BD}`, textAlign: 'center' }}>
+              <button onClick={() => setCandidatePreview(false)} style={{ padding: '10px 28px', borderRadius: 9, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}>
+                Close preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── SEND TO CLIENT MODAL ── */}
       {sendModal && (

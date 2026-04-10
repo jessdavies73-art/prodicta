@@ -1136,6 +1136,226 @@ function Confetti() {
 }
 
 // ─── State: Complete ──────────────────────────────────────────────────────────
+// ─── Candidate Self-Preview ──────────────────────────────────────────────────
+function CandidatePreviewPage({ candidateName, uniqueToken, onContinue }) {
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState(null)
+  const [error, setError] = useState(null)
+  const [pollCount, setPollCount] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        const res = await fetch(`/api/assess/${uniqueToken}/feedback`)
+        if (res.status === 425) {
+          // Scoring not finished yet — poll
+          if (pollCount < 30) {
+            setTimeout(() => { if (!cancelled) setPollCount(c => c + 1) }, 3000)
+          }
+          return
+        }
+        if (res.status === 403) {
+          // Feedback disabled — skip to complete
+          onContinue()
+          return
+        }
+        if (!res.ok) { setError('Unable to load preview'); setLoading(false); return }
+        const json = await res.json()
+        setData(json)
+      } catch {
+        setError('Unable to load preview')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [pollCount, uniqueToken])
+
+  if (loading || (!data && !error && pollCount < 30)) {
+    return (
+      <>
+        <NavBar candidateName={candidateName} />
+        <CentredCard>
+          <Card style={{ textAlign: 'center', padding: '64px 36px' }}>
+            <div style={{
+              width: 40, height: 40, border: `4px solid ${BD}`, borderTopColor: TEAL,
+              borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+              margin: '0 auto 24px',
+            }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <h2 style={{ fontFamily: F, color: TX, fontSize: 20, fontWeight: 800, margin: '0 0 8px' }}>
+              Analysing your responses...
+            </h2>
+            <p style={{ fontFamily: F, color: TX3, fontSize: 14, margin: 0, lineHeight: 1.6 }}>
+              This usually takes 30-60 seconds. Your personalised insights will appear shortly.
+            </p>
+          </Card>
+        </CentredCard>
+      </>
+    )
+  }
+
+  if (error || !data) {
+    // Skip preview gracefully
+    return (
+      <>
+        <NavBar candidateName={candidateName} />
+        <CentredCard>
+          <Card style={{ textAlign: 'center', padding: '48px 36px' }}>
+            <h2 style={{ fontFamily: F, color: TX, fontSize: 20, fontWeight: 800, margin: '0 0 12px' }}>Your Assessment is Complete</h2>
+            <p style={{ fontFamily: F, color: TX2, fontSize: 15, margin: '0 0 24px', lineHeight: 1.6 }}>
+              Thank you for completing your assessment. The hiring team will be in touch.
+            </p>
+            <button onClick={onContinue} style={{ padding: '12px 28px', borderRadius: 9, border: 'none', background: TEAL, color: '#fff', fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+              Continue
+            </button>
+          </Card>
+        </CentredCard>
+      </>
+    )
+  }
+
+  const strengths = (data.strengths || []).slice(0, 3)
+  const devArea = (data.development_plan || [])[0]
+
+  return (
+    <>
+      <NavBar candidateName={candidateName} />
+      <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 20px 80px' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%', margin: '0 auto 20px',
+            background: `linear-gradient(135deg, ${TEAL}, #009688)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: `0 0 0 8px ${TEALLT}, 0 8px 28px rgba(0,191,165,0.25)`,
+          }}>
+            <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <h1 style={{ fontFamily: F, fontSize: 28, fontWeight: 800, color: NAVY, margin: '0 0 8px' }}>
+            Your Assessment is Complete
+          </h1>
+          <p style={{ fontFamily: F, fontSize: 16, color: TX2, margin: '0 0 6px', lineHeight: 1.6 }}>
+            Here is a snapshot of what the assessment revealed about you.
+          </p>
+          <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: 0 }}>
+            This is a summary for you. The hiring team will receive a detailed report.
+          </p>
+        </div>
+
+        {/* Strengths */}
+        {strengths.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+              Your Strengths
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {strengths.map((s, i) => (
+                <Card key={i} style={{ borderLeft: `4px solid ${TEAL}`, padding: '16px 20px' }}>
+                  <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 6 }}>
+                    {s.text || s.strength || s.title}
+                  </div>
+                  {(s.detail || s.explanation) && (
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 6px', lineHeight: 1.6 }}>
+                      {s.detail || s.explanation}
+                    </p>
+                  )}
+                  {s.evidence && (
+                    <div style={{ fontFamily: F, fontSize: 12.5, color: TEALD, fontStyle: 'italic', lineHeight: 1.55 }}>
+                      "{s.evidence}"
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Development opportunity */}
+        {devArea && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#E8B84B', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+              One area to develop
+            </div>
+            <Card style={{ borderLeft: '4px solid #E8B84B', padding: '16px 20px' }}>
+              <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 6 }}>
+                {devArea.area}
+              </div>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px', lineHeight: 1.6 }}>
+                {devArea.advice}
+              </p>
+              {devArea.actions && devArea.actions.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {devArea.actions.map((a, j) => (
+                    <div key={j} style={{ display: 'flex', gap: 8, fontSize: 13, color: TX, fontFamily: F }}>
+                      <span style={{ color: '#E8B84B', fontWeight: 700, flexShrink: 0 }}>{j + 1}.</span>
+                      <span>{a}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
+
+        {/* Role expectations */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+            What to expect in this role
+          </div>
+          <Card style={{ padding: '16px 20px' }}>
+            <p style={{ fontFamily: F, fontSize: 14, color: TX, margin: 0, lineHeight: 1.7 }}>
+              Your responses showed how you approach real work situations. The hiring team uses this alongside the rest of their process to understand how you are likely to perform and what support you may need in your first 90 days.
+            </p>
+          </Card>
+        </div>
+
+        {/* Benchmarks if available */}
+        {data.benchmarks && data.benchmarks.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+              How you compare
+            </div>
+            <Card style={{ padding: '16px 20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {data.benchmarks.map((b, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: F, fontSize: 13, color: TX }}>{b.skill}</span>
+                    <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: TEAL }}>Top {100 - b.percentile}%</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <p style={{ fontFamily: F, fontSize: 15, color: TX2, margin: '0 0 20px', lineHeight: 1.65 }}>
+            Thank you for completing your assessment. The hiring team will be in touch.
+          </p>
+          <button onClick={onContinue} style={{
+            padding: '14px 32px', borderRadius: 10, border: 'none',
+            background: TEAL, color: '#fff',
+            fontFamily: F, fontSize: 15, fontWeight: 800, cursor: 'pointer',
+          }}>
+            Done
+          </button>
+        </div>
+
+        <div style={{ textAlign: 'center', paddingTop: 16, borderTop: `1px solid ${BD}` }}>
+          <ProdictaLogo textColor={NAVY} size={28} />
+          <p style={{ fontFamily: F, color: TX3, fontSize: 12, margin: '6px 0 0' }}>Work simulation assessments</p>
+        </div>
+      </div>
+    </>
+  )
+}
+
 function CompletePage({ candidateName }) {
   const [textVisible, setTextVisible] = useState(false)
   useEffect(() => { const t = setTimeout(() => setTextVisible(true), 700); return () => clearTimeout(t) }, [])
@@ -1553,7 +1773,14 @@ export default function AssessPage({ params }) {
     <RatingPage
       candidateName={candidate?.name}
       uniqueToken={uniqueToken}
-      onComplete={() => setUiState('complete')}
+      onComplete={() => setUiState('preview')}
+    />
+  )
+  if (uiState === 'preview') return (
+    <CandidatePreviewPage
+      candidateName={candidate?.name}
+      uniqueToken={uniqueToken}
+      onContinue={() => setUiState('complete')}
     />
   )
   if (uiState === 'complete') return <CompletePage candidateName={candidate?.name} />
