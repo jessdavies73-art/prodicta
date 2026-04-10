@@ -7,7 +7,7 @@ export async function GET(request, { params }) {
 
     const { data: candidate, error } = await adminClient
       .from('candidates')
-      .select('*, assessments(role_title, job_description, scenarios, skill_weights, assessment_mode, role_level, calendar_events, users(company_name))')
+      .select('*, assessments(role_title, job_description, scenarios, skill_weights, assessment_mode, role_level, calendar_events, inbox_events, users(company_name))')
       .eq('unique_link', params.token)
       .single()
 

@@ -324,6 +324,18 @@ function ActivePage({ candidate, assessment, onSubmit }) {
   const recordTimerRef = useRef(null)
   const audioChunksRef = useRef([])
 
+  // Inbox Overload state
+  const showInbox = mode !== 'quick' && assessment.inbox_events?.scenarios
+  const inboxData = showInbox ? (assessment.inbox_events.scenarios || []) : []
+  const currentInbox = inboxData.find(s => s.scenario_index === scenarioIndex) || null
+  const [inboxActions, setInboxActions] = useState({}) // { `${scenarioIdx}-${itemIdx}`: 'action'|'defer' }
+  const [inboxNotes, setInboxNotes] = useState({}) // { `${scenarioIdx}`: 'reason for deferral' }
+  const [interruptionVisible, setInterruptionVisible] = useState(false)
+  const [interruptionResponse, setInterruptionResponse] = useState({}) // { scenarioIdx: 'reply_now'|'note_later'|'focus' }
+  const [interruptionReply, setInterruptionReply] = useState({}) // { scenarioIdx: 'text' }
+  const [interruptionDismissed, setInterruptionDismissed] = useState({})
+  const interruptionTimerRef = useRef(null)
+
   function startRecording() {
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
       audioChunksRef.current = []
@@ -371,6 +383,20 @@ function ActivePage({ candidate, assessment, onSubmit }) {
 
   const scenario = scenarios[scenarioIndex]
   const isLast = scenarioIndex === scenarios.length - 1
+
+  // Interruption trigger — 90 seconds into each scenario
+  useEffect(() => {
+    if (!showInbox || !currentInbox?.interruption || interruptionDismissed[scenarioIndex]) return
+    setInterruptionVisible(false)
+    const t = setTimeout(() => {
+      if (!interruptionDismissed[scenarioIndex]) setInterruptionVisible(true)
+    }, 90000)
+    interruptionTimerRef.current = setTimeout(() => {
+      setInterruptionVisible(false)
+      setInterruptionDismissed(prev => ({ ...prev, [scenarioIndex]: true }))
+    }, 105000) // auto-dismiss after 15 seconds
+    return () => { clearTimeout(t); clearTimeout(interruptionTimerRef.current) }
+  }, [scenarioIndex, showInbox])
 
   // Start/restart timer whenever scenarioIndex changes
   useEffect(() => {
@@ -433,6 +459,13 @@ function ActivePage({ candidate, assessment, onSubmit }) {
         time_taken_seconds: i === scenarioIndex ? elapsed : timeTakens[i],
         audio_url: uploadedAudioUrls[i] || null,
         input_mode: inputModes[i],
+        inbox_responses: currentInbox ? (currentInbox.inbox_items || []).map((item, idx) => ({
+          item: item.subject,
+          action: inboxActions[`${i}-${idx}`] || 'no_action',
+        })) : null,
+        interruption_response: interruptionResponse[i] || null,
+        interruption_reply: interruptionReply[i] || null,
+        inbox_note: inboxNotes[i] || null,
       }))
       onSubmit(payload)
     } else {
@@ -493,6 +526,122 @@ function ActivePage({ candidate, assessment, onSubmit }) {
         </div>
 
         <div style={{ maxWidth: 780, margin: '0 auto', padding: '32px 20px 80px' }}>
+          {/* Interruption Toast */}
+          {interruptionVisible && currentInbox?.interruption && !interruptionResponse[scenarioIndex] && (
+            <div style={{
+              position: 'fixed', top: 80, right: 20, zIndex: 500, width: 340, maxWidth: 'calc(100vw - 40px)',
+              background: CARD, border: `1.5px solid ${BD}`, borderRadius: 12,
+              boxShadow: '0 8px 32px rgba(15,33,55,0.18)', padding: '16px 18px',
+              animation: 'slideIn 0.3s ease',
+            }}>
+              <style>{`@keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
+              <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: TEAL, flexShrink: 0 }}>
+                  {currentInbox.interruption.sender?.[0] || 'M'}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX }}>{currentInbox.interruption.sender} <span style={{ fontWeight: 500, color: TX3 }}>({currentInbox.interruption.role})</span></div>
+                  <div style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.5 }}>{currentInbox.interruption.message}</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[
+                  { key: 'reply_now', label: 'Reply now' },
+                  { key: 'note_later', label: 'Note for later' },
+                  { key: 'focus', label: 'Stay focused' },
+                ].map(opt => (
+                  <button key={opt.key} onClick={() => {
+                    setInterruptionResponse(prev => ({ ...prev, [scenarioIndex]: opt.key }))
+                    setInterruptionVisible(false)
+                    setInterruptionDismissed(prev => ({ ...prev, [scenarioIndex]: true }))
+                  }} style={{
+                    padding: '5px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                    fontFamily: F, cursor: 'pointer',
+                    background: opt.key === 'reply_now' ? TEALLT : opt.key === 'focus' ? BG : '#FEF3C7',
+                    border: `1px solid ${opt.key === 'reply_now' ? `${TEAL}55` : opt.key === 'focus' ? BD : '#FCD34D'}`,
+                    color: opt.key === 'reply_now' ? TEALD : opt.key === 'focus' ? TX2 : '#92400E',
+                  }}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Reply field if they chose reply_now */}
+          {interruptionResponse[scenarioIndex] === 'reply_now' && !interruptionReply[scenarioIndex] && currentInbox?.interruption && (
+            <div style={{ background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
+              <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TEALD, marginBottom: 6 }}>Quick reply to {currentInbox.interruption.sender}</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="text"
+                  placeholder="Type your quick reply..."
+                  onKeyDown={e => { if (e.key === 'Enter' && e.target.value.trim()) setInterruptionReply(prev => ({ ...prev, [scenarioIndex]: e.target.value.trim() })) }}
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, outline: 'none' }}
+                />
+                <button onClick={e => {
+                  const input = e.target.previousSibling
+                  if (input.value.trim()) setInterruptionReply(prev => ({ ...prev, [scenarioIndex]: input.value.trim() }))
+                }} style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Send</button>
+              </div>
+            </div>
+          )}
+
+          {/* Inbox Panel */}
+          {showInbox && currentInbox && (
+            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Your inbox</div>
+                <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>These arrived at the same time as this scenario</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {(currentInbox.inbox_items || []).map((item, idx) => {
+                  const key = `${scenarioIndex}-${idx}`
+                  const action = inboxActions[key]
+                  const priorityStyles = {
+                    urgent: { bg: '#FEF2F2', bd: '#fecaca', color: '#dc2626', label: 'URGENT' },
+                    action_needed: { bg: '#FEF3C7', bd: '#FCD34D', color: '#92400E', label: 'ACTION NEEDED' },
+                    today: { bg: BG, bd: BD, color: NAVY, label: 'TODAY' },
+                  }
+                  const ps = priorityStyles[item.priority] || priorityStyles.today
+                  return (
+                    <div key={idx} style={{ background: ps.bg, border: `1px solid ${ps.bd}`, borderRadius: 8, padding: '10px 14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: 9, fontWeight: 800, color: ps.color, background: `${ps.color}18`, padding: '1px 6px', borderRadius: 3, textTransform: 'uppercase', flexShrink: 0 }}>{ps.label}</span>
+                          <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX }}>{item.sender}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                          <button onClick={() => setInboxActions(prev => ({ ...prev, [key]: 'action' }))} style={{
+                            padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: F,
+                            background: action === 'action' ? TEALLT : '#fff', border: `1px solid ${action === 'action' ? TEAL : BD}`,
+                            color: action === 'action' ? TEALD : TX3,
+                          }}>Handle now</button>
+                          <button onClick={() => setInboxActions(prev => ({ ...prev, [key]: 'defer' }))} style={{
+                            padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: F,
+                            background: action === 'defer' ? '#FEF3C7' : '#fff', border: `1px solid ${action === 'defer' ? '#FCD34D' : BD}`,
+                            color: action === 'defer' ? '#92400E' : TX3,
+                          }}>Defer</button>
+                        </div>
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX, marginBottom: 2 }}>{item.subject}</div>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX3 }}>{item.preview}</div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <input
+                  type="text"
+                  value={inboxNotes[scenarioIndex] || ''}
+                  onChange={e => setInboxNotes(prev => ({ ...prev, [scenarioIndex]: e.target.value }))}
+                  placeholder="Optional: why did you defer or prioritise certain items?"
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '8px 12px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 12.5, color: TX, outline: 'none' }}
+                />
+              </div>
+            </div>
+          )}
+
           <Card style={isOperational ? { background: '#f8f9fb', border: 'none', boxShadow: 'none', padding: '16px' } : {}}>
             {isOperational ? (
               <>

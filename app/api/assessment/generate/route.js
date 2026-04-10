@@ -532,6 +532,50 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple practical events: team briefing, flo
       console.error('Calendar events generation error:', calErr)
     }
 
+    // -- ALTER TABLE assessments ADD COLUMN inbox_events JSONB;
+    // Generate inbox overload events for Depth-Fit and Strategy-Fit (non-blocking)
+    if (mode !== 'quick') {
+      try {
+        const inboxMsg = await client.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Generate realistic inbox overload items for each scenario in a "${role_title}" assessment (${roleLevel} level). There are ${scenarios.length} scenarios.
+
+For EACH scenario, generate:
+- 3 inbox items that land at the same time as the scenario (an urgent client/external request, a resource/budget constraint notification, and a team/internal message)
+- 1 interruption message from a manager or colleague that arrives mid-task
+
+Return JSON only. UK English. No emoji. No em dashes.
+{
+  "scenarios": [
+    {
+      "scenario_index": 0,
+      "inbox_items": [
+        {"sender": "string", "subject": "string", "preview": "string", "priority": "urgent", "type": "client"},
+        {"sender": "string", "subject": "string", "preview": "string", "priority": "action_needed", "type": "resource"},
+        {"sender": "string", "subject": "string", "preview": "string", "priority": "today", "type": "team"}
+      ],
+      "interruption": {"sender": "string", "role": "string", "message": "string"}
+    }
+  ]
+}
+
+${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor asking about shift cover, stock delivery query, colleague needing help on the floor.' : roleLevel === 'LEADERSHIP' ? 'Use executive-level messages: board member requesting data, investor relations query, HR escalation about a senior hire.' : 'Use mid-level workplace messages: client complaint, budget approval needed, team member asking for guidance on a project.'}`
+          }],
+        })
+        const inboxText = inboxMsg.content[0]?.text || ''
+        const inboxMatch = inboxText.match(/\{[\s\S]*\}/)
+        if (inboxMatch) {
+          const inboxEvents = JSON.parse(inboxMatch[0].replace(/[\u2014\u2013]/g, ', '))
+          await adminClient.from('assessments').update({ inbox_events: inboxEvents }).eq('id', assessment.id)
+        }
+      } catch (inboxErr) {
+        console.error('Inbox events generation error:', inboxErr)
+      }
+    }
+
     return NextResponse.json({ id: assessment.id, scenarios })
   } catch (err) {
     console.error('Generate error:', err)

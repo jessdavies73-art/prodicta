@@ -1897,6 +1897,65 @@ function DemoCandidateInner({ params }) {
               </ScrollReveal>
             )}
 
+            {/* ── INBOX OVERLOAD (demo for Sophie Chen) ── */}
+            {params.candidateId === 'demo-c1' && (
+              <ScrollReveal delay={60}>
+                <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '24px 28px', marginBottom: 20, borderTop: `3px solid ${NAVY}` }}>
+                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>Inbox Overload</h2>
+                  <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+                    How this candidate handles competing demands under pressure
+                  </p>
+                  <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 24, flexDirection: isMobile ? 'column' : 'row', marginBottom: 18 }}>
+                    <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+                      <svg width={72} height={72} viewBox="0 0 72 72">
+                        <circle cx={36} cy={36} r={30} fill="none" stroke={BD} strokeWidth={6} />
+                        <circle cx={36} cy={36} r={30} fill="none" stroke={TEAL} strokeWidth={6}
+                          strokeDasharray={`${0.79 * 2 * Math.PI * 30} ${2 * Math.PI * 30}`}
+                          strokeLinecap="round" transform="rotate(-90 36 36)"
+                        />
+                      </svg>
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: TEAL }}>79</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.65, margin: '0 0 10px' }}>
+                        Sophie correctly identified the client complaint as the highest priority item and deferred the internal team request to end of day. When the manager interruption arrived she chose to note it for later rather than break her focus mid-scenario, a pragmatic and professional response. Her main scenario answer quality remained high despite the additional pressure, indicating strong cognitive load management.
+                      </p>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {['Client-first', 'Deadline-aware', 'Focused under pressure'].map(t => (
+                          <span key={t} style={{ fontSize: 11.5, fontWeight: 700, color: TEALD, background: TEALLT, border: `1px solid ${TEAL}44`, padding: '3px 10px', borderRadius: 20 }}>{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Inbox decisions summary */}
+                  <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '12px 16px', marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Her triage decisions</div>
+                    {[
+                      { item: 'Client complaint about campaign delays', action: 'Handle now', urgent: true },
+                      { item: 'Budget reallocation approval needed', action: 'Handle now', urgent: false },
+                      { item: 'Team member asking about Friday social', action: 'Deferred', urgent: false },
+                    ].map((d, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${BD}` }}>
+                        <span style={{ fontFamily: F, fontSize: 13, color: TX }}>{d.item}</span>
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
+                          background: d.action === 'Handle now' ? TEALLT : '#FEF3C7',
+                          color: d.action === 'Handle now' ? TEALD : '#92400E',
+                          border: `1px solid ${d.action === 'Handle now' ? `${TEAL}55` : '#FCD34D'}`,
+                        }}>{d.action}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '12px 16px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Interruption handling</div>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0 }}>Manager asked for a quick budget update mid-scenario. Sophie chose <strong>Note for later</strong> — maintained focus on the current task.</p>
+                  </div>
+                </div>
+              </ScrollReveal>
+            )}
+
             {/* ── BLURRED / LOCKED PREMIUM SECTIONS ── */}
             {[
               { title: 'Predicted Outcomes', desc: 'See the probability of passing probation, churn risk, and top performer likelihood with dynamic colour-coded bars.', variant: 'cards' },
