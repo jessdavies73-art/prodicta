@@ -161,7 +161,7 @@ ASSESSMENT STYLE: Stakeholder Conflict Navigation. Present two conflicting but e
     // Call Claude API
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-    const standard3Prompt = `You are a specialist assessment designer for UK businesses. Your job is to create THREE work simulation scenarios for this role. These are for a 25-minute Standard Assessment, the right balance of depth and candidate experience for most roles.
+    const standard3Prompt = `You are a specialist assessment designer for UK businesses. Your job is to create THREE work simulation scenarios for this role. These are for a 25-minute Depth-Fit Assessment, the right balance of depth and candidate experience for most roles.
 
 These are NOT hypothetical exercises. Each scenario must be built from actual tasks listed in the job description. The candidate should feel like they are already in the role.
 

@@ -1558,7 +1558,7 @@ export default function CandidateReportPage({ params }) {
                       {(() => {
                         const m = candidate?.assessments?.assessment_mode
                         if (!m || m === 'standard') return null
-                        const labelMap = { rapid: 'Quick Assessment', quick: 'Quick Assessment', advanced: 'Advanced Assessment' }
+                        const labelMap = { rapid: 'Speed-Fit', quick: 'Speed-Fit', advanced: 'Strategy-Fit' }
                         const label = labelMap[m] || null
                         if (!label) return null
                         return (

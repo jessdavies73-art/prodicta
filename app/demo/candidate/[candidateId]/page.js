@@ -880,7 +880,7 @@ function DemoCandidateInner({ params }) {
                   {(() => {
                     const m = candidate.assessments?.assessment_mode
                     if (!m || m === 'standard') return null
-                    const label = m === 'advanced' ? 'Advanced Assessment' : m === 'quick' || m === 'rapid' ? 'Quick Assessment' : null
+                    const label = m === 'advanced' ? 'Strategy-Fit' : m === 'quick' || m === 'rapid' ? 'Speed-Fit' : null
                     if (!label) return null
                     return <Badge label={label} bg="#fffbeb" color="#d97706" border="#fcd34d" />
                   })()}

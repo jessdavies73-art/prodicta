@@ -819,19 +819,19 @@ export default function NewAssessmentPage() {
             {[
               {
                 value: 'quick',
-                title: 'Quick Assessment',
+                title: 'Speed-Fit',
                 subtitle: '15 minutes, 2 scenarios',
                 description: 'Best for urgent hires, high-volume roles, or when you need a fast initial screen. Tests core competence and pressure handling. Use when speed matters more than depth.',
               },
               {
                 value: 'standard',
-                title: 'Standard Assessment',
+                title: 'Depth-Fit',
                 subtitle: '25 minutes, 3 scenarios',
                 description: 'Best for most roles. Tests core competence, pressure handling, and team fit. The right balance of depth and candidate experience. Recommended for junior and mid-level roles.',
               },
               {
                 value: 'advanced',
-                title: 'Advanced Assessment',
+                title: 'Strategy-Fit',
                 subtitle: '45 minutes, 4 scenarios',
                 description: 'Best for senior, leadership, or high-stakes roles. Tests competence, pressure, team fit, and long-term retention risk. The most comprehensive assessment. Recommended for senior and director-level hires.',
               },

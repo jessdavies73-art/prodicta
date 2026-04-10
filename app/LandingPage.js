@@ -917,7 +917,7 @@ export default function LandingPage() {
                 {
                   n: 2,
                   title: 'Choose your assessment depth',
-                  body: 'Quick for urgent hires and high-volume roles. Standard for most positions. Advanced for senior or high-stakes hires. PRODICTA recommends the right depth based on the role level. Recruiters filling multiple roles get speed. Employers hiring for critical positions get depth. Every scenario is built from the actual job description, not a generic template.',
+                  body: 'Speed-Fit for urgent hires and high-volume roles. Depth-Fit for most positions. Strategy-Fit for senior or high-stakes hires. PRODICTA recommends the right depth based on the role level. Recruiters filling multiple roles get speed. Employers hiring for critical positions get depth. Every scenario is built from the actual job description, not a generic template.',
                 },
                 {
                   n: 3,
@@ -1601,7 +1601,7 @@ export default function LandingPage() {
                 },
                 {
                   q: 'How long does an assessment take?',
-                  a: 'It depends on the role. Quick assessments take 15 minutes and test 2 scenarios, ideal for urgent hires or high volume roles. Standard assessments take 25 minutes with 3 scenarios, recommended for most roles. Advanced assessments take 45 minutes with 4 scenarios, best for senior or high stakes hires. PRODICTA recommends the right level based on the role but you can choose. Reports are available within minutes of the candidate finishing.',
+                  a: 'It depends on the role. Speed-Fit assessments take 15 minutes and test 2 scenarios, ideal for urgent hires or high volume roles. Depth-Fit assessments take 25 minutes with 3 scenarios, recommended for most roles. Strategy-Fit assessments take 45 minutes with 4 scenarios, best for senior or high stakes hires. PRODICTA recommends the right level based on the role but you can choose. Reports are available within minutes of the candidate finishing.',
                 },
                 {
                   q: 'What roles does PRODICTA work for?',
