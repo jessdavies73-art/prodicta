@@ -221,7 +221,7 @@ const IN_DEVELOPMENT = [
   },
   {
     title: 'Skills Mirror',
-    teaser: 'Your next great hire might already work for you.',
+    teaser: 'Your next great hire might already work for you. And your next promotion might be hiding in plain sight.',
   },
   {
     title: 'Hiring Memory',
