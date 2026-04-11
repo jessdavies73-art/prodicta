@@ -94,6 +94,122 @@ function StatCard({ icon, label, value, sub, accent = TEAL }) {
   )
 }
 
+// ── Placement Health (agency only) ────────────────────────────────────────
+
+const HEALTH_PALETTE = {
+  GREEN: { bg: '#16a34a', fg: '#ffffff', label: 'Healthy' },
+  AMBER: { bg: '#E8B84B', fg: NAVY,     label: 'At Risk' },
+  RED:   { bg: '#dc2626', fg: '#ffffff', label: 'Critical' },
+}
+
+function HealthDot({ health, open, onToggle }) {
+  let color = '#cbd5e1'
+  let label = 'No probation data yet'
+  let reason = 'No probation data has been recorded for this candidate yet.'
+  if (health) {
+    const p = HEALTH_PALETTE[health.health_status] || null
+    if (p) {
+      color = p.bg
+      label = p.label
+      reason = health.health_reason || label
+    }
+  }
+  return (
+    <span style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        title={`${label}: ${reason}`}
+        aria-label={`Placement health ${label}`}
+        style={{
+          width: 10, height: 10, borderRadius: '50%',
+          background: color, border: 'none', padding: 0, cursor: 'pointer',
+          boxShadow: `0 0 0 2px ${color}22`,
+        }}
+      />
+      {open && (
+        <span style={{
+          position: 'absolute', top: 16, left: -6, zIndex: 50,
+          background: NAVY, color: '#fff', borderRadius: 8,
+          padding: '8px 12px', fontSize: 11.5, fontWeight: 500, lineHeight: 1.5,
+          width: 220, fontFamily: F, boxShadow: '0 8px 24px rgba(15,33,55,0.25)',
+          whiteSpace: 'normal',
+        }}>
+          <div style={{ fontWeight: 700, color: color, marginBottom: 3, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.06em' }}>{label}</div>
+          {reason}
+        </span>
+      )}
+    </span>
+  )
+}
+
+function PlacementHealthPanel({ data, activeFilter, onFilter }) {
+  const { counts = {}, total_active = 0, rebate_ending_this_month = 0 } = data || {}
+  const cards = [
+    { key: 'GREEN', label: 'Healthy',  count: counts.GREEN || 0, bg: '#16a34a', fg: '#ffffff', sub: 'Performing as predicted' },
+    { key: 'AMBER', label: 'At Risk',  count: counts.AMBER || 0, bg: '#E8B84B', fg: NAVY,      sub: 'Early warning signals' },
+    { key: 'RED',   label: 'Critical', count: counts.RED   || 0, bg: '#dc2626', fg: '#ffffff', sub: 'Immediate action required' },
+  ]
+  return (
+    <div style={{
+      ...cs, marginBottom: 20, padding: '20px 24px',
+      borderTop: `3px solid ${TEAL}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        <Ic name="shield" size={14} color={TEAL} />
+        <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Placement Health
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+        {cards.map(c => {
+          const isActive = activeFilter === c.key
+          return (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => onFilter(c.key)}
+              style={{
+                background: c.bg, color: c.fg, border: 'none',
+                borderRadius: 12, padding: '18px 20px', textAlign: 'left',
+                cursor: 'pointer', fontFamily: F,
+                outline: isActive ? `3px solid ${NAVY}` : 'none', outlineOffset: 2,
+                boxShadow: isActive ? '0 8px 24px rgba(15,33,55,0.18)' : '0 2px 8px rgba(15,33,55,0.08)',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+                transform: isActive ? 'translateY(-1px)' : 'none',
+              }}
+            >
+              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.85, marginBottom: 8 }}>
+                {c.label}
+              </div>
+              <div style={{ fontFamily: FM, fontSize: 38, fontWeight: 800, lineHeight: 1, marginBottom: 6 }}>
+                {c.count}
+              </div>
+              <div style={{ fontSize: 11.5, opacity: 0.85 }}>{c.sub}</div>
+            </button>
+          )
+        })}
+      </div>
+      <div style={{ marginTop: 14, fontSize: 12.5, color: TX3, fontFamily: F }}>
+        <strong style={{ color: TX2 }}>{total_active}</strong> placement{total_active === 1 ? '' : 's'} active.{' '}
+        <strong style={{ color: TX2 }}>{rebate_ending_this_month}</strong> rebate period{rebate_ending_this_month === 1 ? '' : 's'} ending this month.
+        {activeFilter && (
+          <button
+            type="button"
+            onClick={() => onFilter(activeFilter)}
+            style={{
+              marginLeft: 12, background: 'none', border: 'none', cursor: 'pointer',
+              color: TEALD, fontSize: 12.5, fontWeight: 700, fontFamily: F, textDecoration: 'underline',
+            }}
+          >
+            Clear filter
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function StatusBadge({ status }) {
   const map = {
     completed: { label: 'Completed', bg: GRNBG, color: GRN, bd: GRNBD },
@@ -260,6 +376,9 @@ export default function DashboardPage() {
   const [selectedCandidates, setSelectedCandidates] = useState(new Set())
   const [assessmentCredits, setAssessmentCredits] = useState([])
   const [redlineCandidates, setRedlineCandidates] = useState(new Set())
+  const [placementHealth, setPlacementHealth] = useState(null) // { placements, counts, total_active, rebate_ending_this_month }
+  const [healthFilter, setHealthFilter] = useState(null) // 'GREEN' | 'AMBER' | 'RED' | null
+  const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -335,6 +454,15 @@ export default function DashboardPage() {
           } catch (_) {
             // Columns may not exist yet; skip silently
           }
+
+          // Fetch placement health (traffic light) data
+          try {
+            const res = await fetch('/api/placements/health')
+            if (res.ok) {
+              const data = await res.json()
+              setPlacementHealth(data)
+            }
+          } catch (_) {}
         }
 
         // Load candidate outcomes (for cost saved calculator)
@@ -553,14 +681,25 @@ export default function DashboardPage() {
     return (r.overall_score != null && r.overall_score < 55) || r.risk_level === 'High'
   })
 
+  // ── placement health lookup ────────────────────────────────────────────────
+  const isAgencyAccount = profile?.account_type === 'agency'
+  const healthByCandidate = {}
+  if (placementHealth?.placements) {
+    for (const p of placementHealth.placements) healthByCandidate[p.candidate_id] = p
+  }
+
   // ── filtered candidates ─────────────────────────────────────────────────────
 
-  const filtered = search.trim()
+  const searchFiltered = search.trim()
     ? candidates.filter(c =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         c.email.toLowerCase().includes(search.toLowerCase())
       )
     : candidates
+
+  const filtered = isAgencyAccount && healthFilter
+    ? searchFiltered.filter(c => healthByCandidate[c.id]?.health_status === healthFilter)
+    : searchFiltered
 
   // ── render ──────────────────────────────────────────────────────────────────
 
@@ -1165,6 +1304,15 @@ export default function DashboardPage() {
         <RiskCalculator profile={profile} completed={completed} />
         <CostOfVacancyCard profile={profile} />
 
+        {/* ── Placement Health (agency only) ── */}
+        {isAgencyAccount && placementHealth && placementHealth.total_active > 0 && (
+          <PlacementHealthPanel
+            data={placementHealth}
+            activeFilter={healthFilter}
+            onFilter={(s) => setHealthFilter(prev => prev === s ? null : s)}
+          />
+        )}
+
         {/* ── Bottom grid: table + assessments panel ── */}
         <div className="dashboard-layout" style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
 
@@ -1311,6 +1459,16 @@ export default function DashboardPage() {
                                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                     display: 'flex', alignItems: 'center', gap: 6,
                                   }}>
+                                    {isAgencyAccount && (
+                                      <HealthDot
+                                        health={healthByCandidate[c.id] || null}
+                                        open={healthTooltip === c.id}
+                                        onToggle={(e) => {
+                                          e.stopPropagation()
+                                          setHealthTooltip(prev => prev === c.id ? null : c.id)
+                                        }}
+                                      />
+                                    )}
                                     {c.name}
                                     {redlineCandidates.has(c.id) && (
                                       <a

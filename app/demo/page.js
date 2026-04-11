@@ -249,6 +249,22 @@ function DemoDashboardInner() {
   const [filterAssessmentId, setFilterAssessmentId] = useState(null)
   const [modal, setModal] = useState(false)
   const [selectedCandidates, setSelectedCandidates] = useState(new Set())
+  const [demoHealthFilter, setDemoHealthFilter] = useState(null) // 'GREEN' | 'AMBER' | 'RED' | null
+  const [demoHealthTooltip, setDemoHealthTooltip] = useState(null)
+
+  // Demo placement health: traffic light per candidate id
+  // James O'Brien (demo-c4) is one of the AMBER cases as per the brief.
+  const DEMO_PLACEMENT_HEALTH = {
+    'demo-c1': { health_status: 'GREEN', health_reason: 'Co-pilot check-ins on track. Performing as predicted.' },
+    'demo-c2': { health_status: 'GREEN', health_reason: 'Within rebate period. No concerns recorded.' },
+    'demo-c3': { health_status: 'GREEN', health_reason: 'Manager review positive. Above expectation on key metrics.' },
+    'demo-c4': { health_status: 'AMBER', health_reason: "James O'Brien — early signs of accountability avoidance. Predicted in assessment." },
+    'demo-c5': { health_status: 'GREEN', health_reason: 'Steady performer. No deviation from prediction.' },
+    'demo-c6': { health_status: 'AMBER', health_reason: 'Manager flagged missed deadlines in week 2 check-in.' },
+    'demo-c7': { health_status: 'RED',   health_reason: 'Redline alert: significant deviation from prediction. Intervention not yet actioned.' },
+    'demo-c8': { health_status: 'GREEN', health_reason: 'Strong placement. Hire confidence confirmed in practice.' },
+    'demo-c9': { health_status: 'GREEN', health_reason: 'Co-pilot check-ins on track. No interventions required.' },
+  }
 
   // Exclude archived from main view
   const activeCandidates = DEMO_CANDIDATES.filter(c => c.status !== 'archived')
@@ -264,9 +280,12 @@ function DemoDashboardInner() {
   const byAssessment = filterAssessmentId
     ? activeCandidates.filter(c => c.assessments?.id === filterAssessmentId)
     : activeCandidates
-  const filtered = search.trim()
+  const searchedDemo = search.trim()
     ? byAssessment.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase()))
     : byAssessment
+  const filtered = isAgency && demoHealthFilter
+    ? searchedDemo.filter(c => DEMO_PLACEMENT_HEALTH[c.id]?.health_status === demoHealthFilter)
+    : searchedDemo
 
   const passRate = completed.length ? Math.round((recommendedCount / completed.length) * 100) : null
   const highRisk = completed.filter(c => (c.results?.[0]?.risk_level ?? '').toLowerCase().includes('high'))
@@ -514,6 +533,61 @@ function DemoDashboardInner() {
         {/* Agency-only sections */}
         {isAgency && (
           <>
+            {/* Placement Health (traffic light) */}
+            <div style={{ background: CARD, border: `1px solid ${BD}`, borderTop: `3px solid ${TEAL}`, borderRadius: 14, padding: '20px 24px', marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <Ic name="shield" size={14} color={TEAL} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Placement Health
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+                {[
+                  { key: 'GREEN', label: 'Healthy',  count: 6, bg: '#16a34a', fg: '#ffffff', sub: 'Performing as predicted' },
+                  { key: 'AMBER', label: 'At Risk',  count: 2, bg: '#E8B84B', fg: NAVY,      sub: 'Early warning signals' },
+                  { key: 'RED',   label: 'Critical', count: 1, bg: '#dc2626', fg: '#ffffff', sub: 'Immediate action required' },
+                ].map(c => {
+                  const isActive = demoHealthFilter === c.key
+                  return (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() => setDemoHealthFilter(prev => prev === c.key ? null : c.key)}
+                      style={{
+                        background: c.bg, color: c.fg, border: 'none',
+                        borderRadius: 12, padding: '18px 20px', textAlign: 'left',
+                        cursor: 'pointer', fontFamily: F,
+                        outline: isActive ? `3px solid ${NAVY}` : 'none', outlineOffset: 2,
+                        boxShadow: isActive ? '0 8px 24px rgba(15,33,55,0.18)' : '0 2px 8px rgba(15,33,55,0.08)',
+                        transform: isActive ? 'translateY(-1px)' : 'none',
+                        transition: 'transform 0.15s, box-shadow 0.15s',
+                      }}
+                    >
+                      <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.85, marginBottom: 8 }}>{c.label}</div>
+                      <div style={{ fontFamily: FM, fontSize: 38, fontWeight: 800, lineHeight: 1, marginBottom: 6 }}>{c.count}</div>
+                      <div style={{ fontSize: 11.5, opacity: 0.85 }}>{c.sub}</div>
+                    </button>
+                  )
+                })}
+              </div>
+              <div style={{ marginTop: 14, fontSize: 12.5, color: TX3, fontFamily: F }}>
+                <strong style={{ color: TX2 }}>9</strong> placements active.{' '}
+                <strong style={{ color: TX2 }}>3</strong> rebate periods ending this month.
+                {demoHealthFilter && (
+                  <button
+                    type="button"
+                    onClick={() => setDemoHealthFilter(null)}
+                    style={{
+                      marginLeft: 12, background: 'none', border: 'none', cursor: 'pointer',
+                      color: TEALD, fontSize: 12.5, fontWeight: 700, fontFamily: F, textDecoration: 'underline',
+                    }}
+                  >
+                    Clear filter
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
               <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -877,7 +951,39 @@ function DemoDashboardInner() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <Avatar name={c.name} size={28} />
                             <div style={{ minWidth: 0, flex: 1 }}>
-                              <div style={{ fontSize: 12.5, fontWeight: 600, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                              <div style={{ fontSize: 12.5, fontWeight: 600, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {isAgency && (() => {
+                                  const h = DEMO_PLACEMENT_HEALTH[c.id]
+                                  const palette = h?.health_status === 'GREEN' ? '#16a34a'
+                                    : h?.health_status === 'AMBER' ? '#E8B84B'
+                                    : h?.health_status === 'RED' ? '#dc2626'
+                                    : '#cbd5e1'
+                                  const label = h?.health_status === 'GREEN' ? 'Healthy'
+                                    : h?.health_status === 'AMBER' ? 'At Risk'
+                                    : h?.health_status === 'RED' ? 'Critical'
+                                    : 'No probation data yet'
+                                  const reason = h?.health_reason || 'No probation data has been recorded for this candidate yet.'
+                                  const open = demoHealthTooltip === c.id
+                                  return (
+                                    <span style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); setDemoHealthTooltip(prev => prev === c.id ? null : c.id) }}
+                                        title={`${label}: ${reason}`}
+                                        aria-label={`Placement health ${label}`}
+                                        style={{ width: 10, height: 10, borderRadius: '50%', background: palette, border: 'none', padding: 0, cursor: 'pointer', boxShadow: `0 0 0 2px ${palette}22` }}
+                                      />
+                                      {open && (
+                                        <span style={{ position: 'absolute', top: 16, left: -6, zIndex: 50, background: NAVY, color: '#fff', borderRadius: 8, padding: '8px 12px', fontSize: 11.5, fontWeight: 500, lineHeight: 1.5, width: 220, fontFamily: F, boxShadow: '0 8px 24px rgba(15,33,55,0.25)', whiteSpace: 'normal' }}>
+                                          <div style={{ fontWeight: 700, color: palette, marginBottom: 3, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.06em' }}>{label}</div>
+                                          {reason}
+                                        </span>
+                                      )}
+                                    </span>
+                                  )
+                                })()}
+                                {c.name}
+                              </div>
                               <div style={{ fontSize: 11, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div>
                             </div>
                           </div>
