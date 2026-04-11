@@ -2886,8 +2886,22 @@ export default function CandidateReportPage({ params }) {
                             <div style={{ width: 28, height: 28, borderRadius: 8, background: `${TEAL}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Ic name="eye" size={14} color={TEAL} />
                             </div>
-                            <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.2px' }}>
-                              Response Integrity
+                            <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.2px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                              {(rq === 'Genuine' || rq === 'Likely Genuine') ? 'Verified Human' : 'Response Integrity'}
+                              {(rq === 'Genuine' || rq === 'Likely Genuine') && (
+                                <span
+                                  aria-label="Verified human"
+                                  title="Verified Human"
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    width: 16, height: 16, borderRadius: '50%', background: GRN, flexShrink: 0,
+                                  }}
+                                >
+                                  <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                  </svg>
+                                </span>
+                              )}
                             </h2>
                             <InfoTooltip text="AI analysis of response authenticity, timing patterns, and consistency across scenarios." light />
                           </div>

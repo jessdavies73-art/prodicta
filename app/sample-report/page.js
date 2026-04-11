@@ -365,7 +365,25 @@ export default function SampleReportPage() {
         <Card style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 18, flexWrap: 'wrap' }}>
             <div>
-              <SectionHeading>Response Integrity</SectionHeading>
+              <SectionHeading>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  {(RESULTS.integrity.response_quality === 'Genuine' || RESULTS.integrity.response_quality === 'Likely Genuine') ? 'Verified Human' : 'Response Integrity'}
+                  {(RESULTS.integrity.response_quality === 'Genuine' || RESULTS.integrity.response_quality === 'Likely Genuine') && (
+                    <span
+                      aria-label="Verified human"
+                      title="Verified Human"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: 16, height: 16, borderRadius: '50%', background: GRN, flexShrink: 0,
+                      }}
+                    >
+                      <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </span>
+                  )}
+                </span>
+              </SectionHeading>
               <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '-8px 0 0' }}>
                 AI analysis of response authenticity, timing, and consistency across all 4 scenarios.
               </p>
