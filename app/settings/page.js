@@ -403,6 +403,9 @@ export default function SettingsPage() {
   const usagePct   = isUnlimited ? 0 : Math.min(100, Math.round((monthlyCount / planLimit) * 100))
   const atLimit    = !isUnlimited && monthlyCount >= planLimit
   const monthLabel = new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+  const hasActiveSubscription = profile?.subscription_status === 'active'
+  const hasCredits = assessmentCredits.length > 0
+  const payAsYouGoOnly = !hasActiveSubscription && hasCredits
 
   const emailInitial = userEmail ? userEmail[0].toUpperCase() : '?'
 
@@ -665,7 +668,32 @@ export default function SettingsPage() {
         {activeTab === 'billing' && (
           <div style={{ maxWidth: 560 }}>
 
-            {/* ── Current plan card ── */}
+            {/* ── Pay-as-you-go header (no subscription, credits only) ── */}
+            {payAsYouGoOnly && (
+              <div style={{
+                ...cs, marginBottom: 16,
+                borderTop: `3px solid ${TEAL}`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 8, background: TEALLT,
+                    border: `1px solid ${TEAL}55`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <Ic name="shield" size={15} color={TEALD} />
+                  </div>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: TX }}>Pay as you go</h2>
+                    <p style={{ margin: '2px 0 0', fontSize: 12.5, color: TX3, fontFamily: F }}>
+                      You are on pay-per-assessment. No monthly subscription. Use credits as you need them.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Current plan card (subscription users only) ── */}
+            {hasActiveSubscription && (<>
             <div style={{ ...cs, marginBottom: 16 }}>
               <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: TX }}>Current plan</h2>
               <div style={{
@@ -834,8 +862,10 @@ export default function SettingsPage() {
                 </a>
               </div>
             )}
+            </>)}
+
             {/* ── Assessment Credits (pay-per-assessment) ── */}
-            {assessmentCredits.length > 0 && (
+            {hasCredits && (
               <div style={{ ...cs, marginBottom: 16 }}>
                 <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: TX }}>Assessment Credits</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
@@ -878,13 +908,41 @@ export default function SettingsPage() {
                   }}>
                     Buy more credits
                   </a>
-                  <a href="/login" style={{
+                  <a href="mailto:hello@prodicta.co.uk?subject=Switch to monthly subscription" style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     padding: '10px 20px', borderRadius: 8, border: `1.5px solid ${BD}`,
                     background: 'transparent', color: TX2, fontFamily: F, fontSize: 13, fontWeight: 600,
                     textDecoration: 'none',
                   }}>
                     Switch to monthly subscription
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* ── No subscription and no credits: prompt to start ── */}
+            {!hasActiveSubscription && !hasCredits && (
+              <div style={{ ...cs }}>
+                <h2 style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: TX }}>Choose a billing option</h2>
+                <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+                  Start with a monthly subscription for unlimited or volume hiring, or pay per assessment with no commitment.
+                </p>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <a href="/#pricing" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '11px 22px', borderRadius: 9, border: 'none',
+                    background: TEAL, color: NAVY, fontFamily: F, fontSize: 13.5, fontWeight: 700,
+                    textDecoration: 'none',
+                  }}>
+                    See pricing
+                  </a>
+                  <a href="mailto:hello@prodicta.co.uk?subject=Subscription enquiry" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '11px 22px', borderRadius: 9, border: `1.5px solid ${BD}`,
+                    background: 'transparent', color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 600,
+                    textDecoration: 'none',
+                  }}>
+                    Contact us
                   </a>
                 </div>
               </div>
