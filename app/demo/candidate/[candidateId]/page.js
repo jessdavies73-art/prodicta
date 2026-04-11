@@ -687,6 +687,7 @@ function DemoCandidateInner({ params }) {
     return s >= 80 ? 'passed_probation' : s >= 70 ? 'still_in_probation' : null
   })
   const [signupPrompt, setSignupPrompt] = useState(false)
+  const [evidencePackModal, setEvidencePackModal] = useState(false)
   const [candidatePreview, setCandidatePreview] = useState(false)
   const [sendModal, setSendModal] = useState(false)
   const [sendEmail, setSendEmail] = useState('')
@@ -1075,6 +1076,18 @@ function DemoCandidateInner({ params }) {
                         Send Development Feedback
                       </button>
                       <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
+                    </div>
+                  )}
+                  {params.candidateId === 'demo-c4' && (
+                    <div>
+                      <button
+                        onClick={() => setEvidencePackModal(true)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${NAVY}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px', cursor: 'pointer', width: '100%' }}
+                      >
+                        <Ic name="shield" size={14} color={NAVY} />
+                        Evidence Pack
+                      </button>
+                      <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Fair dismissal audit trail</span>
                     </div>
                   )}
                 </div>
@@ -2210,6 +2223,74 @@ function DemoCandidateInner({ params }) {
       </main>
 
       {signupPrompt && <SignUpModal onClose={() => setSignupPrompt(false)} />}
+
+      {/* ── EVIDENCE PACK MODAL (James O'Brien demo) ── */}
+      {evidencePackModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.6)', zIndex: 1300, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px', overflowY: 'auto' }}
+          onClick={() => setEvidencePackModal(false)}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, maxWidth: 620, width: '100%', boxShadow: '0 24px 72px rgba(15,33,55,0.3)', overflow: 'hidden' }}>
+            <div style={{ background: NAVY, padding: '24px 28px', position: 'relative' }}>
+              <button onClick={() => setEvidencePackModal(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <Ic name="x" size={18} color="rgba(255,255,255,0.6)" />
+              </button>
+              <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Fair Dismissal Audit Trail</div>
+              <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 6px', letterSpacing: '-0.4px' }}>Probation Evidence Pack</h2>
+              <p style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.55 }}>
+                A legally-structured document combining the original assessment and probation data for ERA 2025 compliance.
+              </p>
+            </div>
+
+            <div style={{ padding: '24px 28px' }}>
+              <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 18px', lineHeight: 1.65 }}>
+                When an employer hires through PRODICTA and later needs to end employment during probation, the Evidence Pack consolidates every step of the process into a single downloadable PDF. It demonstrates that the decision was based on documented, objective performance, not on any protected characteristic.
+              </p>
+
+              <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '16px 18px', marginBottom: 18 }}>
+                <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>What is included</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  {[
+                    'Cover page with reference number, candidate, role, and key dates',
+                    'Assessment summary: score, hiring confidence, strengths, watch-outs, Pressure-Fit and Response Integrity',
+                    'Probation co-pilot evidence: check-in entries, watch-out tracking, and 90-Day Coaching Plan adherence',
+                    'Redline alert history with intervention plans and whether they were actioned',
+                    'Side-by-side performance deviation analysis (predicted vs observed)',
+                    'Compliance statement covering Equality Act 2010 and ERA 2025',
+                    'Recommendation for legal use, signed off with timestamp and pack reference',
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+                      <Ic name="check" size={13} color={TEAL} />
+                      <span style={{ fontFamily: F, fontSize: 12.5, color: TX, lineHeight: 1.55 }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ background: TEALLT, border: `1px solid ${TEAL}44`, borderRadius: 10, padding: '12px 16px', marginBottom: 22 }}>
+                <p style={{ fontFamily: F, fontSize: 12.5, color: TEALD, margin: 0, lineHeight: 1.55 }}>
+                  <strong>Why it matters:</strong> the Employment Rights Act 2025 strengthens protections during the probation period. The Evidence Pack gives employers an objective, contemporaneous record to support a fair dismissal.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  onClick={() => router.push('/login')}
+                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '12px 0', borderRadius: 9, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}
+                >
+                  Get started
+                </button>
+                <button
+                  onClick={() => setEvidencePackModal(false)}
+                  style={{ padding: '12px 22px', borderRadius: 9, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Candidate Self-Preview Modal */}
       {candidatePreview && (

@@ -1931,6 +1931,20 @@ export default function CandidateReportPage({ params }) {
                         Generate Probation Review
                       </button>
                     )}
+                    {results && existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
+                      <button
+                        onClick={() => window.open(`/api/assessment/${params.id}/candidate/${params.candidateId}/evidence-pack`, '_blank')}
+                        className="no-print"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: '#fff', border: `1.5px solid ${NAVY}`, borderRadius: 8, cursor: 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px',
+                        }}
+                      >
+                        <Ic name="shield" size={15} color={NAVY} />
+                        Evidence Pack
+                      </button>
+                    )}
                     {results && profile?.account_type === 'employer' && existingOutcome && ['rejected', 'failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
                       <button
                         onClick={async () => {
