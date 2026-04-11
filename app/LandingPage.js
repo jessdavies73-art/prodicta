@@ -954,6 +954,28 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
+
+          <Reveal delay={120}>
+            <div style={{
+              maxWidth: 760, margin: '48px auto 0',
+              background: '#fff', border: `1.5px solid ${TEAL}33`, borderRadius: 14,
+              padding: '20px 26px', display: 'flex', alignItems: 'flex-start', gap: 16,
+              boxShadow: '0 4px 18px rgba(15,33,55,0.05)',
+            }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center',
+                fontFamily: F, fontSize: 10.5, fontWeight: 800, color: TEAL,
+                background: `${TEAL}18`, border: `1px solid ${TEAL}55`, borderRadius: 50,
+                padding: '4px 11px', textTransform: 'uppercase', letterSpacing: '0.06em',
+                flexShrink: 0,
+              }}>
+                Strategy-Fit
+              </div>
+              <p style={{ fontFamily: F, fontSize: 13.5, color: '#5e6b7f', lineHeight: 1.7, margin: 0 }}>
+                Strategy-Fit assessments for senior hires include additional immersive layers: Day One Planning, Inbox Overload simulation, and the Virtual Job Tryout Workspace.
+              </p>
+            </div>
+          </Reveal>
         </div>
       </section>
 
@@ -1159,6 +1181,10 @@ export default function LandingPage() {
                   'Monday Morning Reality: plain English description of what managing this candidate actually looks like day-to-day, not the interview version',
                   'Watch-outs framed as what gets tolerated if your client does not address it, with specific triggers and timelines',
                   '90-Day Hiring Manager Coaching Plan developed with Alchemy Training UK, giving your client a structured probation guide for every hire',
+                  'Placement Health Score: traffic light dashboard showing the health of every active placement. Green, amber, red. Automatic alert when a placement goes at risk',
+                  'Day 1 Highlight Reel: a 60-second animated visual summary of the candidate with a shareable link. Send clients a reel instead of a report',
+                  'Manager Brief PDF: a 2-page hiring manager summary with QR code. Everything a line manager needs to make a decision',
+                  'Team Dynamics: profile your client\'s existing team and see exactly how a new candidate will fit, where friction will occur, and what gap they fill',
                   'Predicted outcomes for the first 90 days with milestones your client can track',
                   'AI-generated interview questions specific to each candidate\'s gaps',
                   'ERA 2025 Compliance Certificate documenting the objective, evidence-based hiring decision',
@@ -1180,6 +1206,11 @@ export default function LandingPage() {
                   'Monday Morning Reality: what managing this person actually looks like day-to-day when everything is happening at once',
                   'Watch-outs framed as what gets tolerated if you do not address it, so you know exactly what to act on and when',
                   '90-Day Hiring Manager Coaching Plan developed with Alchemy Training UK, telling your managers exactly how to support each new hire through probation with structured check-ins, SMART objectives, and Alchemy coach sign-off at each phase',
+                  'Fair Dismissal Audit Trail: if a hire does not work out during probation, generate a Probation Evidence Pack combining assessment data and probation records. Legally defensible documentation for ERA 2025',
+                  'Manager DNA Assessment: the hiring manager completes a 10-minute assessment. Every candidate is then compared against the manager\'s actual decision-making profile',
+                  'Team Dynamics: profile your existing team and see exactly how a new candidate will fit, where friction will occur, and what gap they fill',
+                  'Candidate Self-Preview: after completing the assessment, candidates see a positive-framed preview of their own results. Reduces post-offer ghosting',
+                  'Virtual Job Tryout Workspace: available in Strategy-Fit assessments. Candidates handle a real inbox, task list, messages, and calendar on Day 1 of the job before they are offered it',
                   'Predicted outcomes for the first 90 days with specific milestones',
                   'Probation Co-pilot: live dashboard tracking whether predictions are materialising, with traffic lights for each watch-out and manager notes',
                   'Outcome Tracking: automatic check-ins at 3, 6, and 12 months to track whether the hire is still in role',
@@ -1690,6 +1721,14 @@ export default function LandingPage() {
                 {
                   q: 'What happens after January 2027?',
                   a: 'From January 2027, employees gain unfair dismissal protection from their first day of employment. There is no qualifying period and no cap on compensation. This means every hire you make is a legal and financial risk from day one. PRODICTA helps you document fair, evidence based hiring decisions before you make the offer. It also includes a Probation Timeline Tracker with automated review reminders at month 1, 3, and 5 so you never miss a critical checkpoint during the probation period.',
+                },
+                {
+                  q: 'Can I pay per assessment instead of a monthly subscription?',
+                  a: 'Yes. PRODICTA offers pay-per-assessment pricing with no monthly commitment. Speed-Fit assessments are £18, Depth-Fit are £35, and Strategy-Fit are £65. Toggle to Pay as you go on our pricing page to see the options.',
+                },
+                {
+                  q: 'What is the Virtual Job Tryout Workspace?',
+                  a: 'The Workspace is available in Strategy-Fit assessments for senior hires. After completing their scenarios, candidates enter a browser-based simulation of Day 1 on the job — a real inbox, task list, Slack-style messages, and a calendar. They handle their first morning exactly as they would in the role. You see exactly how they perform before you commit to them.',
                 },
               ].map((item, i) => (
                 <div key={i} style={{
