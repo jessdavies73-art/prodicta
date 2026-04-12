@@ -832,20 +832,19 @@ function DemoDashboardInner() {
           </>
         )}
 
-        {/* ── Strong / Maybe / Risk filter (employer only) ── */}
-        {!isAgency && (
-          <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
-            {[
-              { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
-              { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
-              { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
-            ].map(v => {
-              const active = verdictFilter === v.key
-              return (
-                <button
-                  key={v.key}
-                  type="button"
-                  onClick={() => setVerdictFilter(prev => prev === v.key ? null : v.key)}
+        {/* ── Strong / Maybe / Risk filter (both account types) ── */}
+        <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
+          {[
+            { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
+            { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
+            { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
+          ].map(v => {
+            const active = verdictFilter === v.key
+            return (
+              <button
+                key={v.key}
+                type="button"
+                onClick={() => { setVerdictFilter(prev => prev === v.key ? null : v.key); setDemoHealthFilter(null) }}
                   onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                   onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                   style={{
@@ -871,8 +870,7 @@ function DemoDashboardInner() {
               )
             })}
           </div>
-        )}
-        {!isAgency && verdictFilter && (
+        {verdictFilter && (
           <div style={{ marginBottom: 14 }}>
             <button
               type="button"
