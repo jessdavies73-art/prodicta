@@ -144,25 +144,22 @@ function HealthDot({ health, open, onToggle }) {
   )
 }
 
-function PlacementHealthPanel({ data, activeFilter, onFilter }) {
+function PlacementHealthPanel({ data, activeFilter, onFilter, isMobile }) {
   const { counts = {}, total_active = 0, rebate_ending_this_month = 0 } = data || {}
   const cards = [
-    { key: 'GREEN', label: 'Healthy',  count: counts.GREEN || 0, bg: '#00BFA5', fg: '#ffffff', sub: 'Performing as predicted' },
-    { key: 'AMBER', label: 'At Risk',  count: counts.AMBER || 0, bg: '#E8B84B', fg: NAVY,      sub: 'Early warning signals' },
-    { key: 'RED',   label: 'Critical', count: counts.RED   || 0, bg: '#dc2626', fg: '#ffffff', sub: 'Immediate action required' },
+    { key: 'GREEN', label: 'Healthy',  count: counts.GREEN || 0, accent: '#00BFA5', sub: 'Performing as predicted' },
+    { key: 'AMBER', label: 'At Risk',  count: counts.AMBER || 0, accent: '#D97706', sub: 'Early warning signals' },
+    { key: 'RED',   label: 'Critical', count: counts.RED   || 0, accent: '#B91C1C', sub: 'Immediate action required' },
   ]
   return (
-    <div style={{
-      ...cs, marginBottom: 20, padding: '20px 24px',
-      borderTop: `3px solid ${TEAL}`,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <Ic name="shield" size={14} color={TEAL} />
         <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Placement Health
         </span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+      <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
         {cards.map(c => {
           const isActive = activeFilter === c.key
           return (
@@ -170,23 +167,27 @@ function PlacementHealthPanel({ data, activeFilter, onFilter }) {
               key={c.key}
               type="button"
               onClick={() => onFilter(c.key)}
+              onMouseEnter={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
+              onMouseLeave={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
               style={{
-                background: c.bg, color: c.fg, border: 'none',
-                borderRadius: 12, padding: '18px 20px', textAlign: 'left',
+                flex: isMobile ? undefined : 1,
+                width: isMobile ? '100%' : undefined,
+                background: isActive ? `${c.accent}14` : '#fff',
+                border: '1px solid #E5E7EB',
+                borderLeft: `${isActive ? 6 : 4}px solid ${c.accent}`,
+                borderRadius: 12, padding: '20px 22px', textAlign: 'left',
                 cursor: 'pointer', fontFamily: F,
-                outline: isActive ? `3px solid ${NAVY}` : 'none', outlineOffset: 2,
-                boxShadow: isActive ? '0 8px 24px rgba(15,33,55,0.18)' : '0 2px 8px rgba(15,33,55,0.08)',
-                transition: 'transform 0.15s, box-shadow 0.15s',
-                transform: isActive ? 'translateY(-1px)' : 'none',
+                boxShadow: isActive ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
+                transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
+                transform: isActive ? 'translateY(-2px)' : 'none',
+                opacity: activeFilter && !isActive ? 0.6 : 1,
               }}
             >
-              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.85, marginBottom: 8 }}>
-                {c.label}
-              </div>
-              <div style={{ fontFamily: FM, fontSize: 38, fontWeight: 800, lineHeight: 1, marginBottom: 6 }}>
+              <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: c.accent }}>
                 {c.count}
               </div>
-              <div style={{ fontSize: 11.5, opacity: 0.85 }}>{c.sub}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2, color: NAVY }}>{c.label}</div>
+              <div style={{ fontSize: 12, color: TX3 }}>{c.sub}</div>
             </button>
           )
         })}
@@ -194,19 +195,22 @@ function PlacementHealthPanel({ data, activeFilter, onFilter }) {
       <div style={{ marginTop: 14, fontSize: 12.5, color: TX3, fontFamily: F }}>
         <strong style={{ color: TX2 }}>{total_active}</strong> placement{total_active === 1 ? '' : 's'} active.{' '}
         <strong style={{ color: TX2 }}>{rebate_ending_this_month}</strong> rebate period{rebate_ending_this_month === 1 ? '' : 's'} ending this month.
-        {activeFilter && (
+      </div>
+      {activeFilter && (
+        <div style={{ marginTop: 10 }}>
           <button
             type="button"
             onClick={() => onFilter(activeFilter)}
             style={{
-              marginLeft: 12, background: 'none', border: 'none', cursor: 'pointer',
-              color: TEALD, fontSize: 12.5, fontWeight: 700, fontFamily: F, textDecoration: 'underline',
+              background: 'none', border: `1px solid ${BD}`, borderRadius: 6,
+              padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600,
+              color: TX3, cursor: 'pointer',
             }}
           >
-            Clear filter
+            Show all candidates
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1548,6 +1552,7 @@ export default function DashboardPage() {
             data={placementHealth}
             activeFilter={healthFilter}
             onFilter={(s) => setHealthFilter(prev => prev === s ? null : s)}
+            isMobile={isMobile}
           />
         )}
 

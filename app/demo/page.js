@@ -555,18 +555,18 @@ function DemoDashboardInner() {
         {isAgency && (
           <>
             {/* Placement Health (traffic light) */}
-            <div style={{ background: CARD, border: `1px solid ${BD}`, borderTop: `3px solid ${TEAL}`, borderRadius: 14, padding: '20px 24px', marginBottom: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <Ic name="shield" size={14} color={TEAL} />
                 <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Placement Health
                 </span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+              <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
                 {[
-                  { key: 'GREEN', label: 'Healthy',  count: 6, bg: '#16a34a', fg: '#ffffff', sub: 'Performing as predicted' },
-                  { key: 'AMBER', label: 'At Risk',  count: 2, bg: '#E8B84B', fg: NAVY,      sub: 'Early warning signals' },
-                  { key: 'RED',   label: 'Critical', count: 1, bg: '#dc2626', fg: '#ffffff', sub: 'Immediate action required' },
+                  { key: 'GREEN', label: 'Healthy',  count: 6, accent: '#00BFA5', sub: 'Performing as predicted' },
+                  { key: 'AMBER', label: 'At Risk',  count: 2, accent: '#D97706', sub: 'Early warning signals' },
+                  { key: 'RED',   label: 'Critical', count: 1, accent: '#B91C1C', sub: 'Immediate action required' },
                 ].map(c => {
                   const isActive = demoHealthFilter === c.key
                   return (
@@ -574,19 +574,25 @@ function DemoDashboardInner() {
                       key={c.key}
                       type="button"
                       onClick={() => setDemoHealthFilter(prev => prev === c.key ? null : c.key)}
+                      onMouseEnter={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
+                      onMouseLeave={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                       style={{
-                        background: c.bg, color: c.fg, border: 'none',
-                        borderRadius: 12, padding: '18px 20px', textAlign: 'left',
+                        flex: isMobile ? undefined : 1,
+                        width: isMobile ? '100%' : undefined,
+                        background: isActive ? `${c.accent}14` : '#fff',
+                        border: '1px solid #E5E7EB',
+                        borderLeft: `${isActive ? 6 : 4}px solid ${c.accent}`,
+                        borderRadius: 12, padding: '20px 22px', textAlign: 'left',
                         cursor: 'pointer', fontFamily: F,
-                        outline: isActive ? `3px solid ${NAVY}` : 'none', outlineOffset: 2,
-                        boxShadow: isActive ? '0 8px 24px rgba(15,33,55,0.18)' : '0 2px 8px rgba(15,33,55,0.08)',
-                        transform: isActive ? 'translateY(-1px)' : 'none',
-                        transition: 'transform 0.15s, box-shadow 0.15s',
+                        boxShadow: isActive ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
+                        transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
+                        transform: isActive ? 'translateY(-2px)' : 'none',
+                        opacity: demoHealthFilter && !isActive ? 0.6 : 1,
                       }}
                     >
-                      <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.85, marginBottom: 8 }}>{c.label}</div>
-                      <div style={{ fontFamily: FM, fontSize: 38, fontWeight: 800, lineHeight: 1, marginBottom: 6 }}>{c.count}</div>
-                      <div style={{ fontSize: 11.5, opacity: 0.85 }}>{c.sub}</div>
+                      <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: c.accent }}>{c.count}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2, color: NAVY }}>{c.label}</div>
+                      <div style={{ fontSize: 12, color: TX3 }}>{c.sub}</div>
                     </button>
                   )
                 })}
@@ -594,19 +600,22 @@ function DemoDashboardInner() {
               <div style={{ marginTop: 14, fontSize: 12.5, color: TX3, fontFamily: F }}>
                 <strong style={{ color: TX2 }}>9</strong> placements active.{' '}
                 <strong style={{ color: TX2 }}>3</strong> rebate periods ending this month.
-                {demoHealthFilter && (
+              </div>
+              {demoHealthFilter && (
+                <div style={{ marginTop: 10 }}>
                   <button
                     type="button"
                     onClick={() => setDemoHealthFilter(null)}
                     style={{
-                      marginLeft: 12, background: 'none', border: 'none', cursor: 'pointer',
-                      color: TEALD, fontSize: 12.5, fontWeight: 700, fontFamily: F, textDecoration: 'underline',
+                      background: 'none', border: `1px solid ${BD}`, borderRadius: 6,
+                      padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600,
+                      color: TX3, cursor: 'pointer',
                     }}
                   >
-                    Clear filter
+                    Show all candidates
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
