@@ -38,16 +38,17 @@ function fmt(d) {
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
-function StatRing({ value, size = 100 }) {
-  const r = (size - 6) / 2
+function StatRing({ value, accent = '#00BFA5', size = 120 }) {
+  const sw = 4
+  const r = (size - sw * 2) / 2
   const circ = 2 * Math.PI * r
   return (
-    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto' }}>
+    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.08))' }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={3} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#00BFA5" strokeWidth={3} strokeDasharray={`${circ}`} strokeLinecap="round" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={sw} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={accent} strokeWidth={sw} strokeDasharray={`${circ}`} strokeLinecap="round" />
       </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 26, fontWeight: 800, color: NAVY }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 30, fontWeight: 800, color: NAVY }}>
         {typeof value === 'number' ? <CountUp target={value} /> : value}
       </div>
     </div>
@@ -56,10 +57,10 @@ function StatRing({ value, size = 100 }) {
 
 function StatCard({ icon, label, value, sub, accent = TEAL }) {
   return (
-    <div style={{ flex: 1, minWidth: 120, textAlign: 'center', padding: '8px 0' }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>{label}</div>
-      <StatRing value={value} />
-      {sub && <div style={{ fontSize: 12, color: '#6B7280', fontFamily: F, marginTop: 8 }}>{sub}</div>}
+    <div style={{ flex: '1 1 120px', textAlign: 'center', padding: '8px 0' }}>
+      <StatRing value={value} accent={accent} />
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 12 }}>{label}</div>
+      {sub && <div style={{ fontSize: 12, color: '#6B7280', fontFamily: F, marginTop: 4 }}>{sub}</div>}
     </div>
   )
 }
