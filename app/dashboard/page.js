@@ -60,6 +60,22 @@ function initials(name = '') {
 
 // ── sub-components ────────────────────────────────────────────────────────────
 
+function StatRing({ value, size = 80 }) {
+  const r = (size - 6) / 2
+  const circ = 2 * Math.PI * r
+  return (
+    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto' }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={3} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#00BFA5" strokeWidth={3} strokeDasharray={`${circ}`} strokeLinecap="round" />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 22, fontWeight: 800, color: NAVY }}>
+        {typeof value === 'number' ? <CountUp target={value} /> : value}
+      </div>
+    </div>
+  )
+}
+
 function StatCard({ icon, label, value, sub, accent = TEAL }) {
   const isMob = useIsMobile()
   const [hovered, setHovered] = useState(false)
@@ -81,13 +97,12 @@ function StatCard({ icon, label, value, sub, accent = TEAL }) {
         transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
         transition: 'box-shadow 0.15s ease, transform 0.15s ease',
         cursor: 'default',
+        textAlign: 'center',
       }}
     >
       <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>{label}</div>
-      <div style={{ fontSize: 34, fontWeight: 800, color: accent, fontFamily: FM, lineHeight: 1, marginBottom: 6 }}>
-        {typeof value === 'number' ? <CountUp target={value} /> : value}
-      </div>
-      {sub && <div style={{ fontSize: 12, color: '#6B7280', fontFamily: F }}>{sub}</div>}
+      <StatRing value={value} />
+      {sub && <div style={{ fontSize: 12, color: '#6B7280', fontFamily: F, marginTop: 8 }}>{sub}</div>}
     </div>
   )
 }
@@ -2311,10 +2326,10 @@ function AssessmentInsights({ candidates = [] }) {
           { label: 'Completion rate', value: `${completionRate}%`, sub: `Platform avg ${PLATFORM_AVG}%`, accent: TEAL },
           { label: 'Avg time to complete', value: avgDisplay, sub: avgHours == null ? 'Not enough data' : 'From invite to submit', accent: NAVY },
         ].map(m => (
-          <div key={m.label} style={{ background: '#fff', border: '1px solid #E5E7EB', borderLeft: `4px solid ${m.accent}`, borderRadius: 10, padding: '14px 16px', boxShadow: '0 4px 16px rgba(0,0,0,0.10)' }}>
+          <div key={m.label} style={{ background: '#fff', border: '1px solid #E5E7EB', borderLeft: `4px solid ${m.accent}`, borderRadius: 10, padding: '14px 16px', boxShadow: '0 4px 16px rgba(0,0,0,0.10)', textAlign: 'center' }}>
             <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{m.label}</div>
-            <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, color: m.accent, lineHeight: 1, marginBottom: 4 }}>{m.value}</div>
-            <div style={{ fontFamily: F, fontSize: 12, color: '#6B7280' }}>{m.sub}</div>
+            <StatRing value={m.value} />
+            <div style={{ fontFamily: F, fontSize: 12, color: '#6B7280', marginTop: 6 }}>{m.sub}</div>
           </div>
         ))}
       </div>
