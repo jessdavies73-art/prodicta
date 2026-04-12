@@ -871,19 +871,7 @@ function DemoDashboardInner() {
               </div>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Bulk screening mode</div>
-                <p style={{ fontSize: 12.5, color: TX2, margin: '0 0 12px' }}>5 candidates assessed for Customer Service Advisor</p>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {[
-                    { tier: 'Recommended', count: 2, color: GRN, bg: GRNBG, bd: GRNBD },
-                    { tier: 'Review', count: 2, color: AMB, bg: AMBBG, bd: AMBBD },
-                    { tier: 'Not Recommended', count: 1, color: RED, bg: REDBG, bd: REDBD },
-                  ].map(t => (
-                    <div key={t.tier} style={{ flex: 1, minWidth: 80, padding: '10px 12px', background: t.bg, border: `1.5px solid ${t.bd}`, borderRadius: 8, textAlign: 'center' }}>
-                      <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: t.color, lineHeight: 1, marginBottom: 2 }}>{t.count}</div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: t.color }}>{t.tier}</div>
-                    </div>
-                  ))}
-                </div>
+                <p style={{ fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.5 }}>5 candidates assessed for Customer Service Advisor. Use the filter cards above to view by verdict.</p>
               </div>
             </div>
           </>
