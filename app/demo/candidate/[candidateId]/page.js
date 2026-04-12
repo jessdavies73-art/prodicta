@@ -1008,6 +1008,7 @@ function DemoCandidateInner({ params }) {
                   <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                     <Ic name="send" size={14} color={TEALD} />
                     Send to Client
+                    <InfoTooltip text="Email this candidate report directly to your client contact." />
                   </button>
                   </>
                 )}
@@ -1021,7 +1022,7 @@ function DemoCandidateInner({ params }) {
                 </button>
                 <button onClick={() => setSignupPrompt(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
                   <Ic name="sliders" size={14} color={TEALD} />
-                  Re-analyse with New Context
+                  Re-analyse with Context
                   <InfoTooltip text="Add new information and re-analyse the existing responses. The candidate does nothing. Shows a before and after comparison." />
                 </button>
 
@@ -1073,7 +1074,7 @@ function DemoCandidateInner({ params }) {
                 </button>
                 <button onClick={() => setCandidatePreview(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
                   <Ic name="users" size={14} color={TEALD} />
-                  Preview Candidate View
+                  Candidate Preview
                   <InfoTooltip text="See the positive-framed summary the candidate sees after submitting their assessment." />
                 </button>
                 {!isAgency && (

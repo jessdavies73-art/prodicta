@@ -1738,6 +1738,7 @@ export default function CandidateReportPage({ params }) {
                       }}>
                         <Ic name="send" size={15} color={TEALD} />
                         Send to Client
+                        <InfoTooltip text="Email this candidate report directly to your client contact." />
                       </button>
                     )}
 
@@ -1755,7 +1756,7 @@ export default function CandidateReportPage({ params }) {
                         }}
                       >
                         <Ic name="sliders" size={15} color={TEALD} />
-                        {reanalysing ? 'Re-analysing...' : 'Re-analyse with New Context'}
+                        {reanalysing ? 'Re-analysing...' : 'Re-analyse with Context'}
                         <InfoTooltip text="Add new information and re-analyse the existing responses. The candidate does nothing. Shows a before and after comparison." />
                       </button>
                     )}
