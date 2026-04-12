@@ -60,11 +60,11 @@ function StatCard({ icon, label, value, sub, accent = TEAL }) {
         cursor: 'default',
       }}
     >
-      <div style={{ fontSize: 12, fontWeight: 700, color: NAVY, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>{label}</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>{label}</div>
       <div style={{ fontSize: 34, fontWeight: 800, color: accent, fontFamily: FM, lineHeight: 1, marginBottom: 6 }}>
         {typeof value === 'number' ? <CountUp target={value} /> : value}
       </div>
-      {sub && <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 12, color: '#6B7280', fontFamily: F }}>{sub}</div>}
     </div>
   )
 }
