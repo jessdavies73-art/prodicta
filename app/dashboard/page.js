@@ -150,11 +150,8 @@ function PlacementHealthPanel({ data, activeFilter, onFilter, isMobile }) {
   ]
   return (
     <div style={{ marginBottom: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-        <Ic name="shield" size={14} color={TEAL} />
-        <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Placement Health
-        </span>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+        Placement Health
       </div>
       <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
         {cards.map(c => {
@@ -1550,8 +1547,10 @@ export default function DashboardPage() {
           />
         )}
 
-        {/* ── Strong / Maybe / Risk filter (both account types, always visible) ── */}
-        {candidates.length > 0 && (
+        {/* ── Strong / Maybe / Risk filter (hidden when Placement Health is showing) ── */}
+        {candidates.length > 0 && !(isAgencyAccount && placementHealth && placementHealth.total_active > 0) && (
+          <>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Candidate Pipeline</div>
           <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
             {[
               { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
@@ -1589,8 +1588,9 @@ export default function DashboardPage() {
               )
             })}
           </div>
+          </>
         )}
-        {verdictFilter && (
+        {verdictFilter && !(isAgencyAccount && placementHealth && placementHealth.total_active > 0) && (
           <div style={{ marginBottom: 14 }}>
             <button
               type="button"

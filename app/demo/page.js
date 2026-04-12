@@ -525,11 +525,8 @@ function DemoDashboardInner() {
           <>
             {/* Placement Health (traffic light) */}
             <div style={{ marginBottom: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <Ic name="shield" size={14} color={TEAL} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Placement Health
-                </span>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+                Placement Health
               </div>
               <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
                 {[
@@ -832,8 +829,11 @@ function DemoDashboardInner() {
           </>
         )}
 
-        {/* ── Strong / Maybe / Risk filter (both account types) ── */}
-        <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
+        {/* ── Strong / Maybe / Risk filter (hidden when Placement Health is showing for agency) ── */}
+        {!isAgency && (
+          <>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Candidate Pipeline</div>
+          <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
           {[
             { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
             { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
@@ -870,7 +870,9 @@ function DemoDashboardInner() {
               )
             })}
           </div>
-        {verdictFilter && (
+          </>
+        )}
+        {!isAgency && verdictFilter && (
           <div style={{ marginBottom: 14 }}>
             <button
               type="button"
