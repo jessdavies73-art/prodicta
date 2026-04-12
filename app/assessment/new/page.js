@@ -191,6 +191,14 @@ export default function NewAssessmentPage() {
   const [smartLoading, setSmartLoading] = useState(false)
   const smartCacheRef = useRef({ key: '', questions: null })
 
+  // Auto-analyse state
+  const [analysed, setAnalysed] = useState(false)
+  const [analysing, setAnalysing] = useState(false)
+  const [showAdjust, setShowAdjust] = useState(false)
+  const [autoFocus, setAutoFocus] = useState([])
+  const [detectedLevel, setDetectedLevel] = useState('') // 'OPERATIONAL' | 'MID_LEVEL' | 'LEADERSHIP'
+  const analyseTimerRef = useRef(null)
+
   // Brief Health Check
   const [briefFlags, setBriefFlags] = useState(null) // null = not checked, [] = clean, [...] = issues
   const [briefChecking, setBriefChecking] = useState(false)
@@ -216,6 +224,49 @@ export default function NewAssessmentPage() {
       setBriefChecking(false)
     }
   }
+
+  // ── Auto-analyse JD ──────────────────────────────────────────────────────────
+  function runAutoAnalyse(title, desc) {
+    const text = `${title} ${desc}`.toLowerCase()
+    // Detect role level
+    let level = 'MID_LEVEL'
+    if (/\b(junior|jr\.?|graduate|trainee|entry.?level|apprentice|assistant|intern|care worker|receptionist|driver|operative|coordinator|support worker|cleaner|porter|carer|warehouse|admin)\b/.test(text)) level = 'OPERATIONAL'
+    else if (/\b(director|head of|vp|vice president|chief|cxo|ceo|cto|cfo|coo|managing director|md\b|partner|principal|senior|sr\.?|lead|staff engineer)\b/.test(text)) level = 'LEADERSHIP'
+    setDetectedLevel(level)
+
+    // Auto-select mode
+    const autoMode = level === 'OPERATIONAL' ? 'rapid' : level === 'LEADERSHIP' ? 'advanced' : 'quick'
+    if (!modeOverridden) setMode(autoMode)
+
+    // Detect focus areas from JD
+    const focus = []
+    if (/communicat|customer|client|stakeholder|phone|email|correspond/i.test(desc)) focus.push('Communication and responsiveness')
+    if (/prioriti|organis|multitask|deadline|time manage|schedul/i.test(desc)) focus.push('Prioritisation under pressure')
+    if (/team|collaborat|people|manage|lead|supervis/i.test(desc)) focus.push('Team fit and leadership')
+    if (/problem.?solv|troubleshoot|analys|decision|judgment/i.test(desc)) focus.push('Problem-solving and judgment')
+    if (/sales|revenue|target|pipeline|commercial|negotiat/i.test(desc)) focus.push('Commercial drive and resilience')
+    if (/safeguard|compliance|regulat|health.*safety|risk/i.test(desc)) focus.push('Compliance and risk awareness')
+    if (focus.length === 0) focus.push('Core competence', 'Pressure handling', 'Communication')
+    setAutoFocus(focus.slice(0, 3))
+
+    setAnalysed(true)
+    setAnalysing(false)
+    setShowAdjust(false)
+  }
+
+  // Debounced auto-analyse trigger when JD changes
+  useEffect(() => {
+    if (jd.length < 50 || roleTitle.trim().length === 0) {
+      setAnalysed(false)
+      return
+    }
+    setAnalysing(true)
+    if (analyseTimerRef.current) clearTimeout(analyseTimerRef.current)
+    analyseTimerRef.current = setTimeout(() => {
+      runAutoAnalyse(roleTitle, jd)
+    }, 1500)
+    return () => { if (analyseTimerRef.current) clearTimeout(analyseTimerRef.current) }
+  }, [jd, roleTitle])
 
   useEffect(() => {
     const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
@@ -285,7 +336,6 @@ export default function NewAssessmentPage() {
 
   function applyRoleTemplate(tpl) {
     setRoleTitle(tpl.role_title)
-    // Build a JD from the template data
     const jdParts = [
       `Role: ${tpl.role_title}`,
       '',
@@ -296,17 +346,14 @@ export default function NewAssessmentPage() {
       '',
       `What success looks like: ${tpl.success_looks_like}`,
     ]
-    setJd(jdParts.join('\n'))
-    // Set recommended mode
+    const builtJd = jdParts.join('\n')
+    setJd(builtJd)
     const modeMap = { 'rapid': 'rapid', 'speed-fit': 'quick', 'depth-fit': 'standard', 'strategy-fit': 'advanced' }
     setMode(modeMap[tpl.recommended_mode] || 'standard')
     setModeOverridden(true)
-    // Pre-fill context answers
-    if (tpl.context_prefill) {
-      setContextAnswers(tpl.context_prefill)
-    }
-    setTemplateLoaded(true)
-    setTimeout(() => setTemplateLoaded(false), 5000)
+    if (tpl.context_prefill) setContextAnswers(tpl.context_prefill)
+    // Skip to confirmation
+    runAutoAnalyse(tpl.role_title, builtJd)
   }
 
   function applyUserTemplate(ut) {
@@ -318,8 +365,8 @@ export default function NewAssessmentPage() {
       setModeOverridden(true)
     }
     if (ut.context_answers) setContextAnswers(ut.context_answers)
-    setTemplateLoaded(true)
-    setTimeout(() => setTemplateLoaded(false), 5000)
+    // Skip to confirmation
+    runAutoAnalyse(ut.role_title || '', ut.jd_text || '')
   }
 
   const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0)
@@ -338,13 +385,6 @@ export default function NewAssessmentPage() {
     return null
   })()
   const recommendedMode = detectedSeniority === 'senior' ? 'advanced' : 'standard'
-
-  // Auto-select recommended mode when seniority changes (unless user has overridden)
-  useEffect(() => {
-    if (modeOverridden) return
-    if (detectedSeniority && recommendedMode !== mode) setMode(recommendedMode)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detectedSeniority])
 
   // Fetch role-specific Smart Role Context questions when role+JD are ready (debounced)
   useEffect(() => {
@@ -637,19 +677,133 @@ export default function NewAssessmentPage() {
           </p>
         </div>
 
-        {/* Template loaded banner */}
-        {templateLoaded && (
+        {/* ══════════════════════════════════════════════════
+            CONFIRMATION SCREEN (shown when analysed)
+        ══════════════════════════════════════════════════ */}
+        {analysed && !loading && (
+          <>
+            <div style={{
+              background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
+              padding: isMobile ? '28px 20px' : '36px 36px', marginBottom: 24,
+              boxShadow: '0 2px 12px rgba(15,33,55,0.06)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#e0f2f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Ic name="check" size={18} color="#009688" />
+                </div>
+                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#0f2137', fontFamily: F }}>
+                  We have set this up for you.
+                </h2>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 28 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, fontFamily: F }}>Role</div>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0f2137', fontFamily: F }}>{roleTitle}</span>
+                    <span style={{ fontSize: 12, color: '#94a1b3', marginLeft: 10, fontFamily: F }}>
+                      {detectedLevel === 'OPERATIONAL' ? 'Operational' : detectedLevel === 'LEADERSHIP' ? 'Leadership' : 'Mid-level'}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, fontFamily: F }}>Mode</div>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#009688', fontFamily: F }}>
+                      {mode === 'rapid' ? 'Rapid Screen' : mode === 'quick' ? 'Speed-Fit' : mode === 'advanced' ? 'Strategy-Fit' : 'Depth-Fit'}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#94a1b3', marginLeft: 10, fontFamily: F }}>
+                      {mode === 'rapid' ? '5-8 minutes' : mode === 'quick' ? '15 minutes' : mode === 'advanced' ? '45 minutes' : '25 minutes'}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, paddingTop: 2, fontFamily: F }}>Focus</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {autoFocus.map((f, i) => (
+                      <span key={i} style={{
+                        fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
+                        background: '#e0f2f0', color: '#009688', fontFamily: F,
+                      }}>
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div style={{
+                  marginBottom: 16, padding: '12px 16px', borderRadius: 8,
+                  background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: 14
+                }}>
+                  {error}
+                </div>
+              )}
+
+              {loading ? (
+                <GeneratingLoader />
+              ) : (
+                <button
+                  onClick={handleGenerate}
+                  disabled={!canGenerate}
+                  style={{
+                    width: '100%', padding: '16px 0', borderRadius: 12, border: 'none',
+                    background: canGenerate ? '#00BFA5' : '#e4e9f0',
+                    color: canGenerate ? '#fff' : '#94a1b3',
+                    fontSize: 17, fontWeight: 800, fontFamily: F,
+                    cursor: canGenerate ? 'pointer' : 'not-allowed',
+                    transition: 'background 0.15s',
+                    boxShadow: canGenerate ? '0 4px 16px rgba(0,191,165,0.25)' : 'none',
+                  }}
+                >
+                  Send Assessment
+                </button>
+              )}
+            </div>
+
+            {/* Adjust if needed toggle */}
+            <button
+              type="button"
+              onClick={() => setShowAdjust(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20,
+                background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+                fontFamily: F, fontSize: 13.5, fontWeight: 600, color: '#94a1b3',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: showAdjust ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+              {showAdjust ? 'Hide options' : 'Adjust if needed'}
+            </button>
+          </>
+        )}
+
+        {/* Analysing indicator */}
+        {analysing && !analysed && jd.length >= 50 && (
           <div style={{
-            background: '#e0f2f0', border: '1px solid #00BFA555', borderRadius: 10,
-            padding: '12px 18px', marginBottom: 20,
-            display: 'flex', alignItems: 'center', gap: 10,
+            background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
+            padding: '20px 28px', marginBottom: 20, textAlign: 'center',
           }}>
-            <Ic name="check" size={16} color="#009688" />
-            <span style={{ fontSize: 13.5, fontWeight: 600, color: '#009688', fontFamily: F }}>
-              Template loaded. You can edit any details before sending.
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <div style={{
+                width: 16, height: 16,
+                border: '2px solid #e0f2f0', borderTopColor: '#00BFA5',
+                borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+              }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#009688', fontFamily: F }}>Setting this up for you...</span>
+            </div>
           </div>
         )}
+
+        {/* ══════════════════════════════════════════════════
+            MAIN FORM (hidden when analysed, unless Adjust is open)
+        ══════════════════════════════════════════════════ */}
+        {(!analysed || showAdjust) && (
+        <>
 
         {/* Card 1: Role details */}
         <div style={{
@@ -1138,36 +1292,43 @@ export default function NewAssessmentPage() {
           </div>
         )}
 
-        {/* Generate button */}
-        {error && (
-          <div style={{
-            marginBottom: 16, padding: '12px 16px', borderRadius: 8,
-            background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: 14
-          }}>
-            {error}
-          </div>
+        {/* Generate button (shown in adjust mode or when not yet analysed) */}
+        {!analysed && (
+          <>
+            {error && (
+              <div style={{
+                marginBottom: 16, padding: '12px 16px', borderRadius: 8,
+                background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: 14
+              }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0', padding: '24px 32px' }}>
+              {loading ? (
+                <GeneratingLoader />
+              ) : (
+                <button
+                  onClick={handleGenerate}
+                  disabled={!canGenerate}
+                  style={{
+                    width: '100%', padding: '14px 0', borderRadius: 10, border: 'none',
+                    background: canGenerate ? '#00BFA5' : '#e4e9f0',
+                    color: canGenerate ? '#fff' : '#94a1b3',
+                    fontSize: 16, fontWeight: 700, fontFamily: F,
+                    cursor: canGenerate ? 'pointer' : 'not-allowed',
+                    transition: 'background 0.15s, color 0.15s'
+                  }}
+                >
+                  Generate simulations
+                </button>
+              )}
+            </div>
+          </>
         )}
 
-        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0', padding: '24px 32px' }}>
-          {loading ? (
-            <GeneratingLoader />
-          ) : (
-            <button
-              onClick={handleGenerate}
-              disabled={!canGenerate}
-              style={{
-                width: '100%', padding: '14px 0', borderRadius: 10, border: 'none',
-                background: canGenerate ? '#00BFA5' : '#e4e9f0',
-                color: canGenerate ? '#fff' : '#94a1b3',
-                fontSize: 16, fontWeight: 700, fontFamily: F,
-                cursor: canGenerate ? 'pointer' : 'not-allowed',
-                transition: 'background 0.15s, color 0.15s'
-              }}
-            >
-              Generate simulations
-            </button>
-          )}
-        </div>
+        </>
+        )}
       </main>
     </div>
   )
