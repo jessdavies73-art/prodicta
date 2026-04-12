@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
 import { useToast } from '@/components/ToastProvider'
+import { ROLE_TEMPLATES } from '@/lib/role-templates'
 
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
 const _mSnap = () => window.innerWidth <= 768
@@ -175,10 +176,12 @@ export default function NewAssessmentPage() {
 
   // Templates
   const [templates, setTemplates] = useState([])
+  const [userTemplates, setUserTemplates] = useState([])
   const [selectedTemplate, setSelectedTemplate] = useState('')
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
   const [templateName, setTemplateName] = useState('')
-  const [mode, setMode] = useState('standard') // 'quick' | 'standard' | 'advanced'
+  const [templateLoaded, setTemplateLoaded] = useState(false)
+  const [mode, setMode] = useState('standard') // 'rapid' | 'quick' | 'standard' | 'advanced'
   const [modeOverridden, setModeOverridden] = useState(false)
 
   // Context questions
@@ -249,7 +252,7 @@ export default function NewAssessmentPage() {
         setLimitInfo({ used: 0, limit: totalCredits, isCredits: true })
       }
 
-      // Load saved templates
+      // Load saved templates (from assessments)
       const { data: tmpl } = await supabase
         .from('assessments')
         .select('id, template_name, role_title, job_description, skill_weights')
@@ -257,6 +260,16 @@ export default function NewAssessmentPage() {
         .eq('is_template', true)
         .order('created_at', { ascending: false })
       setTemplates(tmpl || [])
+
+      // Load user-saved role templates
+      try {
+        const { data: ut } = await supabase
+          .from('user_templates')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+        setUserTemplates(ut || [])
+      } catch (_) {}
     }
     init()
   }, [router])
@@ -268,6 +281,45 @@ export default function NewAssessmentPage() {
     setJd(tmpl.job_description || '')
     if (tmpl.skill_weights) setWeights(tmpl.skill_weights)
     setSelectedTemplate(templateId)
+  }
+
+  function applyRoleTemplate(tpl) {
+    setRoleTitle(tpl.role_title)
+    // Build a JD from the template data
+    const jdParts = [
+      `Role: ${tpl.role_title}`,
+      '',
+      'Key responsibilities:',
+      ...tpl.key_responsibilities.map(r => `- ${r}`),
+      '',
+      `Key challenges: ${tpl.pressure_points}`,
+      '',
+      `What success looks like: ${tpl.success_looks_like}`,
+    ]
+    setJd(jdParts.join('\n'))
+    // Set recommended mode
+    const modeMap = { 'rapid': 'rapid', 'speed-fit': 'quick', 'depth-fit': 'standard', 'strategy-fit': 'advanced' }
+    setMode(modeMap[tpl.recommended_mode] || 'standard')
+    setModeOverridden(true)
+    // Pre-fill context answers
+    if (tpl.context_prefill) {
+      setContextAnswers(tpl.context_prefill)
+    }
+    setTemplateLoaded(true)
+    setTimeout(() => setTemplateLoaded(false), 5000)
+  }
+
+  function applyUserTemplate(ut) {
+    setRoleTitle(ut.role_title || '')
+    if (ut.jd_text) setJd(ut.jd_text)
+    if (ut.recommended_mode) {
+      const modeMap = { 'rapid': 'rapid', 'speed-fit': 'quick', 'depth-fit': 'standard', 'strategy-fit': 'advanced' }
+      setMode(modeMap[ut.recommended_mode] || ut.recommended_mode || 'standard')
+      setModeOverridden(true)
+    }
+    if (ut.context_answers) setContextAnswers(ut.context_answers)
+    setTemplateLoaded(true)
+    setTimeout(() => setTemplateLoaded(false), 5000)
   }
 
   const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0)
@@ -359,7 +411,30 @@ export default function NewAssessmentPage() {
         })
       })
       const data = await res.json()
-      if (data.id) { toast('Assessment created'); router.push(`/assessment/${data.id}`) }
+      if (data.id) {
+        // Save to user_templates if checkbox is checked
+        if (saveAsTemplate) {
+          try {
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+              const contextQsSave = smartQuestions && smartQuestions.length > 0
+                ? smartQuestions
+                : (accountType === 'agency' ? AGENCY_QUESTIONS : EMPLOYER_QUESTIONS)
+              await supabase.from('user_templates').insert({
+                user_id: user.id,
+                role_title: templateName.trim() || roleTitle.trim(),
+                role_level: null,
+                recommended_mode: mode === 'rapid' ? 'rapid' : mode === 'quick' ? 'speed-fit' : mode === 'advanced' ? 'strategy-fit' : 'depth-fit',
+                jd_text: jd,
+                context_answers: serializeContextAnswers(contextQsSave, contextAnswers),
+              })
+            }
+          } catch (_) {}
+        }
+        toast('Assessment created')
+        router.push(`/assessment/${data.id}`)
+      }
       else if (data.error === 'unsuitable_role') setError(data.message || 'This role type may not be suitable for scenario-based assessment.')
       else setError(data.error || 'Failed to generate')
     } catch {
@@ -484,6 +559,95 @@ export default function NewAssessmentPage() {
                 Clear
               </button>
             )}
+          </div>
+        )}
+
+        {/* Template library */}
+        <div style={{
+          background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
+          padding: '28px 32px', marginBottom: 24,
+        }}>
+          <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: '#0f172a', fontFamily: F }}>
+            Start from a template
+          </h2>
+          <p style={{ margin: '0 0 18px', fontSize: 13, color: '#94a1b3', fontFamily: F }}>
+            Common roles ready to go in one click.
+          </p>
+
+          {/* User's own templates */}
+          {userTemplates.length > 0 && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10, fontFamily: F }}>
+                Your templates
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+                {userTemplates.map(ut => (
+                  <button
+                    key={ut.id}
+                    type="button"
+                    onClick={() => applyUserTemplate(ut)}
+                    style={{
+                      textAlign: 'left', background: '#f8fafc', border: '1px solid #e4e9f0',
+                      borderRadius: 10, padding: '14px 16px', cursor: 'pointer', fontFamily: F,
+                      transition: 'border-color 0.15s, box-shadow 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#00BFA5'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,191,165,0.1)' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e4e9f0'; e.currentTarget.style.boxShadow = 'none' }}
+                  >
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{ut.role_title}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#009688' }}>Use template</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Standard library */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+            {ROLE_TEMPLATES.map(tpl => {
+              const modeLabel = tpl.recommended_mode === 'rapid' ? 'Rapid Screen' : tpl.recommended_mode === 'speed-fit' ? 'Speed-Fit' : tpl.recommended_mode === 'depth-fit' ? 'Depth-Fit' : 'Depth-Fit'
+              return (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  onClick={() => applyRoleTemplate(tpl)}
+                  style={{
+                    textAlign: 'left', background: '#fff', border: '1px solid #e4e9f0',
+                    borderRadius: 10, padding: '14px 16px', cursor: 'pointer', fontFamily: F,
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#00BFA5'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,191,165,0.1)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e4e9f0'; e.currentTarget.style.boxShadow = 'none' }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>{tpl.role_title}</div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                    background: '#e0f2f0', color: '#009688', fontFamily: F,
+                  }}>
+                    {modeLabel} recommended
+                  </span>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#009688', marginTop: 8 }}>Use template</div>
+                </button>
+              )
+            })}
+          </div>
+
+          <p style={{ margin: '16px 0 0', fontSize: 13, color: '#94a1b3', fontFamily: F }}>
+            Don't see your role? Paste your own job description below.
+          </p>
+        </div>
+
+        {/* Template loaded banner */}
+        {templateLoaded && (
+          <div style={{
+            background: '#e0f2f0', border: '1px solid #00BFA555', borderRadius: 10,
+            padding: '12px 18px', marginBottom: 20,
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <Ic name="check" size={16} color="#009688" />
+            <span style={{ fontSize: 13.5, fontWeight: 600, color: '#009688', fontFamily: F }}>
+              Template loaded. You can edit any details before sending.
+            </span>
           </div>
         )}
 
@@ -788,10 +952,10 @@ export default function NewAssessmentPage() {
               style={{ width: 16, height: 16, accentColor: '#00BFA5', cursor: 'pointer' }}
             />
             <span style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', fontFamily: F }}>
-              Save as template
+              Save this role as a template
             </span>
             <span style={{ fontSize: 13, color: '#94a1b3' }}>
-              Reuse this JD and weights for future assessments
+              Appears in your templates for one-click reuse
             </span>
           </label>
 
