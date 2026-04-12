@@ -956,6 +956,7 @@ function DemoCandidateInner({ params }) {
                     >
                       <Ic name="file" size={14} color={TEAL} />
                       {isAgency ? 'Export Client Report' : 'Export PDF'}
+                      <InfoTooltip text="Send a configured version of this report to your client" />
                     </button>
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
                   </div>
@@ -987,6 +988,7 @@ function DemoCandidateInner({ params }) {
                     >
                       <Ic name="file" size={14} color={TEALD} />
                       Interview Brief
+                      <InfoTooltip text="Targeted interview questions generated from this candidate's specific watch-outs" />
                     </button>
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
                   </div>
@@ -994,6 +996,7 @@ function DemoCandidateInner({ params }) {
                     <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                       <Ic name="file" size={14} color={TEALD} />
                       Export Coaching Plan PDF
+                      <InfoTooltip text="The 90-day probation coaching plan from Alchemy Training UK" />
                     </button>
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
                   </div>
@@ -1001,6 +1004,7 @@ function DemoCandidateInner({ params }) {
                     <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                       <Ic name="file" size={14} color={TEALD} />
                       Export Compliance Certificate
+                      <InfoTooltip text="ERA 2025 legal compliance certificate for this assessment" />
                     </button>
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
                   </div>
@@ -1011,6 +1015,7 @@ function DemoCandidateInner({ params }) {
                     >
                       <Ic name="file" size={14} color={TEAL} />
                       Manager Brief PDF
+                      <InfoTooltip text="A 2-page summary with QR code for line managers who will not read the full report" light />
                     </button>
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>2-page summary with QR code</span>
                   </div>
@@ -1023,6 +1028,7 @@ function DemoCandidateInner({ params }) {
                     >
                       <Ic name="zap" size={14} color="#fff" />
                       Highlight Reel
+                      <InfoTooltip text="A 60-second animated visual summary with a shareable link — send to clients instead of a PDF" light />
                     </a>
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>60-second visual summary</span>
                   </div>
@@ -1035,6 +1041,7 @@ function DemoCandidateInner({ params }) {
                     >
                       <Ic name="grid" size={14} color={TEAL} />
                       Workspace Demo
+                      <InfoTooltip text="View how this candidate performed in the Day 1 virtual workspace simulation" light />
                     </a>
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Immersive assessment available</span>
                   </div>
@@ -1052,6 +1059,7 @@ function DemoCandidateInner({ params }) {
                     >
                       <Ic name="sliders" size={14} color={TEALD} />
                       Re-run with Context
+                      <InfoTooltip text="Add new information and re-analyse — shows a before and after comparison" />
                     </button>
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Add context and re-analyse</span>
                   </div>
@@ -1062,6 +1070,7 @@ function DemoCandidateInner({ params }) {
                     >
                       <Ic name="users" size={14} color={TEALD} />
                       See candidate view
+                      <InfoTooltip text="Preview what the candidate sees after submitting their assessment" />
                     </button>
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>What the candidate sees</span>
                   </div>
@@ -1069,6 +1078,7 @@ function DemoCandidateInner({ params }) {
                     <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: AMBBG, border: `1.5px solid ${AMBBD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: AMB, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                       <Ic name="alert" size={14} color={AMB} />
                       Offer Risk Confirmation
+                      <InfoTooltip text="Confirm you have reviewed the risks before making an offer — creates an audit trail" />
                     </button>
                     <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
                   </div>

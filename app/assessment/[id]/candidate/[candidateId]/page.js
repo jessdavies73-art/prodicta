@@ -1676,6 +1676,7 @@ export default function CandidateReportPage({ params }) {
                       }}>
                         <Ic name="check" size={15} color={existingOutcome ? GRN : TEALD} />
                         {existingOutcome ? 'Update Outcome' : 'Log Outcome'}
+                        <InfoTooltip text="Record whether this candidate passed probation — builds your prediction accuracy data" />
                       </button>
                     )}
                     {results && !existingOutcome && (
@@ -1687,6 +1688,7 @@ export default function CandidateReportPage({ params }) {
                       }}>
                         <Ic name="alert" size={15} color={AMB} />
                         Offer Risk Confirmation
+                        <InfoTooltip text="Confirm you have reviewed the risks before making an offer — creates an audit trail" />
                       </button>
                     )}
                     {results && (
@@ -1697,6 +1699,7 @@ export default function CandidateReportPage({ params }) {
                       }}>
                         <Ic name="file" size={15} color={TEAL} />
                         Export Client Report
+                        <InfoTooltip text="Send a configured version of this report to your client" />
                       </button>
                     )}
                     {results && (
@@ -1710,6 +1713,7 @@ export default function CandidateReportPage({ params }) {
                       >
                         <Ic name="shield" size={15} color={TEALD} />
                         Export Compliance Certificate
+                        <InfoTooltip text="ERA 2025 legal compliance certificate for this assessment" />
                       </button>
                     )}
                     {results && (
@@ -1723,6 +1727,7 @@ export default function CandidateReportPage({ params }) {
                       >
                         <Ic name="file" size={15} color={TEAL} />
                         Manager Brief PDF
+                        <InfoTooltip text="A 2-page summary with QR code for line managers who will not read the full report" />
                       </button>
                     )}
                     {results && (
@@ -1739,6 +1744,7 @@ export default function CandidateReportPage({ params }) {
                       >
                         <Ic name="zap" size={15} color="#fff" />
                         Highlight Reel
+                        <InfoTooltip text="A 60-second animated visual summary with a shareable link — send to clients instead of a PDF" light />
                       </a>
                     )}
                     {results && (
@@ -1788,6 +1794,7 @@ export default function CandidateReportPage({ params }) {
                       >
                         <Ic name="sliders" size={15} color={TEALD} />
                         {reanalysing ? 'Re-analysing...' : 'Re-run with Context'}
+                        <InfoTooltip text="Add new information and re-analyse — shows a before and after comparison" />
                       </button>
                     )}
                     {results && profile?.account_type === 'agency' && (
@@ -1862,6 +1869,7 @@ export default function CandidateReportPage({ params }) {
                       >
                         <Ic name="file-text" size={15} color={TEALD} />
                         Interview Brief
+                        <InfoTooltip text="Targeted interview questions generated from this candidate's specific watch-outs" />
                       </button>
                     )}
                     {results && profile?.account_type === 'employer' && existingOutcome?.outcome === 'still_probation' && (
@@ -4688,7 +4696,7 @@ export default function CandidateReportPage({ params }) {
                       </p>
                       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
                         <a href={`/assessment/${params.id}/candidate/${params.candidateId}/coaching-plan`} target="_blank" rel="noreferrer" style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: '#fff', background: NAVY, padding: '9px 14px', borderRadius: 8, textDecoration: 'none' }}>View Full Coaching Plan</a>
-                        <a href={`/api/assessment/${params.id}/candidate/${params.candidateId}/coaching-plan-pdf`} style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: NAVY, background: '#fff', border: `1.5px solid ${NAVY}`, padding: '9px 14px', borderRadius: 8, textDecoration: 'none' }}>Export Coaching Plan PDF</a>
+                        <a href={`/api/assessment/${params.id}/candidate/${params.candidateId}/coaching-plan-pdf`} style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: NAVY, background: '#fff', border: `1.5px solid ${NAVY}`, padding: '9px 14px', borderRadius: 8, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}>Export Coaching Plan PDF <InfoTooltip text="The 90-day probation coaching plan from Alchemy Training UK" /></a>
                       </div>
                       {expandedSections.coachingPlan && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
