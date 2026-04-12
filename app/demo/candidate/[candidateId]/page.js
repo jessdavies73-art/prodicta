@@ -954,6 +954,7 @@ function DemoCandidateInner({ params }) {
             <div className="no-print" style={{ flexShrink: 0, width: isMobile ? '100%' : 220 }}>
               {/* Primary actions */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+                {isAgency && (
                 <button
                   onClick={() => setSignupPrompt(true)}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '10px 16px', cursor: 'pointer', width: '100%' }}
@@ -962,6 +963,7 @@ function DemoCandidateInner({ params }) {
                   Manager Brief PDF
                   <InfoTooltip text="A 2-page summary with QR code for line managers who will not read the full report" light />
                 </button>
+                )}
                 <a
                   href="/demo/highlight-reel"
                   target="_blank"
@@ -1044,24 +1046,26 @@ function DemoCandidateInner({ params }) {
                 )}
 
                 {/* COMPLIANCE */}
+                {!isAgency && (
+                <>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Compliance</div>
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="shield" size={14} color={TEALD} />
                   Compliance Certificate
                   <InfoTooltip text="ERA 2025 legal compliance certificate for this assessment" />
                 </button>
-                {!isAgency && (
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="alert" size={14} color={AMB} />
                   Offer Risk Confirmation
                   <InfoTooltip text="Confirm you have reviewed the risks before making an offer — creates an audit trail" />
                 </button>
-                )}
                 {params.candidateId === 'demo-c4' && (
                   <button onClick={() => setEvidencePackModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
                     <Ic name="shield" size={14} color={NAVY} />
                     Evidence Pack
                   </button>
+                )}
+                </>
                 )}
 
                 {/* CANDIDATE */}

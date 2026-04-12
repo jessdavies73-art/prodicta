@@ -1660,7 +1660,7 @@ export default function CandidateReportPage({ params }) {
                 <div className="no-print" style={{ flexShrink: 0, width: isMobile ? '100%' : 220 }}>
                   {/* Primary actions */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
-                    {results && (
+                    {results && profile?.account_type === 'agency' && (
                       <button
                         onClick={() => setBriefModal(true)}
                         style={{
@@ -1946,8 +1946,10 @@ export default function CandidateReportPage({ params }) {
                       </button>
                     )}
                     {/* COMPLIANCE */}
+                    {profile?.account_type === 'employer' && (
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Compliance</div>
-                    {results && (
+                    )}
+                    {results && profile?.account_type === 'employer' && (
                       <button
                         onClick={() => window.open(`/api/candidates/${params.candidateId}/certificate`, '_blank')}
                         style={{
@@ -1972,7 +1974,7 @@ export default function CandidateReportPage({ params }) {
                         <InfoTooltip text="Confirm you have reviewed the risks before making an offer — creates an audit trail" />
                       </button>
                     )}
-                    {results && existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
+                    {results && profile?.account_type === 'employer' && existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
                       <button
                         onClick={() => window.open(`/api/assessment/${params.id}/candidate/${params.candidateId}/evidence-pack`, '_blank')}
                         className="no-print"
