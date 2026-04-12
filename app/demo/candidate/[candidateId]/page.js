@@ -264,9 +264,11 @@ function RadarChart({ scores }) {
         const ca = Math.cos(a), sa = Math.sin(a)
         const anchor = ca > 0.25 ? 'start' : ca < -0.25 ? 'end' : 'middle'
         const nameY = sa > 0.25 ? ly : sa < -0.25 ? ly - 14 : ly - 6
+        const SHORT_LABELS = { 'Technical Communication': 'Technical Comms', 'Execution Reliability': 'Delivers consistently?' }
+        const label = SHORT_LABELS[skill] || skill
         return (
           <g key={i}>
-            <text x={lx} y={nameY} textAnchor={anchor} fontSize={11} fontWeight="700" fontFamily="Outfit, system-ui, sans-serif" fill="#0f2137">{skill}</text>
+            <text x={lx} y={nameY} textAnchor={anchor} fontSize={11} fontWeight="700" fontFamily="Outfit, system-ui, sans-serif" fill="#0f2137">{label}</text>
             <text x={lx} y={nameY + 14} textAnchor={anchor} fontSize={13} fontWeight="800" fontFamily="'IBM Plex Mono', monospace" fill="#00BFA5">{s}</text>
           </g>
         )
@@ -1589,17 +1591,15 @@ function DemoCandidateInner({ params }) {
                   <RadarChart scores={results.scores} />
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 16 }}>
                     {Object.entries(results.scores).map(([skill, skillScore]) => {
+                      const displaySkill = skill === 'Execution Reliability' ? 'Will they deliver consistently?' : skill
                       const narrative = results.score_narratives?.[skill]
                       return (
                         <div key={skill} style={{ background: BG, border: `1.5px solid ${BD}`, borderRadius: 10, padding: '18px 20px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
                             <SmallRing score={skillScore} size={58} strokeWidth={5} />
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 5 }}>{skill}</div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: sc(skillScore) }}>{skillScore}</span>
-                                <Badge label={slbl(skillScore)} bg={sbg(skillScore)} color={sc(skillScore)} border={sbd(skillScore)} />
-                              </div>
+                              <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 5 }}>{displaySkill}</div>
+                              <Badge label={slbl(skillScore)} bg={sbg(skillScore)} color={sc(skillScore)} border={sbd(skillScore)} />
                             </div>
                           </div>
                           <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.7 }}>{narrative || 'Assessment based on scenario responses.'}</p>
