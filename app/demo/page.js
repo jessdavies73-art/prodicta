@@ -48,24 +48,20 @@ function StatCard({ icon, label, value, sub, accent = TEAL }) {
         flex: 1,
         minWidth: 140,
         background: '#fff',
-        border: `1.5px solid ${BD}`,
-        borderStyle: 'solid',
-        borderTop: `3px solid ${accent}`,
+        border: '1px solid #E5E7EB',
+        borderLeft: `4px solid ${accent}`,
         borderRadius: 12,
-        padding: '20px 24px',
+        padding: '20px 22px',
         boxShadow: hovered
-          ? '0 8px 24px rgba(15,33,55,0.13), 0 2px 8px rgba(15,33,55,0.07)'
-          : '0 2px 8px rgba(15,33,55,0.06), 0 1px 3px rgba(15,33,55,0.04)',
+          ? '0 8px 24px rgba(0,0,0,0.13)'
+          : '0 4px 16px rgba(0,0,0,0.10)',
         transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
-        transition: 'box-shadow 0.18s ease, transform 0.18s ease',
+        transition: 'box-shadow 0.15s ease, transform 0.15s ease',
         cursor: 'default',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14 }}>
-        <Ic name={icon} size={14} color={accent} />
-        <span style={{ fontSize: 11.5, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
-      </div>
-      <div style={{ fontSize: 38, fontWeight: 800, color: accent, fontFamily: FM, lineHeight: 1, letterSpacing: '-1.5px', marginBottom: 8 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: NAVY, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>{label}</div>
+      <div style={{ fontSize: 34, fontWeight: 800, color: accent, fontFamily: FM, lineHeight: 1, marginBottom: 6 }}>
         {typeof value === 'number' ? <CountUp target={value} /> : value}
       </div>
       {sub && <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>{sub}</div>}
@@ -372,7 +368,7 @@ function DemoDashboardInner() {
         <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
           <StatCard icon="check" label="Completed" value={completed.length} sub="Completed assessments" accent={TEAL} />
           <StatCard icon="clock" label="Pending" value={pendingCandidates.length} sub="Awaiting completion" accent={AMB} />
-          <StatCard icon="bar" label="Avg score" value={avgScore !== null ? avgScore : '-'} sub={avgScore !== null ? slabel(avgScore) : 'No data yet'} accent={avgScore !== null ? (avgScore >= 75 ? GRN : avgScore >= 50 ? AMB : RED) : TX3} />
+          <StatCard icon="bar" label="Avg score" value={avgScore !== null ? avgScore : '-'} sub={avgScore !== null ? slabel(avgScore) : 'No data yet'} accent={NAVY} />
           <StatCard icon="award" label="Recommended" value={recommendedCount} sub="Scoring 70 or above" accent={TEAL} />
         </div>
 
