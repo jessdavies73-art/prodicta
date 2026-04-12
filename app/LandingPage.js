@@ -318,6 +318,7 @@ function StatNumber({ to, suffix = '', display }) {
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState(null)
+  const [heroPersona, setHeroPersona] = useState('senior') // 'senior' | 'volume'
   const [pricingMode, setPricingMode] = useState('subscription') // 'subscription' | 'payg'
   const [riskJd, setRiskJd] = useState('')
   const [riskLoading, setRiskLoading] = useState(false)
@@ -426,25 +427,68 @@ export default function LandingPage() {
           <ProdictaLogo size={56} textColor="#ffffff" />
         </div>
 
+        {/* Persona toggle */}
+        <div style={{
+          display: 'inline-flex', gap: 0, marginBottom: 28, position: 'relative', zIndex: 1,
+          borderRadius: 50, border: `1.5px solid ${TEAL}`,
+          overflow: 'hidden',
+        }}>
+          {[
+            { key: 'senior', label: 'Senior and specialist hiring' },
+            { key: 'volume', label: 'High-volume hiring' },
+          ].map(p => {
+            const active = heroPersona === p.key
+            return (
+              <button
+                key={p.key}
+                onClick={() => setHeroPersona(p.key)}
+                style={{
+                  fontFamily: F, fontSize: 13, fontWeight: 700,
+                  padding: '9px 22px',
+                  background: active ? TEAL : 'transparent',
+                  color: active ? '#fff' : TEAL,
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'background 0.25s, color 0.25s',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {p.label}
+              </button>
+            )
+          })}
+        </div>
+
         {/* Headline */}
         <h1 style={{
           fontFamily: F, fontWeight: 900, color: '#fff', position: 'relative', zIndex: 1,
           fontSize: 'clamp(36px, 5.5vw, 66px)', letterSpacing: '-2px', lineHeight: 1.05,
           maxWidth: 820, marginBottom: 24,
         }}>
-          Understand likely{' '}
-          <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>probation outcomes</span>
-          {' '}before you{' '}
-          <span style={{ color: GOLD, textShadow: '0 0 40px rgba(232,184,75,0.35)' }}>hire.</span>
+          {heroPersona === 'senior' ? (
+            <>
+              Understand likely{' '}
+              <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>probation outcomes</span>
+              {' '}before you{' '}
+              <span style={{ color: GOLD, textShadow: '0 0 40px rgba(232,184,75,0.35)' }}>hire.</span>
+            </>
+          ) : (
+            <>
+              The fastest way to find the candidates{' '}
+              <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>worth interviewing.</span>
+            </>
+          )}
         </h1>
 
         {/* Positioning line */}
         <p style={{
           fontFamily: F, fontSize: 'clamp(18px, 2.5vw, 28px)', fontWeight: 700,
           color: '#00BFA5', lineHeight: 1.4,
-          maxWidth: 620, marginBottom: 16, position: 'relative', zIndex: 1,
+          maxWidth: 680, marginBottom: 16, position: 'relative', zIndex: 1,
         }}>
-          The Hiring Decision Engine with built-in Probation Insurance.
+          {heroPersona === 'senior'
+            ? 'The Hiring Decision Engine with built-in Probation Insurance.'
+            : 'Screen 80 candidates. Shortlist 20. Interview 6.'}
         </p>
 
         {/* Subheadline */}
@@ -453,7 +497,9 @@ export default function LandingPage() {
           color: 'rgba(255,255,255,0.6)', lineHeight: 1.75,
           maxWidth: 620, marginBottom: 44, position: 'relative', zIndex: 1,
         }}>
-          Your next hire is either your best decision or your most expensive. Know which.
+          {heroPersona === 'senior'
+            ? 'Your next hire is either your best decision or your most expensive. Know which.'
+            : 'Rapid Screen puts candidates through a 5-8 minute real-work test. You get a clear signal: Strong Proceed, Interview Worthwhile, or High Risk.'}
         </p>
         {/* CTA buttons */}
         <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 56, position: 'relative', zIndex: 1 }}>
@@ -466,7 +512,7 @@ export default function LandingPage() {
           }}
           onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.animation='none'; e.currentTarget.style.boxShadow=`0 12px 40px rgba(0,191,165,0.5)` }}
           onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.animation='ctaPulse 3s ease infinite'; e.currentTarget.style.boxShadow='' }}>
-            Get started
+            {heroPersona === 'senior' ? 'Get started' : 'Start screening'}
           </a>
           <a href="/demo" style={{
             fontFamily: F, fontSize: 16, fontWeight: 600, color: '#fff',
