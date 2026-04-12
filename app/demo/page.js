@@ -722,26 +722,12 @@ function DemoDashboardInner() {
             </div>
 
             {/* Agency: Bulk Screening */}
-            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
-              <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Ic name="sliders" size={16} color={TEAL} />
-                  <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Bulk Screening Mode</h2>
-                </div>
-                <p style={{ margin: '4px 0 0', fontSize: 12.5, color: TX3 }}>5 candidates assessed for Customer Service Advisor</p>
+            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '16px 24px', marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Ic name="sliders" size={16} color={TEAL} />
+                <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Bulk Screening Mode</h2>
               </div>
-              <div style={{ padding: '16px 24px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                {[
-                  { tier: 'Recommended', count: 2, color: GRN, bg: GRNBG, bd: GRNBD },
-                  { tier: 'Review', count: 2, color: AMB, bg: AMBBG, bd: AMBBD },
-                  { tier: 'Not Recommended', count: 1, color: RED, bg: REDBG, bd: REDBD },
-                ].map(t => (
-                  <div key={t.tier} style={{ flex: 1, minWidth: 100, padding: '14px 16px', background: t.bg, border: `1.5px solid ${t.bd}`, borderRadius: 10, textAlign: 'center' }}>
-                    <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: t.color, lineHeight: 1, marginBottom: 4 }}>{t.count}</div>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, color: t.color }}>{t.tier}</div>
-                  </div>
-                ))}
-              </div>
+              <p style={{ margin: '4px 0 0', fontSize: 12.5, color: TX3 }}>5 candidates assessed for Customer Service Advisor. Use the filter cards below to view by verdict.</p>
             </div>
           </>
         )}
