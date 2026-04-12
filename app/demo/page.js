@@ -385,7 +385,7 @@ function DemoDashboardInner() {
                 <button
                   key={v.key}
                   type="button"
-                  onClick={() => { setVerdictFilter(prev => prev === v.key ? null : v.key); setDemoHealthFilter(null) }}
+                  onClick={(e) => { e.stopPropagation(); setVerdictFilter(prev => prev === v.key ? null : v.key); setDemoHealthFilter(null); setSelectedCandidates(new Set()) }}
                   onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                   onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                   style={{
@@ -417,7 +417,7 @@ function DemoDashboardInner() {
           <div style={{ marginBottom: 14 }}>
             <button
               type="button"
-              onClick={() => setVerdictFilter(null)}
+              onClick={(e) => { e.stopPropagation(); setVerdictFilter(null); setSelectedCandidates(new Set()) }}
               style={{
                 background: 'none', border: `1px solid ${BD}`, borderRadius: 6,
                 padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600,
@@ -575,7 +575,7 @@ function DemoDashboardInner() {
                     <button
                       key={c.key}
                       type="button"
-                      onClick={() => { setDemoHealthFilter(prev => prev === c.key ? null : c.key); setVerdictFilter(null) }}
+                      onClick={(e) => { e.stopPropagation(); setDemoHealthFilter(prev => prev === c.key ? null : c.key); setVerdictFilter(null); setSelectedCandidates(new Set()) }}
                       onMouseEnter={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                       onMouseLeave={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                       style={{
@@ -607,7 +607,7 @@ function DemoDashboardInner() {
                 <div style={{ marginTop: 10 }}>
                   <button
                     type="button"
-                    onClick={() => setDemoHealthFilter(null)}
+                    onClick={(e) => { e.stopPropagation(); setDemoHealthFilter(null); setSelectedCandidates(new Set()) }}
                     style={{
                       background: 'none', border: `1px solid ${BD}`, borderRadius: 6,
                       padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600,
@@ -745,7 +745,7 @@ function DemoDashboardInner() {
                   <button
                     key={v.key}
                     type="button"
-                    onClick={() => { setVerdictFilter(prev => prev === v.key ? null : v.key); setDemoHealthFilter(null) }}
+                    onClick={(e) => { e.stopPropagation(); setVerdictFilter(prev => prev === v.key ? null : v.key); setDemoHealthFilter(null); setSelectedCandidates(new Set()) }}
                     onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                     onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                     style={{
@@ -771,7 +771,7 @@ function DemoDashboardInner() {
             </div>
             {verdictFilter && (
               <div style={{ marginBottom: 14 }}>
-                <button type="button" onClick={() => setVerdictFilter(null)} style={{ background: 'none', border: `1px solid ${BD}`, borderRadius: 6, padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, cursor: 'pointer' }}>
+                <button type="button" onClick={(e) => { e.stopPropagation(); setVerdictFilter(null); setSelectedCandidates(new Set()) }} style={{ background: 'none', border: `1px solid ${BD}`, borderRadius: 6, padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, cursor: 'pointer' }}>
                   Show all candidates
                 </button>
               </div>
