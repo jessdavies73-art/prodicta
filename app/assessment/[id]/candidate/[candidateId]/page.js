@@ -2097,25 +2097,12 @@ export default function CandidateReportPage({ params }) {
                   </div>
                   {/* White content */}
                   <div style={{ background: '#fff', padding: isMobile ? '20px 20px' : '24px 36px' }}>
-                    {/* Score + Confidence row */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 16 : 28, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 20 }}>
-                      <div style={{ textAlign: 'center', minWidth: 80 }}>
-                        <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Overall Score</div>
-                        <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: NAVY, lineHeight: 1 }}>{score}</div>
-                        <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>/100</div>
+                    {/* AI summary overview */}
+                    {results.ai_summary && (
+                      <div style={{ fontFamily: F, fontSize: 14, fontStyle: 'italic', color: '#5e6b7f', marginBottom: 16, lineHeight: 1.5 }}>
+                        {results.ai_summary.split(/[.!?]/)[0].trim().slice(0, 120)}{results.ai_summary.split(/[.!?]/)[0].trim().length > 0 ? '.' : ''}
                       </div>
-                      <div style={{ textAlign: 'center', minWidth: 80 }}>
-                        <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Hiring Confidence</div>
-                        <div style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: NAVY }}>
-                          {(() => {
-                            const hc = results.hiring_confidence
-                            const hcScore = hc ? (hc.score ?? hc) : null
-                            if (hcScore != null) return hcScore >= 70 ? 'High' : hcScore >= 55 ? 'Moderate' : 'Low'
-                            return results.confidence_level || '-'
-                          })()}
-                        </div>
-                      </div>
-                    </div>
+                    )}
                     {/* Strengths + Watch-outs */}
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 20 }}>
                       {(results.strengths || []).length > 0 && (
