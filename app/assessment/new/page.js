@@ -828,6 +828,13 @@ export default function NewAssessmentPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
             {[
               {
+                value: 'rapid',
+                title: 'Rapid Screen',
+                subtitle: '5-8 minutes, 1 scenario + prioritisation test',
+                badge: 'High Volume',
+                description: 'Screen large volumes of candidates fast. Perfect for operational and entry-level roles.',
+              },
+              {
                 value: 'quick',
                 title: 'Speed-Fit',
                 subtitle: '15 minutes, 2 scenarios',
@@ -877,6 +884,16 @@ export default function NewAssessmentPage() {
                       textTransform: 'uppercase', letterSpacing: '0.05em',
                     }}>
                       Recommended
+                    </span>
+                  )}
+                  {opt.badge && !isRecommended && (
+                    <span style={{
+                      position: 'absolute', top: 10, right: 10,
+                      fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 20,
+                      background: '#00BFA5', color: '#fff', fontFamily: F,
+                      textTransform: 'uppercase', letterSpacing: '0.05em',
+                    }}>
+                      {opt.badge}
                     </span>
                   )}
                   <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginBottom: 2, paddingRight: isRecommended ? 90 : 0 }}>

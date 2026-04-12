@@ -882,7 +882,7 @@ function DemoCandidateInner({ params }) {
                   {(() => {
                     const m = candidate.assessments?.assessment_mode
                     if (!m || m === 'standard') return null
-                    const label = m === 'advanced' ? 'Strategy-Fit' : m === 'quick' || m === 'rapid' ? 'Speed-Fit' : null
+                    const label = m === 'advanced' ? 'Strategy-Fit' : m === 'rapid' ? 'Rapid Screen' : m === 'quick' ? 'Speed-Fit' : null
                     if (!label) return null
                     return <Badge label={label} bg="#fffbeb" color="#d97706" border="#fcd34d" />
                   })()}
@@ -1100,14 +1100,24 @@ function DemoCandidateInner({ params }) {
             VERDICT CARD
         ══════════════════════════════════════════════════ */}
         {results && (() => {
-          const isStrongHire = score >= 75 && (results.risk_level === 'Low' || results.risk_level === 'Very Low')
-          const isDoNotHire = score < 55 || results.risk_level === 'High'
-          const verdictLabel = isStrongHire ? 'Strong Hire' : isDoNotHire ? 'Do Not Hire' : 'Review'
-          const verdictSub = isStrongHire
-            ? 'This candidate is predicted to pass probation. Confidence: High.'
-            : isDoNotHire
-            ? 'This candidate is predicted to struggle in this role. See full report for detail.'
-            : 'This candidate has potential with areas to watch. See watch-outs below.'
+          const isRapidScreen = candidate?.assessments?.assessment_mode === 'rapid'
+          const rapidSignal = results.rapid_screen_signal
+          const isStrongHire = isRapidScreen
+            ? rapidSignal === 'Strong Proceed'
+            : score >= 75 && (results.risk_level === 'Low' || results.risk_level === 'Very Low')
+          const isDoNotHire = isRapidScreen
+            ? rapidSignal === 'High Risk'
+            : score < 55 || results.risk_level === 'High'
+          const verdictLabel = isRapidScreen
+            ? (rapidSignal || (score >= 70 ? 'Strong Proceed' : score >= 50 ? 'Interview Worthwhile' : 'High Risk'))
+            : (isStrongHire ? 'Strong Hire' : isDoNotHire ? 'Do Not Hire' : 'Review')
+          const verdictSub = isRapidScreen
+            ? (results.rapid_screen_reason || 'Rapid screen assessment complete.')
+            : (isStrongHire
+              ? 'This candidate is predicted to pass probation. Confidence: High.'
+              : isDoNotHire
+              ? 'This candidate is predicted to struggle in this role. See full report for detail.'
+              : 'This candidate has potential with areas to watch. See watch-outs below.')
           const verdictBg = isStrongHire ? '#00BFA5' : isDoNotHire ? '#991B1B' : '#B45309'
           return (
             <div style={{
@@ -1143,6 +1153,67 @@ function DemoCandidateInner({ params }) {
             </div>
           )
         })()}
+
+        {/* ── RAPID SCREEN SIMPLIFIED REPORT ── */}
+        {results && candidate?.assessments?.assessment_mode === 'rapid' && (
+          <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 20 }}>
+              <ScoreRing score={score} size={110} strokeWidth={8} />
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Rapid Screen Result</div>
+                <div style={{ fontFamily: F, fontSize: 14, color: TX2, lineHeight: 1.65 }}>
+                  {results.rapid_screen_reason || results.ai_summary || 'Assessment complete.'}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+              {(results.strengths || []).slice(0, 1).map((s, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <div style={{ width: 24, height: 24, borderRadius: 6, background: GRNBG, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Ic name="check" size={13} color={GRN} />
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: GRN, marginBottom: 2 }}>What they did well</div>
+                    <div style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>{typeof s === 'object' ? (s.strength || s.title || '') : s}</div>
+                  </div>
+                </div>
+              ))}
+              {(results.interview_questions || []).slice(0, 1).map((q, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <div style={{ width: 24, height: 24, borderRadius: 6, background: AMBBG, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Ic name="search" size={13} color={AMB} />
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: AMB, marginBottom: 2 }}>What to probe at interview</div>
+                    <div style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>{typeof q === 'object' ? (q.question || q.text || '') : q}</div>
+                  </div>
+                </div>
+              ))}
+              {(results.watchouts || []).slice(0, 1).map((w, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <div style={{ width: 24, height: 24, borderRadius: 6, background: REDBG, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Ic name="alert" size={13} color={RED} />
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: RED, marginBottom: 2 }}>Risk flag</div>
+                    <div style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>{typeof w === 'object' ? (w.watchout || w.title || '') : w}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ textAlign: 'center', paddingTop: 16, borderTop: `1px solid ${BD}` }}>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 12px' }}>Get the full report for this candidate</p>
+              <a href="/login" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                background: TEAL, color: NAVY, border: 'none', borderRadius: 10,
+                padding: '12px 28px', fontFamily: F, fontSize: 14, fontWeight: 700,
+                textDecoration: 'none', cursor: 'pointer',
+              }}>
+                Upgrade to Speed-Fit
+              </a>
+            </div>
+          </Card>
+        )}
 
         {results && (
           <>

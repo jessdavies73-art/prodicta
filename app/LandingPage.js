@@ -1027,6 +1027,7 @@ export default function LandingPage() {
               </Reveal>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, alignItems: 'start', marginBottom: 20 }}>
                 {[
+                  { name: 'Rapid Screen', price: '£6', time: '5-8 minutes, 1 scenario + prioritisation test', desc: 'For high volume screening of operational roles' },
                   { name: 'Speed-Fit', price: '£18', time: '15 minutes, 2 scenarios', desc: 'For urgent hires and high volume roles' },
                   { name: 'Depth-Fit', price: '£35', time: '25 minutes, 3 scenarios', desc: 'For most roles', highlight: true },
                   { name: 'Strategy-Fit', price: '£65', time: '45 minutes, 4 scenarios + Workspace', desc: 'For senior and high stakes hires' },

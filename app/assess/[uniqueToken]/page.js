@@ -13,6 +13,7 @@ const BD     = '#e4e9f0'
 const TX     = '#0f172a'
 const TX2    = '#5e6b7f'
 const TX3    = '#94a1b3'
+const AMB    = '#F59E0B'
 const F      = "'Outfit', system-ui, sans-serif"
 const FM     = "'IBM Plex Mono', monospace"
 
@@ -196,6 +197,23 @@ function IntroPage({ candidate, assessment, companyName, onBegin }) {
           </p>
         </div>
 
+        {(assessment.assessment_mode || '').toLowerCase() === 'rapid' && (
+          <div style={{
+            background: TEALLT,
+            border: `1px solid ${TEAL}55`,
+            borderRadius: 10,
+            padding: '12px 18px',
+            marginBottom: 20,
+            fontFamily: F,
+            fontSize: 14,
+            fontWeight: 600,
+            color: TEALD,
+            textAlign: 'center',
+          }}>
+            This is a brief 5-8 minute screening assessment.
+          </div>
+        )}
+
         <Card style={{ marginBottom: 24 }}>
           <h3 style={{ fontFamily: F, fontSize: 15, fontWeight: 600, color: TX, margin: '0 0 8px' }}>
             About this assessment
@@ -313,7 +331,7 @@ function ActivePage({ candidate, assessment, onSubmit }) {
   const roleLevel = assessment.role_level || 'MID_LEVEL'
   const isOperational = roleLevel === 'OPERATIONAL'
   const isLeadership = roleLevel === 'LEADERSHIP'
-  const showRecordToggle = mode !== 'quick' && !isOperational
+  const showRecordToggle = mode !== 'quick' && mode !== 'rapid' && !isOperational
   const [inputModes, setInputModes] = useState(scenarios.map(() => 'type')) // 'type' or 'record'
   const [audioBlobs, setAudioBlobs] = useState(scenarios.map(() => null))
   const [audioUrls, setAudioUrls] = useState(scenarios.map(() => null))
@@ -325,7 +343,7 @@ function ActivePage({ candidate, assessment, onSubmit }) {
   const audioChunksRef = useRef([])
 
   // Inbox Overload state
-  const showInbox = mode !== 'quick' && assessment.inbox_events?.scenarios
+  const showInbox = mode !== 'quick' && mode !== 'rapid' && assessment.inbox_events?.scenarios
   const inboxData = showInbox ? (assessment.inbox_events.scenarios || []) : []
   const currentInbox = inboxData.find(s => s.scenario_index === scenarioIndex) || null
   const [inboxActions, setInboxActions] = useState({}) // { `${scenarioIdx}-${itemIdx}`: 'action'|'defer' }
@@ -792,6 +810,11 @@ function ActivePage({ candidate, assessment, onSubmit }) {
                   <div style={{ fontFamily: FM, fontSize: 13, color: TX3, marginTop: 6, textAlign: 'right' }}>
                     {wordCount(responses[scenarioIndex])} words
                   </div>
+                  {mode === 'rapid' && (
+                    <div style={{ fontFamily: F, fontSize: 12, color: AMB, marginTop: 4, textAlign: 'right' }}>
+                      Keep your response under 100 words
+                    </div>
+                  )}
                 </>
               )}
 
@@ -1925,8 +1948,11 @@ export default function AssessPage({ params }) {
 
   function handleScenariosComplete(responses) {
     setPendingResponses(responses)
-    // Show calendar step if calendar events exist, otherwise submit directly
-    if (assessment?.calendar_events) {
+    const currentMode = (assessment?.assessment_mode || '').toLowerCase()
+    // Rapid mode skips calendar, goes straight to submit
+    if (currentMode === 'rapid') {
+      doSubmit(responses)
+    } else if (assessment?.calendar_events) {
       setUiState('calendar')
     } else {
       doSubmit(responses)

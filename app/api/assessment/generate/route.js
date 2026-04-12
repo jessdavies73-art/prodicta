@@ -5,9 +5,10 @@ import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-
 export async function POST(request) {
   try {
     const { role_title, job_description, skill_weights, save_as_template, template_name, context_answers, assessment_mode } = await request.json()
-    // Normalise mode: 'quick' (2 scenarios), 'standard' (3 scenarios), 'advanced' (4 scenarios). Legacy 'rapid' -> quick.
+    // Normalise mode: 'rapid' (1 scenario + prioritisation), 'quick' (2 scenarios), 'standard' (3 scenarios), 'advanced' (4 scenarios).
     const rawMode = (assessment_mode || 'standard').toLowerCase()
-    const mode = rawMode === 'rapid' ? 'quick' : (['quick', 'standard', 'advanced'].includes(rawMode) ? rawMode : 'standard')
+    const mode = ['rapid', 'quick', 'standard', 'advanced'].includes(rawMode) ? rawMode : 'standard'
+    const isRapid    = mode === 'rapid'
     const isQuick    = mode === 'quick'
     const isStandard = mode === 'standard'
     const isAdvanced = mode === 'advanced'
@@ -225,7 +226,75 @@ Write in UK English throughout. No Americanisms. Pull everything from the JD.
 
 FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in the output. Use commas, full stops, or rewrite the sentence instead.`
 
-    const prompt = isQuick ? `You are a specialist assessment designer for UK businesses. Your job is to create TWO rapid work simulation scenarios for this role. These are for a 15-minute rapid assessment - they must be tightly focused on the highest-priority skills from the job description.
+    const rapidPrompt = `You are a specialist assessment designer for UK businesses. Your job is to create a RAPID SCREEN assessment for this role. This is a 5-8 minute screening assessment designed to filter large volumes of candidates quickly. Keep everything short, punchy, and real-world.
+
+---
+
+ROLE: ${role_title}
+
+JOB DESCRIPTION:
+${job_description}
+${context_answers && Object.values(context_answers).some(v => v?.trim()) ? `
+ADDITIONAL CONTEXT PROVIDED BY THE HIRING MANAGER:
+${Object.entries(context_answers).map(([, v]) => v?.trim()).filter(Boolean).map(v => `- ${v}`).join('\n')}
+
+Treat these answers as ground truth.
+` : ''}---
+
+STEP 1 - IDENTIFY THE SINGLE MOST CRITICAL TASK FROM THE JD
+
+Read the job description. Identify the ONE task that will determine whether this hire survives their first week. Build a short, sharp scenario around it.
+
+---
+
+SCENARIO 1 - Quick fire task (Type: "Rapid Screen", Time: 5 minutes)
+
+A real situation this person will face in their first week. Keep the context SHORT (60-80 words). The task must be specific and concrete. The candidate should respond in under 100 words. Use OPERATIONAL framing regardless of seniority: direct, practical, no corporate fluff.
+
+---
+
+SCENARIO 2 - Prioritisation test (Type: "Prioritisation Test", Time: 3 minutes)
+
+Give the candidate exactly 5 tasks that could realistically land on their desk at the same time in this role. Pull these directly from the job description. They must rank them 1 to 5 in order of priority and give a one-line reason for their top choice.
+
+The 5 tasks should include:
+- One genuinely urgent task (health and safety, client emergency, or deadline)
+- One important but not urgent task
+- One task that seems urgent but is actually low priority
+- Two routine tasks of varying importance
+
+---
+
+OUTPUT FORMAT
+
+Return ONLY a JSON array with exactly 2 objects. No preamble, no explanation, no markdown.
+
+[
+  {
+    "type": "Rapid Screen",
+    "title": "Concise title describing the situation",
+    "context": "The situation in present tense. 60-80 words. Named characters, specific details. Must feel like a real working day.",
+    "task": "Exactly what the candidate must do. One specific deliverable. Tell them to keep their response under 100 words.",
+    "timeMinutes": 5,
+    "skills": ["Communication", "Judgment"]
+  },
+  {
+    "type": "Prioritisation Test",
+    "title": "Prioritise your morning",
+    "context": "You arrive at work and these 5 tasks are all waiting for you.",
+    "task": "Rank these tasks 1 to 5 in order of priority. Give a one-line reason for your number 1 choice.\\n\\n1. [Task A]\\n2. [Task B]\\n3. [Task C]\\n4. [Task D]\\n5. [Task E]",
+    "timeMinutes": 3,
+    "skills": ["Prioritisation", "Judgment"]
+  }
+]
+
+Skills must be chosen only from: Communication, Problem solving, Prioritisation, Leadership, Negotiation, Client management, Judgment, Strategy, Analysis, Crisis management, People management, Technical communication, Stakeholder management, Conflict resolution
+
+Write in UK English throughout. No Americanisms.
+
+FORMATTING RULE: Never use em dash or en dash characters anywhere in the output. Use commas, full stops, or rewrite the sentence instead.`
+
+    const prompt = isRapid ? rapidPrompt : isQuick ? `You are a specialist assessment designer for UK businesses. Your job is to create TWO rapid work simulation scenarios for this role. These are for a 15-minute rapid assessment - they must be tightly focused on the highest-priority skills from the job description.
 
 These are NOT hypothetical exercises. Each scenario must be built from actual tasks listed in the job description. The candidate should feel like they are already in the role.
 
