@@ -140,7 +140,7 @@ function InfoTooltip({ text, light = false }) {
           left: pos.left,
           transform: 'translateX(-50%)',
           background: tooltipBg, color: '#fff', fontSize: 12, fontFamily: F, fontWeight: 400, lineHeight: 1.55,
-          padding: '9px 13px', borderRadius: 8, width: 240, zIndex: 9999,
+          padding: '8px 12px', borderRadius: 6, maxWidth: 220, zIndex: 9999,
           boxShadow: '0 4px 16px rgba(0,0,0,0.35)', pointerEvents: 'none', textAlign: 'left',
           whiteSpace: 'normal', border: light ? '1px solid rgba(255,255,255,0.15)' : 'none',
         }}>
@@ -1002,8 +1002,8 @@ function DemoCandidateInner({ params }) {
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Share</div>
                   <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                     <Ic name="file" size={14} color={TEALD} />
-                    Export Client Report
-                    <InfoTooltip text="Send a configured version of this report to your client" />
+                    Send Report to Client
+                    <InfoTooltip text="Generate and send a configured version of this report to your client." />
                   </button>
                   <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                     <Ic name="send" size={14} color={TEALD} />
@@ -1019,14 +1019,10 @@ function DemoCandidateInner({ params }) {
                   Interview Brief
                   <InfoTooltip text="Targeted interview questions generated from this candidate's specific watch-outs" />
                 </button>
-                <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
-                  <Ic name="sliders" size={14} color={TEALD} />
-                  Re-run Scenario
-                </button>
                 <button onClick={() => setSignupPrompt(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
                   <Ic name="sliders" size={14} color={TEALD} />
-                  Re-run with Context
-                  <InfoTooltip text="Add new information and re-analyse — shows a before and after comparison" />
+                  Re-analyse with New Context
+                  <InfoTooltip text="Add new information and re-analyse the existing responses. The candidate does nothing. Shows a before and after comparison." />
                 </button>
 
                 {/* ONBOARDING */}
@@ -1035,12 +1031,13 @@ function DemoCandidateInner({ params }) {
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Onboarding</div>
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="file" size={14} color={TEALD} />
-                  Coaching Plan PDF
-                  <InfoTooltip text="The 90-day probation coaching plan from Alchemy Training UK" />
+                  90-Day Manager Coaching Plan
+                  <InfoTooltip text="A structured probation guide with SMART objectives and Alchemy Training UK coach support." />
                 </button>
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="award" size={14} color={TEALD} />
-                  Probation Co-pilot
+                  Open Probation Co-pilot
+                  <InfoTooltip text="Track this candidate through their probation period with structured check-ins and guidance." />
                 </button>
                 </>
                 )}
@@ -1051,13 +1048,13 @@ function DemoCandidateInner({ params }) {
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Compliance</div>
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="shield" size={14} color={TEALD} />
-                  Compliance Certificate
-                  <InfoTooltip text="ERA 2025 legal compliance certificate for this assessment" />
+                  ERA 2025 Certificate
+                  <InfoTooltip text="ERA 2025 compliance certificate for this assessment. Download for your legal records." />
                 </button>
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="alert" size={14} color={AMB} />
-                  Offer Risk Confirmation
-                  <InfoTooltip text="Confirm you have reviewed the risks before making an offer — creates an audit trail" />
+                  Confirm Offer Decision
+                  <InfoTooltip text="Acknowledge the risks before making an offer. Creates a legal audit trail of your decision." />
                 </button>
                 {params.candidateId === 'demo-c4' && (
                   <button onClick={() => setEvidencePackModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
@@ -1076,13 +1073,14 @@ function DemoCandidateInner({ params }) {
                 </button>
                 <button onClick={() => setCandidatePreview(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
                   <Ic name="users" size={14} color={TEALD} />
-                  See candidate view
-                  <InfoTooltip text="Preview what the candidate sees after submitting their assessment" />
+                  Preview Candidate View
+                  <InfoTooltip text="See the positive-framed summary the candidate sees after submitting their assessment." />
                 </button>
                 {!isAgency && (
                   <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                     <Ic name="send" size={14} color={TEALD} />
-                    Send Development Feedback
+                    Send Feedback to Candidate
+                    <InfoTooltip text="Send the rejected candidate a constructive development plan showing what they could work on." />
                   </button>
                 )}
 
@@ -1090,8 +1088,8 @@ function DemoCandidateInner({ params }) {
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Workspace</div>
                 <a href="/demo/workspace" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', textDecoration: 'none', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}>
                   <Ic name="grid" size={14} color={TEALD} />
-                  Workspace Demo
-                  <InfoTooltip text="View how this candidate performed in the Day 1 virtual workspace simulation" />
+                  View Day 1 Simulation
+                  <InfoTooltip text="See how this candidate performed in the virtual Day 1 workspace — emails, tasks, messages and calendar." />
                 </a>
               </div>
               )}

@@ -190,9 +190,9 @@ function InfoTooltip({ text, light = false }) {
           fontFamily: F,
           fontWeight: 400,
           lineHeight: 1.55,
-          padding: '9px 13px',
-          borderRadius: 8,
-          width: 240,
+          padding: '8px 12px',
+          borderRadius: 6,
+          maxWidth: 220,
           zIndex: 9999,
           boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
           pointerEvents: 'none',
@@ -1726,8 +1726,8 @@ export default function CandidateReportPage({ params }) {
                         fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
                       }}>
                         <Ic name="file" size={15} color={TEALD} />
-                        Export Client Report
-                        <InfoTooltip text="Send a configured version of this report to your client" />
+                        Send Report to Client
+                        <InfoTooltip text="Generate and send a configured version of this report to your client." />
                       </button>
                     )}
                     {results && profile?.account_type === 'agency' && (
@@ -1745,40 +1745,6 @@ export default function CandidateReportPage({ params }) {
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Interview</div>
                     {results && (
                       <button
-                        disabled={!!results.additional_scenario || rerunPending}
-                        onClick={async () => {
-                          if (results.additional_scenario || rerunPending) return
-                          if (!confirm('Generate one additional scenario for this candidate? They will receive a new email with a single extra task.')) return
-                          setRerunPending(true)
-                          try {
-                            const res = await fetch(`/api/candidates/${params.candidateId}/rerun`, { method: 'POST' })
-                            const data = await res.json()
-                            if (!res.ok) throw new Error(data?.error || 'Re-run failed')
-                            alert('Additional scenario sent to the candidate.')
-                            setResults(r => ({ ...r, additional_scenario: data.additional_scenario }))
-                          } catch (e) {
-                            alert(e.message)
-                          } finally {
-                            setRerunPending(false)
-                          }
-                        }}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: results.additional_scenario || rerunPending ? '#e2e8f0' : '#fff',
-                          border: `1.5px solid ${results.additional_scenario || rerunPending ? BD : `${TEAL}55`}`,
-                          borderRadius: 8,
-                          cursor: results.additional_scenario || rerunPending ? 'not-allowed' : 'pointer',
-                          fontFamily: F, fontSize: 13, fontWeight: 700,
-                          color: results.additional_scenario || rerunPending ? TX3 : TEALD,
-                          padding: '9px 16px',
-                        }}
-                      >
-                        <Ic name="refresh" size={15} color={results.additional_scenario || rerunPending ? TX3 : TEALD} />
-                        {results.additional_scenario ? 'Re-run already used' : rerunPending ? 'Sending...' : 'Re-run Scenario'}
-                      </button>
-                    )}
-                    {results && (
-                      <button
                         onClick={() => setReanalyseModal(true)}
                         disabled={reanalysing}
                         style={{
@@ -1789,8 +1755,8 @@ export default function CandidateReportPage({ params }) {
                         }}
                       >
                         <Ic name="sliders" size={15} color={TEALD} />
-                        {reanalysing ? 'Re-analysing...' : 'Re-run with Context'}
-                        <InfoTooltip text="Add new information and re-analyse — shows a before and after comparison" />
+                        {reanalysing ? 'Re-analysing...' : 'Re-analyse with New Context'}
+                        <InfoTooltip text="Add new information and re-analyse the existing responses. The candidate does nothing. Shows a before and after comparison." />
                       </button>
                     )}
                     {results && (
@@ -1872,7 +1838,8 @@ export default function CandidateReportPage({ params }) {
                         }}
                       >
                         <Ic name="award" size={15} color={TEALD} />
-                        Probation Co-pilot
+                        Open Probation Co-pilot
+                        <InfoTooltip text="Track this candidate through their probation period with structured check-ins and guidance." />
                       </button>
                     )}
                     {results && profile?.account_type === 'employer' && existingOutcome?.outcome === 'still_probation' && (
@@ -1959,8 +1926,8 @@ export default function CandidateReportPage({ params }) {
                         }}
                       >
                         <Ic name="shield" size={15} color={TEALD} />
-                        Compliance Certificate
-                        <InfoTooltip text="ERA 2025 legal compliance certificate for this assessment" />
+                        ERA 2025 Certificate
+                        <InfoTooltip text="ERA 2025 compliance certificate for this assessment. Download for your legal records." />
                       </button>
                     )}
                     {results && profile?.account_type === 'employer' && !existingOutcome && (
@@ -1970,8 +1937,8 @@ export default function CandidateReportPage({ params }) {
                         fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
                       }}>
                         <Ic name="alert" size={15} color={AMB} />
-                        Offer Risk Confirmation
-                        <InfoTooltip text="Confirm you have reviewed the risks before making an offer — creates an audit trail" />
+                        Confirm Offer Decision
+                        <InfoTooltip text="Acknowledge the risks before making an offer. Creates a legal audit trail of your decision." />
                       </button>
                     )}
                     {results && profile?.account_type === 'employer' && existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
@@ -2035,7 +2002,8 @@ export default function CandidateReportPage({ params }) {
                         }}
                       >
                         <Ic name={devFeedbackSent ? 'check' : 'mail'} size={15} color={devFeedbackSent ? GRN : TEALD} />
-                        {sendingDevFeedback ? 'Sending...' : devFeedbackSent ? 'Development feedback sent' : 'Send Development Feedback'}
+                        {sendingDevFeedback ? 'Sending...' : devFeedbackSent ? 'Feedback sent' : 'Send Feedback to Candidate'}
+                        {!sendingDevFeedback && !devFeedbackSent && <InfoTooltip text="Send the rejected candidate a constructive development plan showing what they could work on." />}
                       </button>
                     )}
                     {devFeedbackError && (
