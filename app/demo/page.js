@@ -884,9 +884,9 @@ function DemoDashboardInner() {
         {(verdictCounts.strong > 0 || verdictCounts.maybe > 0 || verdictCounts.risk > 0) && (
           <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
             {[
-              { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', bg: '#00BFA5', fg: '#fff' },
-              { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', bg: AMB, fg: NAVY },
-              { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', bg: RED, fg: '#fff' },
+              { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
+              { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
+              { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
             ].map(v => {
               const active = verdictFilter === v.key
               return (
@@ -894,24 +894,27 @@ function DemoDashboardInner() {
                   key={v.key}
                   type="button"
                   onClick={() => setVerdictFilter(prev => prev === v.key ? null : v.key)}
+                  onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
+                  onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                   style={{
                     flex: isMobile ? undefined : 1,
                     width: isMobile ? '100%' : undefined,
-                    background: v.bg, color: v.fg, border: 'none',
-                    borderRadius: 14, padding: '20px 22px', textAlign: 'left',
+                    background: active ? `${v.accent}14` : '#fff',
+                    border: '1px solid #E5E7EB',
+                    borderLeft: `${active ? 6 : 4}px solid ${v.accent}`,
+                    borderRadius: 12, padding: '20px 22px', textAlign: 'left',
                     cursor: 'pointer', fontFamily: F,
-                    outline: active ? `3px solid ${NAVY}` : 'none', outlineOffset: 2,
-                    boxShadow: active ? '0 8px 24px rgba(15,33,55,0.18)' : '0 2px 8px rgba(15,33,55,0.08)',
-                    transition: 'transform 0.15s, box-shadow 0.15s',
+                    boxShadow: active ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
+                    transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
                     transform: active ? 'translateY(-2px)' : 'none',
-                    opacity: verdictFilter && !active ? 0.55 : 1,
+                    opacity: verdictFilter && !active ? 0.6 : 1,
                   }}
                 >
-                  <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6 }}>
+                  <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: v.accent }}>
                     {v.count}
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>{v.label}</div>
-                  <div style={{ fontSize: 12, opacity: 0.8 }}>{v.sub}</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2, color: NAVY }}>{v.label}</div>
+                  <div style={{ fontSize: 12, color: TX3 }}>{v.sub}</div>
                 </button>
               )
             })}
