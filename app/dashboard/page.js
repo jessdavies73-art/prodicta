@@ -1551,8 +1551,8 @@ export default function DashboardPage() {
           />
         )}
 
-        {/* ── Strong / Maybe / Risk filter ── */}
-        {candidates.length > 0 && (verdictCounts.strong > 0 || verdictCounts.maybe > 0 || verdictCounts.risk > 0) && (
+        {/* ── Strong / Maybe / Risk filter (hidden when Placement Health panel is active) ── */}
+        {!(isAgencyAccount && placementHealth && placementHealth.total_active > 0) && candidates.length > 0 && (verdictCounts.strong > 0 || verdictCounts.maybe > 0 || verdictCounts.risk > 0) && (
           <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
             {[
               { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', bg: '#00BFA5', fg: '#fff' },
