@@ -1709,104 +1709,36 @@ export default function CandidateReportPage({ params }) {
                     </button>
                   )}
 
-                  {/* Secondary actions */}
+                  {/* Secondary actions — categorised */}
                   {moreActionsOpen && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-                    {existingOutcome && (
-                      <button
-                        onClick={() => router.push(`/assessment/${params.id}/candidate/${params.candidateId}/copilot`)}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer',
-                          fontFamily: F, fontSize: 13, fontWeight: 700, color: TEAL, padding: '9px 16px',
-                        }}
-                      >
-                        <Ic name="award" size={15} color={TEAL} />
-                        Probation Co-pilot
-                      </button>
-                    )}
-                    {results && (profile?.account_type === 'employer' || profile?.account_type === 'agency') && (
-                      <button onClick={() => setOutcomeModal(true)} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        background: existingOutcome ? GRNBG : TEALLT,
-                        border: `1.5px solid ${existingOutcome ? GRNBD : `${TEAL}55`}`,
-                        borderRadius: 8, cursor: 'pointer',
-                        fontFamily: F, fontSize: 13, fontWeight: 700,
-                        color: existingOutcome ? GRN : TEALD, padding: '9px 16px',
-                      }}>
-                        <Ic name="check" size={15} color={existingOutcome ? GRN : TEALD} />
-                        {existingOutcome ? 'Update Outcome' : 'Log Outcome'}
-                        <InfoTooltip text="Record whether this candidate passed probation — builds your prediction accuracy data" />
-                      </button>
-                    )}
-                    {results && !existingOutcome && (
-                      <button onClick={() => setConfirmHireModal(true)} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        background: AMBBG, border: `1.5px solid ${AMBBD}`,
-                        borderRadius: 8, cursor: 'pointer',
-                        fontFamily: F, fontSize: 13, fontWeight: 700, color: AMB, padding: '9px 16px',
-                      }}>
-                        <Ic name="alert" size={15} color={AMB} />
-                        Offer Risk Confirmation
-                        <InfoTooltip text="Confirm you have reviewed the risks before making an offer — creates an audit trail" />
-                      </button>
-                    )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+
+                    {/* SHARE */}
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Share</div>
                     {results && (
                       <button onClick={handleClientExport} style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
-                        background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer',
-                        fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px',
+                        background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                        fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
                       }}>
-                        <Ic name="file" size={15} color={TEAL} />
+                        <Ic name="file" size={15} color={TEALD} />
                         Export Client Report
                         <InfoTooltip text="Send a configured version of this report to your client" />
                       </button>
                     )}
-                    {results && (
-                      <button
-                        onClick={() => window.open(`/api/candidates/${params.candidateId}/certificate`, '_blank')}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: '#fff', border: `1.5px solid ${TEAL}55`, borderRadius: 8, cursor: 'pointer',
-                          fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px',
-                        }}
-                      >
-                        <Ic name="shield" size={15} color={TEALD} />
-                        Export Compliance Certificate
-                        <InfoTooltip text="ERA 2025 legal compliance certificate for this assessment" />
+                    {results && profile?.account_type === 'agency' && (
+                      <button onClick={() => setSendModal(true)} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                        fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                      }}>
+                        <Ic name="send" size={15} color={TEALD} />
+                        Send to Client
                       </button>
                     )}
-                    {results && (
-                      <button
-                        onClick={() => setBriefModal(true)}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer',
-                          fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px',
-                        }}
-                      >
-                        <Ic name="file" size={15} color={TEAL} />
-                        Manager Brief PDF
-                        <InfoTooltip text="A 2-page summary with QR code for line managers who will not read the full report" />
-                      </button>
-                    )}
-                    {results && (
-                      <a
-                        href={`/assessment/${params.id}/candidate/${params.candidateId}/highlight-reel`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: TEAL, border: 'none', borderRadius: 8,
-                          fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px',
-                          textDecoration: 'none', cursor: 'pointer',
-                        }}
-                      >
-                        <Ic name="zap" size={15} color="#fff" />
-                        Highlight Reel
-                        <InfoTooltip text="A 60-second animated visual summary with a shareable link — send to clients instead of a PDF" light />
-                      </a>
-                    )}
+
+                    {/* INTERVIEW */}
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Interview</div>
                     {results && (
                       <button
                         disabled={!!results.additional_scenario || rerunPending}
@@ -1855,16 +1787,6 @@ export default function CandidateReportPage({ params }) {
                         <Ic name="sliders" size={15} color={TEALD} />
                         {reanalysing ? 'Re-analysing...' : 'Re-run with Context'}
                         <InfoTooltip text="Add new information and re-analyse — shows a before and after comparison" />
-                      </button>
-                    )}
-                    {results && profile?.account_type === 'agency' && (
-                      <button onClick={() => setSendModal(true)} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        background: TEAL, border: 'none', borderRadius: 8, cursor: 'pointer',
-                        fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px',
-                      }}>
-                        <Ic name="send" size={15} color={NAVY} />
-                        Send to Client
                       </button>
                     )}
                     {results && (
@@ -1930,6 +1852,21 @@ export default function CandidateReportPage({ params }) {
                         <Ic name="file-text" size={15} color={TEALD} />
                         Interview Brief
                         <InfoTooltip text="Targeted interview questions generated from this candidate's specific watch-outs" />
+                      </button>
+                    )}
+                    {/* ONBOARDING */}
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Onboarding</div>
+                    {existingOutcome && (
+                      <button
+                        onClick={() => router.push(`/assessment/${params.id}/candidate/${params.candidateId}/copilot`)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                        }}
+                      >
+                        <Ic name="award" size={15} color={TEALD} />
+                        Probation Co-pilot
                       </button>
                     )}
                     {results && profile?.account_type === 'employer' && existingOutcome?.outcome === 'still_probation' && (
@@ -2002,18 +1939,59 @@ export default function CandidateReportPage({ params }) {
                         Generate Probation Review
                       </button>
                     )}
+                    {/* COMPLIANCE */}
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Compliance</div>
+                    {results && (
+                      <button
+                        onClick={() => window.open(`/api/candidates/${params.candidateId}/certificate`, '_blank')}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                        }}
+                      >
+                        <Ic name="shield" size={15} color={TEALD} />
+                        Export Compliance Certificate
+                        <InfoTooltip text="ERA 2025 legal compliance certificate for this assessment" />
+                      </button>
+                    )}
+                    {results && !existingOutcome && (
+                      <button onClick={() => setConfirmHireModal(true)} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                        fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                      }}>
+                        <Ic name="alert" size={15} color={AMB} />
+                        Offer Risk Confirmation
+                        <InfoTooltip text="Confirm you have reviewed the risks before making an offer — creates an audit trail" />
+                      </button>
+                    )}
                     {results && existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
                       <button
                         onClick={() => window.open(`/api/assessment/${params.id}/candidate/${params.candidateId}/evidence-pack`, '_blank')}
                         className="no-print"
                         style={{
                           display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: '#fff', border: `1.5px solid ${NAVY}`, borderRadius: 8, cursor: 'pointer',
-                          fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px',
+                          background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
                         }}
                       >
                         <Ic name="shield" size={15} color={NAVY} />
                         Evidence Pack
+                      </button>
+                    )}
+
+                    {/* CANDIDATE */}
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Candidate</div>
+                    {results && (profile?.account_type === 'employer' || profile?.account_type === 'agency') && (
+                      <button onClick={() => setOutcomeModal(true)} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                        fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                      }}>
+                        <Ic name="check" size={15} color={TEALD} />
+                        {existingOutcome ? 'Update Outcome' : 'Log Outcome'}
+                        <InfoTooltip text="Record whether this candidate passed probation — builds your prediction accuracy data" />
                       </button>
                     )}
                     {results && profile?.account_type === 'employer' && existingOutcome && ['rejected', 'failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (

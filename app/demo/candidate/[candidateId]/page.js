@@ -988,171 +988,101 @@ function DemoCandidateInner({ params }) {
                 </svg>
               </button>
 
-              {/* Secondary actions */}
+              {/* Secondary actions — categorised */}
               {moreActionsOpen && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-                  <button
-                    onClick={() => setOutcomeModal(true)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: demoOutcome ? GRNBG : TEALLT, border: `1.5px solid ${demoOutcome ? GRNBD : `${TEAL}55`}`, borderRadius: 8, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, color: demoOutcome ? GRN : TEALD, padding: '9px 16px' }}
-                  >
-                    <Ic name="check" size={14} color={demoOutcome ? GRN : TEALD} />
-                    {demoOutcome ? 'Update Outcome' : 'Log Outcome'}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+
+                {/* SHARE */}
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Share</div>
+                <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                  <Ic name="file" size={14} color={TEALD} />
+                  {isAgency ? 'Export Client Report' : 'Export PDF'}
+                  <InfoTooltip text="Send a configured version of this report to your client" />
+                </button>
+                {isAgency && (
+                  <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                    <Ic name="send" size={14} color={TEALD} />
+                    Send to Client
                   </button>
-                  <div>
-                    <button
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}
-                    >
-                      <Ic name="file" size={14} color={TEAL} />
-                      {isAgency ? 'Export Client Report' : 'Export PDF'}
-                      <InfoTooltip text="Send a configured version of this report to your client" />
-                    </button>
-                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
-                  </div>
-                  {isAgency && (
-                    <div>
-                      <button
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEAL, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}
-                      >
-                        <Ic name="send" size={14} color={NAVY} />
-                        Send to Client
-                      </button>
-                      <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
-                    </div>
-                  )}
-                  {!isAgency && (
-                    <div>
-                      <button
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEAL, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}
-                      >
-                        <Ic name="bar" size={14} color={NAVY} />
-                        Probation Co-pilot
-                      </button>
-                      <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
-                    </div>
-                  )}
-                  <div>
-                    <button
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}
-                    >
-                      <Ic name="file" size={14} color={TEALD} />
-                      Interview Brief
-                      <InfoTooltip text="Targeted interview questions generated from this candidate's specific watch-outs" />
-                    </button>
-                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
-                  </div>
-                  <div>
-                    <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
-                      <Ic name="file" size={14} color={TEALD} />
-                      Export Coaching Plan PDF
-                      <InfoTooltip text="The 90-day probation coaching plan from Alchemy Training UK" />
-                    </button>
-                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
-                  </div>
-                  <div>
-                    <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
-                      <Ic name="file" size={14} color={TEALD} />
-                      Export Compliance Certificate
-                      <InfoTooltip text="ERA 2025 legal compliance certificate for this assessment" />
-                    </button>
-                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
-                  </div>
-                  <div>
-                    <button
-                      onClick={() => setSignupPrompt(true)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px', cursor: 'pointer', width: '100%' }}
-                    >
-                      <Ic name="file" size={14} color={TEAL} />
-                      Manager Brief PDF
-                      <InfoTooltip text="A 2-page summary with QR code for line managers who will not read the full report" light />
-                    </button>
-                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>2-page summary with QR code</span>
-                  </div>
-                  <div>
-                    <a
-                      href="/demo/highlight-reel"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEAL, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px', textDecoration: 'none', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}
-                    >
-                      <Ic name="zap" size={14} color="#fff" />
-                      Highlight Reel
-                      <InfoTooltip text="A 60-second animated visual summary with a shareable link — send to clients instead of a PDF" light />
-                    </a>
-                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>60-second visual summary</span>
-                  </div>
-                  <div>
-                    <a
-                      href="/demo/workspace"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px', textDecoration: 'none', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}
-                    >
-                      <Ic name="grid" size={14} color={TEAL} />
-                      Workspace Demo
-                      <InfoTooltip text="View how this candidate performed in the Day 1 virtual workspace simulation" light />
-                    </a>
-                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Immersive assessment available</span>
-                  </div>
-                  <div>
-                    <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
-                      <Ic name="sliders" size={14} color={TEALD} />
-                      Re-run Scenario
-                    </button>
-                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
-                  </div>
-                  <div>
-                    <button
-                      onClick={() => setSignupPrompt(true)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${TEAL}55`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', cursor: 'pointer', width: '100%' }}
-                    >
-                      <Ic name="sliders" size={14} color={TEALD} />
-                      Re-run with Context
-                      <InfoTooltip text="Add new information and re-analyse — shows a before and after comparison" />
-                    </button>
-                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Add context and re-analyse</span>
-                  </div>
-                  <div>
-                    <button
-                      onClick={() => setCandidatePreview(true)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', cursor: 'pointer', width: '100%' }}
-                    >
-                      <Ic name="users" size={14} color={TEALD} />
-                      See candidate view
-                      <InfoTooltip text="Preview what the candidate sees after submitting their assessment" />
-                    </button>
-                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>What the candidate sees</span>
-                  </div>
-                  <div>
-                    <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: AMBBG, border: `1.5px solid ${AMBBD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: AMB, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
-                      <Ic name="alert" size={14} color={AMB} />
-                      Offer Risk Confirmation
-                      <InfoTooltip text="Confirm you have reviewed the risks before making an offer — creates an audit trail" />
-                    </button>
-                    <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
-                  </div>
-                  {!isAgency && (
-                    <div>
-                      <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TEALLT, border: `1.5px solid ${TEAL}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TEALD, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
-                        <Ic name="send" size={14} color={TEALD} />
-                        Send Development Feedback
-                      </button>
-                      <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Available with subscription</span>
-                    </div>
-                  )}
-                  {params.candidateId === 'demo-c4' && (
-                    <div>
-                      <button
-                        onClick={() => setEvidencePackModal(true)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${NAVY}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '9px 16px', cursor: 'pointer', width: '100%' }}
-                      >
-                        <Ic name="shield" size={14} color={NAVY} />
-                        Evidence Pack
-                      </button>
-                      <span style={{ fontFamily: F, fontSize: 11, color: TX3, display: 'block', marginTop: 2, paddingLeft: 2 }}>Fair dismissal audit trail</span>
-                    </div>
-                  )}
-                </div>
                 )}
+
+                {/* INTERVIEW */}
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Interview</div>
+                <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                  <Ic name="file" size={14} color={TEALD} />
+                  Interview Brief
+                  <InfoTooltip text="Targeted interview questions generated from this candidate's specific watch-outs" />
+                </button>
+                <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                  <Ic name="sliders" size={14} color={TEALD} />
+                  Re-run Scenario
+                </button>
+                <button onClick={() => setSignupPrompt(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
+                  <Ic name="sliders" size={14} color={TEALD} />
+                  Re-run with Context
+                  <InfoTooltip text="Add new information and re-analyse — shows a before and after comparison" />
+                </button>
+
+                {/* ONBOARDING */}
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Onboarding</div>
+                <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                  <Ic name="file" size={14} color={TEALD} />
+                  Export Coaching Plan PDF
+                  <InfoTooltip text="The 90-day probation coaching plan from Alchemy Training UK" />
+                </button>
+                {!isAgency && (
+                  <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                    <Ic name="award" size={14} color={TEALD} />
+                    Probation Co-pilot
+                  </button>
+                )}
+
+                {/* COMPLIANCE */}
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Compliance</div>
+                <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                  <Ic name="shield" size={14} color={TEALD} />
+                  Export Compliance Certificate
+                  <InfoTooltip text="ERA 2025 legal compliance certificate for this assessment" />
+                </button>
+                <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                  <Ic name="alert" size={14} color={AMB} />
+                  Offer Risk Confirmation
+                  <InfoTooltip text="Confirm you have reviewed the risks before making an offer — creates an audit trail" />
+                </button>
+                {params.candidateId === 'demo-c4' && (
+                  <button onClick={() => setEvidencePackModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
+                    <Ic name="shield" size={14} color={NAVY} />
+                    Evidence Pack
+                  </button>
+                )}
+
+                {/* CANDIDATE */}
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Candidate</div>
+                <button onClick={() => setOutcomeModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
+                  <Ic name="check" size={14} color={TEALD} />
+                  {demoOutcome ? 'Update Outcome' : 'Log Outcome'}
+                </button>
+                <button onClick={() => setCandidatePreview(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
+                  <Ic name="users" size={14} color={TEALD} />
+                  See candidate view
+                  <InfoTooltip text="Preview what the candidate sees after submitting their assessment" />
+                </button>
+                {!isAgency && (
+                  <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                    <Ic name="send" size={14} color={TEALD} />
+                    Send Development Feedback
+                  </button>
+                )}
+
+                {/* WORKSPACE */}
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Workspace</div>
+                <a href="/demo/workspace" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', textDecoration: 'none', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}>
+                  <Ic name="grid" size={14} color={TEALD} />
+                  Workspace Demo
+                  <InfoTooltip text="View how this candidate performed in the Day 1 virtual workspace simulation" />
+                </a>
+              </div>
+              )}
               </div>
           </div>
         </Card>
