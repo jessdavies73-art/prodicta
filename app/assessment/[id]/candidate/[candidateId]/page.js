@@ -3452,8 +3452,8 @@ export default function CandidateReportPage({ params }) {
                 ══════════════════════════════════════════════════ */}
                 </>)}
 
-                {/* Layer 3 button — only for non-rapid, non-high-risk reports */}
-                {layer2Open && candidate?.assessments?.assessment_mode !== 'rapid' && !(score < 55 && results.risk_level === 'High') && (
+                {/* Layer 3 button — hidden for operational/rapid and high-risk */}
+                {layer2Open && candidate?.assessments?.assessment_mode !== 'rapid' && candidate?.assessments?.role_level !== 'OPERATIONAL' && !(score < 55 && results.risk_level === 'High') && (
                   <button
                     onClick={() => setLayer3Open(v => !v)}
                     style={{
@@ -3464,7 +3464,7 @@ export default function CandidateReportPage({ params }) {
                       marginBottom: 20, transition: 'background 0.15s',
                     }}
                   >
-                    {layer3Open ? 'Hide full analysis' : 'Full analysis — onboarding, compliance and everything else'}
+                    {layer3Open ? 'Hide full analysis' : (candidate?.assessments?.role_level === 'LEADERSHIP' ? 'Full strategic analysis — onboarding, compliance and everything else' : 'Full analysis — onboarding, compliance and everything else')}
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: layer3Open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
                       <polyline points="6 9 12 15 18 9" />
                     </svg>

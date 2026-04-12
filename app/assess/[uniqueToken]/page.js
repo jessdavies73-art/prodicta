@@ -512,9 +512,11 @@ function ActivePage({ candidate, assessment, onSubmit }) {
           zIndex: 90,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-            <span style={{ fontFamily: F, fontSize: 14, color: TX2, whiteSpace: 'nowrap' }}>
-              Scenario {scenarioIndex + 1} of {scenarios.length}
-            </span>
+            {!isOperational && (
+              <span style={{ fontFamily: F, fontSize: 14, color: TX2, whiteSpace: 'nowrap' }}>
+                {isLeadership ? `Step ${scenarioIndex + 1} of ${scenarios.length}` : `Scenario ${scenarioIndex + 1} of ${scenarios.length}`}
+              </span>
+            )}
             <div style={{
               flex: 1,
               height: 6,
@@ -1379,9 +1381,11 @@ function CandidatePreviewPage({ candidateName, uniqueToken, onContinue }) {
   )
 }
 
-function CompletePage({ candidateName }) {
+function CompletePage({ candidateName, assessment }) {
   const [textVisible, setTextVisible] = useState(false)
   useEffect(() => { const t = setTimeout(() => setTextVisible(true), 700); return () => clearTimeout(t) }, [])
+  const rl = assessment?.role_level || 'MID_LEVEL'
+  const am = (assessment?.assessment_mode || '').toLowerCase()
 
   return (
     <>
@@ -1417,10 +1421,18 @@ function CompletePage({ candidateName }) {
           </div>
           <div style={{ opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(10px)', transition: 'opacity 0.45s ease, transform 0.45s ease' }}>
             <h2 style={{ fontFamily: F, color: TX, fontSize: 26, fontWeight: 800, margin: '0 0 12px' }}>
-              All done. Thank you!
+              {rl === 'OPERATIONAL' || am === 'rapid'
+                ? 'Done. Your results are being prepared.'
+                : rl === 'LEADERSHIP'
+                ? 'Your Strategy-Fit assessment is complete.'
+                : 'All done. Thank you!'}
             </h2>
             <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 8px', lineHeight: 1.6 }}>
-              Your responses have been submitted successfully.
+              {rl === 'OPERATIONAL' || am === 'rapid'
+                ? 'Your responses have been submitted.'
+                : rl === 'LEADERSHIP'
+                ? 'A detailed report is being prepared for the hiring team.'
+                : 'Your responses have been submitted successfully.'}
             </p>
             <p style={{ fontFamily: F, color: TX2, fontSize: 15, margin: '0 0 36px', lineHeight: 1.6 }}>
               The hiring team will review your assessment and be in touch.
@@ -2087,7 +2099,7 @@ export default function AssessPage({ params }) {
       onContinue={() => setUiState('complete')}
     />
   )
-  if (uiState === 'complete') return <CompletePage candidateName={candidate?.name} />
+  if (uiState === 'complete') return <CompletePage candidateName={candidate?.name} assessment={assessment} />
 
   return null
 }

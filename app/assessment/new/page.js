@@ -692,21 +692,12 @@ export default function NewAssessmentPage() {
                   <Ic name="check" size={18} color="#009688" />
                 </div>
                 <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#0f2137', fontFamily: F }}>
-                  We have set this up for you.
+                  {detectedLevel === 'OPERATIONAL' ? 'Ready to screen.' : detectedLevel === 'LEADERSHIP' ? 'Strategy-Fit assessment prepared.' : 'We have set this up for you.'}
                 </h2>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 28 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, fontFamily: F }}>Role</div>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0f2137', fontFamily: F }}>{roleTitle}</span>
-                    <span style={{ fontSize: 12, color: '#94a1b3', marginLeft: 10, fontFamily: F }}>
-                      {detectedLevel === 'OPERATIONAL' ? 'Operational' : detectedLevel === 'LEADERSHIP' ? 'Leadership' : 'Mid-level'}
-                    </span>
-                  </div>
-                </div>
-
+                {/* Mode + time — always shown */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, fontFamily: F }}>Mode</div>
                   <div style={{ flex: 1 }}>
@@ -719,19 +710,35 @@ export default function NewAssessmentPage() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, paddingTop: 2, fontFamily: F }}>Focus</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {autoFocus.map((f, i) => (
-                      <span key={i} style={{
-                        fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
-                        background: '#e0f2f0', color: '#009688', fontFamily: F,
-                      }}>
-                        {f}
+                {/* Role row — hidden for operational (keep it minimal) */}
+                {detectedLevel !== 'OPERATIONAL' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, fontFamily: F }}>Role</div>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: '#0f2137', fontFamily: F }}>{roleTitle}</span>
+                      <span style={{ fontSize: 12, color: '#94a1b3', marginLeft: 10, fontFamily: F }}>
+                        {detectedLevel === 'LEADERSHIP' ? 'Leadership' : 'Mid-level'}
                       </span>
-                    ))}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* Focus row — hidden for operational */}
+                {detectedLevel !== 'OPERATIONAL' && autoFocus.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, paddingTop: 2, fontFamily: F }}>Focus</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {autoFocus.map((f, i) => (
+                        <span key={i} style={{
+                          fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
+                          background: '#e0f2f0', color: '#009688', fontFamily: F,
+                        }}>
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {error && (
