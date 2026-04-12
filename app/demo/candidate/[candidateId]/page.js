@@ -1046,11 +1046,13 @@ function DemoCandidateInner({ params }) {
                   Compliance Certificate
                   <InfoTooltip text="ERA 2025 legal compliance certificate for this assessment" />
                 </button>
+                {!isAgency && (
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="alert" size={14} color={AMB} />
                   Offer Risk Confirmation
                   <InfoTooltip text="Confirm you have reviewed the risks before making an offer — creates an audit trail" />
                 </button>
+                )}
                 {params.candidateId === 'demo-c4' && (
                   <button onClick={() => setEvidencePackModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
                     <Ic name="shield" size={14} color={NAVY} />

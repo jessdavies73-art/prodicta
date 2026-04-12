@@ -1716,7 +1716,9 @@ export default function CandidateReportPage({ params }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
 
                     {/* SHARE */}
+                    {profile?.account_type === 'agency' && (
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Share</div>
+                    )}
                     {results && profile?.account_type === 'agency' && (
                       <button onClick={handleClientExport} style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -1957,7 +1959,7 @@ export default function CandidateReportPage({ params }) {
                         <InfoTooltip text="ERA 2025 legal compliance certificate for this assessment" />
                       </button>
                     )}
-                    {results && !existingOutcome && (
+                    {results && profile?.account_type === 'employer' && !existingOutcome && (
                       <button onClick={() => setConfirmHireModal(true)} style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
                         background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
