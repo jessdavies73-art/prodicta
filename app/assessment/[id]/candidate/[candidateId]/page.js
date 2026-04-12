@@ -985,6 +985,7 @@ export default function CandidateReportPage({ params }) {
   const [expandedSections, setExpandedSections] = useState({ aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false, coachingPlan: false, tuesdayReality: true })
   const [layer2Open, setLayer2Open] = useState(false)
   const [layer3Open, setLayer3Open] = useState(false)
+  const [moreActionsOpen, setMoreActionsOpen] = useState(false)
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
 
@@ -1535,123 +1536,182 @@ export default function CandidateReportPage({ params }) {
           <>
 
             {/* ══════════════════════════════════════════════════
-                CANDIDATE HEADER
+                CANDIDATE HEADER — three-column layout
             ══════════════════════════════════════════════════ */}
             <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
-              <div className="report-header" style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', flexDirection: isMobile ? 'column' : 'row' }}>
-                {/* Avatar + meta */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: 1, minWidth: isMobile ? 0 : 240, width: isMobile ? '100%' : 'auto' }}>
-                  <Avatar name={candidate.name || 'Candidate'} size={52} />
-                  <div>
-                    <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: '0 0 3px', letterSpacing: '-0.4px' }}>
-                      {candidate.name || 'Unknown Candidate'}
-                    </h2>
-                    {candidate.email && (
-                      <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 8px' }}>{candidate.email}</p>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      {candidate.assessments?.role_title && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                          <div style={{
-                            width: 24, height: 24, borderRadius: 6,
-                            background: roleColor(candidate.assessments?.id || ''),
-                            flexShrink: 0,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-                            </svg>
-                          </div>
-                          <span style={{ fontSize: 12.5, fontWeight: 600, color: TX2, fontFamily: F }}>{candidate.assessments.role_title}</span>
-                        </div>
-                      )}
-                      {(() => {
-                        const m = candidate?.assessments?.assessment_mode
-                        if (!m || m === 'standard') return null
-                        const labelMap = { rapid: 'Rapid Screen', quick: 'Speed-Fit', advanced: 'Strategy-Fit' }
-                        const label = labelMap[m] || null
-                        if (!label) return null
-                        return (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 20, background: '#fffbeb', color: '#d97706', border: '1px solid #fcd34d', fontFamily: F }}>
-                            {label}
-                          </span>
-                        )
-                      })()}
-                      {completedDate && (
-                        <span style={{ fontSize: 12, color: TX3, fontFamily: F }}>Completed {completedDate}</span>
-                      )}
-                      {candidate.rating && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                          {[1,2,3,4,5].map(i => (
-                            <span key={i} style={{ fontSize: 14, color: i <= candidate.rating ? '#f59e0b' : '#e2e8f0', lineHeight: 1 }}>★</span>
-                          ))}
-                          <span style={{ fontSize: 11.5, color: TX3, marginLeft: 4, fontFamily: F }}>Candidate self-rating</span>
-                        </div>
+              <div className="report-header" style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexDirection: isMobile ? 'column' : 'row' }}>
+
+                {/* LEFT COLUMN — candidate info (40%) */}
+                <div style={{ flex: '0 0 40%', minWidth: 0, width: isMobile ? '100%' : undefined }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+                    <Avatar name={candidate.name || 'Candidate'} size={52} />
+                    <div>
+                      <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: NAVY, margin: '0 0 2px', letterSpacing: '-0.4px' }}>
+                        {candidate.name || 'Unknown Candidate'}
+                      </h2>
+                      {candidate.email && (
+                        <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0 }}>{candidate.email}</p>
                       )}
                     </div>
-                    {results && (results.confidence_level || results.trajectory || results.seniority_fit_score != null) && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                        <ConfidenceBadge level={results.confidence_level} />
-                        <TrajectoryBadge trajectory={results.trajectory} />
-                        <SeniorityBadge score={results.seniority_fit_score} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                    {candidate.assessments?.role_title && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <div style={{
+                          width: 24, height: 24, borderRadius: 6,
+                          background: roleColor(candidate.assessments?.id || ''),
+                          flexShrink: 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                            <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                          </svg>
+                        </div>
+                        <span style={{ fontSize: 12.5, fontWeight: 600, color: TX2, fontFamily: F }}>{candidate.assessments.role_title}</span>
                       </div>
                     )}
+                    {(() => {
+                      const m = candidate?.assessments?.assessment_mode
+                      if (!m || m === 'standard') return null
+                      const labelMap = { rapid: 'Rapid Screen', quick: 'Speed-Fit', advanced: 'Strategy-Fit' }
+                      const label = labelMap[m] || null
+                      if (!label) return null
+                      return (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 20, background: '#fffbeb', color: '#d97706', border: '1px solid #fcd34d', fontFamily: F }}>
+                          {label}
+                        </span>
+                      )
+                    })()}
                   </div>
-                </div>
-
-                {/* Score ring + actions */}
-                <div className="report-score-actions" style={{ display: 'flex', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? 16 : 28, flexShrink: 0, flexWrap: 'wrap', width: isMobile ? '100%' : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
-                  {results && (
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
-                        Overall Score <InfoTooltip text="Comprehensive performance score across all 4 scenarios. 50 is average, 75+ is strong. Calibrated to role seniority." />
-                      </div>
-                      <ScoreRing score={score} size={130} strokeWidth={9} />
-                      <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: sc(score), marginTop: 8 }}>
-                        {slbl(score)}
-                      </div>
-                      {results.percentile && (
-                        <div style={{
-                          marginTop: 6, fontFamily: F, fontSize: 11.5, fontWeight: 600,
-                          color: TEALD, background: TEALLT, border: `1px solid ${TEAL}55`,
-                          borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap',
-                        }}>
-                          {results.percentile} of candidates
-                        </div>
-                      )}
-                      {(() => {
-                        const stored = candidate?.assessments?.detected_role_type
-                        const roleType = (stored && ROLE_BENCHMARKS[stored])
-                          ? stored
-                          : detectRoleCategory(candidate?.assessments?.role_title, candidate?.assessments?.job_description)
-                        const seeded = ROLE_BENCHMARKS[roleType] || ROLE_BENCHMARKS.general
-                        const useLive = liveBenchmark && liveBenchmark.source === 'live' && liveBenchmark.avg != null
-                        const avgVal = useLive ? liveBenchmark.avg : seeded.avg
-                        const diff = score - avgVal
-                        const titleLabel = candidate?.assessments?.role_title || 'Similar'
-                        const sourceLabel = useLive
-                          ? `based on ${liveBenchmark.count} assessments`
-                          : 'platform estimate'
-                        return (
-                          <div style={{ marginTop: 10, textAlign: 'center' }}>
-                            <div style={{ fontFamily: F, fontSize: 10.5, color: TX3, marginBottom: 5 }}>
-                              {titleLabel} roles avg: {avgVal} ({sourceLabel})
-                            </div>
-                            <div style={{ position: 'relative', height: 5, background: '#e4e9f0', borderRadius: 3, width: 120, margin: '0 auto' }}>
-                              <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${Math.min(score, 100)}%`, background: sc(score), borderRadius: 3 }} />
-                              <div style={{ position: 'absolute', top: -4, left: `${avgVal}%`, width: 2, height: 13, background: '#94a3b8', borderRadius: 1, transform: 'translateX(-50%)' }} />
-                            </div>
-                            <div style={{ fontFamily: F, fontSize: 10, color: diff > 0 ? GRN : diff < 0 ? RED : TX3, marginTop: 4 }}>
-                              {diff > 0 ? `+${diff} above average` : diff < 0 ? `${diff} below average` : 'At average'}
-                            </div>
-                          </div>
-                        )
-                      })()}
+                  {completedDate && (
+                    <div style={{ fontSize: 12, color: TX3, fontFamily: F, marginBottom: 6 }}>Completed {completedDate}</div>
+                  )}
+                  {candidate.rating && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 6 }}>
+                      {[1,2,3,4,5].map(i => (
+                        <span key={i} style={{ fontSize: 14, color: i <= candidate.rating ? '#f59e0b' : '#e2e8f0', lineHeight: 1 }}>★</span>
+                      ))}
+                      <span style={{ fontSize: 11.5, color: TX3, marginLeft: 4, fontFamily: F }}>Candidate self-rating</span>
                     </div>
                   )}
+                  {results && (results.confidence_level || results.trajectory || results.seniority_fit_score != null) && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <ConfidenceBadge level={results.confidence_level} />
+                      <TrajectoryBadge trajectory={results.trajectory} />
+                      <SeniorityBadge score={results.seniority_fit_score} />
+                    </div>
+                  )}
+                </div>
 
-                  <div className="no-print report-action-buttons" style={{ display: 'flex', flexDirection: 'column', gap: 8, width: isMobile ? '100%' : 'auto' }}>
+                {/* CENTRE COLUMN — score ring (25%) */}
+                {results && (
+                  <div style={{ flex: '0 0 25%', textAlign: 'center', width: isMobile ? '100%' : undefined }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
+                      Overall Score <InfoTooltip text="Comprehensive performance score across all scenarios. 50 is average, 75+ is strong. Calibrated to role seniority." />
+                    </div>
+                    <ScoreRing score={score} size={130} strokeWidth={9} />
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TEAL, marginTop: 8 }}>
+                      {slbl(score)}
+                    </div>
+                    {results.percentile && (
+                      <div style={{
+                        marginTop: 6, fontFamily: F, fontSize: 11.5, fontWeight: 600,
+                        color: TEALD, background: TEALLT, border: `1px solid ${TEAL}55`,
+                        borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap', display: 'inline-block',
+                      }}>
+                        {results.percentile} of candidates
+                      </div>
+                    )}
+                    {(() => {
+                      const stored = candidate?.assessments?.detected_role_type
+                      const roleType = (stored && ROLE_BENCHMARKS[stored])
+                        ? stored
+                        : detectRoleCategory(candidate?.assessments?.role_title, candidate?.assessments?.job_description)
+                      const seeded = ROLE_BENCHMARKS[roleType] || ROLE_BENCHMARKS.general
+                      const useLive = liveBenchmark && liveBenchmark.source === 'live' && liveBenchmark.avg != null
+                      const avgVal = useLive ? liveBenchmark.avg : seeded.avg
+                      const diff = score - avgVal
+                      const titleLabel = candidate?.assessments?.role_title || 'Similar'
+                      const sourceLabel = useLive
+                        ? `based on ${liveBenchmark.count} assessments`
+                        : 'platform estimate'
+                      return (
+                        <div style={{ marginTop: 10, textAlign: 'center' }}>
+                          <div style={{ fontFamily: F, fontSize: 10.5, color: TX3, marginBottom: 5 }}>
+                            {titleLabel} roles avg: {avgVal} ({sourceLabel})
+                          </div>
+                          <div style={{ position: 'relative', height: 5, background: '#e4e9f0', borderRadius: 3, width: 120, margin: '0 auto' }}>
+                            <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${Math.min(score, 100)}%`, background: TEAL, borderRadius: 3 }} />
+                            <div style={{ position: 'absolute', top: -4, left: `${avgVal}%`, width: 2, height: 13, background: '#94a3b8', borderRadius: 1, transform: 'translateX(-50%)' }} />
+                          </div>
+                          <div style={{ fontFamily: F, fontSize: 10, color: diff > 0 ? TEAL : diff < 0 ? RED : TX3, marginTop: 4 }}>
+                            {diff > 0 ? `+${diff} above average` : diff < 0 ? `${diff} below average` : 'At average'}
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )}
+
+                {/* RIGHT COLUMN — actions (35%) */}
+                <div className="no-print" style={{ flex: '0 0 35%', width: isMobile ? '100%' : undefined }}>
+                  {/* Primary actions */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+                    {results && (
+                      <button
+                        onClick={() => setBriefModal(true)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '10px 16px', width: '100%',
+                        }}
+                      >
+                        <Ic name="file" size={15} color={TEAL} />
+                        Manager Brief PDF
+                        <InfoTooltip text="A 2-page summary with QR code for line managers who will not read the full report" light />
+                      </button>
+                    )}
+                    {results && (
+                      <a
+                        href={`/assessment/${params.id}/candidate/${params.candidateId}/highlight-reel`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: TEAL, border: 'none', borderRadius: 8,
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '10px 16px',
+                          textDecoration: 'none', cursor: 'pointer', width: '100%', boxSizing: 'border-box',
+                        }}
+                      >
+                        <Ic name="zap" size={15} color="#fff" />
+                        Highlight Reel
+                        <InfoTooltip text="A 60-second animated visual summary with a shareable link — send to clients instead of a PDF" light />
+                      </a>
+                    )}
+                  </div>
+
+                  {/* More actions toggle */}
+                  {results && (
+                    <button
+                      type="button"
+                      onClick={() => setMoreActionsOpen(v => !v)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6, width: '100%', justifyContent: 'center',
+                        background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0',
+                        fontFamily: F, fontSize: 12.5, fontWeight: 600, color: TX3,
+                      }}
+                    >
+                      {moreActionsOpen ? 'Fewer actions' : 'More actions'}
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: moreActionsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+                  )}
+
+                  {/* Secondary actions */}
+                  {moreActionsOpen && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
                     {existingOutcome && (
                       <button
                         onClick={() => router.push(`/assessment/${params.id}/candidate/${params.candidateId}/copilot`)}
@@ -1996,6 +2056,7 @@ export default function CandidateReportPage({ params }) {
                       <span style={{ fontSize: 12, color: RED, fontFamily: F }}>{devFeedbackError}</span>
                     )}
                   </div>
+                  )}
                 </div>
               </div>
             </Card>
