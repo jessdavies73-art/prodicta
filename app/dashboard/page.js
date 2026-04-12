@@ -2306,15 +2306,15 @@ function AssessmentInsights({ candidates = [] }) {
 
       <div style={{ padding: '18px 22px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
         {[
-          { label: 'Total sent',      value: totalSent,         sub: 'All time',                color: TEALD, bg: TEALLT, bd: `${TEAL}55` },
-          { label: 'Total completed', value: totalCompleted,    sub: `${totalSent - totalCompleted} not completed`, color: TEALD, bg: TEALLT, bd: `${TEAL}55` },
-          { label: 'Completion rate', value: `${completionRate}%`, sub: `Platform avg ${PLATFORM_AVG}%`, color: rateColor, bg: completionRate >= PLATFORM_AVG ? TEALLT : completionRate >= 40 ? AMBBG : REDBG, bd: `${rateColor}55` },
-          { label: 'Avg time to complete', value: avgDisplay, sub: avgHours == null ? 'Not enough data' : 'From invite to submit', color: TEALD, bg: TEALLT, bd: `${TEAL}55` },
+          { label: 'Total sent',      value: totalSent,         sub: 'All time',                accent: NAVY },
+          { label: 'Total completed', value: totalCompleted,    sub: `${totalSent - totalCompleted} not completed`, accent: TEAL },
+          { label: 'Completion rate', value: `${completionRate}%`, sub: `Platform avg ${PLATFORM_AVG}%`, accent: TEAL },
+          { label: 'Avg time to complete', value: avgDisplay, sub: avgHours == null ? 'Not enough data' : 'From invite to submit', accent: NAVY },
         ].map(m => (
-          <div key={m.label} style={{ background: m.bg, border: `1px solid ${m.bd}`, borderRadius: 10, padding: '12px 14px' }}>
-            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{m.label}</div>
-            <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: m.color, lineHeight: 1.1, marginBottom: 2 }}>{m.value}</div>
-            <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>{m.sub}</div>
+          <div key={m.label} style={{ background: '#fff', border: '1px solid #E5E7EB', borderLeft: `4px solid ${m.accent}`, borderRadius: 10, padding: '14px 16px', boxShadow: '0 4px 16px rgba(0,0,0,0.10)' }}>
+            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{m.label}</div>
+            <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, color: m.accent, lineHeight: 1, marginBottom: 4 }}>{m.value}</div>
+            <div style={{ fontFamily: F, fontSize: 12, color: '#6B7280' }}>{m.sub}</div>
           </div>
         ))}
       </div>

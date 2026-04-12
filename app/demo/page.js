@@ -429,15 +429,15 @@ function DemoDashboardInner() {
           </div>
           <div style={{ padding: '18px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
             {[
-              { label: 'Total sent',          value: 12,        sub: 'All time' },
-              { label: 'Total completed',     value: 10,        sub: '2 not completed' },
-              { label: 'Completion rate',     value: '83%',     sub: 'Platform avg 68%' },
-              { label: 'Avg time to complete', value: '38 min', sub: 'From invite to submit' },
+              { label: 'Total sent',          value: 12,        sub: 'All time',                accent: NAVY },
+              { label: 'Total completed',     value: 10,        sub: '2 not completed',         accent: TEAL },
+              { label: 'Completion rate',     value: '83%',     sub: 'Platform avg 68%',        accent: TEAL },
+              { label: 'Avg time to complete', value: '38 min', sub: 'From invite to submit',   accent: NAVY },
             ].map(m => (
-              <div key={m.label} style={{ background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 10, padding: '12px 14px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{m.label}</div>
-                <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: TEALD, lineHeight: 1.1, marginBottom: 2 }}>{m.value}</div>
-                <div style={{ fontSize: 11.5, color: TX3 }}>{m.sub}</div>
+              <div key={m.label} style={{ background: '#fff', border: '1px solid #E5E7EB', borderLeft: `4px solid ${m.accent}`, borderRadius: 10, padding: '14px 16px', boxShadow: '0 4px 16px rgba(0,0,0,0.10)' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{m.label}</div>
+                <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, color: m.accent, lineHeight: 1, marginBottom: 4 }}>{m.value}</div>
+                <div style={{ fontSize: 12, color: '#6B7280' }}>{m.sub}</div>
               </div>
             ))}
           </div>
