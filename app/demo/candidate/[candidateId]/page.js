@@ -995,17 +995,19 @@ function DemoCandidateInner({ params }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
 
                 {/* SHARE */}
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Share</div>
-                <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
-                  <Ic name="file" size={14} color={TEALD} />
-                  {isAgency ? 'Export Client Report' : 'Export PDF'}
-                  <InfoTooltip text="Send a configured version of this report to your client" />
-                </button>
                 {isAgency && (
+                  <>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Share</div>
+                  <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                    <Ic name="file" size={14} color={TEALD} />
+                    Export Client Report
+                    <InfoTooltip text="Send a configured version of this report to your client" />
+                  </button>
                   <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                     <Ic name="send" size={14} color={TEALD} />
                     Send to Client
                   </button>
+                  </>
                 )}
 
                 {/* INTERVIEW */}
@@ -1029,21 +1031,19 @@ function DemoCandidateInner({ params }) {
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Onboarding</div>
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="file" size={14} color={TEALD} />
-                  Export Coaching Plan PDF
+                  Coaching Plan PDF
                   <InfoTooltip text="The 90-day probation coaching plan from Alchemy Training UK" />
                 </button>
-                {!isAgency && (
-                  <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
-                    <Ic name="award" size={14} color={TEALD} />
-                    Probation Co-pilot
-                  </button>
-                )}
+                <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                  <Ic name="award" size={14} color={TEALD} />
+                  Probation Co-pilot
+                </button>
 
                 {/* COMPLIANCE */}
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Compliance</div>
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="shield" size={14} color={TEALD} />
-                  Export Compliance Certificate
+                  Compliance Certificate
                   <InfoTooltip text="ERA 2025 legal compliance certificate for this assessment" />
                 </button>
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>

@@ -1717,7 +1717,7 @@ export default function CandidateReportPage({ params }) {
 
                     {/* SHARE */}
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Share</div>
-                    {results && (
+                    {results && profile?.account_type === 'agency' && (
                       <button onClick={handleClientExport} style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
                         background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
@@ -1953,7 +1953,7 @@ export default function CandidateReportPage({ params }) {
                         }}
                       >
                         <Ic name="shield" size={15} color={TEALD} />
-                        Export Compliance Certificate
+                        Compliance Certificate
                         <InfoTooltip text="ERA 2025 legal compliance certificate for this assessment" />
                       </button>
                     )}
@@ -4705,7 +4705,7 @@ export default function CandidateReportPage({ params }) {
                       </p>
                       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
                         <a href={`/assessment/${params.id}/candidate/${params.candidateId}/coaching-plan`} target="_blank" rel="noreferrer" style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: '#fff', background: NAVY, padding: '9px 14px', borderRadius: 8, textDecoration: 'none' }}>View Full Coaching Plan</a>
-                        <a href={`/api/assessment/${params.id}/candidate/${params.candidateId}/coaching-plan-pdf`} style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: NAVY, background: '#fff', border: `1.5px solid ${NAVY}`, padding: '9px 14px', borderRadius: 8, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}>Export Coaching Plan PDF <InfoTooltip text="The 90-day probation coaching plan from Alchemy Training UK" /></a>
+                        <a href={`/api/assessment/${params.id}/candidate/${params.candidateId}/coaching-plan-pdf`} style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: NAVY, background: '#fff', border: `1.5px solid ${NAVY}`, padding: '9px 14px', borderRadius: 8, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}>Coaching Plan PDF <InfoTooltip text="The 90-day probation coaching plan from Alchemy Training UK" /></a>
                       </div>
                       {expandedSections.coachingPlan && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
