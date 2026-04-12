@@ -43,14 +43,14 @@ function StatRing({ value, accent = '#00BFA5', size = 130, fillPercent = 100 }) 
   const r = (size - sw * 2) / 2
   const circ = 2 * Math.PI * r
   const [drawn, setDrawn] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setDrawn(true), 100); return () => clearTimeout(t) }, [])
+  useEffect(() => { const t = setTimeout(() => setDrawn(true), 200); return () => clearTimeout(t) }, [])
   const target = Math.min(100, Math.max(0, fillPercent))
   const offset = drawn ? circ * (1 - target / 100) : circ
   return (
     <div style={{ position: 'relative', width: size, height: size, margin: '0 auto', filter: `drop-shadow(0 0 8px ${accent}55)` }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={sw} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={accent} strokeWidth={sw} strokeDasharray={`${circ}`} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.8s ease-out' }} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={accent} strokeWidth={sw} strokeDasharray={`${circ}`} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s ease-out' }} />
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 28, fontWeight: 800, color: NAVY }}>
         {typeof value === 'number' ? <CountUp target={value} /> : value}
@@ -364,10 +364,10 @@ function DemoDashboardInner() {
 
         {/* Stats */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
-          <StatCard icon="check" label="Completed" value={completed.length} sub="Completed assessments" accent={TEAL} />
-          <StatCard icon="clock" label="Pending" value={pendingCandidates.length} sub="Awaiting completion" accent={AMB} />
+          <StatCard icon="check" label="Completed" value={completed.length} sub="Completed assessments" accent={TEAL} fillPercent={activeCandidates.length > 0 ? Math.round((completed.length / activeCandidates.length) * 100) : 0} />
+          <StatCard icon="clock" label="Pending" value={pendingCandidates.length} sub="Awaiting completion" accent={AMB} fillPercent={activeCandidates.length > 0 ? Math.round((pendingCandidates.length / activeCandidates.length) * 100) : 0} />
           <StatCard icon="bar" label="Avg score" value={avgScore !== null ? avgScore : '-'} sub={avgScore !== null ? slabel(avgScore) : 'No data yet'} accent={NAVY} fillPercent={avgScore ?? 0} />
-          <StatCard icon="award" label="Recommended" value={recommendedCount} sub="Scoring 70 or above" accent={TEAL} />
+          <StatCard icon="award" label="Recommended" value={recommendedCount} sub="Scoring 70 or above" accent={TEAL} fillPercent={completed.length > 0 ? Math.round((recommendedCount / completed.length) * 100) : 0} />
         </div>
 
         {/* ── Candidate Pipeline filter (employer only, right after stats) ── */}

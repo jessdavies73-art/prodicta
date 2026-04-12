@@ -65,14 +65,14 @@ function StatRing({ value, accent = '#00BFA5', size = 130, fillPercent = 100 }) 
   const r = (size - sw * 2) / 2
   const circ = 2 * Math.PI * r
   const [drawn, setDrawn] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setDrawn(true), 100); return () => clearTimeout(t) }, [])
+  useEffect(() => { const t = setTimeout(() => setDrawn(true), 200); return () => clearTimeout(t) }, [])
   const target = Math.min(100, Math.max(0, fillPercent))
   const offset = drawn ? circ * (1 - target / 100) : circ
   return (
     <div style={{ position: 'relative', width: size, height: size, margin: '0 auto', filter: `drop-shadow(0 0 8px ${accent}55)` }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={sw} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={accent} strokeWidth={sw} strokeDasharray={`${circ}`} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.8s ease-out' }} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={accent} strokeWidth={sw} strokeDasharray={`${circ}`} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s ease-out' }} />
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 28, fontWeight: 800, color: NAVY }}>
         {typeof value === 'number' ? <CountUp target={value} /> : value}
@@ -1226,6 +1226,7 @@ export default function DashboardPage() {
             value={completed.length}
             sub="Completed assessments"
             accent={TEAL}
+            fillPercent={candidates.length > 0 ? Math.round((completed.length / candidates.length) * 100) : 0}
           />
           <StatCard
             icon="clock"
@@ -1233,6 +1234,7 @@ export default function DashboardPage() {
             value={pendingCandidates.length}
             sub="Awaiting completion"
             accent={AMB}
+            fillPercent={candidates.length > 0 ? Math.round((pendingCandidates.length / candidates.length) * 100) : 0}
           />
           <StatCard
             icon="bar"
@@ -1248,6 +1250,7 @@ export default function DashboardPage() {
             value={recommendedCount}
             sub="Scoring 70 or above"
             accent={TEAL}
+            fillPercent={completed.length > 0 ? Math.round((recommendedCount / completed.length) * 100) : 0}
           />
         </div>
 
@@ -2307,14 +2310,14 @@ function AssessmentInsights({ candidates = [] }) {
 
       <div style={{ padding: '18px 22px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
         {[
-          { label: 'Total sent',      value: totalSent,         sub: 'All time',                accent: NAVY },
-          { label: 'Total completed', value: totalCompleted,    sub: `${totalSent - totalCompleted} not completed`, accent: TEAL },
-          { label: 'Completion rate', value: `${completionRate}%`, sub: `Platform avg ${PLATFORM_AVG}%`, accent: TEAL },
-          { label: 'Avg time to complete', value: avgDisplay, sub: avgHours == null ? 'Not enough data' : 'From invite to submit', accent: NAVY },
+          { label: 'Total sent',      value: totalSent,         sub: 'All time',                accent: NAVY, fill: 100 },
+          { label: 'Total completed', value: totalCompleted,    sub: `${totalSent - totalCompleted} not completed`, accent: TEAL, fill: totalSent > 0 ? Math.round((totalCompleted / totalSent) * 100) : 0 },
+          { label: 'Completion rate', value: `${completionRate}%`, sub: `Platform avg ${PLATFORM_AVG}%`, accent: TEAL, fill: completionRate },
+          { label: 'Avg time to complete', value: avgDisplay, sub: avgHours == null ? 'Not enough data' : 'From invite to submit', accent: NAVY, fill: 100 },
         ].map(m => (
           <div key={m.label} style={{ textAlign: 'center', padding: '8px 0' }}>
             <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{m.label}</div>
-            <StatRing value={m.value} />
+            <StatRing value={m.value} accent={m.accent} fillPercent={m.fill} />
             <div style={{ fontFamily: F, fontSize: 12, color: '#6B7280', marginTop: 6 }}>{m.sub}</div>
           </div>
         ))}
