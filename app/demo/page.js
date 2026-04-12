@@ -573,7 +573,7 @@ function DemoDashboardInner() {
                     <button
                       key={c.key}
                       type="button"
-                      onClick={() => setDemoHealthFilter(prev => prev === c.key ? null : c.key)}
+                      onClick={() => { setDemoHealthFilter(prev => prev === c.key ? null : c.key); setVerdictFilter(null) }}
                       onMouseEnter={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                       onMouseLeave={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                       style={{
@@ -863,8 +863,8 @@ function DemoDashboardInner() {
           </>
         )}
 
-        {/* ── Strong / Maybe / Risk filter ── */}
-        {(verdictCounts.strong > 0 || verdictCounts.maybe > 0 || verdictCounts.risk > 0) && (
+        {/* ── Strong / Maybe / Risk filter (hidden when Placement Health panel is active) ── */}
+        {!isAgency && (verdictCounts.strong > 0 || verdictCounts.maybe > 0 || verdictCounts.risk > 0) && (
           <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
             {[
               { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
@@ -903,7 +903,7 @@ function DemoDashboardInner() {
             })}
           </div>
         )}
-        {verdictFilter && (
+        {!isAgency && verdictFilter && (
           <div style={{ marginBottom: 14 }}>
             <button
               type="button"

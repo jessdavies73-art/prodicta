@@ -1551,7 +1551,7 @@ export default function DashboardPage() {
           <PlacementHealthPanel
             data={placementHealth}
             activeFilter={healthFilter}
-            onFilter={(s) => setHealthFilter(prev => prev === s ? null : s)}
+            onFilter={(s) => { setHealthFilter(prev => prev === s ? null : s); setVerdictFilter(null) }}
             isMobile={isMobile}
           />
         )}
@@ -1569,7 +1569,7 @@ export default function DashboardPage() {
                 <button
                   key={v.key}
                   type="button"
-                  onClick={() => setVerdictFilter(prev => prev === v.key ? null : v.key)}
+                  onClick={() => { setVerdictFilter(prev => prev === v.key ? null : v.key); setHealthFilter(null) }}
                   onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                   onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                   style={{
