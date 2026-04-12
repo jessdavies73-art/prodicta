@@ -310,8 +310,6 @@ function DemoDashboardInner() {
     ? healthFiltered.filter(c => getVerdict(c) === verdictFilter)
     : healthFiltered
 
-  const passRate = completed.length ? Math.round((recommendedCount / completed.length) * 100) : null
-  const highRisk = completed.filter(c => (c.results?.[0]?.risk_level ?? '').toLowerCase().includes('high'))
   const flaggedCandidates = activeCandidates.filter(c => {
     const r = Array.isArray(c.results) ? c.results[0] : c.results
     if (!r) return false
@@ -421,37 +419,6 @@ function DemoDashboardInner() {
             </div>
           </div>
         )}
-
-        {/* Pipeline health */}
-        <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
-          <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <div>
-              <h2 style={{ margin: '0 0 2px', fontSize: 15.5, fontWeight: 700, color: TX }}>{isAgency ? 'Placement Pipeline Health' : 'Hiring Pipeline Health'}</h2>
-              <p style={{ margin: 0, fontSize: 12.5, color: TX3 }}>{isAgency ? 'Quality snapshot across all active placements.' : 'Quality snapshot across all active assessments.'}</p>
-            </div>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, background: TEALLT, border: `1px solid ${TEAL}55`, fontSize: 12, fontWeight: 700, color: TEALD }}>
-              <Ic name="calendar" size={12} color={TEALD} />April 2026
-            </span>
-          </div>
-          <div style={{ padding: '20px 24px', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-            {[
-              { label: 'Assessed', value: completed.length, sub: 'Completed', color: TEALD, bg: TEALLT, bd: `${TEAL}55` },
-              { label: 'Pass rate', value: `${passRate}%`, sub: `${recommendedCount} of ${completed.length} scored 70+`, color: passRate >= 70 ? '#22C55E' : passRate >= 50 ? '#F59E0B' : '#EF4444', bg: passRate >= 70 ? GRNBG : passRate >= 50 ? AMBBG : REDBG, bd: passRate >= 70 ? GRNBD : passRate >= 50 ? '#fde68a' : '#fecaca' },
-              { label: 'Average score', value: avgScore ?? '-', sub: avgScore >= 70 ? 'Above threshold' : 'Below threshold', color: avgScore >= 70 ? '#22C55E' : avgScore >= 50 ? '#F59E0B' : '#EF4444', bg: avgScore >= 70 ? GRNBG : avgScore >= 50 ? AMBBG : REDBG, bd: `${avgScore >= 70 ? '#22C55E' : avgScore >= 50 ? '#F59E0B' : '#EF4444'}55` },
-            ].map(({ label, value, sub, color, bg, bd }) => (
-              <div key={label} style={{ flex: 1, minWidth: 140, background: bg, border: `1px solid ${bd}`, borderRadius: 10, padding: '14px 16px' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>{label}</div>
-                <div style={{ fontFamily: FM, fontSize: 30, fontWeight: 800, color, lineHeight: 1, marginBottom: 4 }}>{value}</div>
-                <div style={{ fontSize: 11.5, color: TX3 }}>{sub}</div>
-              </div>
-            ))}
-            <div style={{ flex: '1 1 180px', background: highRisk.length > 0 ? `linear-gradient(135deg, ${REDBG}, #fff5f5)` : GRNBG, border: `1.5px solid ${highRisk.length > 0 ? '#fecaca' : GRNBD}`, borderRadius: 10, padding: '14px 16px' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>High risk</div>
-              <div style={{ fontFamily: FM, fontSize: 30, fontWeight: 800, color: highRisk.length > 0 ? '#EF4444' : '#22C55E', lineHeight: 1, marginBottom: 4 }}>{highRisk.length}</div>
-              <div style={{ fontSize: 11.5, color: TX3 }}>{highRisk.length > 0 ? 'Candidates flagged' : 'No high-risk candidates'}</div>
-            </div>
-          </div>
-        </div>
 
         {/* Assessment Insights */}
         <div style={{ ...cs, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
