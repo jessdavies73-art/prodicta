@@ -13,6 +13,7 @@ import {
   F, FM, scolor, sbg, slabel, dL, dC, riskCol, riskBg, riskBd, cs, ps, bs
 } from '@/lib/constants'
 import OnboardingWizard from '@/components/OnboardingWizard'
+import ProdictaLogo from '@/components/ProdictaLogo'
 
 /* Inline mobile detection — no external hook dependency */
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
@@ -327,19 +328,210 @@ function EmptyState() {
           <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
       </div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: TX, fontFamily: F, marginBottom: 8 }}>
-        No candidates yet
+      <div style={{ fontSize: 20, fontWeight: 800, color: TX, fontFamily: F, marginBottom: 8 }}>
+        No assessments yet
       </div>
-      <div style={{ fontSize: 13.5, color: TX2, fontFamily: F, lineHeight: 1.6, maxWidth: 300, margin: '0 auto 24px' }}>
-        Ready to find your best hire? Create an assessment and send your first invite.
+      <div style={{ fontSize: 14, color: TX2, fontFamily: F, lineHeight: 1.6, maxWidth: 340, margin: '0 auto 24px' }}>
+        Create your first assessment to get started.
       </div>
       <button
         onClick={() => router.push('/assessment/new')}
-        style={bs('primary', 'md')}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          background: TEAL, color: NAVY, border: 'none', borderRadius: 10,
+          padding: '14px 32px', fontFamily: F, fontSize: 15, fontWeight: 800,
+          cursor: 'pointer', marginBottom: 16,
+        }}
       >
-        <Ic name="plus" size={15} color={NAVY} />
-        New assessment
+        <Ic name="plus" size={16} color={NAVY} />
+        Create assessment
       </button>
+      <div>
+        <a
+          href="/demo"
+          style={{ fontFamily: F, fontSize: 13, color: TX3, textDecoration: 'none' }}
+        >
+          Or try the demo
+        </a>
+      </div>
+    </div>
+  )
+}
+
+// ── First-time welcome screen ────────────────────────────────────────────────
+
+function FirstTimeScreen({ onDismiss, isMobile }) {
+  const router = useRouter()
+  const steps = [
+    {
+      num: 1,
+      title: 'Paste your job description',
+      icon: (
+        <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+      ),
+      iconBg: TEAL,
+      text: 'Tell PRODICTA about the role. Paste any job description and answer 3 quick questions. Takes 2 minutes.',
+      button: { label: 'Start here', href: '/assessment/new' },
+    },
+    {
+      num: 2,
+      title: 'Send to your candidate',
+      icon: (
+        <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      ),
+      iconBg: NAVY,
+      text: 'Your candidate gets a unique link. They complete real work scenarios built from the job description. Takes 15 to 45 minutes.',
+      button: null,
+    },
+    {
+      num: 3,
+      title: 'Get your hiring decision',
+      icon: (
+        <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      ),
+      iconBg: TEAL,
+      text: 'Within minutes of completion you get a full report with a clear verdict: Strong Hire, Review, or Do Not Hire.',
+      button: null,
+    },
+  ]
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: '#fff',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: isMobile ? '40px 20px' : '60px 40px',
+      fontFamily: F,
+    }}>
+      <div style={{ textAlign: 'center', marginBottom: isMobile ? 40 : 56, maxWidth: 640 }}>
+        <div style={{ marginBottom: 24 }}>
+          <ProdictaLogo size={48} textColor={NAVY} />
+        </div>
+        <h1 style={{
+          fontFamily: F, fontSize: isMobile ? 28 : 38, fontWeight: 900,
+          color: NAVY, margin: '0 0 12px', letterSpacing: '-1px', lineHeight: 1.1,
+        }}>
+          Welcome to PRODICTA
+        </h1>
+        <p style={{
+          fontFamily: F, fontSize: isMobile ? 16 : 18, fontWeight: 700,
+          color: TEAL, margin: '0 0 12px', lineHeight: 1.4,
+        }}>
+          The Hiring Decision Engine with built-in Probation Insurance.
+        </p>
+        <p style={{
+          fontFamily: F, fontSize: isMobile ? 14 : 16, fontWeight: 400,
+          color: TX3, margin: 0, lineHeight: 1.5,
+        }}>
+          Let's get you to your first hiring decision in 3 steps.
+        </p>
+      </div>
+
+      <div style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? 20 : 24,
+        maxWidth: 960,
+        width: '100%',
+        marginBottom: isMobile ? 40 : 56,
+      }}>
+        {steps.map(step => (
+          <div key={step.num} style={{
+            flex: 1,
+            background: '#fff',
+            border: `1px solid ${BD}`,
+            borderRadius: 16,
+            padding: isMobile ? '28px 24px' : '32px 28px',
+            boxShadow: '0 2px 12px rgba(15,33,55,0.06)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%',
+                background: BG, border: `1.5px solid ${BD}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: FM, fontSize: 13, fontWeight: 800, color: TX3, flexShrink: 0,
+              }}>
+                {step.num}
+              </div>
+              <div style={{
+                width: 44, height: 44, borderRadius: 12,
+                background: step.iconBg,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                {step.icon}
+              </div>
+            </div>
+            <h3 style={{
+              fontFamily: F, fontSize: 16, fontWeight: 800,
+              color: NAVY, margin: '0 0 10px',
+            }}>
+              {step.title}
+            </h3>
+            <p style={{
+              fontFamily: F, fontSize: 13.5, color: TX2,
+              margin: 0, lineHeight: 1.65, flex: 1,
+            }}>
+              {step.text}
+            </p>
+            {step.button && (
+              <button
+                onClick={() => router.push(step.button.href)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  gap: 8, marginTop: 20,
+                  background: TEAL, color: NAVY, border: 'none', borderRadius: 10,
+                  padding: '12px 28px', fontFamily: F, fontSize: 14, fontWeight: 800,
+                  cursor: 'pointer', width: '100%',
+                }}
+              >
+                {step.button.label}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ textAlign: 'center' }}>
+        <a
+          href="/demo"
+          style={{
+            fontFamily: F, fontSize: 14, color: TEALD, fontWeight: 600,
+            textDecoration: 'none', marginBottom: 16, display: 'inline-block',
+          }}
+        >
+          Try the demo first
+        </a>
+        <div>
+          <button
+            onClick={onDismiss}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: F, fontSize: 13, color: TX3, fontWeight: 500,
+              padding: '8px 16px',
+            }}
+          >
+            Skip to dashboard
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -379,6 +571,7 @@ export default function DashboardPage() {
   const [placementHealth, setPlacementHealth] = useState(null) // { placements, counts, total_active, rebate_ending_this_month }
   const [healthFilter, setHealthFilter] = useState(null) // 'GREEN' | 'AMBER' | 'RED' | null
   const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
+  const [showFirstTime, setShowFirstTime] = useState(false)
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -424,6 +617,15 @@ export default function DashboardPage() {
 
         if (assessErr) throw assessErr
         setAssessments(assess || [])
+
+        // First-time detection: no assessments and no candidates means brand new user
+        if ((assess || []).length === 0 && (cands || []).length === 0) {
+          try {
+            if (!localStorage.getItem('prodicta_first_time_dismissed')) {
+              setShowFirstTime(true)
+            }
+          } catch (_) {}
+        }
 
         // Monthly usage count
         const now = new Date()
@@ -621,6 +823,19 @@ export default function DashboardPage() {
           </div>
         </main>
       </div>
+    )
+  }
+
+  // ── first-time welcome screen ────────────────────────────────────────────────
+  if (showFirstTime) {
+    return (
+      <FirstTimeScreen
+        isMobile={isMobile}
+        onDismiss={() => {
+          try { localStorage.setItem('prodicta_first_time_dismissed', '1') } catch (_) {}
+          setShowFirstTime(false)
+        }}
+      />
     )
   }
 
