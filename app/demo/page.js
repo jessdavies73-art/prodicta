@@ -365,6 +365,65 @@ function DemoDashboardInner() {
           <StatCard icon="award" label="Recommended" value={recommendedCount} sub="Scoring 70 or above" accent={TEAL} />
         </div>
 
+        {/* ── Candidate Pipeline filter (employer only, right after stats) ── */}
+        {!isAgency && (
+          <>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Candidate Pipeline</div>
+          <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
+            {[
+              { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
+              { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
+              { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
+            ].map(v => {
+              const active = verdictFilter === v.key
+              return (
+                <button
+                  key={v.key}
+                  type="button"
+                  onClick={() => { setVerdictFilter(prev => prev === v.key ? null : v.key); setDemoHealthFilter(null) }}
+                  onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
+                  onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
+                  style={{
+                    flex: isMobile ? undefined : 1,
+                    width: isMobile ? '100%' : undefined,
+                    background: active ? `${v.accent}14` : '#fff',
+                    border: '1px solid #E5E7EB',
+                    borderLeft: `${active ? 6 : 4}px solid ${v.accent}`,
+                    borderRadius: 12, padding: '20px 22px', textAlign: 'left',
+                    cursor: 'pointer', fontFamily: F,
+                    boxShadow: active ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
+                    transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
+                    transform: active ? 'translateY(-2px)' : 'none',
+                    opacity: verdictFilter && !active ? 0.6 : 1,
+                  }}
+                >
+                  <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: v.accent }}>
+                    {v.count}
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2, color: NAVY }}>{v.label}</div>
+                  <div style={{ fontSize: 12, color: TX3 }}>{v.sub}</div>
+                </button>
+              )
+            })}
+          </div>
+          </>
+        )}
+        {!isAgency && verdictFilter && (
+          <div style={{ marginBottom: 14 }}>
+            <button
+              type="button"
+              onClick={() => setVerdictFilter(null)}
+              style={{
+                background: 'none', border: `1px solid ${BD}`, borderRadius: 6,
+                padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600,
+                color: TX3, cursor: 'pointer',
+              }}
+            >
+              Show all candidates
+            </button>
+          </div>
+        )}
+
         {/* Red flag banner */}
         {flaggedCandidates.length > 0 && (
           <div style={{
@@ -780,8 +839,8 @@ function DemoDashboardInner() {
               </div>
             </div>
 
-            {/* Employer: Red Flag Alerts + Bulk Screening */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
+            {/* Employer: Red Flag Alerts */}
+            <div style={{ marginBottom: 24 }}>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Red flag email alerts</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, marginBottom: 10 }}>
@@ -793,71 +852,8 @@ function DemoDashboardInner() {
                 </div>
                 <p style={{ fontSize: 12, color: TX3, margin: 0, lineHeight: 1.5 }}>Automatic notifications when a candidate scores below your threshold. Configure thresholds in Settings.</p>
               </div>
-              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Bulk screening mode</div>
-                <p style={{ fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.5 }}>5 candidates assessed for Customer Service Advisor. Use the filter cards above to view by verdict.</p>
-              </div>
             </div>
           </>
-        )}
-
-        {/* ── Strong / Maybe / Risk filter (hidden when Placement Health is showing for agency) ── */}
-        {!isAgency && (
-          <>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Candidate Pipeline</div>
-          <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
-          {[
-            { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
-            { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
-            { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
-          ].map(v => {
-            const active = verdictFilter === v.key
-            return (
-              <button
-                key={v.key}
-                type="button"
-                onClick={() => { setVerdictFilter(prev => prev === v.key ? null : v.key); setDemoHealthFilter(null) }}
-                  onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
-                  onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
-                  style={{
-                    flex: isMobile ? undefined : 1,
-                    width: isMobile ? '100%' : undefined,
-                    background: active ? `${v.accent}14` : '#fff',
-                    border: '1px solid #E5E7EB',
-                    borderLeft: `${active ? 6 : 4}px solid ${v.accent}`,
-                    borderRadius: 12, padding: '20px 22px', textAlign: 'left',
-                    cursor: 'pointer', fontFamily: F,
-                    boxShadow: active ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
-                    transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
-                    transform: active ? 'translateY(-2px)' : 'none',
-                    opacity: verdictFilter && !active ? 0.6 : 1,
-                  }}
-                >
-                  <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: v.accent }}>
-                    {v.count}
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2, color: NAVY }}>{v.label}</div>
-                  <div style={{ fontSize: 12, color: TX3 }}>{v.sub}</div>
-                </button>
-              )
-            })}
-          </div>
-          </>
-        )}
-        {!isAgency && verdictFilter && (
-          <div style={{ marginBottom: 14 }}>
-            <button
-              type="button"
-              onClick={() => setVerdictFilter(null)}
-              style={{
-                background: 'none', border: `1px solid ${BD}`, borderRadius: 6,
-                padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600,
-                color: TX3, cursor: 'pointer',
-              }}
-            >
-              Show all candidates
-            </button>
-          </div>
         )}
 
         {/* Candidates table + assessments panel */}
