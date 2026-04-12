@@ -1635,9 +1635,9 @@ export default function DashboardPage() {
                   }}>
                     All Candidates
                   </h2>
-                  {search && (
+                  {(search || healthFilter || verdictFilter) && (
                     <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>
-                      {filtered.length} result{filtered.length !== 1 ? 's' : ''} for "{search}"
+                      {filtered.length} result{filtered.length !== 1 ? 's' : ''}{search ? ` for "${search}"` : ''}
                     </div>
                   )}
                 </div>

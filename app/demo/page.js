@@ -869,8 +869,8 @@ function DemoDashboardInner() {
           </>
         )}
 
-        {/* ── Strong / Maybe / Risk filter (hidden when Placement Health panel is active) ── */}
-        {!isAgency && (verdictCounts.strong > 0 || verdictCounts.maybe > 0 || verdictCounts.risk > 0) && (
+        {/* ── Strong / Maybe / Risk filter (employer only) ── */}
+        {!isAgency && (
           <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
             {[
               { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
@@ -932,7 +932,7 @@ function DemoDashboardInner() {
               <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div>
                   <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>All Candidates</h2>
-                  {(search || filterAssessmentId) && <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>{filtered.length} result{filtered.length !== 1 ? 's' : ''}</div>}
+                  {(search || filterAssessmentId || demoHealthFilter || verdictFilter) && <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>{filtered.length} result{filtered.length !== 1 ? 's' : ''}</div>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {filterAssessmentId && (
