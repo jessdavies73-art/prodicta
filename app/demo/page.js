@@ -241,7 +241,13 @@ function DemoDashboardInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isMobile = useIsMobile()
-  const [demoType, setDemoType] = useState(searchParams.get('type') === 'employer' ? 'employer' : 'agency')
+  const [demoType, setDemoType] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('prodicta_demo_account_type')
+      if (saved === 'employer' || saved === 'agency') return saved
+    }
+    return searchParams.get('type') === 'employer' ? 'employer' : 'agency'
+  })
   const isAgency = demoType === 'agency'
   const [search, setSearch] = useState('')
   const [hoveredRow, setHoveredRow] = useState(null)
@@ -349,7 +355,7 @@ function DemoDashboardInner() {
           {[{ key: 'agency', label: 'Recruitment Agency' }, { key: 'employer', label: 'Direct Employer' }].map(opt => (
             <button
               key={opt.key}
-              onClick={() => { setDemoType(opt.key); window.history.replaceState(null, '', `/demo?type=${opt.key}`) }}
+              onClick={() => { setDemoType(opt.key); localStorage.setItem('prodicta_demo_account_type', opt.key); window.history.replaceState(null, '', `/demo?type=${opt.key}`) }}
               style={{
                 fontFamily: F, fontSize: 13.5, fontWeight: 700, border: 'none', cursor: 'pointer',
                 padding: '9px 22px', borderRadius: 8, transition: 'all 0.15s',
