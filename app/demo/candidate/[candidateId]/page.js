@@ -873,10 +873,10 @@ function DemoCandidateInner({ params }) {
 
         {/* ── CANDIDATE HEADER — three-column layout ── */}
         <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, flexDirection: isMobile ? 'column' : 'row' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 16 : 20, flexDirection: isMobile ? 'column' : 'row' }}>
 
-            {/* LEFT COLUMN — candidate info (40%) */}
-            <div style={{ flex: '0 0 40%', minWidth: 0, width: isMobile ? '100%' : undefined }}>
+            {/* LEFT COLUMN — candidate info */}
+            <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
                 <Avatar name={candidate.name} size={52} />
                 <div>
@@ -916,7 +916,7 @@ function DemoCandidateInner({ params }) {
 
             {/* CENTRE COLUMN — score ring (25%) */}
             {results && (
-              <div style={{ flex: '0 0 25%', textAlign: 'center', width: isMobile ? '100%' : undefined }}>
+              <div style={{ flexShrink: 0, textAlign: 'center', width: isMobile ? '100%' : 160 }}>
                 <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>Overall Score <InfoTooltip text="Comprehensive performance score across all scenarios. 50 is average, 75+ is strong." /></div>
                 <ScoreRing score={score} size={130} strokeWidth={9} />
                 <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TEAL, marginTop: 8 }}>{slbl(score)}</div>
@@ -949,7 +949,7 @@ function DemoCandidateInner({ params }) {
             )}
 
             {/* RIGHT COLUMN — actions (35%) */}
-            <div className="no-print" style={{ flex: '0 0 35%', width: isMobile ? '100%' : undefined }}>
+            <div className="no-print" style={{ flexShrink: 0, width: isMobile ? '100%' : 220 }}>
               {/* Primary actions */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
                 <button
