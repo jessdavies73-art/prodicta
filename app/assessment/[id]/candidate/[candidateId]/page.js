@@ -2040,7 +2040,7 @@ export default function CandidateReportPage({ params }) {
             </Card>
 
             {/* ══════════════════════════════════════════════════
-                VERDICT CARD
+                UNIFIED VERDICT + LAYER 1 CARD
             ══════════════════════════════════════════════════ */}
             {results && (() => {
               const isRapidScreen = candidate?.assessments?.assessment_mode === 'rapid'
@@ -2062,36 +2062,87 @@ export default function CandidateReportPage({ params }) {
                   ? 'This candidate is predicted to struggle in this role. See full report for detail.'
                   : 'This candidate has potential with areas to watch. See watch-outs below.')
               const verdictBg = isStrongHire ? '#00BFA5' : isDoNotHire ? '#991B1B' : '#B45309'
+              const nextStep = isStrongHire
+                ? 'Ready to interview. Use the Interview Brief below.'
+                : isDoNotHire
+                ? 'We recommend not proceeding. Full detail available below.'
+                : 'Proceed with caution. See risks in the detail below.'
+              const nextCol = isStrongHire ? TEAL : isDoNotHire ? RED : AMB
               return (
                 <div style={{
                   marginBottom: 20,
-                  background: verdictBg,
                   borderRadius: 14,
-                  padding: isMobile ? '28px 20px' : '36px 36px',
-                  boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
-                  textAlign: 'center',
+                  boxShadow: SHADOW_LG,
+                  overflow: 'hidden',
+                  border: `1px solid ${BD}`,
                 }}>
+                  {/* Coloured header */}
                   <div style={{
-                    fontFamily: F,
-                    fontSize: isMobile ? 32 : 42,
-                    fontWeight: 900,
-                    color: '#fff',
-                    letterSpacing: '-1px',
-                    lineHeight: 1.1,
-                    marginBottom: 10,
+                    background: verdictBg,
+                    padding: isMobile ? '24px 20px' : '32px 36px',
+                    textAlign: 'center',
                   }}>
-                    {verdictLabel}
+                    <div style={{
+                      fontFamily: F, fontSize: isMobile ? 30 : 38, fontWeight: 900,
+                      color: '#fff', letterSpacing: '-1px', lineHeight: 1.1, marginBottom: 8,
+                    }}>
+                      {verdictLabel}
+                    </div>
+                    <div style={{
+                      fontFamily: F, fontSize: isMobile ? 14 : 15, fontWeight: 500,
+                      color: 'rgba(255,255,255,0.85)', lineHeight: 1.5, maxWidth: 480, margin: '0 auto',
+                    }}>
+                      {verdictSub}
+                    </div>
                   </div>
-                  <div style={{
-                    fontFamily: F,
-                    fontSize: isMobile ? 14 : 16,
-                    fontWeight: 500,
-                    color: 'rgba(255,255,255,0.85)',
-                    lineHeight: 1.5,
-                    maxWidth: 480,
-                    margin: '0 auto',
-                  }}>
-                    {verdictSub}
+                  {/* White content */}
+                  <div style={{ background: '#fff', padding: isMobile ? '20px 20px' : '24px 36px' }}>
+                    {/* Score + Confidence row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 16 : 28, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 20 }}>
+                      <div style={{ textAlign: 'center', minWidth: 80 }}>
+                        <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Overall Score</div>
+                        <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: NAVY, lineHeight: 1 }}>{score}</div>
+                        <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>/100</div>
+                      </div>
+                      <div style={{ textAlign: 'center', minWidth: 80 }}>
+                        <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Hiring Confidence</div>
+                        <div style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: NAVY }}>
+                          {(() => {
+                            const hc = results.hiring_confidence
+                            const hcScore = hc ? (hc.score ?? hc) : null
+                            if (hcScore != null) return hcScore >= 70 ? 'High' : hcScore >= 55 ? 'Moderate' : 'Low'
+                            return results.confidence_level || '-'
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Strengths + Watch-outs */}
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 20 }}>
+                      {(results.strengths || []).length > 0 && (
+                        <div>
+                          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Top strengths</div>
+                          {(results.strengths || []).slice(0, 2).map((s, i) => (
+                            <div key={i} style={{ borderLeft: `4px solid ${TEAL}`, paddingLeft: 12, marginBottom: 8 }}>
+                              <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY }}>{typeof s === 'object' ? (s.strength || s.title || '') : s}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {(results.watchouts || []).length > 0 && (
+                        <div>
+                          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Watch-outs</div>
+                          {(results.watchouts || []).slice(0, 2).map((w, i) => (
+                            <div key={i} style={{ borderLeft: `4px solid ${AMB}`, paddingLeft: 12, marginBottom: 8 }}>
+                              <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY }}>{typeof w === 'object' ? (w.watchout || w.title || '') : w}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {/* Next step */}
+                    <div style={{ padding: '12px 16px', borderRadius: 8, background: `${nextCol}10`, border: `1px solid ${nextCol}30` }}>
+                      <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: nextCol }}>{nextStep}</span>
+                    </div>
                   </div>
                 </div>
               )
@@ -2247,74 +2298,6 @@ export default function CandidateReportPage({ params }) {
 
             {results && (
               <>
-                {/* ══════════════════════════════════════════════════
-                    LAYER 1 — THE DECISION (always visible)
-                ══════════════════════════════════════════════════ */}
-                <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
-                  {/* Score + Confidence row */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 16 : 28, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 20 }}>
-                    <div style={{ textAlign: 'center', minWidth: 80 }}>
-                      <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Overall Score</div>
-                      <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: sc(score), lineHeight: 1 }}>{score}</div>
-                      <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>/100</div>
-                    </div>
-                    <div style={{ textAlign: 'center', minWidth: 80 }}>
-                      <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Hiring Confidence</div>
-                      <div style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: TX }}>
-                        {(() => {
-                          const hc = results.hiring_confidence
-                          const hcScore = hc ? (hc.score ?? hc) : null
-                          if (hcScore != null) return hcScore >= 70 ? 'High' : hcScore >= 55 ? 'Moderate' : 'Low'
-                          return results.confidence_level || '-'
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Top strengths and watch-outs (titles only) */}
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 20 }}>
-                    {(results.strengths || []).length > 0 && (
-                      <div>
-                        <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Top strengths</div>
-                        {(results.strengths || []).slice(0, 2).map((s, i) => (
-                          <div key={i} style={{ borderLeft: `4px solid ${TEAL}`, paddingLeft: 12, marginBottom: 8 }}>
-                            <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY }}>{typeof s === 'object' ? (s.strength || s.title || '') : s}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {(results.watchouts || []).length > 0 && (
-                      <div>
-                        <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Watch-outs</div>
-                        {(results.watchouts || []).slice(0, 2).map((w, i) => (
-                          <div key={i} style={{ borderLeft: `4px solid ${AMB}`, paddingLeft: 12, marginBottom: 8 }}>
-                            <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY }}>{typeof w === 'object' ? (w.watchout || w.title || '') : w}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Next step suggestion */}
-                  {(() => {
-                    const isRapid = candidate?.assessments?.assessment_mode === 'rapid'
-                    const sig = results.rapid_screen_signal
-                    const isStrong = isRapid ? sig === 'Strong Proceed' : score >= 75 && (results.risk_level === 'Low' || results.risk_level === 'Very Low')
-                    const isDNH = isRapid ? sig === 'High Risk' : score < 55 || results.risk_level === 'High'
-                    const nextStep = isStrong
-                      ? 'Ready to interview. Use the Interview Brief below.'
-                      : isDNH
-                      ? 'We recommend not proceeding. Full detail available below.'
-                      : 'Proceed with caution. See risks in the detail below.'
-                    const nextCol = isStrong ? GRN : isDNH ? RED : AMB
-                    return (
-                      <div style={{ padding: '12px 16px', borderRadius: 8, background: `${nextCol}10`, border: `1px solid ${nextCol}30` }}>
-                        <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: nextCol }}>{nextStep}</span>
-                      </div>
-                    )
-                  })()}
-                </Card>
-
                 {/* ══════════════════════════════════════════════════
                     LAYER 2 BUTTON
                 ══════════════════════════════════════════════════ */}
