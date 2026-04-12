@@ -1859,8 +1859,10 @@ export default function CandidateReportPage({ params }) {
                       </button>
                     )}
                     {/* ONBOARDING */}
+                    {profile?.account_type === 'employer' && (
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Onboarding</div>
-                    {existingOutcome && (
+                    )}
+                    {profile?.account_type === 'employer' && existingOutcome && (
                       <button
                         onClick={() => router.push(`/assessment/${params.id}/candidate/${params.candidateId}/copilot`)}
                         style={{
