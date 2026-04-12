@@ -17,7 +17,7 @@ export const viewport = {
 
 export const metadata = {
   title: 'PRODICTA',
-  description: 'Prodicta helps UK businesses identify whether candidates will succeed through probation using AI-powered work simulations.',
+  description: 'The Hiring Decision Engine with built-in Probation Insurance. Prodicta helps UK businesses identify whether candidates will succeed through probation using AI-powered work simulations.',
   icons: {
     icon: '/favicon.ico',
   },

@@ -438,6 +438,15 @@ export default function LandingPage() {
           <span style={{ color: GOLD, textShadow: '0 0 40px rgba(232,184,75,0.35)' }}>hire.</span>
         </h1>
 
+        {/* Positioning line */}
+        <p style={{
+          fontFamily: F, fontSize: 'clamp(18px, 2.5vw, 28px)', fontWeight: 700,
+          color: '#00BFA5', lineHeight: 1.4,
+          maxWidth: 620, marginBottom: 16, position: 'relative', zIndex: 1,
+        }}>
+          The Hiring Decision Engine with built-in Probation Insurance.
+        </p>
+
         {/* Subheadline */}
         <p style={{
           fontFamily: F, fontSize: 'clamp(16px, 1.8vw, 20px)', fontWeight: 400,
