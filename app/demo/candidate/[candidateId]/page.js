@@ -692,6 +692,8 @@ function DemoCandidateInner({ params }) {
   const [sendModal, setSendModal] = useState(false)
   const [sendEmail, setSendEmail] = useState('')
   const [expandedSections, setExpandedSections] = useState({ aiSummary: false, candidateDocs: false, onboarding: false, fairWork: false })
+  const [layer2Open, setLayer2Open] = useState(false)
+  const [layer3Open, setLayer3Open] = useState(false)
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
 
@@ -1215,20 +1217,93 @@ function DemoCandidateInner({ params }) {
           </Card>
         )}
 
-        {results && (
-          <>
-            <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
-              <button
-                onClick={() => setExpandedSections(allExpanded
-                  ? { aiSummary: false, candidateDocs: false, onboarding: false, fairWork: false }
-                  : { aiSummary: true,  candidateDocs: true,  onboarding: true,  fairWork: true  }
-                )}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: `1px solid ${BD}`, borderRadius: 7, cursor: 'pointer', padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3 }}
-              >
-                {allExpanded ? 'Collapse all' : 'Expand all'}
-              </button>
+        {/* ── LAYER 1 — THE DECISION (always visible) ── */}
+        {results && candidate?.assessments?.assessment_mode !== 'rapid' && (
+          <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 16 : 28, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 20 }}>
+              <div style={{ textAlign: 'center', minWidth: 80 }}>
+                <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Overall Score</div>
+                <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: sc(score), lineHeight: 1 }}>{score}</div>
+                <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>/100</div>
+              </div>
+              <div style={{ textAlign: 'center', minWidth: 80 }}>
+                <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Hiring Confidence</div>
+                <div style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: TX }}>{results.confidence_level || '-'}</div>
+              </div>
             </div>
-            <StickyNav active={activeSection} />
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 20 }}>
+              {(results.strengths || []).length > 0 && (
+                <div>
+                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: GRN, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Top strengths</div>
+                  {(results.strengths || []).slice(0, 2).map((s, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: GRN, flexShrink: 0 }} />
+                      <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX }}>{typeof s === 'object' ? (s.strength || s.title || '') : s}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {(results.watchouts || []).length > 0 && (
+                <div>
+                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Watch-outs</div>
+                  {(results.watchouts || []).slice(0, 2).map((w, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: RED, flexShrink: 0 }} />
+                      <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX }}>{typeof w === 'object' ? (w.watchout || w.title || '') : w}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {(() => {
+              const isStrong = score >= 75 && (results.risk_level === 'Low' || results.risk_level === 'Very Low')
+              const isDNH = score < 55 || results.risk_level === 'High'
+              const nextStep = isStrong ? 'Ready to interview. Use the Interview Brief below.' : isDNH ? 'We recommend not proceeding. Full detail available below.' : 'Proceed with caution. See risks in the detail below.'
+              const nextCol = isStrong ? GRN : isDNH ? RED : AMB
+              return (
+                <div style={{ padding: '12px 16px', borderRadius: 8, background: `${nextCol}10`, border: `1px solid ${nextCol}30` }}>
+                  <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: nextCol }}>{nextStep}</span>
+                </div>
+              )
+            })()}
+          </Card>
+        )}
+
+        {/* Layer 2 button */}
+        {results && candidate?.assessments?.assessment_mode !== 'rapid' && (
+          <button
+            onClick={() => setLayer2Open(v => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              width: '100%', padding: '14px 0', borderRadius: 10, cursor: 'pointer',
+              background: 'transparent', border: `1.5px solid ${TEAL}`,
+              fontFamily: F, fontSize: 14, fontWeight: 700, color: TEALD,
+              marginBottom: 20, transition: 'background 0.15s',
+            }}
+          >
+            {layer2Open ? 'Hide detail' : 'See why — pressure-fit, predictions and risks'}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: layer2Open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+        )}
+
+        {results && (candidate?.assessments?.assessment_mode === 'rapid' || layer2Open) && (
+          <>
+            {layer2Open && (
+              <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+                <button
+                  onClick={() => setExpandedSections(allExpanded
+                    ? { aiSummary: false, candidateDocs: false, onboarding: false, fairWork: false }
+                    : { aiSummary: true,  candidateDocs: true,  onboarding: true,  fairWork: true  }
+                  )}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: `1px solid ${BD}`, borderRadius: 7, cursor: 'pointer', padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3 }}
+                >
+                  {allExpanded ? 'Collapse all' : 'Expand all'}
+                </button>
+              </div>
+            )}
+            {layer2Open && <StickyNav active={activeSection} />}
 
             {/* ── CANDIDATE TYPE SNAPSHOT ── */}
             {results.candidate_type && (() => {
@@ -1502,6 +1577,29 @@ function DemoCandidateInner({ params }) {
                 </div>
               </ScrollReveal>
             )}
+
+            {/* ── END LAYER 2 / LAYER 3 BOUNDARY ── */}
+
+            {/* Layer 3 button — show for Sophie (Strategy-Fit), hide for James (failed) and Alex (rapid) */}
+            {candidate?.assessments?.assessment_mode !== 'rapid' && !(score < 55 && results.risk_level === 'High') && (
+              <button
+                onClick={() => setLayer3Open(v => !v)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  width: '100%', padding: '14px 0', borderRadius: 10, cursor: 'pointer',
+                  background: 'transparent', border: `1.5px solid #0f2137`,
+                  fontFamily: F, fontSize: 14, fontWeight: 700, color: '#0f2137',
+                  marginBottom: 20, transition: 'background 0.15s',
+                }}
+              >
+                {layer3Open ? 'Hide full analysis' : 'Full analysis — onboarding, compliance and everything else'}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: layer3Open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+            )}
+
+            {layer3Open && (<>
 
             {/* ── AI SUMMARY ── */}
             {results.ai_summary && (
@@ -2299,6 +2397,8 @@ function DemoCandidateInner({ params }) {
                 Get started
               </a>
             </div>
+
+            </>)}
           </>
         )}
 

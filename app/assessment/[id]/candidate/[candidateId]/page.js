@@ -982,7 +982,8 @@ export default function CandidateReportPage({ params }) {
   const [activeSection, setActiveSection] = useState('summary')
   const [expandedWeeks, setExpandedWeeks] = useState({})
   const [expandedSections, setExpandedSections] = useState({ aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false, coachingPlan: false, tuesdayReality: true })
-  const [fullReportExpanded, setFullReportExpanded] = useState(false)
+  const [layer2Open, setLayer2Open] = useState(false)
+  const [layer3Open, setLayer3Open] = useState(false)
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
 
@@ -2199,22 +2200,16 @@ export default function CandidateReportPage({ params }) {
             {results && (
               <>
                 {/* ══════════════════════════════════════════════════
-                    SUMMARY ROW
+                    LAYER 1 — THE DECISION (always visible)
                 ══════════════════════════════════════════════════ */}
                 <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 16 : 28, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {/* Score + Confidence row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 16 : 28, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 20 }}>
                     <div style={{ textAlign: 'center', minWidth: 80 }}>
                       <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Overall Score</div>
                       <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: sc(score), lineHeight: 1 }}>{score}</div>
                       <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>/100</div>
                     </div>
-                    {results.pressure_fit_score != null && (
-                      <div style={{ textAlign: 'center', minWidth: 80 }}>
-                        <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Pressure-Fit</div>
-                        <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: pfColor(results.pressure_fit_score), lineHeight: 1 }}>{results.pressure_fit_score}</div>
-                        <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>/100</div>
-                      </div>
-                    )}
                     <div style={{ textAlign: 'center', minWidth: 80 }}>
                       <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Hiring Confidence</div>
                       <div style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: TX }}>
@@ -2226,42 +2221,76 @@ export default function CandidateReportPage({ params }) {
                         })()}
                       </div>
                     </div>
-                    {candidate?.assessments?.role_level && (
-                      <div style={{ textAlign: 'center', minWidth: 80 }}>
-                        <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Role Level</div>
-                        <Badge
-                          label={candidate.assessments.role_level === 'OPERATIONAL' ? 'Operational' : candidate.assessments.role_level === 'LEADERSHIP' ? 'Leadership' : 'Mid-Level'}
-                          bg={TEALLT}
-                          color={TEALD}
-                          border={`${TEAL}55`}
-                        />
+                  </div>
+
+                  {/* Top strengths and watch-outs (titles only) */}
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 20 }}>
+                    {(results.strengths || []).length > 0 && (
+                      <div>
+                        <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: GRN, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Top strengths</div>
+                        {(results.strengths || []).slice(0, 2).map((s, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: GRN, flexShrink: 0 }} />
+                            <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX }}>{typeof s === 'object' ? (s.strength || s.title || '') : s}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {(results.watchouts || []).length > 0 && (
+                      <div>
+                        <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Watch-outs</div>
+                        {(results.watchouts || []).slice(0, 2).map((w, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: RED, flexShrink: 0 }} />
+                            <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX }}>{typeof w === 'object' ? (w.watchout || w.title || '') : w}</span>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
-                  <div style={{ textAlign: 'center', marginTop: 20 }}>
-                    <button
-                      onClick={() => setFullReportExpanded(v => !v)}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 8,
-                        background: fullReportExpanded ? 'transparent' : TEAL,
-                        color: fullReportExpanded ? TEALD : '#fff',
-                        border: fullReportExpanded ? `1.5px solid ${TEAL}` : 'none',
-                        borderRadius: 10, cursor: 'pointer', padding: '12px 32px',
-                        fontFamily: F, fontSize: 15, fontWeight: 700,
-                      }}
-                    >
-                      {fullReportExpanded ? 'Collapse full report' : 'View full report'}
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: fullReportExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div style={{ textAlign: 'center', marginTop: 12, fontFamily: F, fontSize: 12.5, color: TX3, lineHeight: 1.5 }}>
-                    Full report includes strengths, watch-outs, onboarding plan, compliance certificate, and more.
-                  </div>
+
+                  {/* Next step suggestion */}
+                  {(() => {
+                    const isRapid = candidate?.assessments?.assessment_mode === 'rapid'
+                    const sig = results.rapid_screen_signal
+                    const isStrong = isRapid ? sig === 'Strong Proceed' : score >= 75 && (results.risk_level === 'Low' || results.risk_level === 'Very Low')
+                    const isDNH = isRapid ? sig === 'High Risk' : score < 55 || results.risk_level === 'High'
+                    const nextStep = isStrong
+                      ? 'Ready to interview. Use the Interview Brief below.'
+                      : isDNH
+                      ? 'We recommend not proceeding. Full detail available below.'
+                      : 'Proceed with caution. See risks in the detail below.'
+                    const nextCol = isStrong ? GRN : isDNH ? RED : AMB
+                    return (
+                      <div style={{ padding: '12px 16px', borderRadius: 8, background: `${nextCol}10`, border: `1px solid ${nextCol}30` }}>
+                        <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: nextCol }}>{nextStep}</span>
+                      </div>
+                    )
+                  })()}
                 </Card>
 
-                {fullReportExpanded && (<>
+                {/* ══════════════════════════════════════════════════
+                    LAYER 2 BUTTON
+                ══════════════════════════════════════════════════ */}
+                {candidate?.assessments?.assessment_mode !== 'rapid' && (
+                  <button
+                    onClick={() => setLayer2Open(v => !v)}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                      width: '100%', padding: '14px 0', borderRadius: 10, cursor: 'pointer',
+                      background: 'transparent', border: `1.5px solid ${TEAL}`,
+                      fontFamily: F, fontSize: 14, fontWeight: 700, color: TEALD,
+                      marginBottom: 20, transition: 'background 0.15s',
+                    }}
+                  >
+                    {layer2Open ? 'Hide detail' : 'See why — pressure-fit, predictions and risks'}
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: layer2Open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                )}
+
+                {layer2Open && (<>
                 <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 6 }}>
                   {results?.simple_view && (
                     <button
@@ -3417,6 +3446,32 @@ export default function CandidateReportPage({ params }) {
                   )
                 })()}
                 </ScrollReveal>
+
+                {/* ══════════════════════════════════════════════════
+                    END LAYER 2 / START LAYER 3
+                ══════════════════════════════════════════════════ */}
+                </>)}
+
+                {/* Layer 3 button — only for non-rapid, non-high-risk reports */}
+                {layer2Open && candidate?.assessments?.assessment_mode !== 'rapid' && !(score < 55 && results.risk_level === 'High') && (
+                  <button
+                    onClick={() => setLayer3Open(v => !v)}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                      width: '100%', padding: '14px 0', borderRadius: 10, cursor: 'pointer',
+                      background: 'transparent', border: `1.5px solid ${NAVY}`,
+                      fontFamily: F, fontSize: 14, fontWeight: 700, color: NAVY,
+                      marginBottom: 20, transition: 'background 0.15s',
+                    }}
+                  >
+                    {layer3Open ? 'Hide full analysis' : 'Full analysis — onboarding, compliance and everything else'}
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: layer3Open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                )}
+
+                {layer3Open && (<>
 
                 {/* ══════════════════════════════════════════════════
                     AI HIRING SUMMARY
