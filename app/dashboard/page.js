@@ -60,28 +60,32 @@ function initials(name = '') {
 
 // ── sub-components ────────────────────────────────────────────────────────────
 
-function StatRing({ value, accent = '#00BFA5', size = 120 }) {
-  const sw = 4
+function StatRing({ value, accent = '#00BFA5', size = 130, fillPercent = 100 }) {
+  const sw = 8
   const r = (size - sw * 2) / 2
   const circ = 2 * Math.PI * r
+  const [drawn, setDrawn] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setDrawn(true), 100); return () => clearTimeout(t) }, [])
+  const target = Math.min(100, Math.max(0, fillPercent))
+  const offset = drawn ? circ * (1 - target / 100) : circ
   return (
-    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.08))' }}>
+    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto', filter: `drop-shadow(0 0 8px ${accent}55)` }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={sw} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={accent} strokeWidth={sw} strokeDasharray={`${circ}`} strokeLinecap="round" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={accent} strokeWidth={sw} strokeDasharray={`${circ}`} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.8s ease-out' }} />
       </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 30, fontWeight: 800, color: NAVY }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 28, fontWeight: 800, color: NAVY }}>
         {typeof value === 'number' ? <CountUp target={value} /> : value}
       </div>
     </div>
   )
 }
 
-function StatCard({ icon, label, value, sub, accent = TEAL }) {
+function StatCard({ icon, label, value, sub, accent = TEAL, fillPercent = 100 }) {
   const isMob = useIsMobile()
   return (
     <div style={{ flex: isMob ? '1 1 45%' : 1, textAlign: 'center', padding: '8px 0' }}>
-      <StatRing value={value} accent={accent} />
+      <StatRing value={value} accent={accent} fillPercent={fillPercent} />
       <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 12 }}>{label}</div>
       {sub && <div style={{ fontSize: 12, color: '#6B7280', fontFamily: F, marginTop: 4 }}>{sub}</div>}
     </div>
@@ -1236,6 +1240,7 @@ export default function DashboardPage() {
             value={avgScore !== null ? avgScore : '-'}
             sub={avgScore !== null ? slabel(avgScore) : 'No data yet'}
             accent={NAVY}
+            fillPercent={avgScore ?? 0}
           />
           <StatCard
             icon="award"
