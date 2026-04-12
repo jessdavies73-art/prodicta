@@ -572,6 +572,7 @@ export default function DashboardPage() {
   const [healthFilter, setHealthFilter] = useState(null) // 'GREEN' | 'AMBER' | 'RED' | null
   const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
   const [showFirstTime, setShowFirstTime] = useState(false)
+  const [verdictFilter, setVerdictFilter] = useState(null) // 'strong' | 'maybe' | 'risk' | null
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -903,6 +904,24 @@ export default function DashboardPage() {
     for (const p of placementHealth.placements) healthByCandidate[p.candidate_id] = p
   }
 
+  // ── verdict classification ──────────────────────────────────────────────────
+
+  function getVerdict(c) {
+    const r = c.results?.[0]
+    if (!r || r.overall_score == null) return null
+    const s = r.overall_score
+    const rl = r.risk_level
+    if (s >= 75 && (rl === 'Low' || rl === 'Very Low')) return 'strong'
+    if (s < 55 || rl === 'High') return 'risk'
+    return 'maybe'
+  }
+
+  const verdictCounts = { strong: 0, maybe: 0, risk: 0 }
+  candidates.forEach(c => {
+    const v = getVerdict(c)
+    if (v) verdictCounts[v]++
+  })
+
   // ── filtered candidates ─────────────────────────────────────────────────────
 
   const searchFiltered = search.trim()
@@ -912,9 +931,13 @@ export default function DashboardPage() {
       )
     : candidates
 
-  const filtered = isAgencyAccount && healthFilter
+  const healthFiltered = isAgencyAccount && healthFilter
     ? searchFiltered.filter(c => healthByCandidate[c.id]?.health_status === healthFilter)
     : searchFiltered
+
+  const filtered = verdictFilter
+    ? healthFiltered.filter(c => getVerdict(c) === verdictFilter)
+    : healthFiltered
 
   // ── render ──────────────────────────────────────────────────────────────────
 
@@ -1526,6 +1549,59 @@ export default function DashboardPage() {
             activeFilter={healthFilter}
             onFilter={(s) => setHealthFilter(prev => prev === s ? null : s)}
           />
+        )}
+
+        {/* ── Strong / Maybe / Risk filter ── */}
+        {candidates.length > 0 && (verdictCounts.strong > 0 || verdictCounts.maybe > 0 || verdictCounts.risk > 0) && (
+          <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
+            {[
+              { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', bg: GRN, fg: '#fff' },
+              { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', bg: AMB, fg: NAVY },
+              { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', bg: RED, fg: '#fff' },
+            ].map(v => {
+              const active = verdictFilter === v.key
+              return (
+                <button
+                  key={v.key}
+                  type="button"
+                  onClick={() => setVerdictFilter(prev => prev === v.key ? null : v.key)}
+                  style={{
+                    flex: isMobile ? undefined : 1,
+                    width: isMobile ? '100%' : undefined,
+                    background: v.bg, color: v.fg, border: 'none',
+                    borderRadius: 14, padding: '20px 22px', textAlign: 'left',
+                    cursor: 'pointer', fontFamily: F,
+                    outline: active ? `3px solid ${NAVY}` : 'none', outlineOffset: 2,
+                    boxShadow: active ? '0 8px 24px rgba(15,33,55,0.18)' : '0 2px 8px rgba(15,33,55,0.08)',
+                    transition: 'transform 0.15s, box-shadow 0.15s',
+                    transform: active ? 'translateY(-2px)' : 'none',
+                    opacity: verdictFilter && !active ? 0.55 : 1,
+                  }}
+                >
+                  <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6 }}>
+                    {v.count}
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>{v.label}</div>
+                  <div style={{ fontSize: 12, opacity: 0.8 }}>{v.sub}</div>
+                </button>
+              )
+            })}
+          </div>
+        )}
+        {verdictFilter && (
+          <div style={{ marginBottom: 14 }}>
+            <button
+              type="button"
+              onClick={() => setVerdictFilter(null)}
+              style={{
+                background: 'none', border: `1px solid ${BD}`, borderRadius: 6,
+                padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600,
+                color: TX3, cursor: 'pointer',
+              }}
+            >
+              Show all candidates
+            </button>
+          </div>
         )}
 
         {/* ── Bottom grid: table + assessments panel ── */}
