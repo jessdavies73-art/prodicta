@@ -1096,6 +1096,54 @@ function DemoCandidateInner({ params }) {
           </div>
         </Card>
 
+        {/* ══════════════════════════════════════════════════
+            VERDICT CARD
+        ══════════════════════════════════════════════════ */}
+        {results && (() => {
+          const isStrongHire = score >= 75 && (results.risk_level === 'Low' || results.risk_level === 'Very Low')
+          const isDoNotHire = score < 55 || results.risk_level === 'High'
+          const verdictLabel = isStrongHire ? 'Strong Hire' : isDoNotHire ? 'Do Not Hire' : 'Review'
+          const verdictSub = isStrongHire
+            ? 'This candidate is predicted to pass probation. Confidence: High.'
+            : isDoNotHire
+            ? 'This candidate is predicted to struggle in this role. See full report for detail.'
+            : 'This candidate has potential with areas to watch. See watch-outs below.'
+          const verdictBg = isStrongHire ? '#00BFA5' : isDoNotHire ? '#991B1B' : '#B45309'
+          return (
+            <div style={{
+              marginBottom: 20,
+              background: verdictBg,
+              borderRadius: 14,
+              padding: isMobile ? '28px 20px' : '36px 36px',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+              textAlign: 'center',
+            }}>
+              <div style={{
+                fontFamily: F,
+                fontSize: isMobile ? 32 : 42,
+                fontWeight: 900,
+                color: '#fff',
+                letterSpacing: '-1px',
+                lineHeight: 1.1,
+                marginBottom: 10,
+              }}>
+                {verdictLabel}
+              </div>
+              <div style={{
+                fontFamily: F,
+                fontSize: isMobile ? 14 : 16,
+                fontWeight: 500,
+                color: 'rgba(255,255,255,0.85)',
+                lineHeight: 1.5,
+                maxWidth: 480,
+                margin: '0 auto',
+              }}>
+                {verdictSub}
+              </div>
+            </div>
+          )
+        })()}
+
         {results && (
           <>
             <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>

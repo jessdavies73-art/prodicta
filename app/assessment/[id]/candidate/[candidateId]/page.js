@@ -982,6 +982,7 @@ export default function CandidateReportPage({ params }) {
   const [activeSection, setActiveSection] = useState('summary')
   const [expandedWeeks, setExpandedWeeks] = useState({})
   const [expandedSections, setExpandedSections] = useState({ aiSummary: false, responses: false, documentAssessment: false, fairWork: false, candidateDocs: false, coachingPlan: false, tuesdayReality: true })
+  const [fullReportExpanded, setFullReportExpanded] = useState(false)
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
 
@@ -1989,6 +1990,54 @@ export default function CandidateReportPage({ params }) {
               </div>
             </Card>
 
+            {/* ══════════════════════════════════════════════════
+                VERDICT CARD
+            ══════════════════════════════════════════════════ */}
+            {results && (() => {
+              const isStrongHire = score >= 75 && (results.risk_level === 'Low' || results.risk_level === 'Very Low')
+              const isDoNotHire = score < 55 || results.risk_level === 'High'
+              const verdictLabel = isStrongHire ? 'Strong Hire' : isDoNotHire ? 'Do Not Hire' : 'Review'
+              const verdictSub = isStrongHire
+                ? 'This candidate is predicted to pass probation. Confidence: High.'
+                : isDoNotHire
+                ? 'This candidate is predicted to struggle in this role. See full report for detail.'
+                : 'This candidate has potential with areas to watch. See watch-outs below.'
+              const verdictBg = isStrongHire ? '#00BFA5' : isDoNotHire ? '#991B1B' : '#B45309'
+              return (
+                <div style={{
+                  marginBottom: 20,
+                  background: verdictBg,
+                  borderRadius: 14,
+                  padding: isMobile ? '28px 20px' : '36px 36px',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+                  textAlign: 'center',
+                }}>
+                  <div style={{
+                    fontFamily: F,
+                    fontSize: isMobile ? 32 : 42,
+                    fontWeight: 900,
+                    color: '#fff',
+                    letterSpacing: '-1px',
+                    lineHeight: 1.1,
+                    marginBottom: 10,
+                  }}>
+                    {verdictLabel}
+                  </div>
+                  <div style={{
+                    fontFamily: F,
+                    fontSize: isMobile ? 14 : 16,
+                    fontWeight: 500,
+                    color: 'rgba(255,255,255,0.85)',
+                    lineHeight: 1.5,
+                    maxWidth: 480,
+                    margin: '0 auto',
+                  }}>
+                    {verdictSub}
+                  </div>
+                </div>
+              )
+            })()}
+
             {/* Timeline trackers */}
             {existingOutcome?.placement_date && profile?.account_type === 'agency' && (
               <RebateTimeline outcome={existingOutcome} candidateName={candidate?.name} />
@@ -2061,6 +2110,70 @@ export default function CandidateReportPage({ params }) {
 
             {results && (
               <>
+                {/* ══════════════════════════════════════════════════
+                    SUMMARY ROW
+                ══════════════════════════════════════════════════ */}
+                <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 16 : 28, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <div style={{ textAlign: 'center', minWidth: 80 }}>
+                      <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Overall Score</div>
+                      <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: sc(score), lineHeight: 1 }}>{score}</div>
+                      <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>/100</div>
+                    </div>
+                    {results.pressure_fit_score != null && (
+                      <div style={{ textAlign: 'center', minWidth: 80 }}>
+                        <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Pressure-Fit</div>
+                        <div style={{ fontFamily: FM, fontSize: 36, fontWeight: 800, color: pfColor(results.pressure_fit_score), lineHeight: 1 }}>{results.pressure_fit_score}</div>
+                        <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>/100</div>
+                      </div>
+                    )}
+                    <div style={{ textAlign: 'center', minWidth: 80 }}>
+                      <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Hiring Confidence</div>
+                      <div style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: TX }}>
+                        {(() => {
+                          const hc = results.hiring_confidence
+                          const hcScore = hc ? (hc.score ?? hc) : null
+                          if (hcScore != null) return hcScore >= 70 ? 'High' : hcScore >= 55 ? 'Moderate' : 'Low'
+                          return results.confidence_level || '-'
+                        })()}
+                      </div>
+                    </div>
+                    {candidate?.assessments?.role_level && (
+                      <div style={{ textAlign: 'center', minWidth: 80 }}>
+                        <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Role Level</div>
+                        <Badge
+                          label={candidate.assessments.role_level === 'OPERATIONAL' ? 'Operational' : candidate.assessments.role_level === 'LEADERSHIP' ? 'Leadership' : 'Mid-Level'}
+                          bg={TEALLT}
+                          color={TEALD}
+                          border={`${TEAL}55`}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ textAlign: 'center', marginTop: 20 }}>
+                    <button
+                      onClick={() => setFullReportExpanded(v => !v)}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 8,
+                        background: fullReportExpanded ? 'transparent' : TEAL,
+                        color: fullReportExpanded ? TEALD : '#fff',
+                        border: fullReportExpanded ? `1.5px solid ${TEAL}` : 'none',
+                        borderRadius: 10, cursor: 'pointer', padding: '12px 32px',
+                        fontFamily: F, fontSize: 15, fontWeight: 700,
+                      }}
+                    >
+                      {fullReportExpanded ? 'Collapse full report' : 'View full report'}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: fullReportExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div style={{ textAlign: 'center', marginTop: 12, fontFamily: F, fontSize: 12.5, color: TX3, lineHeight: 1.5 }}>
+                    Full report includes strengths, watch-outs, onboarding plan, compliance certificate, and more.
+                  </div>
+                </Card>
+
+                {fullReportExpanded && (<>
                 <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 6 }}>
                   {results?.simple_view && (
                     <button
@@ -4817,6 +4930,8 @@ export default function CandidateReportPage({ params }) {
                   )
                 })()}
                 </ScrollReveal>
+
+                </>)}
 
               </>
             )}
