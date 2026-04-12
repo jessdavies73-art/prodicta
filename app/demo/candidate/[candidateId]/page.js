@@ -820,7 +820,7 @@ function DemoCandidateInner({ params }) {
               <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: RED, padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>Immediate</span>
             </div>
             <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.65, margin: '0 0 6px' }}>
-              <strong>Execution Reliability</strong> scored 58 at assessment but check-ins show missed deadlines and task avoidance in the first two weeks.
+              <strong>Consistent delivery</strong> scored 58 at assessment but check-ins show missed deadlines and task avoidance in the first two weeks.
             </p>
             <p style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55, margin: '0 0 14px' }}>
               Assessment predicted high underperformance risk (74%) and low probation pass probability (27%). Early check-in signals confirm the predicted pattern of accountability avoidance is materialising faster than expected.
@@ -1658,7 +1658,7 @@ function DemoCandidateInner({ params }) {
               <ScrollReveal delay={60}>
                 <Card style={{ marginBottom: 20 }}>
                   <SectionHeading tooltip="Whether the candidate followed instructions, completed every part of each task, avoided overcomplicating things, and stayed consistent across scenarios.">
-                    Execution Reliability
+                    Will they deliver consistently?
                   </SectionHeading>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
                     <SmallRing score={results.execution_reliability} size={68} strokeWidth={6} />
@@ -1693,7 +1693,7 @@ function DemoCandidateInner({ params }) {
                 <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading tooltip="How developable this candidate is. Looks at improvement across scenarios, adaptability, willingness to learn, and self-awareness about gaps.">
-                      Development Potential
+                      How quickly will they grow?
                     </SectionHeading>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
                       <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>Trainability score</span>
@@ -1718,7 +1718,7 @@ function DemoCandidateInner({ params }) {
             <ScrollReveal delay={60}>
               <Card style={{ marginBottom: 20 }}>
                 <SectionHeading tooltip="Signs from the candidate's responses that their expectations of the role do not match what the job description describes.">
-                  Expectation Alignment
+                  Do they know what they are getting into?
                 </SectionHeading>
                 {Array.isArray(results?.expectation_mismatches) && results.expectation_mismatches.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -2094,7 +2094,7 @@ function DemoCandidateInner({ params }) {
             {params.candidateId === 'demo-c1' && (
               <ScrollReveal delay={60}>
                 <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '24px 28px', marginBottom: 20, borderTop: `3px solid ${TEAL}` }}>
-                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>Spoken Delivery</h2>
+                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>How they sound under pressure</h2>
                   <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
                     How this candidate communicates under pressure in their own voice
                   </p>
@@ -2145,7 +2145,7 @@ function DemoCandidateInner({ params }) {
             {params.candidateId === 'demo-c1' && (
               <ScrollReveal delay={60}>
                 <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '24px 28px', marginBottom: 20, borderTop: `3px solid ${TEAL}` }}>
-                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>Day One Planning</h2>
+                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>How they would organise their first day</h2>
                   <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
                     How this candidate structured their first Monday
                   </p>
@@ -2202,7 +2202,7 @@ function DemoCandidateInner({ params }) {
             {params.candidateId === 'demo-c1' && (
               <ScrollReveal delay={60}>
                 <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '24px 28px', marginBottom: 20, borderTop: `3px solid ${NAVY}` }}>
-                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>Inbox Overload</h2>
+                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>How they handle it when everything hits at once</h2>
                   <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
                     How this candidate handles competing demands under pressure
                   </p>
@@ -2261,7 +2261,7 @@ function DemoCandidateInner({ params }) {
             {params.candidateId === 'demo-c1' && (
               <ScrollReveal delay={60}>
                 <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '24px 28px', marginBottom: 20, borderTop: `3px solid ${TEAL}` }}>
-                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>Team Fit</h2>
+                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>How they will work with your team</h2>
                   <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>How this candidate will work with your existing team</p>
                   <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 24, flexDirection: isMobile ? 'column' : 'row', marginBottom: 18 }}>
                     <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
@@ -2323,7 +2323,7 @@ function DemoCandidateInner({ params }) {
             {params.candidateId === 'demo-c1' && (
               <ScrollReveal delay={60}>
                 <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '24px 28px', marginBottom: 20, borderTop: `3px solid ${NAVY}` }}>
-                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>Workspace Performance</h2>
+                  <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>How they handled their first morning</h2>
                   <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>How this candidate handled their first morning on the job</p>
                   <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 24, flexDirection: isMobile ? 'column' : 'row', marginBottom: 14 }}>
                     <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
@@ -2364,13 +2364,13 @@ function DemoCandidateInner({ params }) {
               { title: 'Decision Alerts', desc: 'Consequence predictions on every watch-out showing the real cost of ignoring each one.', variant: 'grid' },
               { title: 'What the Assessment Revealed', desc: 'Side-by-side comparison of what the CV claimed versus what the candidate actually demonstrated.', variant: 'grid' },
               { title: 'Candidate Responses', desc: 'Full scenario replay with every answer the candidate wrote, detailed timing, and integrity signals.', variant: 'text' },
-              { title: 'Monday Morning Reality', desc: 'What managing this person actually looks like on a normal Monday morning when everything is happening at once.', variant: 'text' },
+              { title: 'What managing them actually looks like', desc: 'What managing this person actually looks like on a normal Monday morning when everything is happening at once.', variant: 'text' },
               { title: '90-Day Hiring Manager Coaching Plan', desc: 'A structured probation guide with SMART objectives, weekly check-ins, and Alchemy Training UK coach sign-off at each phase.', variant: 'timeline' },
               { title: 'Key Stakeholder Mapping', desc: 'Who this hire will work with, the pressure points in each relationship, and what to watch for.', variant: 'grid' },
-              { title: 'Culture-Fit DNA', desc: 'Five-dimension working style analysis showing how this candidate\'s natural approach matches the role environment.', variant: 'chart' },
-              { title: 'Counter-Offer Resilience', desc: 'How likely this candidate is to accept a counter-offer from their current employer.', variant: 'score' },
-              { title: 'Training Potential', desc: 'How quickly this candidate will develop with the right support.', variant: 'score' },
-              { title: 'Why They Might Leave', desc: 'A specific prediction of what would cause this hire to leave within 6 months, with prevention actions.', variant: 'text' },
+              { title: 'Will they fit the culture?', desc: 'Five-dimension working style analysis showing how this candidate\'s natural approach matches the role environment.', variant: 'chart' },
+              { title: 'Will they accept the offer?', desc: 'How likely this candidate is to accept a counter-offer from their current employer.', variant: 'score' },
+              { title: 'How quickly will they grow?', desc: 'How quickly this candidate will develop with the right support.', variant: 'score' },
+              { title: 'What could make them leave', desc: 'A specific prediction of what would cause this hire to leave within 6 months, with prevention actions.', variant: 'text' },
               { title: 'Simple View', desc: 'A plain English version of this report for line managers, with no jargon and no technical scoring language.', variant: 'text' },
             ].map(({ title, desc, variant }) => (
               <ScrollReveal key={title} delay={60}>

@@ -2535,7 +2535,7 @@ export default function CandidateReportPage({ params }) {
                   <ScrollReveal delay={60}>
                     <Card style={{ marginBottom: 20, borderLeft: `5px solid ${AMB}`, background: `linear-gradient(135deg, ${AMBBG} 0%, #fff 60%)` }}>
                       <SectionHeading tooltip="A specific narrative prediction of what would cause this candidate to disengage within 6 months, based on their actual responses and the role context.">
-                        Why They Might Leave
+                        What could make them leave
                       </SectionHeading>
                       <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.75, margin: 0 }}>
                         {results.leave_analysis}
@@ -2612,7 +2612,7 @@ export default function CandidateReportPage({ params }) {
                     <ScrollReveal delay={60}>
                       <Card style={{ marginBottom: 20, borderLeft: `5px solid ${accent}`, background: `linear-gradient(135deg, ${accentBg} 0%, #fff 60%)` }}>
                         <SectionHeading tooltip="A measure of whether the candidate's motivation looks genuine, or whether they may waver if their current employer counter-offers.">
-                          Counter-Offer Resilience
+                          Will they accept the offer?
                         </SectionHeading>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 10 }}>
                           <div style={{ fontFamily: F, fontSize: 38, fontWeight: 800, color: accent, lineHeight: 1 }}>{cor}%</div>
@@ -2643,7 +2643,7 @@ export default function CandidateReportPage({ params }) {
                     <ScrollReveal delay={60}>
                       <Card style={{ marginBottom: 20 }}>
                         <SectionHeading tooltip="How the candidate's natural working style aligns with the role environment across structure, collaboration, pace, communication and process.">
-                          Culture Fit
+                          Will they fit the culture?
                         </SectionHeading>
                         {cf.score != null && (
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 12 }}>
@@ -2689,7 +2689,7 @@ export default function CandidateReportPage({ params }) {
                     <Card style={{ marginBottom: 20 }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                         <SectionHeading tooltip="A plain English description of what the hiring manager will actually experience day to day with this candidate.">
-                          Monday Morning Reality
+                          What managing them actually looks like
                         </SectionHeading>
                         <SectionToggle expanded={expandedSections.tuesdayReality} onToggle={() => toggleSection('tuesdayReality')} />
                       </div>
@@ -2715,7 +2715,7 @@ export default function CandidateReportPage({ params }) {
                 <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading tooltip="Signs from the candidate's responses that their expectations of the role do not match what the job description describes.">
-                      Expectation Alignment
+                      Do they know what they are getting into?
                     </SectionHeading>
                     {Array.isArray(results?.expectation_mismatches) && results.expectation_mismatches.length > 0 ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -3560,7 +3560,7 @@ export default function CandidateReportPage({ params }) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <Ic name="zap" size={15} color={TEAL} />
                       <SectionHeading tooltip="Based on the hiring manager's own Management DNA assessment. Shows where this candidate aligns with and where they may clash with the manager's actual style.">
-                        Manager Alignment
+                        How they will work with you
                       </SectionHeading>
                     </div>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
@@ -3630,7 +3630,7 @@ export default function CandidateReportPage({ params }) {
                   <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }} topColor={TEAL}>
                     <SectionHeading tooltip="How this candidate will work with your existing team based on the team profile you built. Analyses conflict compatibility, pace alignment, decision-making fit, and identifies friction risks.">
-                      Team Fit
+                      How they will work with your team
                     </SectionHeading>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
                       How this candidate will work with your existing team
@@ -3779,7 +3779,7 @@ export default function CandidateReportPage({ params }) {
                   <ScrollReveal delay={60}>
                     <Card style={{ marginBottom: 20 }}>
                       <SectionHeading tooltip="Whether the candidate followed instructions, completed every part of each task, avoided overcomplicating things, and stayed consistent across scenarios.">
-                        Execution Reliability
+                        Will they deliver consistently?
                       </SectionHeading>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
                         <SmallRing score={results.execution_reliability} size={68} strokeWidth={6} />
@@ -3816,7 +3816,7 @@ export default function CandidateReportPage({ params }) {
                     <ScrollReveal delay={60}>
                       <Card style={{ marginBottom: 20 }}>
                         <SectionHeading tooltip="How developable this candidate is. Looks at improvement across scenarios, adaptability, willingness to learn, and self-awareness about gaps.">
-                          Development Potential
+                          How quickly will they grow?
                         </SectionHeading>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
                           <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>Trainability score</span>
@@ -3963,7 +3963,7 @@ export default function CandidateReportPage({ params }) {
                   <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }} topColor={TEAL}>
                     <SectionHeading tooltip="This candidate chose to respond by voice on one or more scenarios. This section analyses their spoken delivery quality, confidence, and clarity.">
-                      Spoken Delivery
+                      How they sound under pressure
                     </SectionHeading>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
                       How this candidate communicates under pressure in their own voice
@@ -4018,7 +4018,7 @@ export default function CandidateReportPage({ params }) {
                   <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }} topColor={TEAL}>
                     <SectionHeading tooltip="How this candidate structured their simulated first Monday. Tests time management, prioritisation, and planning under realistic conditions.">
-                      Day One Planning
+                      How they would organise their first day
                     </SectionHeading>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
                       How this candidate structured their first Monday
@@ -4067,7 +4067,7 @@ export default function CandidateReportPage({ params }) {
                   <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }} topColor={NAVY}>
                     <SectionHeading tooltip="How this candidate handles competing demands under pressure. Measures triage quality, prioritisation logic, and focus maintenance when facing inbox overload.">
-                      Inbox Overload
+                      How they handle it when everything hits at once
                     </SectionHeading>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
                       How this candidate handles competing demands under pressure
@@ -4118,7 +4118,7 @@ export default function CandidateReportPage({ params }) {
                   <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }} topColor={NAVY}>
                     <SectionHeading tooltip="How this candidate handled a simulated first morning on the job. Tests email handling, task prioritisation, delegation judgment, and response to unexpected interruptions.">
-                      Workspace Performance
+                      How they handled their first morning
                     </SectionHeading>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
                       How this candidate handled their first morning on the job
