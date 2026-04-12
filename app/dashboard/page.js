@@ -1555,7 +1555,7 @@ export default function DashboardPage() {
         {candidates.length > 0 && (verdictCounts.strong > 0 || verdictCounts.maybe > 0 || verdictCounts.risk > 0) && (
           <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
             {[
-              { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', bg: GRN, fg: '#fff' },
+              { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', bg: '#00BFA5', fg: '#fff' },
               { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', bg: AMB, fg: NAVY },
               { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', bg: RED, fg: '#fff' },
             ].map(v => {
