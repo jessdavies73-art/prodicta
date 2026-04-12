@@ -33,11 +33,11 @@ const TYPE_COLOURS = {
   'Core Task':          { bg: '#eff6ff', tx: '#2563eb' },
   'Pressure Test':      { bg: '#fff7ed', tx: '#9a3412' },
   'Judgment Call':      { bg: '#fdf4ff', tx: '#7e22ce' },
-  'Staying Power':      { bg: '#f0fdf4', tx: '#166534' },
+  'Staying Power':      { bg: '#E6F7F5', tx: '#006B5E' },
   // Legacy types for existing assessments
   'Email Response':     { bg: '#eff6ff', tx: '#2563eb' },
   'Prioritisation':     { bg: '#fef9c3', tx: '#854d0e' },
-  'Strategic Thinking': { bg: '#f0fdf4', tx: '#166534' },
+  'Strategic Thinking': { bg: '#E6F7F5', tx: '#006B5E' },
 }
 function typeBadgeStyle(type) {
   const c = TYPE_COLOURS[type] || { bg: TEALLT, tx: TEALD }
@@ -1402,12 +1402,12 @@ function CompletePage({ candidateName, assessment }) {
             width: 80,
             height: 80,
             borderRadius: '50%',
-            background: `linear-gradient(135deg, #22C55E, #16a34a)`,
+            background: `linear-gradient(135deg, #00BFA5, #009688)`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 28px',
-            boxShadow: `0 0 0 8px #f0fdf4, 0 8px 28px rgba(34,197,94,0.35)`,
+            boxShadow: `0 0 0 8px #E6F7F5, 0 8px 28px rgba(0,191,165,0.35)`,
             animation: 'popIn 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards',
           }}>
             <svg width={36} height={36} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">

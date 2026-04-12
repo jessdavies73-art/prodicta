@@ -47,11 +47,12 @@ const Card = ({ children, style = {}, topColor }) => (
 
 const SectionHeading = ({ children, tooltip }) => (
   <h2 style={{
-    fontFamily: F, fontSize: 15, fontWeight: 800, color: TX,
-    margin: '0 0 18px', paddingBottom: 10,
-    borderBottom: `2px solid ${TEAL}`,
+    fontFamily: F, fontSize: 15, fontWeight: 800, color: NAVY,
+    margin: '0 0 18px', paddingLeft: 14,
+    borderLeft: `4px solid ${TEAL}`,
     letterSpacing: '-0.2px',
     display: 'flex', alignItems: 'center', gap: 6,
+    lineHeight: 1.3,
   }}>
     {children}
     {tooltip && <InfoTooltip text={tooltip} />}
@@ -184,14 +185,14 @@ function ScoreRing({ score, size = 140, strokeWidth = 10, animate = true }) {
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0, filter: `drop-shadow(0 0 ${Math.round(size * 0.06)}px ${color}55)` }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={`${color}18`} strokeWidth={strokeWidth} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={strokeWidth} />
         <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
           strokeDasharray={circ} strokeDashoffset={drawn ? offset : circ}
           style={{ transition: animate ? 'stroke-dashoffset 0.016s linear' : 'none' }}
         />
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontFamily: FM, fontSize: size * 0.26, fontWeight: 800, color, lineHeight: 1, letterSpacing: '-1px' }}>{display}</span>
+        <span style={{ fontFamily: FM, fontSize: size * 0.26, fontWeight: 800, color: NAVY, lineHeight: 1, letterSpacing: '-1px' }}>{display}</span>
         <span style={{ fontFamily: F, fontSize: size * 0.08, fontWeight: 700, color: TX3, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>/100</span>
       </div>
     </div>
@@ -207,14 +208,14 @@ function SmallRing({ score, size = 60, strokeWidth = 5 }) {
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0, filter: `drop-shadow(0 0 ${Math.round(size * 0.07)}px ${color}50)` }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={`${color}18`} strokeWidth={strokeWidth} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={strokeWidth} />
         <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
           strokeDasharray={circ} strokeDashoffset={drawn ? circ * (1 - score / 100) : circ}
           style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)' }}
         />
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontFamily: FM, fontSize: size * 0.26, fontWeight: 800, color, lineHeight: 1 }}>{score}</span>
+        <span style={{ fontFamily: FM, fontSize: size * 0.26, fontWeight: 800, color: NAVY, lineHeight: 1 }}>{score}</span>
       </div>
     </div>
   )
@@ -1234,22 +1235,20 @@ function DemoCandidateInner({ params }) {
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 20 }}>
               {(results.strengths || []).length > 0 && (
                 <div>
-                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: GRN, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Top strengths</div>
+                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Top strengths</div>
                   {(results.strengths || []).slice(0, 2).map((s, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: GRN, flexShrink: 0 }} />
-                      <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX }}>{typeof s === 'object' ? (s.strength || s.title || '') : s}</span>
+                    <div key={i} style={{ borderLeft: `4px solid ${TEAL}`, paddingLeft: 12, marginBottom: 8 }}>
+                      <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY }}>{typeof s === 'object' ? (s.strength || s.title || '') : s}</span>
                     </div>
                   ))}
                 </div>
               )}
               {(results.watchouts || []).length > 0 && (
                 <div>
-                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Watch-outs</div>
+                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Watch-outs</div>
                   {(results.watchouts || []).slice(0, 2).map((w, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: RED, flexShrink: 0 }} />
-                      <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX }}>{typeof w === 'object' ? (w.watchout || w.title || '') : w}</span>
+                    <div key={i} style={{ borderLeft: `4px solid ${AMB}`, paddingLeft: 12, marginBottom: 8 }}>
+                      <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY }}>{typeof w === 'object' ? (w.watchout || w.title || '') : w}</span>
                     </div>
                   ))}
                 </div>

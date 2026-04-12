@@ -98,7 +98,7 @@ function StatCard({ icon, label, value, sub, accent = TEAL }) {
 // ── Placement Health (agency only) ────────────────────────────────────────
 
 const HEALTH_PALETTE = {
-  GREEN: { bg: '#16a34a', fg: '#ffffff', label: 'Healthy' },
+  GREEN: { bg: '#00BFA5', fg: '#ffffff', label: 'Healthy' },
   AMBER: { bg: '#E8B84B', fg: NAVY,     label: 'At Risk' },
   RED:   { bg: '#dc2626', fg: '#ffffff', label: 'Critical' },
 }
@@ -147,7 +147,7 @@ function HealthDot({ health, open, onToggle }) {
 function PlacementHealthPanel({ data, activeFilter, onFilter }) {
   const { counts = {}, total_active = 0, rebate_ending_this_month = 0 } = data || {}
   const cards = [
-    { key: 'GREEN', label: 'Healthy',  count: counts.GREEN || 0, bg: '#16a34a', fg: '#ffffff', sub: 'Performing as predicted' },
+    { key: 'GREEN', label: 'Healthy',  count: counts.GREEN || 0, bg: '#00BFA5', fg: '#ffffff', sub: 'Performing as predicted' },
     { key: 'AMBER', label: 'At Risk',  count: counts.AMBER || 0, bg: '#E8B84B', fg: NAVY,      sub: 'Early warning signals' },
     { key: 'RED',   label: 'Critical', count: counts.RED   || 0, bg: '#dc2626', fg: '#ffffff', sub: 'Immediate action required' },
   ]
