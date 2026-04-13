@@ -257,15 +257,13 @@ function DemoDashboardInner() {
   // Demo placement health: traffic light per candidate id
   // James O'Brien (demo-c4) is one of the AMBER cases as per the brief.
   const DEMO_PLACEMENT_HEALTH = {
-    'demo-c1': { health_status: 'GREEN', health_reason: 'Co-pilot check-ins on track. Performing as predicted.' },
-    'demo-c2': { health_status: 'GREEN', health_reason: 'Within rebate period. No concerns recorded.' },
-    'demo-c3': { health_status: 'GREEN', health_reason: 'Manager review positive. Above expectation on key metrics.' },
-    'demo-c4': { health_status: 'AMBER', health_reason: "James O'Brien — early signs of accountability avoidance. Predicted in assessment." },
-    'demo-c5': { health_status: 'GREEN', health_reason: 'Steady performer. No deviation from prediction.' },
-    'demo-c6': { health_status: 'AMBER', health_reason: 'Manager flagged missed deadlines in week 2 check-in.' },
-    'demo-c7': { health_status: 'RED',   health_reason: 'Redline alert: significant deviation from prediction. Intervention not yet actioned.' },
-    'demo-c8': { health_status: 'GREEN', health_reason: 'Strong placement. Hire confidence confirmed in practice.' },
-    'demo-c9': { health_status: 'GREEN', health_reason: 'Co-pilot check-ins on track. No interventions required.' },
+    'demo-c1':  { health_status: 'GREEN', health_reason: 'Co-pilot check-ins on track. Performing as predicted.' },
+    'demo-c2':  { health_status: 'GREEN', health_reason: 'Within rebate period. No concerns recorded.' },
+    'demo-c3':  { health_status: 'AMBER', health_reason: 'Manager review positive overall but flagged occasional missed deadlines in week 3 check-in.' },
+    'demo-c4':  { health_status: 'AMBER', health_reason: "James O'Brien — early signs of accountability avoidance. Predicted in assessment." },
+    'demo-c5':  { health_status: 'GREEN', health_reason: 'Steady performer. No deviation from prediction.' },
+    'demo-c10': { health_status: 'GREEN', health_reason: 'Strong placement. Hire confidence confirmed in practice.' },
+    'demo-c11': { health_status: 'RED',   health_reason: 'Redline alert: significant deviation from prediction. Intervention not yet actioned.' },
   }
 
   // Exclude archived from main view
@@ -572,7 +570,7 @@ function DemoDashboardInner() {
               </div>
               <div style={{ position: 'relative', zIndex: 2, display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
                 {[
-                  { key: 'GREEN', label: 'Healthy',  count: 6, accent: '#00BFA5', sub: 'Performing as predicted' },
+                  { key: 'GREEN', label: 'Healthy',  count: 4, accent: '#00BFA5', sub: 'Performing as predicted' },
                   { key: 'AMBER', label: 'At Risk',  count: 2, accent: '#D97706', sub: 'Early warning signals' },
                   { key: 'RED',   label: 'Critical', count: 1, accent: '#B91C1C', sub: 'Immediate action required' },
                 ].map(c => {
@@ -606,8 +604,8 @@ function DemoDashboardInner() {
                 })}
               </div>
               <div style={{ marginTop: 14, fontSize: 12.5, color: TX3, fontFamily: F }}>
-                <strong style={{ color: TX2 }}>9</strong> placements active.{' '}
-                <strong style={{ color: TX2 }}>3</strong> rebate periods ending this month.
+                <strong style={{ color: TX2 }}>7</strong> placements active.{' '}
+                <strong style={{ color: TX2 }}>2</strong> rebate periods ending this month.
               </div>
             </div>
 
