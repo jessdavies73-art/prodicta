@@ -1551,50 +1551,72 @@ export default function DashboardPage() {
           />
         )}
 
-        {/* ── Strong / Maybe / Risk filter (hidden when Placement Health is showing) ── */}
-        {candidates.length > 0 && !(isAgencyAccount && placementHealth && placementHealth.total_active > 0) && (
-          <>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Candidate Pipeline</div>
-          <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
-            {[
-              { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
-              { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
-              { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
-            ].map(v => {
-              const active = verdictFilter === v.key
-              return (
-                <button
-                  key={v.key}
-                  type="button"
-                  onClick={() => { setVerdictFilter(prev => prev === v.key ? null : v.key); setHealthFilter(null) }}
-                  onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
-                  onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
-                  style={{
-                    flex: isMobile ? undefined : 1,
-                    width: isMobile ? '100%' : undefined,
-                    background: active ? `${v.accent}14` : '#fff',
-                    border: '1px solid #E5E7EB',
-                    borderLeft: `${active ? 6 : 4}px solid ${v.accent}`,
-                    borderRadius: 12, padding: '20px 22px', textAlign: 'left',
-                    cursor: 'pointer', fontFamily: F,
-                    boxShadow: active ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
-                    transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
-                    transform: active ? 'translateY(-2px)' : 'none',
-                    opacity: verdictFilter && !active ? 0.6 : 1,
-                  }}
-                >
-                  <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: v.accent }}>
-                    {v.count}
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2, color: NAVY }}>{v.label}</div>
-                  <div style={{ fontSize: 12, color: TX3 }}>{v.sub}</div>
-                </button>
-              )
-            })}
-          </div>
-          </>
-        )}
-        {verdictFilter && !(isAgencyAccount && placementHealth && placementHealth.total_active > 0) && (
+        {/* ── Candidate Pipeline filter cards ── */}
+        {candidates.length > 0 && (() => {
+          const pipelineCards = (
+            <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
+              {[
+                { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
+                { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
+                { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
+              ].map(v => {
+                const active = verdictFilter === v.key
+                return (
+                  <button
+                    key={v.key}
+                    type="button"
+                    onClick={() => { setVerdictFilter(prev => prev === v.key ? null : v.key); setHealthFilter(null) }}
+                    onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
+                    onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
+                    style={{
+                      flex: isMobile ? undefined : 1,
+                      width: isMobile ? '100%' : undefined,
+                      background: active ? `${v.accent}14` : '#fff',
+                      border: '1px solid #E5E7EB',
+                      borderLeft: `${active ? 6 : 4}px solid ${v.accent}`,
+                      borderRadius: 12, padding: '20px 22px', textAlign: 'left',
+                      cursor: 'pointer', fontFamily: F,
+                      boxShadow: active ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
+                      transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
+                      transform: active ? 'translateY(-2px)' : 'none',
+                      opacity: verdictFilter && !active ? 0.6 : 1,
+                    }}
+                  >
+                    <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: v.accent }}>
+                      {v.count}
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2, color: NAVY }}>{v.label}</div>
+                    <div style={{ fontSize: 12, color: TX3 }}>{v.sub}</div>
+                  </button>
+                )
+              })}
+            </div>
+          )
+
+          if (isAgencyAccount) {
+            // Agency: wrap in Bulk Screening card
+            const completedCount = candidates.filter(c => c.status === 'completed').length
+            return (
+              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '16px 24px', marginBottom: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Ic name="sliders" size={16} color={TEAL} />
+                  <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Bulk Screening Mode</h2>
+                </div>
+                <p style={{ margin: '4px 0 0 0', fontSize: 12.5, color: TX3 }}>{completedCount} candidate{completedCount !== 1 ? 's' : ''} assessed</p>
+                <div style={{ marginTop: 16 }}>{pipelineCards}</div>
+              </div>
+            )
+          }
+
+          // Employer: show with section label
+          return (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Candidate Pipeline</div>
+              <div style={{ marginBottom: 20 }}>{pipelineCards}</div>
+            </>
+          )
+        })()}
+        {verdictFilter && (
           <div style={{ marginBottom: 14 }}>
             <button
               type="button"
