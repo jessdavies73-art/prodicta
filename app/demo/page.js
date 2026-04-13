@@ -609,6 +609,14 @@ function DemoDashboardInner() {
                 <strong style={{ color: TX2 }}>9</strong> placements active.{' '}
                 <strong style={{ color: TX2 }}>3</strong> rebate periods ending this month.
               </div>
+              {/* DEBUG — remove after confirming filter works */}
+              <div style={{ marginTop: 12, padding: 12, background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: 8, fontFamily: 'monospace', fontSize: 12, color: '#92400e' }}>
+                <div><strong>activeFilter:</strong> {JSON.stringify(activeFilter)}</div>
+                <div><strong>GREEN matches:</strong> {activeCandidates.filter(c => DEMO_PLACEMENT_HEALTH[c.id]?.health_status === 'GREEN').length}</div>
+                <div><strong>AMBER matches:</strong> {activeCandidates.filter(c => DEMO_PLACEMENT_HEALTH[c.id]?.health_status === 'AMBER').length}</div>
+                <div><strong>RED matches:</strong> {activeCandidates.filter(c => DEMO_PLACEMENT_HEALTH[c.id]?.health_status === 'RED').length}</div>
+                <div><strong>healthFilteredCandidates.length:</strong> {healthFilteredCandidates.length}</div>
+              </div>
             </div>
 
             {/* Placement Health filtered results (replaces All Candidates table) */}
