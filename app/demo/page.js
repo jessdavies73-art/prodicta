@@ -766,6 +766,7 @@ function DemoDashboardInner() {
             <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Bulk Screening Mode</h2>
           </div>
           <p style={{ margin: '4px 0 0 0', fontSize: 12.5, color: TX3 }}>{completed.length} candidate{completed.length !== 1 ? 's' : ''} assessed</p>
+          <p style={{ fontSize: 12, color: 'red', margin: '4px 0' }}>DEBUG: strong={verdictCounts.strong} maybe={verdictCounts.maybe} risk={verdictCounts.risk} isAgency={String(isAgency)}</p>
           <div style={{ position: 'relative', zIndex: 2, display: 'flex', gap: 14, marginTop: 16, flexDirection: isMobile ? 'column' : 'row' }}>
             {[
               { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
