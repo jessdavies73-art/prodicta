@@ -149,13 +149,13 @@ function PlacementHealthPanel({ data, activeFilter, onFilter, isMobile }) {
     { key: 'RED',   label: 'Critical', count: counts.RED   || 0, accent: '#B91C1C', sub: 'Immediate action required' },
   ]
   return (
-    <div style={{ marginBottom: 20 }}>
+    <div style={{ marginBottom: 24 }}>
       <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
         Placement Health
       </div>
       <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
         {cards.map(c => {
-          const isActive = activeFilter === c.key
+          const isActive = activeFilter?.type === 'health' && activeFilter.value === c.key
           return (
             <button
               key={c.key}
@@ -174,7 +174,7 @@ function PlacementHealthPanel({ data, activeFilter, onFilter, isMobile }) {
                 boxShadow: isActive ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
                 transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
                 transform: isActive ? 'translateY(-2px)' : 'none',
-                opacity: activeFilter && !isActive ? 0.6 : 1,
+                opacity: activeFilter?.type === 'health' && !isActive ? 0.6 : 1,
               }}
             >
               <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: c.accent }}>
@@ -190,21 +190,6 @@ function PlacementHealthPanel({ data, activeFilter, onFilter, isMobile }) {
         <strong style={{ color: TX2 }}>{total_active}</strong> placement{total_active === 1 ? '' : 's'} active.{' '}
         <strong style={{ color: TX2 }}>{rebate_ending_this_month}</strong> rebate period{rebate_ending_this_month === 1 ? '' : 's'} ending this month.
       </div>
-      {activeFilter && (
-        <div style={{ marginTop: 10 }}>
-          <button
-            type="button"
-            onClick={() => onFilter(activeFilter)}
-            style={{
-              background: 'none', border: `1px solid ${BD}`, borderRadius: 6,
-              padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600,
-              color: TX3, cursor: 'pointer',
-            }}
-          >
-            Show all candidates
-          </button>
-        </div>
-      )}
     </div>
   )
 }
@@ -567,10 +552,9 @@ export default function DashboardPage() {
   const [assessmentCredits, setAssessmentCredits] = useState([])
   const [redlineCandidates, setRedlineCandidates] = useState(new Set())
   const [placementHealth, setPlacementHealth] = useState(null) // { placements, counts, total_active, rebate_ending_this_month }
-  const [healthFilter, setHealthFilter] = useState(null) // 'GREEN' | 'AMBER' | 'RED' | null
+  const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
   const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
   const [showFirstTime, setShowFirstTime] = useState(false)
-  const [verdictFilter, setVerdictFilter] = useState(null) // 'strong' | 'maybe' | 'risk' | null
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -929,13 +913,25 @@ export default function DashboardPage() {
       )
     : candidates
 
-  const healthFiltered = isAgencyAccount && healthFilter
-    ? searchFiltered.filter(c => healthByCandidate[c.id]?.health_status === healthFilter)
+  const filtered = activeFilter?.type === 'verdict'
+    ? searchFiltered.filter(c => getVerdict(c) === activeFilter.value)
     : searchFiltered
 
-  const filtered = verdictFilter
-    ? healthFiltered.filter(c => getVerdict(c) === verdictFilter)
-    : healthFiltered
+  // Separate lists for filtered views (replace main table when active)
+  const healthFilteredCandidates = activeFilter?.type === 'health'
+    ? candidates.filter(c => healthByCandidate[c.id]?.health_status === activeFilter.value)
+    : []
+  const healthFilterLabel = activeFilter?.type === 'health'
+    ? { GREEN: 'Healthy Placements', AMBER: 'At Risk Placements', RED: 'Critical Placements' }[activeFilter.value]
+    : ''
+  const verdictFilteredCandidates = activeFilter?.type === 'verdict'
+    ? candidates.filter(c => getVerdict(c) === activeFilter.value)
+    : []
+  const verdictFilterLabel = activeFilter?.type === 'verdict'
+    ? { strong: 'Strong Hire Candidates', maybe: 'Review Candidates', risk: 'High Risk Candidates' }[activeFilter.value]
+    : ''
+
+  useEffect(() => { setSelectedCandidates(new Set()) }, [activeFilter])
 
   // ── render ──────────────────────────────────────────────────────────────────
 
@@ -1529,8 +1525,103 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── Assessment Insights ── */}
-        <AssessmentInsights candidates={candidates} />
+        {/* ── Placement Health filtered results (agency, replaces All Candidates table) ── */}
+        {activeFilter?.type === 'health' && (
+          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
+            <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>{healthFilterLabel}</h2>
+                <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>{healthFilteredCandidates.length} candidate{healthFilteredCandidates.length !== 1 ? 's' : ''}</div>
+              </div>
+              <button type="button" onClick={() => setActiveFilter(null)} style={{ background: 'none', border: `1px solid ${BD}`, borderRadius: 6, padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, cursor: 'pointer' }}>
+                Clear filter
+              </button>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: isMobile ? '45%' : '28%' }} />
+                <col style={{ width: '20%', display: isMobile ? 'none' : undefined }} />
+                <col style={{ width: isMobile ? '25%' : '14%' }} />
+                <col style={{ width: isMobile ? '30%' : '10%' }} />
+                <col style={{ width: '10%', display: isMobile ? 'none' : undefined }} />
+                <col style={{ width: '10%', display: isMobile ? 'none' : undefined }} />
+              </colgroup>
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${BD}` }}>
+                  {[{ h: 'Candidate', hide: false }, { h: 'Role', hide: true }, { h: 'Status', hide: false }, { h: 'Score', hide: false }, { h: 'Risk', hide: true }, { h: 'Health', hide: true }].map(({ h, hide }) => (
+                    <th key={h} style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', background: BG, display: hide && isMobile ? 'none' : 'table-cell' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {healthFilteredCandidates.map((c, i) => {
+                  const result = c.results?.[0]; const score = result?.overall_score ?? null; const risk = result?.risk_level ?? null
+                  const isCompleted = c.status === 'completed'; const isHovered = hoveredRow === c.id
+                  const h = healthByCandidate[c.id]
+                  const healthColor = h?.health_status === 'GREEN' ? '#16a34a' : h?.health_status === 'AMBER' ? '#E8B84B' : h?.health_status === 'RED' ? '#dc2626' : '#cbd5e1'
+                  return (
+                    <tr key={c.id} onClick={() => { if (isCompleted) router.push(`/assessment/${c.assessments?.id}/candidate/${c.id}`) }} onMouseEnter={() => setHoveredRow(c.id)} onMouseLeave={() => setHoveredRow(null)} style={{ borderBottom: i < healthFilteredCandidates.length - 1 ? `1px solid ${BD}` : 'none', background: isHovered && isCompleted ? '#f0fdfb' : CARD, cursor: isCompleted ? 'pointer' : 'default', transition: 'background 0.15s', boxShadow: isHovered && isCompleted ? `inset 3px 0 0 ${TEAL}` : 'none' }}>
+                      <td style={{ padding: '10px 8px', overflow: 'hidden' }}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Avatar name={c.name} size={28} /><div style={{ minWidth: 0, flex: 1 }}><div style={{ fontSize: 12.5, fontWeight: 600, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div><div style={{ fontSize: 11, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div></div></div></td>
+                      <td style={{ padding: '10px 8px', overflow: 'hidden', display: isMobile ? 'none' : 'table-cell' }}><span style={{ fontSize: 12, color: TX2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{c.assessments?.role_title || '-'}</span></td>
+                      <td style={{ padding: '10px 8px' }}><StatusBadge status={c.status} /></td>
+                      <td style={{ padding: '10px 8px' }}>{isCompleted && score !== null ? <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}><span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>{score}</span><span style={{ fontSize: 10, color: TX3 }}>/100</span></div> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}</td>
+                      <td style={{ padding: '10px 8px', display: isMobile ? 'none' : 'table-cell' }}>{isCompleted ? <RiskBadge risk={risk} /> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}</td>
+                      <td style={{ padding: '10px 8px', display: isMobile ? 'none' : 'table-cell' }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: healthColor, flexShrink: 0 }} /><span style={{ fontSize: 11.5, color: TX2, fontWeight: 600 }}>{h?.health_reason ? h.health_reason.split('.')[0] : '-'}</span></div></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* ── Verdict filtered results (replaces All Candidates table) ── */}
+        {activeFilter?.type === 'verdict' && (
+          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
+            <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>{verdictFilterLabel}</h2>
+                <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>{verdictFilteredCandidates.length} candidate{verdictFilteredCandidates.length !== 1 ? 's' : ''}</div>
+              </div>
+              <button type="button" onClick={() => setActiveFilter(null)} style={{ background: 'none', border: `1px solid ${BD}`, borderRadius: 6, padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, cursor: 'pointer' }}>
+                Clear filter
+              </button>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: isMobile ? '45%' : '28%' }} />
+                <col style={{ width: '20%', display: isMobile ? 'none' : undefined }} />
+                <col style={{ width: isMobile ? '25%' : '14%' }} />
+                <col style={{ width: isMobile ? '30%' : '10%' }} />
+                <col style={{ width: '10%', display: isMobile ? 'none' : undefined }} />
+                <col style={{ width: '10%', display: isMobile ? 'none' : undefined }} />
+              </colgroup>
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${BD}` }}>
+                  {[{ h: 'Candidate', hide: false }, { h: 'Role', hide: true }, { h: 'Status', hide: false }, { h: 'Score', hide: false }, { h: 'Pressure', hide: true }, { h: 'Risk', hide: true }].map(({ h, hide }) => (
+                    <th key={h} style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', background: BG, display: hide && isMobile ? 'none' : 'table-cell' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {verdictFilteredCandidates.map((c, i) => {
+                  const result = c.results?.[0]; const score = result?.overall_score ?? null; const pf = result?.pressure_fit_score ?? null; const risk = result?.risk_level ?? null
+                  const isCompleted = c.status === 'completed'; const isHovered = hoveredRow === c.id
+                  return (
+                    <tr key={c.id} onClick={() => { if (isCompleted) router.push(`/assessment/${c.assessments?.id}/candidate/${c.id}`) }} onMouseEnter={() => setHoveredRow(c.id)} onMouseLeave={() => setHoveredRow(null)} style={{ borderBottom: i < verdictFilteredCandidates.length - 1 ? `1px solid ${BD}` : 'none', background: isHovered && isCompleted ? '#f0fdfb' : CARD, cursor: isCompleted ? 'pointer' : 'default', transition: 'background 0.15s', boxShadow: isHovered && isCompleted ? `inset 3px 0 0 ${TEAL}` : 'none' }}>
+                      <td style={{ padding: '10px 8px', overflow: 'hidden' }}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Avatar name={c.name} size={28} /><div style={{ minWidth: 0, flex: 1 }}><div style={{ fontSize: 12.5, fontWeight: 600, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div><div style={{ fontSize: 11, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div></div></div></td>
+                      <td style={{ padding: '10px 8px', overflow: 'hidden', display: isMobile ? 'none' : 'table-cell' }}><span style={{ fontSize: 12, color: TX2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{c.assessments?.role_title || '-'}</span></td>
+                      <td style={{ padding: '10px 8px' }}><StatusBadge status={c.status} /></td>
+                      <td style={{ padding: '10px 8px' }}>{isCompleted && score !== null ? <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}><span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>{score}</span><span style={{ fontSize: 10, color: TX3 }}>/100</span></div> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}</td>
+                      <td style={{ padding: '10px 8px', display: isMobile ? 'none' : 'table-cell' }}>{isCompleted && pf !== null ? <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}><span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, lineHeight: 1, color: pf >= 75 ? GRN : pf >= 55 ? TEALD : pf >= 40 ? AMB : RED }}>{pf}</span><span style={{ fontSize: 10, color: TX3 }}>/100</span></div> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}</td>
+                      <td style={{ padding: '10px 8px', display: isMobile ? 'none' : 'table-cell' }}>{isCompleted ? <RiskBadge risk={risk} /> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* ── Probation Tracker (employer only) ── */}
         {profile?.account_type === 'employer' && (
@@ -1545,8 +1636,8 @@ export default function DashboardPage() {
         {isAgencyAccount && placementHealth && placementHealth.total_active > 0 && (
           <PlacementHealthPanel
             data={placementHealth}
-            activeFilter={healthFilter}
-            onFilter={(s) => { setHealthFilter(prev => prev === s ? null : s); setVerdictFilter(null) }}
+            activeFilter={activeFilter}
+            onFilter={(s) => setActiveFilter(prev => prev?.type === 'health' && prev.value === s ? null : { type: 'health', value: s })}
             isMobile={isMobile}
           />
         )}
@@ -1560,12 +1651,12 @@ export default function DashboardPage() {
                 { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
                 { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
               ].map(v => {
-                const active = verdictFilter === v.key
+                const active = activeFilter?.type === 'verdict' && activeFilter.value === v.key
                 return (
                   <button
                     key={v.key}
                     type="button"
-                    onClick={() => { setVerdictFilter(prev => prev === v.key ? null : v.key); setHealthFilter(null) }}
+                    onClick={() => setActiveFilter(prev => prev?.type === 'verdict' && prev.value === v.key ? null : { type: 'verdict', value: v.key })}
                     onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                     onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                     style={{
@@ -1579,7 +1670,7 @@ export default function DashboardPage() {
                       boxShadow: active ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
                       transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
                       transform: active ? 'translateY(-2px)' : 'none',
-                      opacity: verdictFilter && !active ? 0.6 : 1,
+                      opacity: activeFilter?.type === 'verdict' && !active ? 0.6 : 1,
                     }}
                   >
                     <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: v.accent }}>
@@ -1594,7 +1685,6 @@ export default function DashboardPage() {
           )
 
           if (isAgencyAccount) {
-            // Agency: wrap in Bulk Screening card
             const completedCount = candidates.filter(c => c.status === 'completed').length
             return (
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '16px 24px', marginBottom: 24 }}>
@@ -1608,7 +1698,6 @@ export default function DashboardPage() {
             )
           }
 
-          // Employer: show with section label
           return (
             <>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Candidate Pipeline</div>
@@ -1616,24 +1705,9 @@ export default function DashboardPage() {
             </>
           )
         })()}
-        {verdictFilter && (
-          <div style={{ marginBottom: 14 }}>
-            <button
-              type="button"
-              onClick={() => setVerdictFilter(null)}
-              style={{
-                background: 'none', border: `1px solid ${BD}`, borderRadius: 6,
-                padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600,
-                color: TX3, cursor: 'pointer',
-              }}
-            >
-              Show all candidates
-            </button>
-          </div>
-        )}
 
-        {/* ── Bottom grid: table + assessments panel ── */}
-        <div className="dashboard-layout" style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
+        {/* ── Bottom grid: table + assessments panel (hidden when filter active) ── */}
+        <div className="dashboard-layout" style={{ display: activeFilter ? 'none' : 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
 
           {/* ── Candidates table ── */}
           <div className="dashboard-candidates" style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : 'auto' }}>
@@ -1655,7 +1729,7 @@ export default function DashboardPage() {
                   }}>
                     All Candidates
                   </h2>
-                  {(search || healthFilter || verdictFilter) && (
+                  {(search || activeFilter) && (
                     <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>
                       {filtered.length} result{filtered.length !== 1 ? 's' : ''}{search ? ` for "${search}"` : ''}
                     </div>
