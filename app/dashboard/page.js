@@ -1684,25 +1684,16 @@ export default function DashboardPage() {
             </div>
           )
 
-          if (isAgencyAccount) {
-            const completedCount = candidates.filter(c => c.status === 'completed').length
-            return (
-              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '16px 24px', marginBottom: 24 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Ic name="sliders" size={16} color={TEAL} />
-                  <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Bulk Screening Mode</h2>
-                </div>
-                <p style={{ margin: '4px 0 0 0', fontSize: 12.5, color: TX3 }}>{completedCount} candidate{completedCount !== 1 ? 's' : ''} assessed</p>
-                <div style={{ marginTop: 16 }}>{pipelineCards}</div>
-              </div>
-            )
-          }
-
+          const completedCount = candidates.filter(c => c.status === 'completed').length
           return (
-            <>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Candidate Pipeline</div>
-              <div style={{ marginBottom: 20 }}>{pipelineCards}</div>
-            </>
+            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '16px 24px', marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Ic name="sliders" size={16} color={TEAL} />
+                <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Bulk Screening Mode</h2>
+              </div>
+              <p style={{ margin: '4px 0 0 0', fontSize: 12.5, color: TX3 }}>{completedCount} candidate{completedCount !== 1 ? 's' : ''} assessed</p>
+              <div style={{ marginTop: 16 }}>{pipelineCards}</div>
+            </div>
           )
         })()}
 
