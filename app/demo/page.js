@@ -302,16 +302,17 @@ function DemoDashboardInner() {
   const searchedDemo = search.trim()
     ? byAssessment.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase()))
     : byAssessment
-  const filtered = (() => {
-    if (!activeFilter) return searchedDemo
-    if (activeFilter.type === 'health') {
-      return searchedDemo.filter(c => DEMO_PLACEMENT_HEALTH[c.id]?.health_status === activeFilter.value)
-    }
-    if (activeFilter.type === 'verdict') {
-      return searchedDemo.filter(c => getVerdict(c) === activeFilter.value)
-    }
-    return searchedDemo
-  })()
+  const filtered = activeFilter?.type === 'verdict'
+    ? searchedDemo.filter(c => getVerdict(c) === activeFilter.value)
+    : searchedDemo
+
+  // Separate list for Placement Health filtered view (agency only, replaces main table)
+  const healthFilteredCandidates = activeFilter?.type === 'health'
+    ? activeCandidates.filter(c => DEMO_PLACEMENT_HEALTH[c.id]?.health_status === activeFilter.value)
+    : []
+  const healthFilterLabel = activeFilter?.type === 'health'
+    ? { GREEN: 'Healthy Placements', AMBER: 'At Risk Placements', RED: 'Critical Placements' }[activeFilter.value]
+    : ''
 
   useEffect(() => { setSelectedCandidates(new Set()) }, [activeFilter])
 
@@ -608,22 +609,101 @@ function DemoDashboardInner() {
                 <strong style={{ color: TX2 }}>9</strong> placements active.{' '}
                 <strong style={{ color: TX2 }}>3</strong> rebate periods ending this month.
               </div>
-              {activeFilter?.type === 'health' && (
-                <div style={{ marginTop: 10 }}>
+            </div>
+
+            {/* Placement Health filtered results (replaces All Candidates table) */}
+            {activeFilter?.type === 'health' && (
+              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
+                <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>{healthFilterLabel}</h2>
+                    <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>{healthFilteredCandidates.length} candidate{healthFilteredCandidates.length !== 1 ? 's' : ''}</div>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setActiveFilter(null)}
-                    style={{
-                      background: 'none', border: `1px solid ${BD}`, borderRadius: 6,
-                      padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600,
-                      color: TX3, cursor: 'pointer',
-                    }}
+                    style={{ background: 'none', border: `1px solid ${BD}`, borderRadius: 6, padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, cursor: 'pointer' }}
                   >
-                    Show all candidates
+                    Clear filter
                   </button>
                 </div>
-              )}
-            </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                  <colgroup>
+                    <col style={{ width: isMobile ? '45%' : '28%' }} />
+                    <col style={{ width: '20%', display: isMobile ? 'none' : undefined }} />
+                    <col style={{ width: isMobile ? '25%' : '14%' }} />
+                    <col style={{ width: isMobile ? '30%' : '10%' }} />
+                    <col style={{ width: '10%', display: isMobile ? 'none' : undefined }} />
+                    <col style={{ width: '10%', display: isMobile ? 'none' : undefined }} />
+                  </colgroup>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${BD}` }}>
+                      {[
+                        { h: 'Candidate', hide: false },
+                        { h: 'Role', hide: true },
+                        { h: 'Status', hide: false },
+                        { h: 'Score', hide: false },
+                        { h: 'Risk', hide: true },
+                        { h: 'Health', hide: true },
+                      ].map(({ h, hide }) => (
+                        <th key={h} style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', background: BG, display: hide && isMobile ? 'none' : 'table-cell' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {healthFilteredCandidates.map((c, i) => {
+                      const result = c.results?.[0]
+                      const score = result?.overall_score ?? null
+                      const risk = result?.risk_level ?? null
+                      const isCompleted = c.status === 'completed'
+                      const isHovered = hoveredRow === c.id
+                      const h = DEMO_PLACEMENT_HEALTH[c.id]
+                      const healthColor = h?.health_status === 'GREEN' ? '#16a34a' : h?.health_status === 'AMBER' ? '#E8B84B' : h?.health_status === 'RED' ? '#dc2626' : '#cbd5e1'
+                      return (
+                        <tr
+                          key={c.id}
+                          onClick={() => { if (isCompleted) router.push(`/demo/candidate/${c.id}?type=${demoType}`) }}
+                          onMouseEnter={() => setHoveredRow(c.id)}
+                          onMouseLeave={() => setHoveredRow(null)}
+                          style={{ borderBottom: i < healthFilteredCandidates.length - 1 ? `1px solid ${BD}` : 'none', background: isHovered && isCompleted ? '#f0fdfb' : CARD, cursor: isCompleted ? 'pointer' : 'default', transition: 'background 0.15s', boxShadow: isHovered && isCompleted ? `inset 3px 0 0 ${TEAL}` : 'none' }}
+                        >
+                          <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <Avatar name={c.name} size={28} />
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ fontSize: 12.5, fontWeight: 600, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                                <div style={{ fontSize: 11, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ padding: '10px 8px', overflow: 'hidden', display: isMobile ? 'none' : 'table-cell' }}>
+                            <span style={{ fontSize: 12, color: TX2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{c.assessments?.role_title || '-'}</span>
+                          </td>
+                          <td style={{ padding: '10px 8px' }}><StatusBadge status={c.status} /></td>
+                          <td style={{ padding: '10px 8px' }}>
+                            {isCompleted && score !== null ? (
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+                                <span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>{score}</span>
+                                <span style={{ fontSize: 10, color: TX3 }}>/100</span>
+                              </div>
+                            ) : <span style={{ color: TX3, fontSize: 12 }}>-</span>}
+                          </td>
+                          <td style={{ padding: '10px 8px', display: isMobile ? 'none' : 'table-cell' }}>
+                            {isCompleted ? <RiskBadge risk={risk} /> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}
+                          </td>
+                          <td style={{ padding: '10px 8px', display: isMobile ? 'none' : 'table-cell' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', background: healthColor, flexShrink: 0 }} />
+                              <span style={{ fontSize: 11.5, color: TX2, fontWeight: 600 }}>{h?.health_reason ? h.health_reason.split('.')[0] : '-'}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
               <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
@@ -908,8 +988,8 @@ function DemoDashboardInner() {
           </>
         )}
 
-        {/* Candidates table + assessments panel */}
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 20, alignItems: 'flex-start' }}>
+        {/* Candidates table + assessments panel (hidden when Placement Health filter is active) */}
+        <div style={{ display: activeFilter?.type === 'health' ? 'none' : 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 20, alignItems: 'flex-start' }}>
           <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined, order: isMobile ? 2 : 1 }}>
             <div style={{ ...cs, padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
