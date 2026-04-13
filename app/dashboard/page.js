@@ -1637,7 +1637,7 @@ export default function DashboardPage() {
           <PlacementHealthPanel
             data={placementHealth}
             activeFilter={activeFilter}
-            onFilter={(s) => setActiveFilter(prev => prev?.type === 'health' && prev.value === s ? null : { type: 'health', value: s })}
+            onFilter={(s) => { if (activeFilter?.type === 'health' && activeFilter.value === s) { setActiveFilter(null) } else { setActiveFilter({ type: 'health', value: s }) } }}
             isMobile={isMobile}
           />
         )}
@@ -1656,7 +1656,7 @@ export default function DashboardPage() {
                   <button
                     key={v.key}
                     type="button"
-                    onClick={() => setActiveFilter(prev => prev?.type === 'verdict' && prev.value === v.key ? null : { type: 'verdict', value: v.key })}
+                    onClick={() => { setActiveFilter({ type: 'verdict', value: v.key }) }}
                     onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                     onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                     style={{
