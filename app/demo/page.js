@@ -566,7 +566,7 @@ function DemoDashboardInner() {
         {isAgency && (
           <>
             {/* Placement Health (traffic light) */}
-            <div style={{ marginBottom: 24 }} onClickCapture={e => e.stopPropagation()}>
+            <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
                 Placement Health
               </div>
@@ -581,7 +581,7 @@ function DemoDashboardInner() {
                     <button
                       key={c.key}
                       type="button"
-                      onClick={() => setActiveFilter(prev => prev?.value === c.key ? null : { type: 'health', value: c.key })}
+                      onClick={() => { console.log('HEALTH CLICKED:', c.key); alert('Health clicked: ' + c.key); setActiveFilter(prev => prev?.value === c.key ? null : { type: 'health', value: c.key }) }}
                       onMouseEnter={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                       onMouseLeave={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                       style={{
