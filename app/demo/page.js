@@ -38,8 +38,8 @@ function fmt(d) {
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
-function StatRing({ value, accent = '#00BFA5', size = 130, fillPercent = 100 }) {
-  const sw = 8
+function StatRing({ value, accent = '#00BFA5', size = 140, fillPercent = 100 }) {
+  const sw = 10
   const r = (size - sw * 2) / 2
   const circ = 2 * Math.PI * r
   const [drawn, setDrawn] = useState(false)
@@ -47,12 +47,12 @@ function StatRing({ value, accent = '#00BFA5', size = 130, fillPercent = 100 }) 
   const target = Math.min(100, Math.max(0, fillPercent))
   const offset = drawn ? circ * (1 - target / 100) : circ
   return (
-    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto', filter: `drop-shadow(0 0 8px ${accent}55)` }}>
+    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto', filter: `drop-shadow(0 0 10px ${accent}55)` }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={sw} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill={`${accent}0F`} stroke="#e4e9f0" strokeWidth={sw} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={accent} strokeWidth={sw} strokeDasharray={`${circ}`} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s ease-out' }} />
       </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 28, fontWeight: 800, color: NAVY }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 32, fontWeight: 800, color: '#0F2137' }}>
         {typeof value === 'number' ? <CountUp target={value} /> : value}
       </div>
     </div>
@@ -366,7 +366,7 @@ function DemoDashboardInner() {
         <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
           <StatCard icon="check" label="Completed" value={completed.length} sub="Completed assessments" accent={TEAL} fillPercent={activeCandidates.length > 0 ? Math.round((completed.length / activeCandidates.length) * 100) : 0} />
           <StatCard icon="clock" label="Pending" value={pendingCandidates.length} sub="Awaiting completion" accent={AMB} fillPercent={activeCandidates.length > 0 ? Math.round((pendingCandidates.length / activeCandidates.length) * 100) : 0} />
-          <StatCard icon="bar" label="Avg score" value={avgScore !== null ? avgScore : '-'} sub={avgScore !== null ? slabel(avgScore) : 'No data yet'} accent={NAVY} fillPercent={avgScore ?? 0} />
+          <StatCard icon="bar" label="Avg score" value={avgScore !== null ? avgScore : '-'} sub={avgScore !== null ? slabel(avgScore) : 'No data yet'} accent="#6366F1" fillPercent={avgScore ?? 0} />
           <StatCard icon="award" label="Recommended" value={recommendedCount} sub="Scoring 70 or above" accent={TEAL} fillPercent={completed.length > 0 ? Math.round((recommendedCount / completed.length) * 100) : 0} />
         </div>
 
@@ -560,7 +560,7 @@ function DemoDashboardInner() {
         {isAgency && (
           <>
             {/* Placement Health (traffic light) */}
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 24 }} onClickCapture={e => e.stopPropagation()}>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
                 Placement Health
               </div>
@@ -575,7 +575,7 @@ function DemoDashboardInner() {
                     <button
                       key={c.key}
                       type="button"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDemoHealthFilter(prev => prev === c.key ? null : c.key); setVerdictFilter(null); setSelectedCandidates(new Set()) }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('Health filter clicked:', c.key, 'filtered count will be:', activeCandidates.filter(cand => DEMO_PLACEMENT_HEALTH[cand.id]?.health_status === c.key).length); setDemoHealthFilter(prev => prev === c.key ? null : c.key); setVerdictFilter(null); setSelectedCandidates(new Set()) }}
                       onMouseEnter={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                       onMouseLeave={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                       style={{

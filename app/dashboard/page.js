@@ -60,8 +60,8 @@ function initials(name = '') {
 
 // ── sub-components ────────────────────────────────────────────────────────────
 
-function StatRing({ value, accent = '#00BFA5', size = 130, fillPercent = 100 }) {
-  const sw = 8
+function StatRing({ value, accent = '#00BFA5', size = 140, fillPercent = 100 }) {
+  const sw = 10
   const r = (size - sw * 2) / 2
   const circ = 2 * Math.PI * r
   const [drawn, setDrawn] = useState(false)
@@ -69,12 +69,12 @@ function StatRing({ value, accent = '#00BFA5', size = 130, fillPercent = 100 }) 
   const target = Math.min(100, Math.max(0, fillPercent))
   const offset = drawn ? circ * (1 - target / 100) : circ
   return (
-    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto', filter: `drop-shadow(0 0 8px ${accent}55)` }}>
+    <div style={{ position: 'relative', width: size, height: size, margin: '0 auto', filter: `drop-shadow(0 0 10px ${accent}55)` }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={sw} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill={`${accent}0F`} stroke="#e4e9f0" strokeWidth={sw} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={accent} strokeWidth={sw} strokeDasharray={`${circ}`} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s ease-out' }} />
       </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 28, fontWeight: 800, color: NAVY }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 32, fontWeight: 800, color: '#0F2137' }}>
         {typeof value === 'number' ? <CountUp target={value} /> : value}
       </div>
     </div>
@@ -1241,7 +1241,7 @@ export default function DashboardPage() {
             label="Avg score"
             value={avgScore !== null ? avgScore : '-'}
             sub={avgScore !== null ? slabel(avgScore) : 'No data yet'}
-            accent={NAVY}
+            accent="#6366F1"
             fillPercent={avgScore ?? 0}
           />
           <StatCard
