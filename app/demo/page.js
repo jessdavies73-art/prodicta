@@ -397,7 +397,7 @@ function DemoDashboardInner() {
                 <button
                   key={v.key}
                   type="button"
-                  onClick={() => { if (activeFilter?.type === 'verdict' && activeFilter.value === v.key) { setActiveFilter(null) } else { setActiveFilter({ type: 'verdict', value: v.key }) } }}
+                  onClick={() => { setActiveFilter({ type: 'verdict', value: v.key }) }}
                   onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                   onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                   style={{
@@ -424,6 +424,55 @@ function DemoDashboardInner() {
             })}
           </div>
           </>
+        )}
+
+        {/* Employer: verdict filtered results (directly below employer pipeline cards) */}
+        {!isAgency && activeFilter?.type === 'verdict' && (
+          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
+            <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>{verdictFilterLabel}</h2>
+                <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>{verdictFilteredCandidates.length} candidate{verdictFilteredCandidates.length !== 1 ? 's' : ''}</div>
+              </div>
+              <button type="button" onClick={() => setActiveFilter(null)} style={{ background: 'none', border: `1px solid ${BD}`, borderRadius: 6, padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, cursor: 'pointer' }}>
+                Clear filter
+              </button>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: isMobile ? '45%' : '28%' }} />
+                <col style={{ width: '20%', display: isMobile ? 'none' : undefined }} />
+                <col style={{ width: isMobile ? '25%' : '14%' }} />
+                <col style={{ width: isMobile ? '30%' : '10%' }} />
+                <col style={{ width: '10%', display: isMobile ? 'none' : undefined }} />
+              </colgroup>
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${BD}` }}>
+                  {[{ h: 'Candidate', hide: false }, { h: 'Role', hide: true }, { h: 'Status', hide: false }, { h: 'Score', hide: false }, { h: 'Risk', hide: true }].map(({ h, hide }) => (
+                    <th key={h} style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', background: BG, display: hide && isMobile ? 'none' : 'table-cell' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {verdictFilteredCandidates.map((c, i) => {
+                  const result = c.results?.[0]
+                  const score = result?.overall_score ?? null
+                  const risk = result?.risk_level ?? null
+                  const isCompleted = c.status === 'completed'
+                  const isHovered = hoveredRow === c.id
+                  return (
+                    <tr key={c.id} onClick={() => { if (isCompleted) router.push(`/demo/candidate/${c.id}?type=${demoType}`) }} onMouseEnter={() => setHoveredRow(c.id)} onMouseLeave={() => setHoveredRow(null)} style={{ borderBottom: i < verdictFilteredCandidates.length - 1 ? `1px solid ${BD}` : 'none', background: isHovered && isCompleted ? '#f0fdfb' : CARD, cursor: isCompleted ? 'pointer' : 'default', transition: 'background 0.15s', boxShadow: isHovered && isCompleted ? `inset 3px 0 0 ${TEAL}` : 'none' }}>
+                      <td style={{ padding: '10px 8px', overflow: 'hidden' }}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Avatar name={c.name} size={28} /><div style={{ minWidth: 0, flex: 1 }}><div style={{ fontSize: 12.5, fontWeight: 600, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div><div style={{ fontSize: 11, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div></div></div></td>
+                      <td style={{ padding: '10px 8px', overflow: 'hidden', display: isMobile ? 'none' : 'table-cell' }}><span style={{ fontSize: 12, color: TX2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{c.assessments?.role_title || '-'}</span></td>
+                      <td style={{ padding: '10px 8px' }}><StatusBadge status={c.status} /></td>
+                      <td style={{ padding: '10px 8px' }}>{isCompleted && score !== null ? <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}><span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>{score}</span><span style={{ fontSize: 10, color: TX3 }}>/100</span></div> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}</td>
+                      <td style={{ padding: '10px 8px', display: isMobile ? 'none' : 'table-cell' }}>{isCompleted ? <RiskBadge risk={risk} /> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* Red flag banner */}
