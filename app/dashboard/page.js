@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef, useSyncExternalStore } from 'react'
+import { useState, useEffect, useRef, useSyncExternalStore, Component } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
@@ -521,7 +521,33 @@ function FirstTimeScreen({ onDismiss, isMobile }) {
 
 // ── main component ────────────────────────────────────────────────────────────
 
+class DashboardErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { hasError: false } }
+  static getDerivedStateFromError() { return { hasError: true } }
+  componentDidCatch(err, info) { console.error('Dashboard render error:', err, info) }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Outfit', system-ui, sans-serif" }}>
+          <div style={{ textAlign: 'center', maxWidth: 400 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F2137', marginBottom: 8 }}>Something went wrong</h2>
+            <p style={{ fontSize: 14, color: '#64748b', marginBottom: 20 }}>The dashboard encountered an error. Please try refreshing.</p>
+            <button onClick={() => window.location.reload()} style={{ padding: '10px 24px', background: '#00BFA5', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              Refresh page
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 export default function DashboardPage() {
+  return <DashboardErrorBoundary><DashboardPageInner /></DashboardErrorBoundary>
+}
+
+function DashboardPageInner() {
   const router = useRouter()
   const toast = useToast()
   const [loading, setLoading] = useState(true)
@@ -1686,60 +1712,6 @@ export default function DashboardPage() {
           />
         )}
 
-        {/* ── Candidate Pipeline filter cards ── */}
-        {candidates.length > 0 && (() => {
-          const pipelineCards = (
-            <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
-              {[
-                { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
-                { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
-                { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
-              ].map(v => {
-                const active = activeFilter?.type === 'verdict' && activeFilter.value === v.key
-                return (
-                  <button
-                    key={v.key}
-                    type="button"
-                    onClick={() => { if (activeFilter?.type === 'verdict' && activeFilter.value === v.key) { setActiveFilter(null) } else { setActiveFilter({ type: 'verdict', value: v.key }) } }}
-                    onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
-                    onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
-                    style={{
-                      flex: isMobile ? undefined : 1,
-                      width: isMobile ? '100%' : undefined,
-                      background: active ? `${v.accent}14` : '#fff',
-                      border: '1px solid #E5E7EB',
-                      borderLeft: `${active ? 6 : 4}px solid ${v.accent}`,
-                      borderRadius: 12, padding: '20px 22px', textAlign: 'left',
-                      cursor: 'pointer', fontFamily: F,
-                      boxShadow: active ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
-                      transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
-                      transform: active ? 'translateY(-2px)' : 'none',
-                      opacity: activeFilter?.type === 'verdict' && !active ? 0.6 : 1,
-                    }}
-                  >
-                    <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: v.accent }}>
-                      {v.count}
-                    </div>
-                    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2, color: NAVY }}>{v.label}</div>
-                    <div style={{ fontSize: 12, color: TX3 }}>{v.sub}</div>
-                  </button>
-                )
-              })}
-            </div>
-          )
-
-          const completedCount = candidates.filter(c => c.status === 'completed').length
-          return (
-            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '16px 24px', marginBottom: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Ic name="sliders" size={16} color={TEAL} />
-                <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Bulk Screening Mode</h2>
-              </div>
-              <p style={{ margin: '4px 0 0 0', fontSize: 12.5, color: TX3 }}>{completedCount} candidate{completedCount !== 1 ? 's' : ''} assessed</p>
-              <div style={{ marginTop: 16 }}>{pipelineCards}</div>
-            </div>
-          )
-        })()}
 
         {/* ── Bottom grid: table + assessments panel (hidden when filter active) ── */}
         <div className="dashboard-layout" style={{ display: activeFilter ? 'none' : 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
@@ -2150,7 +2122,7 @@ export default function DashboardPage() {
                     return `${c.name} | Score: ${r?.overall_score ?? '-'} | Risk: ${r?.risk_level ?? '-'} | ${c.assessments?.role_title ?? ''}`
                   })]
                   navigator.clipboard.writeText(lines.join('\n'))
-                  if (toast) toast({ title: 'Shortlist copied to clipboard', type: 'success' })
+                  if (toast) toast('Shortlist copied to clipboard', 'success')
                 }}
                 style={{
                   padding: '9px 18px', borderRadius: 8, border: 'none',
