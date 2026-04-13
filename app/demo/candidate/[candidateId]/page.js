@@ -2132,7 +2132,7 @@ function DemoCandidateInner({ params }) {
                     </div>
                     <div>
                       <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.65, margin: '0 0 10px' }}>
-                        Sophie demonstrated strong deadline awareness, scheduling the campaign report task with 45 minutes of buffer before the 2pm deadline. She batched her email responses into a single focused block rather than scattering them across the day. The unexpected budget update was handled pragmatically by shortening her lunch break rather than disrupting fixed commitments.
+                        Sophie showed strong awareness of deadlines, completing the campaign report task well before the 2pm cut-off and leaving herself time to review it. She grouped her email responses into one focused block rather than stopping and starting throughout the morning. When the unexpected budget update landed she adjusted her lunch break to fit it in rather than letting it push other tasks off course.
                       </p>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                         {['Deadline-aware', 'Focused blocks', 'Pragmatic'].map(t => (
