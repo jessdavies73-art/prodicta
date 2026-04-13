@@ -252,7 +252,6 @@ function DemoDashboardInner() {
   const [modal, setModal] = useState(false)
   const [selectedCandidates, setSelectedCandidates] = useState(new Set())
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
-  const [debugClickCount, setDebugClickCount] = useState(0)
   const [demoHealthTooltip, setDemoHealthTooltip] = useState(null)
 
   // Demo placement health: traffic light per candidate id
@@ -582,7 +581,7 @@ function DemoDashboardInner() {
                     <button
                       key={c.key}
                       type="button"
-                      onClick={() => { setDebugClickCount(n => n + 1); setActiveFilter({ type: 'health', value: c.key }) }}
+                      onClick={() => setActiveFilter(prev => prev?.type === 'health' && prev.value === c.key ? null : { type: 'health', value: c.key })}
                       onMouseEnter={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                       onMouseLeave={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                       style={{
@@ -609,15 +608,6 @@ function DemoDashboardInner() {
               <div style={{ marginTop: 14, fontSize: 12.5, color: TX3, fontFamily: F }}>
                 <strong style={{ color: TX2 }}>9</strong> placements active.{' '}
                 <strong style={{ color: TX2 }}>3</strong> rebate periods ending this month.
-              </div>
-              {/* DEBUG — remove after confirming filter works */}
-              <div style={{ marginTop: 12, padding: 12, background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: 8, fontFamily: 'monospace', fontSize: 12, color: '#92400e' }}>
-                <div><strong>clicks:</strong> {debugClickCount}</div>
-                <div><strong>activeFilter:</strong> {JSON.stringify(activeFilter)}</div>
-                <div><strong>GREEN matches:</strong> {activeCandidates.filter(c => DEMO_PLACEMENT_HEALTH[c.id]?.health_status === 'GREEN').length}</div>
-                <div><strong>AMBER matches:</strong> {activeCandidates.filter(c => DEMO_PLACEMENT_HEALTH[c.id]?.health_status === 'AMBER').length}</div>
-                <div><strong>RED matches:</strong> {activeCandidates.filter(c => DEMO_PLACEMENT_HEALTH[c.id]?.health_status === 'RED').length}</div>
-                <div><strong>healthFilteredCandidates.length:</strong> {healthFilteredCandidates.length}</div>
               </div>
             </div>
 
