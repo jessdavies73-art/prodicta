@@ -1436,61 +1436,7 @@ function DashboardPageInner() {
           <ActivePlacements placements={activePlacements} router={router} />
         )}
 
-        {/* ── Prediction Accuracy ── */}
-        {accuracyData && (
-          <div style={{
-            ...cs,
-            marginBottom: 20,
-            padding: '20px 24px',
-            borderTop: `3px solid ${TEAL}`,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <Ic name="shield" size={14} color={TEAL} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Prediction Accuracy
-              </span>
-            </div>
-            <div style={{ fontFamily: F, fontSize: 16, color: TX, marginBottom: 14, lineHeight: 1.55 }}>
-              PRODICTA prediction accuracy across your {accuracyData.total} {accuracyData.total === 1 ? 'hire' : 'hires'} with logged outcomes: <strong style={{ color: TEAL, fontSize: 22 }}>{accuracyData.accuracy}%</strong>
-            </div>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-              <div style={{ background: GRNBG, border: `1px solid ${GRNBD}`, borderRadius: 8, padding: '10px 16px', flex: 1, minWidth: 140 }}>
-                <div style={{ fontSize: 11, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Correct</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: GRN, fontFamily: FM }}>{accuracyData.correct}</div>
-              </div>
-              <div style={{ background: REDBG, border: `1px solid #fecaca`, borderRadius: 8, padding: '10px 16px', flex: 1, minWidth: 140 }}>
-                <div style={{ fontSize: 11, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Incorrect</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: RED, fontFamily: FM }}>{accuracyData.incorrect}</div>
-              </div>
-              <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '10px 16px', flex: 1, minWidth: 140 }}>
-                <div style={{ fontSize: 11, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Pending</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: TX2, fontFamily: FM }}>{accuracyData.pending}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {!accuracyData && candidateOutcomes.length < 3 && (
-          <div style={{
-            ...cs, marginBottom: 20, padding: '20px 24px',
-            borderTop: `3px solid ${BD}`,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <Ic name="shield" size={14} color={TX3} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Prediction Accuracy
-              </span>
-            </div>
-            <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.6 }}>
-              Track your first hire outcomes to see prediction accuracy. Log outcomes on at least 3 candidates to unlock this insight.
-            </p>
-            <a href="/outcomes" style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD, textDecoration: 'none', marginTop: 10, display: 'inline-block' }}>
-              Update outcomes
-            </a>
-          </div>
-        )}
-
-        {/* ── Candidate Pipeline (employer only, after Prediction Accuracy) ── */}
+        {/* ── Candidate Pipeline (employer only, after Speed to Offer / before Prediction Accuracy) ── */}
         {!isAgencyAccount && candidates.length > 0 && (
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
@@ -1579,6 +1525,60 @@ function DashboardPageInner() {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* ── Prediction Accuracy ── */}
+        {accuracyData && (
+          <div style={{
+            ...cs,
+            marginBottom: 20,
+            padding: '20px 24px',
+            borderTop: `3px solid ${TEAL}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Ic name="shield" size={14} color={TEAL} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Prediction Accuracy
+              </span>
+            </div>
+            <div style={{ fontFamily: F, fontSize: 16, color: TX, marginBottom: 14, lineHeight: 1.55 }}>
+              PRODICTA prediction accuracy across your {accuracyData.total} {accuracyData.total === 1 ? 'hire' : 'hires'} with logged outcomes: <strong style={{ color: TEAL, fontSize: 22 }}>{accuracyData.accuracy}%</strong>
+            </div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ background: GRNBG, border: `1px solid ${GRNBD}`, borderRadius: 8, padding: '10px 16px', flex: 1, minWidth: 140 }}>
+                <div style={{ fontSize: 11, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Correct</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: GRN, fontFamily: FM }}>{accuracyData.correct}</div>
+              </div>
+              <div style={{ background: REDBG, border: `1px solid #fecaca`, borderRadius: 8, padding: '10px 16px', flex: 1, minWidth: 140 }}>
+                <div style={{ fontSize: 11, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Incorrect</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: RED, fontFamily: FM }}>{accuracyData.incorrect}</div>
+              </div>
+              <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '10px 16px', flex: 1, minWidth: 140 }}>
+                <div style={{ fontSize: 11, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Pending</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: TX2, fontFamily: FM }}>{accuracyData.pending}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!accuracyData && candidateOutcomes.length < 3 && (
+          <div style={{
+            ...cs, marginBottom: 20, padding: '20px 24px',
+            borderTop: `3px solid ${BD}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <Ic name="shield" size={14} color={TX3} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Prediction Accuracy
+              </span>
+            </div>
+            <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.6 }}>
+              Track your first hire outcomes to see prediction accuracy. Log outcomes on at least 3 candidates to unlock this insight.
+            </p>
+            <a href="/outcomes" style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD, textDecoration: 'none', marginTop: 10, display: 'inline-block' }}>
+              Update outcomes
+            </a>
           </div>
         )}
 

@@ -479,38 +479,29 @@ function DemoDashboardInner() {
           </div>
         </div>
 
-        {/* Speed to Offer + Prediction Accuracy */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
-          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Speed to offer</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 12.5, color: TX2, marginBottom: 4 }}>With PRODICTA</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                  <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: TEAL }}>5.2</span>
-                  <span style={{ fontSize: 12, color: TX3 }}>days avg from assessment to offer</span>
-                </div>
+        {/* Speed to Offer */}
+        <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Speed to offer</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 12.5, color: TX2, marginBottom: 4 }}>With PRODICTA</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: TEAL }}>5.2</span>
+                <span style={{ fontSize: 12, color: TX3 }}>days avg from assessment to offer</span>
               </div>
-              <div>
-                <div style={{ fontSize: 12.5, color: TX2, marginBottom: 4 }}>Traditional process</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                  <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: TX3 }}>18.4</span>
-                  <span style={{ fontSize: 12, color: TX3 }}>days avg industry benchmark</span>
-                </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 12.5, color: TX2, marginBottom: 4 }}>Traditional process</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: TX3 }}>18.4</span>
+                <span style={{ fontSize: 12, color: TX3 }}>days avg industry benchmark</span>
               </div>
-              <div style={{ fontSize: 11.5, color: TEALD, fontWeight: 700 }}>72% faster time to offer</div>
             </div>
-          </div>
-          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Prediction accuracy</div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '18px 0' }}>
-              <Ic name="bar" size={28} color={BD} />
-              <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '12px 0 0', lineHeight: 1.55 }}>Available when 3+ outcomes are logged. Track whether PRODICTA predictions matched real hiring outcomes.</p>
-            </div>
+            <div style={{ fontSize: 11.5, color: TEALD, fontWeight: 700 }}>72% faster time to offer</div>
           </div>
         </div>
 
-        {/* Candidate Pipeline (employer only, between Speed to Offer and agency sections) */}
+        {/* Candidate Pipeline (employer only, after Speed to Offer / before Prediction Accuracy) */}
         {!isAgency && (
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
@@ -601,6 +592,15 @@ function DemoDashboardInner() {
             </table>
           </div>
         )}
+
+        {/* Prediction Accuracy */}
+        <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Prediction accuracy</div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '18px 0' }}>
+            <Ic name="bar" size={28} color={BD} />
+            <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '12px 0 0', lineHeight: 1.55 }}>Available when 3+ outcomes are logged. Track whether PRODICTA predictions matched real hiring outcomes.</p>
+          </div>
+        </div>
 
         {/* Agency-only sections */}
         {isAgency && (
