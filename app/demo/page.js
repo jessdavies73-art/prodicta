@@ -251,9 +251,8 @@ function DemoDashboardInner() {
   const [filterAssessmentId, setFilterAssessmentId] = useState(null)
   const [modal, setModal] = useState(false)
   const [selectedCandidates, setSelectedCandidates] = useState(new Set())
-  const [demoHealthFilter, setDemoHealthFilter] = useState(null) // 'GREEN' | 'AMBER' | 'RED' | null
+  const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
   const [demoHealthTooltip, setDemoHealthTooltip] = useState(null)
-  const [verdictFilter, setVerdictFilter] = useState(null) // 'strong' | 'maybe' | 'risk' | null
 
   // Demo placement health: traffic light per candidate id
   // James O'Brien (demo-c4) is one of the AMBER cases as per the brief.
@@ -303,12 +302,18 @@ function DemoDashboardInner() {
   const searchedDemo = search.trim()
     ? byAssessment.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase()))
     : byAssessment
-  const healthFiltered = isAgency && demoHealthFilter
-    ? searchedDemo.filter(c => DEMO_PLACEMENT_HEALTH[c.id]?.health_status === demoHealthFilter)
-    : searchedDemo
-  const filtered = verdictFilter
-    ? healthFiltered.filter(c => getVerdict(c) === verdictFilter)
-    : healthFiltered
+  const filtered = (() => {
+    if (!activeFilter) return searchedDemo
+    if (activeFilter.type === 'health') {
+      return searchedDemo.filter(c => DEMO_PLACEMENT_HEALTH[c.id]?.health_status === activeFilter.value)
+    }
+    if (activeFilter.type === 'verdict') {
+      return searchedDemo.filter(c => getVerdict(c) === activeFilter.value)
+    }
+    return searchedDemo
+  })()
+
+  useEffect(() => { setSelectedCandidates(new Set()) }, [activeFilter])
 
   const flaggedCandidates = activeCandidates.filter(c => {
     const r = Array.isArray(c.results) ? c.results[0] : c.results
@@ -380,12 +385,12 @@ function DemoDashboardInner() {
               { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
               { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
             ].map(v => {
-              const active = verdictFilter === v.key
+              const active = activeFilter?.type === 'verdict' && activeFilter.value === v.key
               return (
                 <button
                   key={v.key}
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); setVerdictFilter(prev => prev === v.key ? null : v.key); setDemoHealthFilter(null); setSelectedCandidates(new Set()) }}
+                  onClick={() => setActiveFilter(prev => prev?.value === v.key ? null : { type: 'verdict', value: v.key })}
                   onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                   onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                   style={{
@@ -399,7 +404,7 @@ function DemoDashboardInner() {
                     boxShadow: active ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
                     transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
                     transform: active ? 'translateY(-2px)' : 'none',
-                    opacity: verdictFilter && !active ? 0.6 : 1,
+                    opacity: activeFilter?.type === 'verdict' && !active ? 0.6 : 1,
                   }}
                 >
                   <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: v.accent }}>
@@ -413,11 +418,11 @@ function DemoDashboardInner() {
           </div>
           </>
         )}
-        {!isAgency && verdictFilter && (
+        {!isAgency && activeFilter?.type === 'verdict' && (
           <div style={{ marginBottom: 14 }}>
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); setVerdictFilter(null); setSelectedCandidates(new Set()) }}
+              onClick={() => setActiveFilter(null)}
               style={{
                 background: 'none', border: `1px solid ${BD}`, borderRadius: 6,
                 padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600,
@@ -570,12 +575,12 @@ function DemoDashboardInner() {
                   { key: 'AMBER', label: 'At Risk',  count: 2, accent: '#D97706', sub: 'Early warning signals' },
                   { key: 'RED',   label: 'Critical', count: 1, accent: '#B91C1C', sub: 'Immediate action required' },
                 ].map(c => {
-                  const isActive = demoHealthFilter === c.key
+                  const isActive = activeFilter?.type === 'health' && activeFilter.value === c.key
                   return (
                     <button
                       key={c.key}
                       type="button"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); console.log('Health filter clicked:', c.key, 'filtered count will be:', activeCandidates.filter(cand => DEMO_PLACEMENT_HEALTH[cand.id]?.health_status === c.key).length); setDemoHealthFilter(prev => prev === c.key ? null : c.key); setVerdictFilter(null); setSelectedCandidates(new Set()) }}
+                      onClick={() => setActiveFilter(prev => prev?.value === c.key ? null : { type: 'health', value: c.key })}
                       onMouseEnter={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                       onMouseLeave={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                       style={{
@@ -589,7 +594,7 @@ function DemoDashboardInner() {
                         boxShadow: isActive ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
                         transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
                         transform: isActive ? 'translateY(-2px)' : 'none',
-                        opacity: demoHealthFilter && !isActive ? 0.6 : 1,
+                        opacity: activeFilter?.type === 'health' && !isActive ? 0.6 : 1,
                       }}
                     >
                       <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: c.accent }}>{c.count}</div>
@@ -603,11 +608,11 @@ function DemoDashboardInner() {
                 <strong style={{ color: TX2 }}>9</strong> placements active.{' '}
                 <strong style={{ color: TX2 }}>3</strong> rebate periods ending this month.
               </div>
-              {demoHealthFilter && (
+              {activeFilter?.type === 'health' && (
                 <div style={{ marginTop: 10 }}>
                   <button
                     type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDemoHealthFilter(null); setSelectedCandidates(new Set()) }}
+                    onClick={() => setActiveFilter(null)}
                     style={{
                       background: 'none', border: `1px solid ${BD}`, borderRadius: 6,
                       padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600,
@@ -736,12 +741,12 @@ function DemoDashboardInner() {
                   { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
                   { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
                 ].map(v => {
-                  const active = verdictFilter === v.key
+                  const active = activeFilter?.type === 'verdict' && activeFilter.value === v.key
                   return (
                     <button
                       key={v.key}
                       type="button"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setVerdictFilter(prev => prev === v.key ? null : v.key); setDemoHealthFilter(null); setSelectedCandidates(new Set()) }}
+                      onClick={() => setActiveFilter(prev => prev?.value === v.key ? null : { type: 'verdict', value: v.key })}
                       onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                       onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                       style={{
@@ -755,7 +760,7 @@ function DemoDashboardInner() {
                         boxShadow: active ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
                         transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
                         transform: active ? 'translateY(-2px)' : 'none',
-                        opacity: verdictFilter && !active ? 0.6 : 1,
+                        opacity: activeFilter?.type === 'verdict' && !active ? 0.6 : 1,
                       }}
                     >
                       <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: v.accent }}>{v.count}</div>
@@ -765,9 +770,9 @@ function DemoDashboardInner() {
                   )
                 })}
               </div>
-              {verdictFilter && (
+              {activeFilter?.type === 'verdict' && (
                 <div style={{ marginTop: 14 }}>
-                  <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setVerdictFilter(null); setSelectedCandidates(new Set()) }} style={{ background: 'none', border: `1px solid ${BD}`, borderRadius: 6, padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, cursor: 'pointer' }}>
+                  <button type="button" onClick={() => setActiveFilter(null)} style={{ background: 'none', border: `1px solid ${BD}`, borderRadius: 6, padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, cursor: 'pointer' }}>
                     Show all candidates
                   </button>
                 </div>
@@ -910,7 +915,7 @@ function DemoDashboardInner() {
               <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div>
                   <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>All Candidates</h2>
-                  {(search || filterAssessmentId || demoHealthFilter || verdictFilter) && <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>{filtered.length} result{filtered.length !== 1 ? 's' : ''}</div>}
+                  {(search || filterAssessmentId || activeFilter) && <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>{filtered.length} result{filtered.length !== 1 ? 's' : ''}</div>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {filterAssessmentId && (
