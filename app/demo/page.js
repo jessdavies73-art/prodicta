@@ -397,7 +397,7 @@ function DemoDashboardInner() {
                 <button
                   key={v.key}
                   type="button"
-                  onClick={() => setActiveFilter(prev => prev?.type === 'verdict' && prev.value === v.key ? null : { type: 'verdict', value: v.key })}
+                  onClick={() => { if (activeFilter?.type === 'verdict' && activeFilter.value === v.key) { setActiveFilter(null) } else { setActiveFilter({ type: 'verdict', value: v.key }) } }}
                   onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                   onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                   style={{
@@ -572,7 +572,7 @@ function DemoDashboardInner() {
                     <button
                       key={c.key}
                       type="button"
-                      onClick={() => setActiveFilter(prev => prev?.type === 'health' && prev.value === c.key ? null : { type: 'health', value: c.key })}
+                      onClick={() => { if (activeFilter?.type === 'health' && activeFilter.value === c.key) { setActiveFilter(null) } else { setActiveFilter({ type: 'health', value: c.key }) } }}
                       onMouseEnter={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                       onMouseLeave={e => { if (!isActive) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                       style={{
@@ -817,7 +817,7 @@ function DemoDashboardInner() {
                     <button
                       key={v.key}
                       type="button"
-                      onClick={() => setActiveFilter(prev => prev?.type === 'verdict' && prev.value === v.key ? null : { type: 'verdict', value: v.key })}
+                      onClick={() => { if (activeFilter?.type === 'verdict' && activeFilter.value === v.key) { setActiveFilter(null) } else { setActiveFilter({ type: 'verdict', value: v.key }) } }}
                       onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
                       onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
                       style={{
