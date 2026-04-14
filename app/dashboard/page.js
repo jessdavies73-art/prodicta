@@ -816,6 +816,9 @@ function DashboardPageInner() {
     }
   }
 
+  // Reset selection when filter changes (must be before early returns to preserve hook order)
+  useEffect(() => { setSelectedCandidates(new Set()) }, [activeFilter])
+
   if (loading) return <LoadingSkeleton />
 
   if (error) {
@@ -956,8 +959,6 @@ function DashboardPageInner() {
   const verdictFilterLabel = activeFilter?.type === 'verdict'
     ? { strong: 'Strong Hire Candidates', maybe: 'Review Candidates', risk: 'High Risk Candidates' }[activeFilter.value]
     : ''
-
-  useEffect(() => { setSelectedCandidates(new Set()) }, [activeFilter])
 
   // ── render ──────────────────────────────────────────────────────────────────
 
@@ -1821,7 +1822,7 @@ function DashboardPageInner() {
                             key={c.id}
                             onClick={() => {
                               if (isClickable) {
-                                router.push(`/assessment/${c.assessments.id}/candidate/${c.id}`)
+                                router.push(`/assessment/${c.assessments?.id}/candidate/${c.id}`)
                               }
                             }}
                             onMouseEnter={() => setHoveredRow(c.id)}
