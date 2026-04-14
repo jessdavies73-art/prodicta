@@ -763,7 +763,7 @@ function DashboardPageInner() {
           const { data: credits } = await supabase
             .from('assessment_credits')
             .select('credit_type, credits_remaining')
-            .eq('user_id', u.id)
+            .eq('user_id', user.id)
           if (credits && credits.length > 0) setAssessmentCredits(credits)
         } catch {}
 
@@ -772,7 +772,7 @@ function DashboardPageInner() {
           const { data: copilotRows } = await supabase
             .from('probation_copilot')
             .select('candidate_id, overall_status')
-            .eq('user_id', u.id)
+            .eq('user_id', user.id)
             .in('overall_status', ['Critical', 'At Risk'])
           if (copilotRows && copilotRows.length > 0) {
             setRedlineCandidates(new Set(copilotRows.filter(r => r.overall_status === 'Critical').map(r => r.candidate_id)))
