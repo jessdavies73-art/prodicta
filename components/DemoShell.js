@@ -59,6 +59,7 @@ const NAV = [
   { key: 'holiday',      label: 'Holiday',         icon: 'calendar', href: '/holiday' },
   { key: 'archive',      label: 'Archive',         icon: 'archive',  href: '/demo/archive' },
   { key: 'settings',     label: 'Settings',        icon: 'settings', href: '/demo/settings' },
+  { key: 'outcomes',     label: 'Outcomes',        icon: 'award',    restricted: true },
 ]
 
 export function DemoSidebar({ active }) {
@@ -137,7 +138,8 @@ export function DemoSidebar({ active }) {
         })}
       </nav>
 
-      <div style={{ padding: '14px 12px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+      {/* Bottom: company badge + sign out — pinned */}
+      <div style={{ marginTop: 'auto', padding: '14px 12px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
         <div style={{ padding: '8px 12px', borderRadius: 8, background: `${TEAL}18`, border: `1px solid ${TEAL}30`, display: 'flex', alignItems: 'center', gap: 9 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${TEAL}, #009688)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: NAVY, flexShrink: 0 }}>D</div>
           <span style={{ fontSize: 12.5, fontWeight: 700, color: TEAL }}>Demo Account</span>
@@ -148,6 +150,20 @@ export function DemoSidebar({ active }) {
         >
           <Ic name="award" size={16} color={TEAL} />
           Sign up
+        </button>
+        <button
+          onClick={() => router.push('/login')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 12px',
+            borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 500,
+            textAlign: 'left', background: 'transparent', color: 'rgba(255,255,255,0.4)',
+            transition: 'background 0.15s, color 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.12)'; e.currentTarget.style.color = '#f87171' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}
+        >
+          <Ic name="logout" size={16} color="rgba(255,255,255,0.35)" />
+          Sign out
         </button>
       </div>
 
