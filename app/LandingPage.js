@@ -318,7 +318,7 @@ function StatNumber({ to, suffix = '', display }) {
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState(null)
-  const [heroPersona, setHeroPersona] = useState('senior') // 'senior' | 'volume'
+  const [heroPersona, setHeroPersona] = useState('agency') // 'agency' | 'employer'
   const [pricingMode, setPricingMode] = useState('subscription') // 'subscription' | 'payg'
   const [riskJd, setRiskJd] = useState('')
   const [riskLoading, setRiskLoading] = useState(false)
@@ -434,8 +434,8 @@ export default function LandingPage() {
           overflow: 'hidden',
         }}>
           {[
-            { key: 'senior', label: 'Senior and specialist hiring' },
-            { key: 'volume', label: 'High-volume hiring' },
+            { key: 'agency', label: 'Recruitment Agencies' },
+            { key: 'employer', label: 'Direct Employers' },
           ].map(p => {
             const active = heroPersona === p.key
             return (
@@ -465,45 +465,60 @@ export default function LandingPage() {
           fontSize: 'clamp(36px, 5.5vw, 66px)', letterSpacing: '-2px', lineHeight: 1.05,
           maxWidth: 820, marginBottom: 24,
         }}>
-          {heroPersona === 'senior' ? (
-            <>
-              Understand likely{' '}
-              <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>probation outcomes</span>
-              {' '}before you{' '}
-              <span style={{ color: GOLD, textShadow: '0 0 40px rgba(232,184,75,0.35)' }}>hire.</span>
-            </>
-          ) : (
-            <>
-              The fastest way to find the candidates{' '}
-              <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>worth interviewing.</span>
-            </>
-          )}
+          Hire right.<br />
+          <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>Keep them there.</span>
         </h1>
-
-        {/* Positioning line */}
-        <p style={{
-          fontFamily: F, fontSize: 'clamp(18px, 2.5vw, 28px)', fontWeight: 700,
-          color: '#00BFA5', lineHeight: 1.4,
-          maxWidth: 680, marginBottom: 16, position: 'relative', zIndex: 1,
-        }}>
-          {heroPersona === 'senior'
-            ? 'The Hiring Decision Engine with built-in Probation Insurance.'
-            : 'Screen 80 candidates. Shortlist 20. Interview 6.'}
-        </p>
 
         {/* Subheadline */}
         <p style={{
           fontFamily: F, fontSize: 'clamp(16px, 1.8vw, 20px)', fontWeight: 400,
           color: 'rgba(255,255,255,0.6)', lineHeight: 1.75,
-          maxWidth: 620, marginBottom: 44, position: 'relative', zIndex: 1,
+          maxWidth: 660, marginBottom: 32, position: 'relative', zIndex: 1,
         }}>
-          {heroPersona === 'senior'
-            ? 'Your next hire is either your best decision or your most expensive. Know which.'
-            : 'Rapid Screen puts candidates through a 5-8 minute real-work test. You get a clear signal: Strong Proceed, Interview Worthwhile, or High Risk.'}
+          PRODICTA is the only platform that predicts who will succeed before you hire them and helps you keep them once you do.
         </p>
+
+        {/* Toggle subtext */}
+        <p style={{
+          fontFamily: F, fontSize: 'clamp(14px, 1.5vw, 17px)', fontWeight: 500,
+          color: 'rgba(255,255,255,0.5)', lineHeight: 1.7,
+          maxWidth: 620, marginBottom: 36, position: 'relative', zIndex: 1,
+          minHeight: 72,
+        }}>
+          {heroPersona === 'agency'
+            ? 'Screen temps at \u00A36 each. Track every placement in real time. Manage SSP, holiday, and compliance automatically. The only platform built for the full temp and perm placement journey.'
+            : 'Assess every candidate with real work simulations. Predict who will pass probation. Generate ERA 2025 compliance documentation automatically. Protect every hiring decision from day one.'}
+        </p>
+
+        {/* Proof points */}
+        <div style={{
+          display: 'flex', gap: 28, justifyContent: 'center', flexWrap: 'wrap',
+          marginBottom: 44, position: 'relative', zIndex: 1, maxWidth: 720,
+        }}>
+          {(heroPersona === 'agency' ? [
+            { label: '\u00A36 Rapid Screen', sub: 'Screen candidates in 5 minutes' },
+            { label: 'Live Placement Health', sub: 'Know before the client calls' },
+            { label: 'Full SSP Management', sub: '2026 rules handled automatically' },
+          ] : [
+            { label: 'Real work simulations', sub: 'Not a personality test' },
+            { label: 'ERA 2025 compliant', sub: 'Every hire documented' },
+            { label: 'Probation tracking', sub: 'Catch problems at week three' },
+          ]).map((pt, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: '1 1 200px', maxWidth: 220 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>{pt.label}</div>
+                <div style={{ fontFamily: F, fontSize: 12.5, fontWeight: 400, color: 'rgba(255,255,255,0.45)', lineHeight: 1.4, marginTop: 2 }}>{pt.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* CTA buttons */}
         <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 56, position: 'relative', zIndex: 1 }}>
-          <a href="/login" style={{
+          <a href="/demo" style={{
             fontFamily: F, fontSize: 16, fontWeight: 800, color: NAVY,
             background: TEAL, textDecoration: 'none',
             padding: '16px 40px', borderRadius: 12, display: 'inline-block',
@@ -512,17 +527,17 @@ export default function LandingPage() {
           }}
           onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.animation='none'; e.currentTarget.style.boxShadow=`0 12px 40px rgba(0,191,165,0.5)` }}
           onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.animation='ctaPulse 3s ease infinite'; e.currentTarget.style.boxShadow='' }}>
-            {heroPersona === 'senior' ? 'Get started' : 'Start screening'}
+            See the demo
           </a>
-          <a href="/demo" style={{
+          <a href="/login" style={{
             fontFamily: F, fontSize: 16, fontWeight: 600, color: '#fff',
-            background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.22)',
+            background: 'transparent', border: `1.5px solid ${NAVY}`,
             textDecoration: 'none', padding: '16px 40px', borderRadius: 12, display: 'inline-block',
             transition: 'background 0.15s, border-color 0.15s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.13)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.4)' }}
-          onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.22)' }}>
-            Try Demo, no account needed
+          onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.4)' }}
+          onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.borderColor=NAVY }}>
+            Start free trial
           </a>
         </div>
 
