@@ -1918,6 +1918,18 @@ export default function CandidateReportPage({ params }) {
                     {results && candidate?.assessments?.employment_type === 'temporary' ? (
                       <>
                         <button
+                          onClick={() => window.open(`/api/candidates/${params.candidateId}/certificate`, '_blank')}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                            fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                          }}
+                        >
+                          <Ic name="shield" size={15} color={TEALD} />
+                          Fair Work Agency Compliance Pack
+                          <InfoTooltip text="Download a compliance pack for Fair Work Agency requirements." />
+                        </button>
+                        <button
                           onClick={() => router.push('/ssp')}
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -1932,6 +1944,20 @@ export default function CandidateReportPage({ params }) {
                       </>
                     ) : (
                       <>
+                        {results && profile?.account_type === 'agency' && (
+                          <button
+                            onClick={() => window.open(`/api/candidates/${params.candidateId}/certificate`, '_blank')}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 6,
+                              background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                              fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                            }}
+                          >
+                            <Ic name="shield" size={15} color={TEALD} />
+                            Compliance Certificate
+                            <InfoTooltip text="Compliance certificate for this assessment." />
+                          </button>
+                        )}
                         {results && profile?.account_type === 'employer' && (
                           <button
                             onClick={() => window.open(`/api/candidates/${params.candidateId}/certificate`, '_blank')}

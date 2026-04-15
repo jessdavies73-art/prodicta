@@ -1046,14 +1046,27 @@ function DemoCandidateInner({ params }) {
                 {/* COMPLIANCE */}
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Compliance</div>
                 {['demo-c6','demo-c4','demo-c7'].includes(params.candidateId) ? (
+                  <>
+                  <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                    <Ic name="shield" size={14} color={TEALD} />
+                    Fair Work Agency Compliance Pack
+                    <InfoTooltip text="Download a compliance pack for Fair Work Agency requirements." />
+                  </button>
                   <button onClick={() => setSignupPrompt(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
                     <Ic name="shield" size={14} color={TEALD} />
                     SSP Checker
                     <InfoTooltip text="Check SSP eligibility and calculate payments for this worker." />
                   </button>
+                  </>
                 ) : (
                 <>
-                {!isAgency && (
+                {isAgency ? (
+                  <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
+                    <Ic name="shield" size={14} color={TEALD} />
+                    Compliance Certificate
+                    <InfoTooltip text="Compliance certificate for this assessment." />
+                  </button>
+                ) : (
                 <>
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="shield" size={14} color={TEALD} />
@@ -1065,12 +1078,6 @@ function DemoCandidateInner({ params }) {
                   Confirm Offer Decision
                   <InfoTooltip text="Acknowledge the risks before making an offer. Creates a legal audit trail of your decision." />
                 </button>
-                {params.candidateId === 'demo-c4' && (
-                  <button onClick={() => setEvidencePackModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
-                    <Ic name="shield" size={14} color={NAVY} />
-                    Evidence Pack
-                  </button>
-                )}
                 </>
                 )}
                 </>
