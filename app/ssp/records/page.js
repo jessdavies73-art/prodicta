@@ -90,6 +90,13 @@ export default function SSPRecordsPage() {
         padding: isMobile ? '24px 16px' : '36px 40px',
       }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+          {/* Sub-nav */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+            <button onClick={() => router.push('/ssp')} style={{ ...bs('secondary', 'sm') }}>SSP Checker</button>
+            <button style={{ ...bs('primary', 'sm') }}>SSP Records</button>
+            <button onClick={() => router.push('/ssp/linked-periods')} style={{ ...bs('secondary', 'sm') }}>Linked Periods</button>
+          </div>
+
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
             <div>

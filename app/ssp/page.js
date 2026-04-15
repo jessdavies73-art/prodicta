@@ -630,6 +630,13 @@ export default function SSPPage() {
         padding: isMobile ? '24px 16px' : '36px 40px',
       }}>
         <div style={{ maxWidth: 700, margin: '0 auto' }}>
+          {/* Sub-nav */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+            <button style={{ ...bs('primary', 'sm') }}>SSP Checker</button>
+            <button onClick={() => router.push('/ssp/records')} style={{ ...bs('secondary', 'sm') }}>SSP Records</button>
+            <button onClick={() => router.push('/ssp/linked-periods')} style={{ ...bs('secondary', 'sm') }}>Linked Periods</button>
+          </div>
+
           {/* Header */}
           <h1 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: 0 }}>
             SSP Eligibility Checker
