@@ -20,6 +20,7 @@ const BASE_NAV_TOP = [
 
 const BASE_NAV_BOTTOM = [
   { key: 'ssp',          label: 'SSP',              icon: 'shield',   href: '/ssp' },
+  { key: 'holiday',      label: 'Holiday',          icon: 'calendar', href: '/holiday' },
   { key: 'archive',      label: 'Archive',          icon: 'archive',  href: '/archive' },
   { key: 'how-it-works', label: 'How It Works',     icon: 'info',     href: '/how-it-works' },
   { key: 'roadmap',      label: "What's Coming",    icon: 'zap',      href: '/roadmap' },
