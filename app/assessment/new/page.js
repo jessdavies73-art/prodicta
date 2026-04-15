@@ -749,50 +749,45 @@ export default function NewAssessmentPage() {
             </div>
           )}
 
-          {/* Sector-grouped templates */}
-          {(employmentType === 'temporary' ? TEMPORARY_TEMPLATES : PERMANENT_TEMPLATES).map(sector => (
-            <div key={sector.sector} style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10, fontFamily: F }}>
-                {sector.sector}
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
-                {sector.templates.map(tpl => {
-                  const modeLabel = tpl.recommended_mode === 'rapid' ? 'Rapid Screen' : tpl.recommended_mode === 'speed-fit' ? 'Speed-Fit' : tpl.recommended_mode === 'depth-fit' ? 'Depth-Fit' : 'Strategy-Fit'
-                  return (
-                    <button
-                      key={tpl.id}
-                      type="button"
-                      onClick={() => applyRoleTemplate(tpl)}
-                      style={{
-                        textAlign: 'left', background: '#fff', border: '1px solid #e4e9f0',
-                        borderRadius: 10, padding: '14px 16px', cursor: 'pointer', fontFamily: F,
-                        transition: 'border-color 0.15s, box-shadow 0.15s',
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#00BFA5'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,191,165,0.1)' }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#e4e9f0'; e.currentTarget.style.boxShadow = 'none' }}
-                    >
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>{tpl.role_title}</div>
-                      <span style={{
-                        fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
-                        background: tpl.recommended_mode === 'rapid' ? '#fffbeb' : '#e0f2f0',
-                        color: tpl.recommended_mode === 'rapid' ? '#d97706' : '#009688',
-                        fontFamily: F,
-                      }}>
-                        {modeLabel} recommended
-                      </span>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: '#009688', marginTop: 8 }}>Use template</div>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
+          {/* Template list */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+            {(employmentType === 'temporary' ? TEMPORARY_TEMPLATES : PERMANENT_TEMPLATES).map(tpl => {
+              const modeLabel = tpl.recommended_mode === 'rapid' ? 'Rapid Screen' : tpl.recommended_mode === 'speed-fit' ? 'Speed-Fit' : tpl.recommended_mode === 'depth-fit' ? 'Depth-Fit' : 'Strategy-Fit'
+              const levelLabel = tpl.role_level === 'OPERATIONAL' ? 'Entry level' : tpl.role_level === 'LEADERSHIP' ? 'Leadership' : 'Senior'
+              return (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  onClick={() => applyRoleTemplate(tpl)}
+                  style={{
+                    textAlign: 'left', background: '#fff', border: '1px solid #e4e9f0',
+                    borderRadius: 10, padding: '14px 16px', cursor: 'pointer', fontFamily: F,
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#00BFA5'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,191,165,0.1)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e4e9f0'; e.currentTarget.style.boxShadow = 'none' }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{tpl.role_title}</div>
+                  <div style={{ fontSize: 11, color: '#94a1b3', fontWeight: 600, marginBottom: 8, fontFamily: F }}>{levelLabel}</div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                    background: tpl.recommended_mode === 'rapid' ? '#fffbeb' : '#e0f2f0',
+                    color: tpl.recommended_mode === 'rapid' ? '#d97706' : '#009688',
+                    fontFamily: F,
+                  }}>
+                    {modeLabel}
+                  </span>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#009688', marginTop: 8 }}>Use template</div>
+                </button>
+              )
+            })}
+          </div>
 
           {/* Rapid Screen note for temporary placements */}
           {employmentType === 'temporary' && (
             <div style={{
               borderLeft: '4px solid #00BFA5', background: '#e0f2f0', borderRadius: '0 8px 8px 0',
-              padding: '10px 14px', marginBottom: 4,
+              padding: '10px 14px', marginTop: 14,
             }}>
               <p style={{ fontFamily: F, fontSize: 12.5, color: '#5e6b7f', margin: 0, lineHeight: 1.5 }}>
                 Rapid Screen recommended for temporary placements. Full assessment also available.
