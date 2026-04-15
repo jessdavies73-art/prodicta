@@ -4,7 +4,9 @@ import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-
 
 export async function POST(request) {
   try {
-    const { role_title, job_description, skill_weights, save_as_template, template_name, context_answers, assessment_mode, employment_type } = await request.json()
+    const body = await request.json()
+    const { role_title, job_description, skill_weights, save_as_template, template_name, context_answers, assessment_mode } = body
+    const employment_type = body.employment_type || 'permanent'
     // Normalise mode: 'rapid' (1 scenario + prioritisation), 'quick' (2 scenarios), 'standard' (3 scenarios), 'advanced' (4 scenarios).
     const rawMode = (assessment_mode || 'standard').toLowerCase()
     const mode = ['rapid', 'quick', 'standard', 'advanced'].includes(rawMode) ? rawMode : 'standard'
@@ -595,7 +597,7 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         skill_weights: skill_weights || { Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 },
         status: 'active',
         assessment_mode: mode,
-        ...(employment_type && { employment_type }),
+        employment_type,
         ...(context_answers && Object.values(context_answers).some(v => v?.trim()) && {
           context_answers,
         }),

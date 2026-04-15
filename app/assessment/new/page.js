@@ -275,7 +275,7 @@ export default function NewAssessmentPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: profile } = await supabase.from('users').select('company_name, plan, account_type').eq('id', user.id).single()
+      const { data: profile } = await supabase.from('users').select('company_name, plan, account_type, subscription_status').eq('id', user.id).single()
       if (profile?.company_name) setCompanyName(profile.company_name)
       if (profile?.account_type) setAccountType(profile.account_type)
 
