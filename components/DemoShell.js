@@ -57,6 +57,7 @@ const NAV = [
   { key: 'compare',      label: 'Compare',         icon: 'sliders',  href: '/demo/compare' },
   { key: 'ssp',          label: 'SSP',             icon: 'shield',   href: '/ssp' },
   { key: 'holiday',      label: 'Holiday',         icon: 'calendar', href: '/holiday' },
+  { key: 'documents',    label: 'Documents',       icon: 'file',     href: '/documents' },
   { key: 'archive',      label: 'Archive',         icon: 'archive',  href: '/demo/archive' },
   { key: 'settings',     label: 'Settings',        icon: 'settings', href: '/demo/settings' },
   { key: 'outcomes',     label: 'Outcomes',        icon: 'award',    restricted: true },
