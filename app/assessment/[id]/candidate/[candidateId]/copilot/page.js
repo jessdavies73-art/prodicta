@@ -77,6 +77,16 @@ export default function ProbationCopilotPage({ params }) {
   const [reviewLoading, setReviewLoading] = useState(false)
   const [reviewResult, setReviewResult] = useState(null)
   const [reviewError, setReviewError] = useState(null)
+
+  // Family Leave
+  const [showLeaveForm, setShowLeaveForm] = useState(false)
+  const [leaveType, setLeaveType] = useState('')
+  const [leaveStart, setLeaveStart] = useState('')
+  const [leaveExpectedReturn, setLeaveExpectedReturn] = useState('')
+  const [leaveActualReturn, setLeaveActualReturn] = useState('')
+  const [leaveSaving, setLeaveSaving] = useState(false)
+  const [leaveRecords, setLeaveRecords] = useState([])
+  const [leaveConflict, setLeaveConflict] = useState(null)
   const [reviewCopied, setReviewCopied] = useState(false)
 
   useEffect(() => {
@@ -118,6 +128,17 @@ export default function ProbationCopilotPage({ params }) {
             }
           } catch {}
         }
+
+        // Load family leave records
+        try {
+          const { data: leaves } = await supabase
+            .from('family_leave_periods')
+            .select('*')
+            .eq('candidate_id', params.candidateId)
+            .eq('user_id', u.id)
+            .order('start_date', { ascending: false })
+          setLeaveRecords(leaves || [])
+        } catch {}
       } catch (e) {
         console.error(e)
       } finally {
@@ -760,6 +781,210 @@ export default function ProbationCopilotPage({ params }) {
             </button>
           </div>
         )}
+
+        {/* ── Family Leave Period ── */}
+        <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '22px 24px', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap', gap: 8 }}>
+            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: NAVY }}>Family Leave</h2>
+            {!showLeaveForm && (
+              <button
+                onClick={() => setShowLeaveForm(true)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '7px 14px', borderRadius: 8, border: `1.5px solid ${BD}`,
+                  background: CARD, fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX, cursor: 'pointer',
+                }}
+              >
+                Log Family Leave Period
+              </button>
+            )}
+          </div>
+
+          {/* Day-one rights notice */}
+          <div style={{
+            background: TEALLT, borderLeft: `4px solid ${TEAL}`, borderRadius: '0 8px 8px 0',
+            padding: '10px 14px', marginBottom: 14,
+          }}>
+            <p style={{ fontFamily: F, fontSize: 12, color: TX2, margin: 0, lineHeight: 1.5 }}>
+              Under the Employment Rights Act 2025, Paternity Leave and Unpaid Parental Leave are day-one rights with no qualifying period. If a {profile?.account_type === 'agency' ? 'assignment' : 'probation'} review coincides with or follows family leave, seek employment law advice before taking action.
+            </p>
+          </div>
+
+          {/* Leave form */}
+          {showLeaveForm && (
+            <div style={{ background: BG, borderRadius: 10, padding: '16px 18px', marginBottom: 14, border: `1px solid ${BD}` }}>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX, display: 'block', marginBottom: 4 }}>Leave type</label>
+                <select
+                  value={leaveType}
+                  onChange={e => setLeaveType(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, background: CARD, outline: 'none', boxSizing: 'border-box' }}
+                >
+                  <option value="">Select leave type...</option>
+                  <option value="paternity">Paternity Leave</option>
+                  <option value="unpaid_parental">Unpaid Parental Leave</option>
+                  <option value="shared_parental">Shared Parental Leave</option>
+                </select>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                <div>
+                  <label style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX, display: 'block', marginBottom: 4 }}>Start date</label>
+                  <input type="date" value={leaveStart} onChange={e => setLeaveStart(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, background: CARD, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX, display: 'block', marginBottom: 4 }}>Expected return date (optional)</label>
+                  <input type="date" value={leaveExpectedReturn} onChange={e => setLeaveExpectedReturn(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, background: CARD, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX, display: 'block', marginBottom: 4 }}>Actual return date (optional)</label>
+                <input type="date" value={leaveActualReturn} onChange={e => setLeaveActualReturn(e.target.value)}
+                  style={{ width: '100%', maxWidth: isMobile ? '100%' : 'calc(50% - 5px)', padding: '8px 12px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, background: CARD, outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  disabled={!leaveType || !leaveStart || leaveSaving}
+                  onClick={async () => {
+                    setLeaveSaving(true)
+                    setLeaveConflict(null)
+                    try {
+                      const supabase = createClient()
+                      const returnDate = leaveExpectedReturn || leaveActualReturn
+                      const isAgency = profile?.account_type === 'agency'
+
+                      // Check for review conflicts: reviews within leave period or within 4 weeks after return
+                      let reviewConflict = false
+                      let conflictDate = null
+                      let suggestedDate = null
+                      if (outcome?.placed_at && returnDate) {
+                        const placedDate = new Date(outcome.placed_at)
+                        const leaveEndDate = new Date(returnDate + 'T00:00:00')
+                        const safeDate = new Date(leaveEndDate)
+                        safeDate.setDate(safeDate.getDate() + 28)
+                        // Standard review milestones: 1 month, 3 months, 6 months from placement
+                        const milestones = [30, 90, 180]
+                        for (const days of milestones) {
+                          const reviewDate = new Date(placedDate)
+                          reviewDate.setDate(reviewDate.getDate() + days)
+                          const leaveStartDate = new Date(leaveStart + 'T00:00:00')
+                          if (reviewDate >= leaveStartDate && reviewDate <= safeDate) {
+                            reviewConflict = true
+                            conflictDate = reviewDate.toISOString().slice(0, 10)
+                            suggestedDate = new Date(safeDate)
+                            suggestedDate.setDate(suggestedDate.getDate() + 1)
+                            suggestedDate = suggestedDate.toISOString().slice(0, 10)
+                            break
+                          }
+                        }
+                      }
+
+                      const { data: saved } = await supabase.from('family_leave_periods').insert({
+                        user_id: user.id,
+                        candidate_id: params.candidateId,
+                        assessment_id: params.id,
+                        leave_type: leaveType,
+                        start_date: leaveStart,
+                        expected_return_date: leaveExpectedReturn || null,
+                        actual_return_date: leaveActualReturn || null,
+                        review_conflict: reviewConflict,
+                        review_conflict_date: conflictDate,
+                        suggested_review_date: suggestedDate,
+                      }).select('*').single()
+
+                      if (saved) setLeaveRecords(prev => [saved, ...prev])
+                      if (reviewConflict) {
+                        setLeaveConflict({ conflictDate, suggestedDate, isAgency })
+                      }
+
+                      setShowLeaveForm(false)
+                      setLeaveType('')
+                      setLeaveStart('')
+                      setLeaveExpectedReturn('')
+                      setLeaveActualReturn('')
+                    } catch (err) {
+                      console.error('Family leave save error:', err)
+                    } finally {
+                      setLeaveSaving(false)
+                    }
+                  }}
+                  style={{
+                    padding: '8px 18px', borderRadius: 8, border: 'none',
+                    background: (!leaveType || !leaveStart || leaveSaving) ? BD : TEAL,
+                    color: (!leaveType || !leaveStart || leaveSaving) ? TX3 : NAVY,
+                    fontFamily: F, fontSize: 13, fontWeight: 700,
+                    cursor: (!leaveType || !leaveStart || leaveSaving) ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {leaveSaving ? 'Saving...' : 'Save Leave Period'}
+                </button>
+                <button
+                  onClick={() => { setShowLeaveForm(false); setLeaveConflict(null) }}
+                  style={{
+                    padding: '8px 14px', borderRadius: 8, border: `1px solid ${BD}`,
+                    background: CARD, fontFamily: F, fontSize: 13, fontWeight: 600, color: TX3, cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Review conflict warning */}
+          {leaveConflict && (
+            <div style={{ background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, padding: '12px 16px', marginBottom: 14 }}>
+              <p style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: RED, margin: '0 0 6px' }}>
+                {leaveConflict.isAgency ? 'An assignment' : 'A probation'} review is scheduled during or shortly after this family leave period.
+              </p>
+              <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '0 0 8px', lineHeight: 1.5 }}>
+                This carries legal risk under the ERA 2025. Consider adjusting the review timeline and seek employment law advice before proceeding.
+              </p>
+              {leaveConflict.conflictDate && (
+                <p style={{ fontFamily: F, fontSize: 12, color: TX2, margin: '0 0 4px' }}>
+                  <strong>Conflicting review date:</strong> {new Date(leaveConflict.conflictDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+              )}
+              {leaveConflict.suggestedDate && (
+                <p style={{ fontFamily: F, fontSize: 12, color: TEALD, margin: 0, fontWeight: 600 }}>
+                  <strong>Suggested review date:</strong> {new Date(leaveConflict.suggestedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} (4 weeks after return)
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Logged leave periods */}
+          {leaveRecords.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {leaveRecords.map(lr => {
+                const typeLabels = { paternity: 'Paternity Leave', unpaid_parental: 'Unpaid Parental Leave', shared_parental: 'Shared Parental Leave' }
+                const fmtD = d => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '--'
+                return (
+                  <div key={lr.id} style={{
+                    background: BG, borderRadius: 8, padding: '10px 14px',
+                    borderLeft: `4px solid ${lr.review_conflict ? RED : TEAL}`,
+                  }}>
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, marginBottom: 4 }}>
+                      {typeLabels[lr.leave_type] || lr.leave_type}
+                    </div>
+                    <div style={{ fontFamily: F, fontSize: 12, color: TX2, lineHeight: 1.6 }}>
+                      Start: {fmtD(lr.start_date)}
+                      {lr.expected_return_date && <> | Expected return: {fmtD(lr.expected_return_date)}</>}
+                      {lr.actual_return_date && <> | Returned: {fmtD(lr.actual_return_date)}</>}
+                    </div>
+                    {lr.review_conflict && (
+                      <div style={{ fontFamily: F, fontSize: 11, fontWeight: 600, color: RED, marginTop: 4 }}>
+                        Review conflict flagged{lr.suggested_review_date && <> — suggested review: {fmtD(lr.suggested_review_date)}</>}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
 
         {savedAt && (
           <div style={{ fontSize: 11.5, color: TX3, textAlign: 'right', marginTop: 6 }}>

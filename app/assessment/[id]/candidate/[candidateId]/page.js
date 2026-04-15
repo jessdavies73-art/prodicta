@@ -1942,6 +1942,20 @@ export default function CandidateReportPage({ params }) {
                         <InfoTooltip text="Acknowledge the risks before making an offer. Creates a legal audit trail of your decision." />
                       </button>
                     )}
+                    {/* Family Leave Risk Notice */}
+                    {results && (
+                      <div style={{
+                        background: '#e0f2f0', borderLeft: `4px solid ${TEAL}`, borderRadius: '0 8px 8px 0',
+                        padding: '12px 14px', marginTop: 4,
+                      }}>
+                        <div style={{ fontFamily: F, fontSize: 12, fontWeight: 800, color: '#0f2137', marginBottom: 4 }}>
+                          Day-One Family Leave Rights
+                        </div>
+                        <p style={{ fontFamily: F, fontSize: 11.5, color: '#5e6b7f', margin: 0, lineHeight: 1.5 }}>
+                          Under the Employment Rights Act 2025 this individual is entitled to Paternity Leave and Unpaid Parental Leave from their first day. There is no qualifying period. If a {profile?.account_type === 'agency' ? 'assignment' : 'probation'} review coincides with or follows a period of family leave, seek independent employment law advice before taking any action.
+                        </p>
+                      </div>
+                    )}
                     {results && profile?.account_type === 'employer' && existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
                       <button
                         onClick={() => window.open(`/api/assessment/${params.id}/candidate/${params.candidateId}/evidence-pack`, '_blank')}

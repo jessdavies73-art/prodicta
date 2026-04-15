@@ -1063,6 +1063,18 @@ function DemoCandidateInner({ params }) {
                     Evidence Pack
                   </button>
                 )}
+                {/* Family Leave Risk Notice */}
+                <div style={{
+                  background: TEALLT, borderLeft: `4px solid ${TEAL}`, borderRadius: '0 8px 8px 0',
+                  padding: '12px 14px', marginTop: 4,
+                }}>
+                  <div style={{ fontFamily: F, fontSize: 12, fontWeight: 800, color: NAVY, marginBottom: 4 }}>
+                    Day-One Family Leave Rights
+                  </div>
+                  <p style={{ fontFamily: F, fontSize: 11.5, color: TX2, margin: 0, lineHeight: 1.5 }}>
+                    Under the Employment Rights Act 2025 this individual is entitled to Paternity Leave and Unpaid Parental Leave from their first day. There is no qualifying period. If a {isAgency ? 'assignment' : 'probation'} review coincides with or follows a period of family leave, seek independent employment law advice before taking any action.
+                  </p>
+                </div>
                 </>
                 )}
 
