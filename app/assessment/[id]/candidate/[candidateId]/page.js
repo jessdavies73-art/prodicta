@@ -1831,7 +1831,11 @@ export default function CandidateReportPage({ params }) {
                     )}
                     {profile?.account_type === 'employer' && existingOutcome && (
                       <button
-                        onClick={() => router.push(`/assessment/${params.id}/candidate/${params.candidateId}/copilot`)}
+                        onClick={() => router.push(
+                          candidate?.assessments?.employment_type === 'temporary'
+                            ? `/assessment/${params.id}/candidate/${params.candidateId}/assignment-review`
+                            : `/assessment/${params.id}/candidate/${params.candidateId}/copilot`
+                        )}
                         style={{
                           display: 'inline-flex', alignItems: 'center', gap: 6,
                           background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
