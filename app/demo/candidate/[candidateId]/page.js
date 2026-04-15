@@ -1065,24 +1065,6 @@ function DemoCandidateInner({ params }) {
                 )}
                 </>
                 )}
-                {/* Family Leave Risk Notice */}
-                <div style={{
-                  background: TEALLT, borderLeft: `4px solid ${TEAL}`, borderRadius: '0 8px 8px 0',
-                  padding: '12px 14px', marginTop: 4,
-                }}>
-                  <div style={{ fontFamily: F, fontSize: 12, fontWeight: 800, color: NAVY, marginBottom: 4 }}>
-                    Day-One Family Leave Rights
-                  </div>
-                  <p style={{ fontFamily: F, fontSize: 11.5, color: TX2, margin: 0, lineHeight: 1.5 }}>
-                    Under the Employment Rights Act 2025 this individual is entitled to Paternity Leave and Unpaid Parental Leave from their first day. There is no qualifying period. If a {isAgency ? 'assignment' : 'probation'} review coincides with or follows a period of family leave, seek independent employment law advice before taking any action.
-                  </p>
-                </div>
-
-                {/* DOCUMENTS */}
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Documents</div>
-                <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '12px 14px' }}>
-                  <span style={{ fontFamily: F, fontSize: 12, color: TX3, fontWeight: 600 }}>Document templates coming soon</span>
-                </div>
 
                 {/* CANDIDATE */}
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Candidate</div>
@@ -1113,6 +1095,32 @@ function DemoCandidateInner({ params }) {
               </div>
               )}
               </div>
+          </div>
+        </Card>
+
+        {/* Family Leave Risk Notice */}
+        <Card style={{ marginBottom: 16, padding: 0, overflow: 'hidden' }}>
+          <div style={{
+            background: TEALLT, borderLeft: `4px solid ${TEAL}`, borderRadius: '0 8px 8px 0',
+            padding: '14px 18px',
+          }}>
+            <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, marginBottom: 4 }}>
+              Day-One Family Leave Rights
+            </div>
+            <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>
+              Under the Employment Rights Act 2025 this individual is entitled to Paternity Leave and Unpaid Parental Leave from their first day. There is no qualifying period. If a {isAgency ? 'assignment' : 'probation'} review coincides with or follows a period of family leave, seek independent employment law advice before taking any action.
+            </p>
+          </div>
+        </Card>
+
+        {/* Documents placeholder */}
+        <Card style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <Ic name="file" size={14} color={TEALD} />
+            <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>Documents</span>
+          </div>
+          <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '12px 14px' }}>
+            <span style={{ fontFamily: F, fontSize: 12.5, color: TX3, fontWeight: 600 }}>Document templates coming soon</span>
           </div>
         </Card>
 
