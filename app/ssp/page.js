@@ -37,6 +37,16 @@ export default function SSPPage() {
   const [calcResult, setCalcResult] = useState(null)
   const [copied, setCopied] = useState(false)
 
+  // Guidance panel state (step 3)
+  const [showGuidance, setShowGuidance] = useState(false)
+  const [guidanceSteps, setGuidanceSteps] = useState({
+    entitlement: { done: false, at: null },
+    evidence: { done: false, at: null },
+    payroll: { done: false, at: null },
+    review: { done: false, at: null },
+    communication: { done: false, at: null },
+  })
+
   useEffect(() => {
     async function load() {
       const supabase = createClient()
@@ -117,6 +127,14 @@ export default function SSPPage() {
     setCalcResult(null)
     setAwe('')
     setQualifyingDays('')
+    setShowGuidance(false)
+    setGuidanceSteps({
+      entitlement: { done: false, at: null },
+      evidence: { done: false, at: null },
+      payroll: { done: false, at: null },
+      review: { done: false, at: null },
+      communication: { done: false, at: null },
+    })
     setSubmitting(false)
   }
 
@@ -685,21 +703,319 @@ export default function SSPPage() {
                   </div>
 
                   {/* Continue to Manager Guidance */}
-                  <button
-                    onClick={() => router.push('/ssp/guidance')}
-                    style={{
-                      ...bs('primary', 'lg'),
-                      width: '100%',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    Continue to Manager Guidance Panel
-                    <Ic name="right" size={16} color={NAVY} />
-                  </button>
+                  {!showGuidance && (
+                    <button
+                      onClick={() => setShowGuidance(true)}
+                      style={{
+                        ...bs('primary', 'lg'),
+                        width: '100%',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      Continue to Manager Guidance Panel
+                      <Ic name="right" size={16} color={NAVY} />
+                    </button>
+                  )}
                 </div>
               )}
             </>
           )}
+
+          {/* ── Step 3: Manager Guidance Panel ── */}
+          {showGuidance && calcResult && (() => {
+            const stepKeys = ['entitlement', 'evidence', 'payroll', 'review', 'communication']
+            const completedCount = stepKeys.filter(k => guidanceSteps[k].done).length
+            const allComplete = completedCount === 5
+            const progressPct = (completedCount / 5) * 100
+
+            const isAgency = profile?.account_type === 'agency'
+
+            // Calculate days since sick date
+            const sickDateObj = new Date(sickDate + 'T00:00:00')
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+            const daysSinceSick = Math.max(1, Math.floor((today - sickDateObj) / (1000 * 60 * 60 * 24)) + 1)
+            const isOverSevenDays = daysSinceSick > 7
+
+            const dbFieldMap = {
+              entitlement: { field: 'step_entitlement_confirmed', atField: 'step_entitlement_confirmed_at' },
+              evidence: { field: 'step_evidence_requested', atField: 'step_evidence_requested_at' },
+              payroll: { field: 'step_payroll_actioned', atField: 'step_payroll_actioned_at' },
+              review: { field: 'step_review_adjusted', atField: 'step_review_adjusted_at' },
+              communication: { field: 'step_communication_sent', atField: 'step_communication_sent_at' },
+            }
+
+            async function toggleStep(key) {
+              const now = new Date().toISOString()
+              const isCurrentlyDone = guidanceSteps[key].done
+              const newDone = !isCurrentlyDone
+              const newAt = newDone ? now : null
+
+              setGuidanceSteps(prev => ({
+                ...prev,
+                [key]: { done: newDone, at: newAt },
+              }))
+
+              try {
+                if (sspRecordId) {
+                  const supabase = createClient()
+                  const { field, atField } = dbFieldMap[key]
+                  await supabase.from('ssp_records').update({
+                    [field]: newDone,
+                    [atField]: newAt,
+                    updated_at: now,
+                  }).eq('id', sspRecordId)
+                }
+              } catch (err) {
+                // Continue even if save fails
+              }
+            }
+
+            function formatTimestamp(iso) {
+              if (!iso) return ''
+              const d = new Date(iso)
+              return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            }
+
+            const steps = [
+              {
+                key: 'entitlement',
+                number: 1,
+                title: 'Confirm Entitlement',
+                description: 'Confirm that SSP entitlement has been verified and recorded for this worker.',
+                checkboxLabel: 'Entitlement confirmed and recorded',
+              },
+              {
+                key: 'evidence',
+                number: 2,
+                title: 'Request Evidence',
+                description: 'Request the appropriate evidence from the worker.',
+                detail: isOverSevenDays
+                  ? 'Fit note required. Ask the worker to provide a fit note from their GP or healthcare professional.'
+                  : 'Self-certification form required. Ask the worker to complete a self-certification.',
+                checkboxLabel: 'Evidence requested from worker',
+              },
+              {
+                key: 'payroll',
+                number: 3,
+                title: 'Action Payroll',
+                description: `Confirm that the SSP amount of \u00A3${(calcResult.dailySSP * daysSinceSick).toFixed(2)} has been passed to payroll for processing.`,
+                checkboxLabel: 'Payroll actioned with SSP amount',
+              },
+              {
+                key: 'review',
+                number: 4,
+                title: 'Adjust Review',
+                description: isAgency
+                  ? 'If this worker is within their assignment period, consider whether the assignment review needs to be adjusted.'
+                  : 'If this employee is within their probation period, consider whether the probation review timeline needs to be adjusted.',
+                checkboxLabel: isAgency
+                  ? 'Assignment review adjusted if applicable'
+                  : 'Probation review adjusted if applicable',
+              },
+              {
+                key: 'communication',
+                number: 5,
+                title: 'Communicate with Worker',
+                description: 'Confirm that the worker has been informed of their SSP entitlement and what happens next.',
+                checkboxLabel: 'Communication sent to worker',
+              },
+            ]
+
+            return (
+              <>
+                {/* Divider */}
+                <div style={{ height: 1, background: BD, margin: '8px 0 24px' }} />
+
+                {/* Guidance header */}
+                <h2 style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: TX, margin: 0 }}>
+                  Manager Guidance Panel
+                </h2>
+                <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: '6px 0 24px' }}>
+                  Complete all five steps to create a full audit trail for this absence.
+                </p>
+
+                {/* Guidance disclaimer */}
+                <div style={{
+                  borderLeft: `4px solid ${TEAL}`,
+                  background: TEALLT,
+                  borderRadius: '0 8px 8px 0',
+                  padding: '14px 18px',
+                  marginBottom: 24,
+                }}>
+                  <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.55 }}>
+                    Each step you complete is time-stamped and stored. This creates a documented record of how this absence was managed.
+                  </p>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ ...cs, marginBottom: 24, padding: '16px 22px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>
+                      {completedCount} of 5 steps completed
+                    </span>
+                    <span style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: allComplete ? TEAL : TX3 }}>
+                      {Math.round(progressPct)}%
+                    </span>
+                  </div>
+                  <div style={{
+                    width: '100%',
+                    height: 8,
+                    background: BG,
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      width: `${progressPct}%`,
+                      height: '100%',
+                      background: TEAL,
+                      borderRadius: 4,
+                      transition: 'width 0.35s ease',
+                    }} />
+                  </div>
+                </div>
+
+                {/* Step cards */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+                  {steps.map((step) => {
+                    const isDone = guidanceSteps[step.key].done
+                    const doneAt = guidanceSteps[step.key].at
+
+                    return (
+                      <div key={step.key} style={{
+                        ...cs,
+                        padding: '18px 22px',
+                        borderLeft: `4px solid ${isDone ? TEAL : BD}`,
+                        transition: 'border-color 0.2s',
+                      }}>
+                        {/* Step header */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            background: isDone ? TEAL : BG,
+                            color: isDone ? '#fff' : TX3,
+                            fontSize: 11,
+                            fontWeight: 800,
+                            fontFamily: F,
+                            flexShrink: 0,
+                            transition: 'background 0.2s, color 0.2s',
+                          }}>
+                            {isDone ? <Ic name="check" size={13} color="#fff" /> : step.number}
+                          </span>
+                          <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>
+                            Step {step.number} — {step.title}
+                          </span>
+                        </div>
+
+                        {/* Description */}
+                        <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 6px', paddingLeft: 34, lineHeight: 1.5 }}>
+                          {step.description}
+                        </p>
+
+                        {/* Conditional detail for evidence step */}
+                        {step.detail && (
+                          <div style={{
+                            background: BG,
+                            borderRadius: 6,
+                            padding: '10px 14px',
+                            marginLeft: 34,
+                            marginBottom: 6,
+                          }}>
+                            <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.5 }}>
+                              {step.detail}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Checkbox row */}
+                        <div style={{ paddingLeft: 34, marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <label style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            cursor: 'pointer',
+                          }}>
+                            <input
+                              type="checkbox"
+                              checked={isDone}
+                              onChange={() => toggleStep(step.key)}
+                              style={{ accentColor: TEAL, width: 16, height: 16, cursor: 'pointer' }}
+                            />
+                            <span style={{
+                              fontFamily: F,
+                              fontSize: 13,
+                              fontWeight: isDone ? 600 : 500,
+                              color: isDone ? TEAL : TX2,
+                              transition: 'color 0.15s',
+                            }}>
+                              {step.checkboxLabel}
+                            </span>
+                          </label>
+                          {isDone && doneAt && (
+                            <span style={{
+                              fontFamily: F,
+                              fontSize: 11,
+                              color: TX3,
+                              marginLeft: 4,
+                            }}>
+                              {formatTimestamp(doneAt)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* All complete banner */}
+                {allComplete && (
+                  <div style={{
+                    background: GRNBG,
+                    border: `1px solid ${GRNBD}`,
+                    borderRadius: 14,
+                    padding: '18px 22px',
+                    marginBottom: 24,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                      <div style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: '50%',
+                        background: TEAL,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>
+                        <Ic name="check" size={15} color="#fff" />
+                      </div>
+                      <span style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: TX }}>
+                        All steps completed. This absence is fully managed.
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => router.push('/ssp/compliance')}
+                      style={{
+                        ...bs('primary', 'lg'),
+                        width: '100%',
+                        justifyContent: 'center',
+                        background: NAVY,
+                        color: '#fff',
+                      }}
+                    >
+                      Generate Compliance Pack
+                      <Ic name="file" size={16} color="#fff" />
+                    </button>
+                  </div>
+                )}
+              </>
+            )
+          })()}
         </div>
       </main>
     </div>
