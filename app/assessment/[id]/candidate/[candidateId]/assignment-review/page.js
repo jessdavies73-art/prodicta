@@ -80,6 +80,11 @@ export default function AssignmentReviewPage({ params }) {
   // Summary
   const [recommendation, setRecommendation] = useState('')
 
+  // Alerts
+  const [alerts, setAlerts] = useState([])
+  const [latestAlert, setLatestAlert] = useState(null)
+  const [resolvingAlert, setResolvingAlert] = useState(false)
+
   useEffect(() => {
     async function load() {
       const supabase = createClient()
@@ -102,6 +107,20 @@ export default function AssignmentReviewPage({ params }) {
         setRecord(existing)
         setClientFeedback(existing.client_feedback || '')
       }
+
+      // Load existing alerts
+      const { data: existingAlerts } = await supabase
+        .from('assignment_alerts')
+        .select('*')
+        .eq('candidate_id', params.candidateId)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      if (existingAlerts && existingAlerts.length > 0) {
+        setAlerts(existingAlerts)
+        const unresolved = existingAlerts.find(a => !a.resolved)
+        if (unresolved) setLatestAlert(unresolved)
+      }
+
       setLoading(false)
     }
     load()
@@ -150,6 +169,29 @@ export default function AssignmentReviewPage({ params }) {
       if (saved) setRecord(saved)
       setActiveReview(null)
       setReviewDate(''); setReviewRating(''); setReviewNotes(''); setReviewClientFeedback('')
+
+      // Run alert detection after saving review
+      try {
+        const alertRes = await fetch(`/api/assignment-alerts/${params.candidateId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'detect' }),
+        })
+        if (alertRes.ok) {
+          const alertData = await alertRes.json()
+          if (alertData.deviation_status === 'REDLINE' || alertData.deviation_status === 'WATCH') {
+            const newAlert = {
+              id: alertData.alert_id,
+              deviation_severity: alertData.deviation_status,
+              alert_type: alertData.alert_type,
+              intervention_plan: JSON.stringify(alertData),
+              resolved: false,
+            }
+            setAlerts(prev => [newAlert, ...prev])
+            setLatestAlert(newAlert)
+          }
+        }
+      } catch {}
     } catch (err) { console.error(err) }
     finally { setSaving(false) }
   }
@@ -268,6 +310,100 @@ export default function AssignmentReviewPage({ params }) {
                   ))}
                 </div>
               </div>
+
+              {/* Alert banner */}
+              {latestAlert && !latestAlert.resolved && (() => {
+                const isRedline = latestAlert.deviation_severity === 'REDLINE'
+                const alertColor = isRedline ? DRED : AMB
+                const alertBg = isRedline ? DREDBG : AMBBG
+                let plan = null
+                try { plan = typeof latestAlert.intervention_plan === 'string' ? JSON.parse(latestAlert.intervention_plan) : latestAlert.intervention_plan } catch {}
+
+                return (
+                  <div style={{ marginBottom: 20 }}>
+                    {/* Banner */}
+                    <div style={{
+                      background: alertBg, borderLeft: `4px solid ${alertColor}`, borderRadius: '0 10px 10px 0',
+                      padding: '14px 18px', marginBottom: 12,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <Ic name="alert" size={16} color={alertColor} />
+                        <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: alertColor }}>
+                          Assignment Performance Alert
+                        </span>
+                        <span style={{
+                          display: 'inline-block', padding: '2px 8px', borderRadius: 50, fontSize: 10, fontWeight: 800, fontFamily: F,
+                          background: alertColor, color: '#fff',
+                        }}>
+                          {isRedline ? 'REDLINE' : 'WATCH'}
+                        </span>
+                      </div>
+                      <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0, lineHeight: 1.55 }}>
+                        This placement is deviating from the assessment prediction. {isRedline ? 'Immediate action required.' : 'Monitor closely and consider early intervention.'}
+                      </p>
+                    </div>
+
+                    {/* Intervention plan */}
+                    {plan && (
+                      <div style={{ ...cs, padding: '18px 22px', marginBottom: 12, borderTop: `3px solid ${alertColor}` }}>
+                        <h3 style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY, margin: '0 0 10px' }}>Intervention Plan</h3>
+                        {plan.intervention_plan && (
+                          <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 14px', lineHeight: 1.6 }}>{plan.intervention_plan}</p>
+                        )}
+                        {plan.client_actions && plan.client_actions.length > 0 && (
+                          <div style={{ marginBottom: 12 }}>
+                            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Actions with client</div>
+                            {plan.client_actions.map((a, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
+                                <Ic name="check" size={13} color={TEAL} />
+                                <span style={{ fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.5 }}>{a}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {plan.worker_actions && plan.worker_actions.length > 0 && (
+                          <div style={{ marginBottom: 12 }}>
+                            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Actions with worker</div>
+                            {plan.worker_actions.map((a, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
+                                <Ic name="check" size={13} color={TEAL} />
+                                <span style={{ fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.5 }}>{a}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {plan.risk_summary && (
+                          <div style={{ background: BG, borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
+                            <span style={{ fontFamily: F, fontSize: 12.5, color: plan.assignment_at_risk ? DRED : TX2, fontWeight: 600 }}>{plan.risk_summary}</span>
+                          </div>
+                        )}
+                        <button
+                          onClick={async () => {
+                            setResolvingAlert(true)
+                            try {
+                              await fetch(`/api/assignment-alerts/${params.candidateId}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ action: 'resolve', alert_id: latestAlert.id }),
+                              })
+                              setLatestAlert(null)
+                              setAlerts(prev => prev.map(a => a.id === latestAlert.id ? { ...a, resolved: true } : a))
+                            } catch {}
+                            finally { setResolvingAlert(false) }
+                          }}
+                          disabled={resolvingAlert}
+                          style={{
+                            padding: '8px 18px', borderRadius: 8, border: `1.5px solid ${BD}`, background: CARD,
+                            fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, cursor: resolvingAlert ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          {resolvingAlert ? 'Resolving...' : 'Resolve Alert'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* Review milestones */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>

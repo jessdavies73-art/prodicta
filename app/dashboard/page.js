@@ -577,6 +577,7 @@ function DashboardPageInner() {
   const [selectedCandidates, setSelectedCandidates] = useState(new Set())
   const [assessmentCredits, setAssessmentCredits] = useState([])
   const [redlineCandidates, setRedlineCandidates] = useState(new Set())
+  const [assignmentAlerts, setAssignmentAlerts] = useState([])
   const [placementHealth, setPlacementHealth] = useState(null) // { placements, counts, total_active, rebate_ending_this_month }
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
   const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
@@ -777,6 +778,17 @@ function DashboardPageInner() {
           if (copilotRows && copilotRows.length > 0) {
             setRedlineCandidates(new Set(copilotRows.filter(r => r.overall_status === 'Critical').map(r => r.candidate_id)))
           }
+        } catch {}
+
+        // Load assignment alerts for agency accounts
+        try {
+          const { data: alertRows } = await supabase
+            .from('assignment_alerts')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('resolved', false)
+            .order('created_at', { ascending: false })
+          if (alertRows) setAssignmentAlerts(alertRows)
         } catch {}
       } catch (err) {
         console.error(err)
@@ -1322,6 +1334,52 @@ function DashboardPageInner() {
                   </div>
                 )
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Assignment alerts banner */}
+        {assignmentAlerts.length > 0 && (
+          <div style={{
+            background: 'linear-gradient(135deg, #fef2f2, #fff5f5)', border: `1.5px solid #fecaca`,
+            borderLeft: `4px solid #B91C1C`, borderRadius: '0 12px 12px 0',
+            padding: isMobile ? '14px 16px' : '16px 24px', marginBottom: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <Ic name="alert" size={16} color="#B91C1C" />
+              <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: '#B91C1C' }}>
+                {assignmentAlerts.length} assignment alert{assignmentAlerts.length !== 1 ? 's' : ''} requiring action
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {assignmentAlerts.slice(0, 5).map(a => (
+                <div key={a.id} style={{
+                  display: 'flex', alignItems: isMobile ? 'flex-start' : 'center',
+                  flexDirection: isMobile ? 'column' : 'row',
+                  gap: isMobile ? 6 : 12, padding: '10px 14px',
+                  background: '#fff', border: `1px solid #fecaca`, borderRadius: 8,
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{a.worker_name}</div>
+                    <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>{a.role_title}</div>
+                  </div>
+                  <span style={{
+                    display: 'inline-block', padding: '2px 8px', borderRadius: 50, fontSize: 10, fontWeight: 800, fontFamily: F,
+                    background: a.deviation_severity === 'REDLINE' ? '#B91C1C' : '#D97706', color: '#fff',
+                  }}>
+                    {a.deviation_severity}
+                  </span>
+                  <button
+                    onClick={() => router.push(`/assessment/${a.assessment_id}/candidate/${a.candidate_id}/assignment-review`)}
+                    style={{
+                      padding: '6px 14px', borderRadius: 7, border: `1px solid ${BD}`,
+                      background: CARD, fontFamily: F, fontSize: 12, fontWeight: 700, color: NAVY, cursor: 'pointer',
+                    }}
+                  >
+                    View tracker
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}
