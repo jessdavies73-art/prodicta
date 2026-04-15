@@ -532,7 +532,29 @@ export default function SSPPage() {
         step_entitlement_confirmed: eligible,
         step_entitlement_confirmed_at: eligible ? new Date().toISOString() : null,
       }).select('id').single()
-      if (insertedRow?.id) setSspRecordId(insertedRow.id)
+      if (insertedRow?.id) {
+        setSspRecordId(insertedRow.id)
+        // Auto-complete any matching open ssp_alert for this worker
+        try {
+          const { data: openAlerts } = await supabase
+            .from('ssp_alerts')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('ssp_check_completed', false)
+            .eq('resolved', false)
+            .ilike('worker_name', workerName.trim())
+            .limit(1)
+          if (openAlerts && openAlerts.length > 0) {
+            await supabase.from('ssp_alerts').update({
+              ssp_check_completed: true,
+              ssp_check_completed_at: new Date().toISOString(),
+              ssp_record_id: insertedRow.id,
+            }).eq('id', openAlerts[0].id)
+          }
+        } catch (_) {
+          // Non-blocking — alert update failure should not affect the SSP check
+        }
+      }
     } catch (err) {
       // Continue even if save fails — show the result to the user
     }

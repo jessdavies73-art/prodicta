@@ -582,6 +582,13 @@ function DashboardPageInner() {
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
   const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
   const [showFirstTime, setShowFirstTime] = useState(false)
+  // SSP Alert system (agency temp workers)
+  const [sspAlerts, setSspAlerts] = useState([])
+  const [reportSicknessCandidate, setReportSicknessCandidate] = useState(null)
+  const [sickDate, setSickDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [reportingSickness, setReportingSickness] = useState(false)
+  const [sicknessReported, setSicknessReported] = useState(false)
+  const [resolvingAlertId, setResolvingAlertId] = useState(null)
 
   // Close ⋯ menu when clicking anywhere outside
   useEffect(() => {
@@ -611,7 +618,7 @@ function DashboardPageInner() {
 
         const { data: cands, error: candsErr } = await supabase
           .from('candidates')
-          .select('*, assessments!inner(role_title, id), results(overall_score, risk_level, percentile, pressure_fit_score)')
+          .select('*, assessments!inner(role_title, id, employment_type), results(overall_score, risk_level, percentile, pressure_fit_score)')
           .eq('user_id', user.id)
           .neq('status', 'archived')
           .order('invited_at', { ascending: false })
@@ -789,6 +796,17 @@ function DashboardPageInner() {
             .eq('resolved', false)
             .order('created_at', { ascending: false })
           if (alertRows) setAssignmentAlerts(alertRows)
+        } catch {}
+
+        // Load active SSP alerts for agency accounts
+        try {
+          const { data: sspRows } = await supabase
+            .from('ssp_alerts')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('resolved', false)
+            .order('reported_at', { ascending: false })
+          if (sspRows) setSspAlerts(sspRows)
         } catch {}
       } catch (err) {
         console.error(err)
@@ -1167,6 +1185,162 @@ function DashboardPageInner() {
         </div>
       )}
 
+      {/* ── Report Sickness modal ── */}
+      {reportSicknessCandidate && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(15,33,55,0.55)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 24,
+        }}
+          onClick={() => { if (!reportingSickness) setReportSicknessCandidate(null) }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: CARD, borderRadius: 14, padding: '28px 32px',
+              maxWidth: 440, width: '100%',
+              boxShadow: '0 16px 48px rgba(15,33,55,0.2)',
+            }}
+          >
+            {sicknessReported ? (
+              <>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: '#e0f7f1', border: '1px solid #00BFA5',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: 16,
+                }}>
+                  <Ic name="check" size={22} color="#00BFA5" />
+                </div>
+                <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800, color: TX }}>
+                  Sickness reported
+                </h3>
+                <p style={{ margin: '0 0 20px', fontSize: 14, color: TX2, lineHeight: 1.6 }}>
+                  An SSP alert has been created for <strong>{reportSicknessCandidate.name}</strong> and a confirmation email has been sent. Complete the SSP check to ensure compliance.
+                </p>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    onClick={() => router.push('/ssp')}
+                    style={{
+                      flex: 1, padding: '10px 0', borderRadius: 8, border: 'none',
+                      background: '#00BFA5', color: '#0F2137', fontFamily: F,
+                      fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+                    }}
+                  >
+                    Run SSP Check now
+                  </button>
+                  <button
+                    onClick={() => setReportSicknessCandidate(null)}
+                    style={{
+                      flex: 1, padding: '10px 0', borderRadius: 8,
+                      border: `1.5px solid ${BD}`, background: 'transparent',
+                      color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: '#fffbeb', border: '1px solid #fbbf24',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: 16,
+                }}>
+                  <Ic name="alert" size={22} color="#D97706" />
+                </div>
+                <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800, color: TX }}>
+                  Report Sickness
+                </h3>
+                <p style={{ margin: '0 0 20px', fontSize: 14, color: TX2, lineHeight: 1.6 }}>
+                  Report a sickness absence for <strong>{reportSicknessCandidate.name}</strong>. This will create an SSP alert and send you a confirmation email.
+                </p>
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ display: 'block', fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, marginBottom: 6 }}>
+                    Date sickness began
+                  </label>
+                  <input
+                    type="date"
+                    value={sickDate}
+                    onChange={e => setSickDate(e.target.value)}
+                    style={{
+                      width: '100%', padding: '10px 14px', borderRadius: 8,
+                      border: `1.5px solid ${BD}`, fontFamily: F, fontSize: 14,
+                      color: TX, background: BG, outline: 'none', boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    onClick={async () => {
+                      if (!sickDate) return
+                      setReportingSickness(true)
+                      try {
+                        const c = reportSicknessCandidate
+                        const res = await fetch('/api/ssp-alerts', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            candidate_id: c.id,
+                            assessment_id: c.assessments?.id || null,
+                            worker_name: c.name,
+                            role_title: c.assessments?.role_title || null,
+                            client_company: null,
+                            reported_sick_date: sickDate,
+                          }),
+                        })
+                        const json = await res.json()
+                        if (!res.ok) throw new Error(json.error || 'Failed')
+                        // Add to local state
+                        setSspAlerts(prev => [{
+                          id: json.id,
+                          worker_name: c.name,
+                          role_title: c.assessments?.role_title || null,
+                          client_company: null,
+                          reported_sick_date: sickDate,
+                          reported_at: new Date().toISOString(),
+                          ssp_check_completed: false,
+                          resolved: false,
+                        }, ...prev])
+                        setSicknessReported(true)
+                      } catch (err) {
+                        toast?.({ title: 'Error', description: err.message, type: 'error' })
+                      } finally {
+                        setReportingSickness(false)
+                      }
+                    }}
+                    disabled={reportingSickness || !sickDate}
+                    style={{
+                      flex: 1, padding: '10px 0', borderRadius: 8, border: 'none',
+                      background: '#D97706', color: '#fff', fontFamily: F,
+                      fontSize: 13.5, fontWeight: 700,
+                      cursor: reportingSickness ? 'wait' : 'pointer',
+                      opacity: reportingSickness ? 0.7 : 1,
+                    }}
+                  >
+                    {reportingSickness ? 'Reporting...' : 'Report Sickness'}
+                  </button>
+                  <button
+                    onClick={() => setReportSicknessCandidate(null)}
+                    disabled={reportingSickness}
+                    style={{
+                      flex: 1, padding: '10px 0', borderRadius: 8,
+                      border: `1.5px solid ${BD}`, background: 'transparent',
+                      color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <main className="main-content" style={{
         marginLeft: isMobile ? 0 : 220,
         padding: isMobile ? '72px 16px 32px' : '32px 40px',
@@ -1380,6 +1554,94 @@ function DashboardPageInner() {
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── SSP Alerts panel (agency only) ── */}
+        {isAgencyAccount && sspAlerts.length > 0 && (
+          <div style={{
+            background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+            borderTop: '3px solid #D97706', padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <Ic name="alert" size={15} color="#D97706" />
+              <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: TX }}>
+                SSP Alerts
+              </span>
+              <span style={{
+                fontSize: 11, fontWeight: 700, color: '#D97706', background: '#fffbeb',
+                border: '1px solid #fbbf24', padding: '1px 8px', borderRadius: 50,
+              }}>
+                {sspAlerts.length}
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {sspAlerts.map(a => {
+                const daysSince = Math.floor((Date.now() - new Date(a.reported_at).getTime()) / 86400000)
+                const isCompleted = a.ssp_check_completed
+                return (
+                  <div key={a.id} style={{
+                    display: 'flex', alignItems: isMobile ? 'flex-start' : 'center',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: isMobile ? 6 : 12, padding: '10px 14px',
+                    background: BG, border: `1px solid ${BD}`, borderRadius: 8,
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{a.worker_name}</div>
+                      <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>
+                        {[a.role_title, a.client_company].filter(Boolean).join(' — ')}
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 2 }}>
+                        Reported sick {new Date(a.reported_sick_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        {daysSince > 0 && ` (${daysSince} day${daysSince !== 1 ? 's' : ''} ago)`}
+                      </div>
+                    </div>
+                    <span style={{
+                      display: 'inline-block', padding: '2px 10px', borderRadius: 50,
+                      fontSize: 10, fontWeight: 800, fontFamily: F, flexShrink: 0,
+                      background: isCompleted ? '#e0f7f1' : '#fffbeb',
+                      color: isCompleted ? '#00BFA5' : '#D97706',
+                      border: `1px solid ${isCompleted ? '#00BFA5' : '#fbbf24'}`,
+                    }}>
+                      {isCompleted ? 'Completed' : 'Pending'}
+                    </span>
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      {!isCompleted && (
+                        <button
+                          onClick={() => router.push('/ssp')}
+                          style={{
+                            padding: '6px 14px', borderRadius: 7, border: `1px solid #00BFA5`,
+                            background: '#e0f7f1', fontFamily: F, fontSize: 12, fontWeight: 700,
+                            color: '#0F2137', cursor: 'pointer',
+                          }}
+                        >
+                          Complete SSP Check
+                        </button>
+                      )}
+                      <button
+                        onClick={async () => {
+                          setResolvingAlertId(a.id)
+                          try {
+                            const supabase = createClient()
+                            await supabase.from('ssp_alerts').update({ resolved: true, resolved_at: new Date().toISOString() }).eq('id', a.id)
+                            setSspAlerts(prev => prev.filter(x => x.id !== a.id))
+                          } catch (_) {} finally { setResolvingAlertId(null) }
+                        }}
+                        disabled={resolvingAlertId === a.id}
+                        style={{
+                          padding: '6px 14px', borderRadius: 7, border: `1px solid ${BD}`,
+                          background: CARD, fontFamily: F, fontSize: 12, fontWeight: 700,
+                          color: TX2, cursor: resolvingAlertId === a.id ? 'wait' : 'pointer',
+                          opacity: resolvingAlertId === a.id ? 0.5 : 1,
+                        }}
+                      >
+                        Resolve
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
@@ -2033,6 +2295,29 @@ function DashboardPageInner() {
                             {/* Actions */}
                             <td style={{ padding: '10px 4px', overflow: 'hidden' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                {isAgencyAccount && c.assessments?.employment_type === 'temporary' && (
+                                  <button
+                                    onClick={e => {
+                                      e.stopPropagation()
+                                      setSicknessReported(false)
+                                      setSickDate(new Date().toISOString().slice(0, 10))
+                                      setReportSicknessCandidate(c)
+                                    }}
+                                    title="Report Sickness"
+                                    style={{
+                                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                      height: 30, borderRadius: 7, padding: '0 10px', gap: 5,
+                                      border: `1px solid ${BD}`, background: 'transparent',
+                                      cursor: 'pointer', transition: 'all 0.15s', fontSize: 11, fontWeight: 700,
+                                      fontFamily: F, color: '#D97706',
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = '#fffbeb'; e.currentTarget.style.borderColor = '#D97706' }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = BD }}
+                                  >
+                                    <Ic name="alert" size={12} color="#D97706" />
+                                    Report Sickness
+                                  </button>
+                                )}
                                 <button
                                   onClick={e => { e.stopPropagation(); setConfirmArchive(c) }}
                                   disabled={isArchiving || isDeleting}
