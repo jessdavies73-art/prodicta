@@ -26,6 +26,12 @@ export default function DocumentsPage() {
   const [generated, setGenerated] = useState([])
   const [focusedField, setFocusedField] = useState(null)
 
+  // Candidate search
+  const [allCandidates, setAllCandidates] = useState([])
+  const [candidateSearch, setCandidateSearch] = useState('')
+  const [selectedCandidate, setSelectedCandidate] = useState(null)
+  const [searchFocused, setSearchFocused] = useState(false)
+
   useEffect(() => {
     async function load() {
       const supabase = createClient()
@@ -42,6 +48,28 @@ export default function DocumentsPage() {
         .order('generated_at', { ascending: false })
         .limit(20)
       setGenerated(docs || [])
+
+      // Load candidates for search
+      const { data: assessments } = await supabase
+        .from('assessments')
+        .select('id, role_title, employment_type, created_at')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+      const assessIds = (assessments || []).map(a => a.id)
+      if (assessIds.length > 0) {
+        const { data: cands } = await supabase
+          .from('candidates')
+          .select('id, name, assessment_id, status')
+          .in('assessment_id', assessIds)
+          .in('status', ['completed', 'scored'])
+          .order('name')
+        const merged = (cands || []).map(c => {
+          const a = (assessments || []).find(aa => aa.id === c.assessment_id)
+          return { ...c, role_title: a?.role_title, employment_type: a?.employment_type || 'permanent', assessment_date: a?.created_at }
+        })
+        setAllCandidates(merged)
+      }
+
       setLoading(false)
     }
     load()
@@ -61,6 +89,8 @@ export default function DocumentsPage() {
     tpl.required.forEach(r => { prefilled[r.key] = '' })
     setFieldValues(prefilled)
     setSelectedTemplate(tpl)
+    setCandidateSearch('')
+    setSelectedCandidate(null)
   }
 
   const allRequiredFilled = selectedTemplate ? selectedTemplate.required.every(r => fieldValues[r.key] && fieldValues[r.key].trim()) : false
@@ -151,6 +181,8 @@ export default function DocumentsPage() {
       if (user) {
         const { data: doc } = await supabase.from('generated_documents').insert({
           user_id: user.id,
+          candidate_id: selectedCandidate?.id || null,
+          assessment_id: selectedCandidate?.assessment_id || null,
           template_type: selectedTemplate.id,
           template_name: selectedTemplate.name,
           field_values: fieldValues,
@@ -217,7 +249,7 @@ export default function DocumentsPage() {
             <div style={{ ...cs, marginBottom: 24 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
                 <h2 style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: TX, margin: 0 }}>{selectedTemplate.name}</h2>
-                <button onClick={() => { setSelectedTemplate(null); setFieldValues({}) }} style={{ ...bs('secondary', 'sm') }}>Back to templates</button>
+                <button onClick={() => { setSelectedTemplate(null); setFieldValues({}); setSelectedCandidate(null); setCandidateSearch('') }} style={{ ...bs('secondary', 'sm') }}>Back to templates</button>
               </div>
 
               {selectedTemplate.warning && (
@@ -231,6 +263,84 @@ export default function DocumentsPage() {
                   <p style={{ fontFamily: F, fontSize: 12, color: TX2, margin: 0 }}>{selectedTemplate.legal}</p>
                 </div>
               )}
+
+              {/* Candidate search */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>Search for a candidate or worker (optional)</label>
+                <input
+                  type="text"
+                  value={candidateSearch}
+                  onChange={e => { setCandidateSearch(e.target.value); if (selectedCandidate) setSelectedCandidate(null) }}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+                  placeholder="Type a name to search..."
+                  style={inputStyle('candidateSearch')}
+                />
+                {searchFocused && candidateSearch.length >= 2 && !selectedCandidate && (() => {
+                  const q = candidateSearch.toLowerCase()
+                  const matches = allCandidates.filter(c => c.name.toLowerCase().includes(q)).slice(0, 8)
+                  if (matches.length === 0) return (
+                    <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: '6px 0 0' }}>No candidates found.</p>
+                  )
+                  return (
+                    <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {matches.map(c => (
+                        <button key={c.id}
+                          onMouseDown={e => {
+                            e.preventDefault()
+                            setSelectedCandidate(c)
+                            setCandidateSearch(c.name)
+                            // Auto-fill fields
+                            setFieldValues(prev => {
+                              const next = { ...prev }
+                              if ('worker_name' in next) next.worker_name = c.name
+                              if ('role_title' in next) next.role_title = c.role_title || ''
+                              if ('start_date' in next && c.assessment_date) next.start_date = c.assessment_date.slice(0, 10)
+                              if ('company_name' in next) next.company_name = profile?.company_name || ''
+                              if ('client_company' in next && accountType === 'agency') next.client_company = ''
+                              return next
+                            })
+                          }}
+                          style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                            padding: '8px 14px', borderRadius: 8, border: `1px solid ${BD}`, background: BG,
+                            fontFamily: F, fontSize: 13, color: TX, cursor: 'pointer', textAlign: 'left',
+                            transition: 'background 0.1s',
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = TEALLT}
+                          onMouseLeave={e => e.currentTarget.style.background = BG}
+                        >
+                          <div>
+                            <span style={{ fontWeight: 600 }}>{c.name}</span>
+                            <span style={{ color: TX3, marginLeft: 8, fontSize: 12 }}>{c.role_title || '--'}</span>
+                            {c.assessment_date && <span style={{ color: TX3, marginLeft: 8, fontSize: 11 }}>{new Date(c.assessment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+                          </div>
+                          <span style={{
+                            fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 4,
+                            background: c.employment_type === 'temporary' ? TEALLT : '#f0f4f8',
+                            color: c.employment_type === 'temporary' ? TEALD : NAVY,
+                            letterSpacing: '0.04em',
+                          }}>
+                            {c.employment_type === 'temporary' ? 'TEMP' : 'PERM'}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )
+                })()}
+                {selectedCandidate && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, padding: '8px 14px', background: TEALLT, borderRadius: 8, border: `1px solid ${TEAL}40` }}>
+                    <Ic name="check" size={14} color={TEALD} />
+                    <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD }}>
+                      {selectedCandidate.name} selected — fields pre-filled from their profile.
+                    </span>
+                    <button onClick={() => { setSelectedCandidate(null); setCandidateSearch('') }}
+                      style={{ marginLeft: 'auto', fontFamily: F, fontSize: 11, fontWeight: 600, color: TX3, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>
+                      Clear
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Pre-filled fields */}
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 16 }}>
