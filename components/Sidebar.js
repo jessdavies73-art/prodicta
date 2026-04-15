@@ -14,6 +14,7 @@ function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 const NAV_ITEMS = [
   { key: 'dashboard',    label: 'Dashboard',      icon: 'grid',     href: '/dashboard' },
   { key: 'assessment',   label: 'New assessment', icon: 'plus',     href: '/assessment/new' },
+  { key: 'compare',      label: 'Compare',        icon: 'sliders',  href: '/compare' },
   { key: 'ssp',          label: 'SSP',            icon: 'shield',   href: '/ssp' },
   { key: 'holiday',      label: 'Holiday',        icon: 'calendar', href: '/holiday' },
   { key: 'archive',      label: 'Archive',        icon: 'archive',  href: '/archive' },

@@ -54,6 +54,7 @@ export function DemoBanner() {
 const NAV = [
   { key: 'dashboard',    label: 'Dashboard',      icon: 'grid',     href: '/demo' },
   { key: 'assessment',   label: 'New assessment',  icon: 'plus',     restricted: true },
+  { key: 'compare',      label: 'Compare',         icon: 'sliders',  href: '/demo/compare' },
   { key: 'archive',      label: 'Archive',         icon: 'archive',  href: '/demo/archive' },
   { key: 'settings',     label: 'Settings',        icon: 'settings', href: '/demo/settings' },
 ]
