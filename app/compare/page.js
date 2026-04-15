@@ -5,854 +5,298 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
-import InfoTooltip from '@/components/InfoTooltip'
+import {
+  NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
+  GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
+  F, FM, scolor, sbg, slabel, dL, dC, cs, bs, ps,
+} from '@/lib/constants'
 
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
 const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
 function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
-import {
-  NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
-  GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
-  F, FM, cs, bs, scolor, sbg, sbd, slabel, dL, dC, riskCol, riskBg, riskBd,
-} from '@/lib/constants'
 
-const AMB_GOLD = '#b45309'
-const AMB_GOLD_BG = '#fef3c7'
-
-function scoreColour(s) {
-  if (s === null || s === undefined) return TX3
-  return s >= 75 ? GRN : s >= 50 ? AMB : RED
+function ScoreRing({ score, size = 64, strokeWidth = 5 }) {
+  const r = (size - strokeWidth * 2) / 2
+  const circ = 2 * Math.PI * r
+  const offset = circ * (1 - (score || 0) / 100)
+  const color = scolor(score)
+  return (
+    <svg width={size} height={size} style={{ display: 'block' }}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={BD} strokeWidth={strokeWidth} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={strokeWidth}
+        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
+      <text x="50%" y="50%" textAnchor="middle" dy="0.35em" style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, fill: TX }}>{score ?? '--'}</text>
+    </svg>
+  )
 }
 
-function LoadingSpinner() {
+function CompareContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const isMobile = useIsMobile()
-  const shimmer = {
-    background: 'linear-gradient(90deg, #e4e9f0 25%, #f1f5f9 50%, #e4e9f0 75%)',
-    backgroundSize: '200% 100%',
-    animation: 'shimmer 1.4s infinite',
-    borderRadius: 10,
-  }
-  return (
-    <div style={{ display: 'flex', fontFamily: F }}>
-      <Sidebar active="compare" />
-      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '36px 40px', minHeight: '100vh', background: BG, flex: 1 }}>
-        <div style={{ ...shimmer, height: 34, width: 240, marginBottom: 10 }} />
-        <div style={{ ...shimmer, height: 16, width: 320, marginBottom: 36, borderRadius: 6 }} />
-        <div style={{ ...shimmer, height: 104, marginBottom: 24 }} />
-        <div style={{ display: 'flex', gap: 16 }}>
-          {[0, 1, 2].map(i => (
-            <div key={i} style={{ flex: 1, ...shimmer, height: 420 }} />
-          ))}
-        </div>
-      </main>
-    </div>
-  )
-}
 
-function RiskBadge({ risk }) {
-  if (!risk) return <span style={{ color: TX3, fontSize: 12, fontFamily: F }}>-</span>
-  return (
-    <span style={{
-      display: 'inline-block',
-      padding: '3px 10px',
-      borderRadius: 50,
-      fontSize: 11.5,
-      fontWeight: 700,
-      fontFamily: F,
-      background: riskBg(risk),
-      color: riskCol(risk),
-      border: `1px solid ${riskBd(risk)}`,
-      whiteSpace: 'nowrap',
-    }}>
-      {risk}
-    </span>
-  )
-}
-
-function CandidateSelector({ candidates, selected, onChange, placeholder, usedIds }) {
-  const [open, setOpen] = useState(false)
-  const selectedCand = candidates.find(c => c.id === selected)
+  const [loading, setLoading] = useState(true)
+  const [companyName, setCompanyName] = useState('')
+  const [assessment, setAssessment] = useState(null)
+  const [candidates, setCandidates] = useState([])
+  const [allCandidates, setAllCandidates] = useState([])
+  const [selectedIds, setSelectedIds] = useState(new Set())
 
   useEffect(() => {
-    if (!open) return
-    function handle(e) {
-      if (!e.target.closest(`[data-selector-id="${placeholder}"]`)) setOpen(false)
+    async function load() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
+      const { data: prof } = await supabase.from('users').select('company_name').eq('id', user.id).single()
+      if (prof?.company_name) setCompanyName(prof.company_name)
+
+      const assessmentId = searchParams.get('assessmentId')
+      const idsParam = searchParams.get('ids')
+
+      if (!assessmentId) { setLoading(false); return }
+
+      const { data: assess } = await supabase.from('assessments').select('id, role_title').eq('id', assessmentId).single()
+      setAssessment(assess)
+
+      const { data: allCands } = await supabase
+        .from('candidates')
+        .select('id, name, email, status, results(overall_score, scores, score_narratives, strengths, watchouts, risk_level, hiring_confidence, candidate_type)')
+        .eq('assessment_id', assessmentId)
+        .eq('status', 'scored')
+        .order('name')
+      const scored = (allCands || []).filter(c => c.results && c.results.length > 0)
+      setAllCandidates(scored)
+
+      if (idsParam) {
+        const ids = new Set(idsParam.split(',').filter(Boolean))
+        setSelectedIds(ids)
+        setCandidates(scored.filter(c => ids.has(c.id)))
+      } else {
+        const ids = new Set(scored.map(c => c.id))
+        setSelectedIds(ids)
+        setCandidates(scored)
+      }
+      setLoading(false)
     }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
-  }, [open, placeholder])
+    load()
+  }, [])
 
-  return (
-    <div data-selector-id={placeholder} style={{ position: 'relative', width: '100%' }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '10px 14px',
-          borderRadius: 9,
-          border: `1.5px solid ${open ? TEAL : BD}`,
-          background: CARD,
-          cursor: 'pointer',
-          fontFamily: F,
-          fontSize: 13.5,
-          color: selectedCand ? TX : TX3,
-          fontWeight: selectedCand ? 600 : 400,
-          textAlign: 'left',
-          transition: 'border-color 0.15s',
-        }}
-      >
-        {selectedCand ? (
-          <>
-            <Avatar name={selectedCand.name} size={28} />
-            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {selectedCand.name}
-            </span>
-          </>
-        ) : (
-          <>
-            <Ic name="users" size={15} color={TX3} />
-            <span style={{ flex: 1 }}>{placeholder}</span>
-          </>
-        )}
-        <Ic name={open ? 'left' : 'right'} size={14} color={TX3} />
-      </button>
+  function toggleCandidate(id) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      setCandidates(allCandidates.filter(c => next.has(c.id)))
+      return next
+    })
+  }
 
-      {open && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 6px)',
-          left: 0,
-          right: 0,
-          background: CARD,
-          border: `1.5px solid ${BD}`,
-          borderRadius: 10,
-          boxShadow: '0 8px 24px rgba(15,33,55,0.12)',
-          zIndex: 200,
-          maxHeight: 260,
-          overflowY: 'auto',
-        }}>
-          {selected && (
-            <button
-              onClick={() => { onChange(null); setOpen(false) }}
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: `1px solid ${BD}`,
-                cursor: 'pointer',
-                fontFamily: F,
-                fontSize: 12.5,
-                color: TX3,
-                textAlign: 'left',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
-              <Ic name="x" size={13} color={TX3} />
-              Clear selection
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', minHeight: '100vh', background: BG }}>
+        <Sidebar companyName={companyName} />
+        <main style={{ flex: 1, marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 56 : 0, padding: isMobile ? '24px 16px' : '36px 40px' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', ...cs, height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 28, height: 28, border: `3px solid ${BD}`, borderTopColor: TEAL, borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (!assessment) {
+    return (
+      <div style={{ display: 'flex', minHeight: '100vh', background: BG }}>
+        <Sidebar companyName={companyName} />
+        <main style={{ flex: 1, marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 56 : 0, padding: isMobile ? '24px 16px' : '36px 40px' }}>
+          <div style={{ maxWidth: 600, margin: '0 auto', ...cs, textAlign: 'center', padding: '48px 24px' }}>
+            <Ic name="sliders" size={28} color={BD} />
+            <p style={{ fontFamily: F, fontSize: 14, color: TX3, margin: '12px 0 0' }}>
+              No assessment selected. Open Compare from an assessment page.
+            </p>
+            <button onClick={() => router.push('/dashboard')} style={{ ...bs('primary', 'md'), marginTop: 16 }}>
+              Back to Dashboard
             </button>
-          )}
-          {candidates.map(c => {
-            const isUsed = usedIds.includes(c.id) && c.id !== selected
-            const isSelected = c.id === selected
-            return (
-              <button
-                key={c.id}
-                disabled={isUsed}
-                onClick={() => { if (!isUsed) { onChange(c.id); setOpen(false) } }}
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  background: isSelected ? TEALLT : isUsed ? BG : 'transparent',
-                  border: 'none',
-                  cursor: isUsed ? 'not-allowed' : 'pointer',
-                  fontFamily: F,
-                  fontSize: 13,
-                  color: isUsed ? TX3 : isSelected ? TEALD : TX,
-                  textAlign: 'left',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  opacity: isUsed ? 0.5 : 1,
-                }}
-              >
-                <Avatar name={c.name} size={28} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.name}
-                  </div>
-                  <div style={{ fontSize: 11.5, color: TX3 }}>
-                    {c.assessments?.role_title || '-'}
-                  </div>
-                </div>
-                {c.results?.[0]?.overall_score != null && (
-                  <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: scoreColour(c.results[0].overall_score), flexShrink: 0 }}>
-                    {c.results[0].overall_score}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-          {candidates.length === 0 && (
-            <div style={{ padding: '14px 16px', fontSize: 13, color: TX3, fontFamily: F }}>
-              No completed candidates
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  const SKILLS = ['Communication', 'Problem solving', 'Prioritisation', 'Leadership']
+  const cols = Math.min(candidates.length, isMobile ? 2 : 4)
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', background: BG }}>
+      <Sidebar companyName={companyName} />
+      <main style={{ flex: 1, marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 56 : 0, padding: isMobile ? '24px 16px' : '36px 40px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+            <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 8, border: `1px solid ${BD}`, background: CARD, cursor: 'pointer', flexShrink: 0 }}>
+              <Ic name="left" size={18} color={TX2} />
+            </button>
+            <div>
+              <h1 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: 0 }}>Compare Candidates</h1>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '4px 0 0' }}>{assessment.role_title}</p>
+            </div>
+          </div>
+
+          {/* Candidate selector */}
+          {allCandidates.length > 2 && (
+            <div style={{ ...cs, marginBottom: 20, padding: '14px 20px' }}>
+              <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Select candidates to compare</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {allCandidates.map(c => {
+                  const sel = selectedIds.has(c.id)
+                  return (
+                    <button key={c.id} onClick={() => toggleCandidate(c.id)} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8,
+                      border: `1.5px solid ${sel ? TEAL : BD}`, background: sel ? TEALLT : CARD,
+                      fontFamily: F, fontSize: 12.5, fontWeight: 600, color: sel ? TEALD : TX2, cursor: 'pointer',
+                    }}>
+                      {c.name}
+                      {sel && <Ic name="check" size={12} color={TEALD} />}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
-        </div>
-      )}
-    </div>
-  )
-}
 
-function RadarCompare({ candidates }) {
-  const active = candidates.filter(Boolean)
-  if (active.length < 2) return null
+          {candidates.length === 0 ? (
+            <div style={{ ...cs, textAlign: 'center', padding: '48px 24px' }}>
+              <p style={{ fontFamily: F, fontSize: 14, color: TX3 }}>Select at least one candidate to compare.</p>
+            </div>
+          ) : (
+            <>
+              {/* Score overview */}
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 14, marginBottom: 20 }}>
+                {candidates.map(c => {
+                  const r = c.results[0]
+                  const score = r?.overall_score ?? 0
+                  return (
+                    <div key={c.id} style={{ ...cs, textAlign: 'center', padding: '20px 16px' }}>
+                      <div style={{ marginBottom: 10 }}><Avatar name={c.name} size={40} /></div>
+                      <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 2 }}>{c.name}</div>
+                      <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginBottom: 12 }}>{r?.candidate_type || '--'}</div>
+                      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+                        <ScoreRing score={score} />
+                      </div>
+                      <span style={{ ...ps(sbg(score), scolor(score)), fontSize: 11 }}>{slabel(score)}</span>
+                    </div>
+                  )
+                })}
+              </div>
 
-  // Build unified skill order from all active candidates
-  const seen = new Set()
-  const skillOrder = []
-  for (const cand of active) {
-    for (const k of Object.keys(cand.results?.[0]?.scores ?? {})) {
-      if (!seen.has(k)) { seen.add(k); skillOrder.push(k) }
-    }
-  }
-  if (skillOrder.length < 3) return null
+              {/* Verdict and confidence */}
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 14, marginBottom: 20 }}>
+                {candidates.map(c => {
+                  const r = c.results[0]
+                  const score = r?.overall_score ?? 0
+                  const verdict = dL(score)
+                  const vColor = dC(score)
+                  const hc = r?.hiring_confidence
+                  return (
+                    <div key={c.id} style={{ ...cs, padding: '16px' }}>
+                      <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Verdict</div>
+                      <div style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: vColor, marginBottom: 10 }}>{verdict}</div>
+                      <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Hiring Confidence</div>
+                      <div style={{ fontFamily: FM, fontSize: 18, fontWeight: 800, color: TX }}>
+                        {hc?.score != null ? `${hc.score}%` : '--'}
+                      </div>
+                      {r?.risk_level && (
+                        <div style={{ marginTop: 8 }}>
+                          <span style={{ ...ps(sbg(score), scolor(score)), fontSize: 10 }}>Risk: {r.risk_level}</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
 
-  const n = skillOrder.length
-  const W = 500, H = 320, cx = 250, cy = 155, r = 90, labelR = 122
-  const angle = (i) => -Math.PI / 2 + i * (2 * Math.PI / n)
-  const pt = (i, val) => {
-    const a = angle(i)
-    return [cx + (val / 100) * r * Math.cos(a), cy + (val / 100) * r * Math.sin(a)]
-  }
-  const GRID = [25, 50, 75, 100]
-  const COLOURS = ['#00BFA5', '#6366f1', '#f59e0b']
-  const FILLS   = ['rgba(0,191,165,0.12)', 'rgba(99,102,241,0.12)', 'rgba(245,158,11,0.12)']
-
-  return (
-    <div style={{
-      background: '#fff',
-      border: `1px solid #e2e8f0`,
-      borderRadius: 12,
-      padding: '20px 24px',
-      marginBottom: 24,
-      boxShadow: '0 2px 12px rgba(15,33,55,0.06)',
-    }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 4 }}>
-        Skills Comparison
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 16, flexWrap: 'wrap' }}>
-        {active.map((cand, ci) => (
-          <div key={cand.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 12, height: 12, borderRadius: '50%', background: COLOURS[ci], flexShrink: 0 }} />
-            <span style={{ fontFamily: "'Outfit', system-ui, sans-serif", fontSize: 13, fontWeight: 600, color: '#0f2137' }}>
-              {cand.name}
-            </span>
-          </div>
-        ))}
-      </div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: W, height: 'auto', display: 'block', margin: '0 auto' }}>
-        {/* Grid */}
-        {GRID.map(lv => (
-          <polygon key={lv}
-            points={skillOrder.map((_, i) => pt(i, lv).join(',')).join(' ')}
-            fill={lv === 100 ? 'rgba(0,191,165,0.02)' : 'none'}
-            stroke="rgba(0,0,0,0.07)" strokeWidth={1}
-          />
-        ))}
-        {GRID.slice(0, 3).map(lv => {
-          const [gx, gy] = pt(0, lv)
-          return (
-            <text key={lv} x={gx + 5} y={gy + 4} fontSize={9} fill="rgba(0,0,0,0.28)" fontFamily="system-ui">{lv}</text>
-          )
-        })}
-        {/* Axis lines */}
-        {skillOrder.map((_, i) => {
-          const [ax, ay] = pt(i, 100)
-          return <line key={i} x1={cx} y1={cy} x2={ax} y2={ay} stroke="rgba(0,0,0,0.09)" strokeWidth={1} />
-        })}
-        {/* Data polygons per candidate (back to front) */}
-        {[...active].reverse().map((cand, rci) => {
-          const ci = active.length - 1 - rci
-          const scores = cand.results?.[0]?.scores ?? {}
-          const pts = skillOrder.map((sk, i) => pt(i, scores[sk] ?? 0).join(',')).join(' ')
-          return (
-            <polygon key={cand.id} points={pts}
-              fill={FILLS[ci]} stroke={COLOURS[ci]} strokeWidth={2} strokeLinejoin="round" opacity={0.9}
-            />
-          )
-        })}
-        {/* Data point dots */}
-        {active.map((cand, ci) => {
-          const scores = cand.results?.[0]?.scores ?? {}
-          return skillOrder.map((sk, i) => {
-            const [px, py] = pt(i, scores[sk] ?? 0)
-            return <circle key={`${cand.id}-${sk}`} cx={px} cy={py} r={3.5} fill={COLOURS[ci]} stroke="white" strokeWidth={1.5} />
-          })
-        })}
-        {/* Axis labels */}
-        {skillOrder.map((skill, i) => {
-          const a = angle(i)
-          const lx = cx + labelR * Math.cos(a)
-          const ly = cy + labelR * Math.sin(a)
-          const ca = Math.cos(a), sa = Math.sin(a)
-          const anchor = ca > 0.25 ? 'start' : ca < -0.25 ? 'end' : 'middle'
-          const nameY = sa > 0.25 ? ly : sa < -0.25 ? ly - 12 : ly - 5
-          return (
-            <text key={i} x={lx} y={nameY} textAnchor={anchor} fontSize={11} fontWeight="700"
-              fontFamily="Outfit, system-ui, sans-serif" fill="#0f2137">
-              {skill}
-            </text>
-          )
-        })}
-      </svg>
-    </div>
-  )
-}
-
-function PlaceholderColumn({ label }) {
-  return (
-    <div style={{
-      flex: 1,
-      minWidth: 0,
-      background: BG,
-      border: `2px dashed ${BD}`,
-      borderRadius: 14,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '48px 24px',
-      gap: 12,
-      minHeight: 300,
-    }}>
-      <div style={{
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        background: CARD,
-        border: `1px solid ${BD}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <Ic name="users" size={20} color={TX3} />
-      </div>
-      <span style={{ fontSize: 13, color: TX3, fontFamily: F, textAlign: 'center' }}>{label}</span>
-    </div>
-  )
-}
-
-function CandidateColumn({ candidate, allScores, skillOrder, assessmentId }) {
-  const router = useRouter()
-  const result = candidate.results?.[0]
-  const score = result?.overall_score ?? null
-  const pf = result?.pressure_fit_score ?? null
-  const pfDims = result?.pressure_fit ?? null
-  const risk = result?.risk_level ?? null
-  const percentile = result?.percentile ?? null
-  const scores = result?.scores ?? {}
-  const strengths = result?.strengths ?? []
-  const watchouts = result?.watchouts ?? []
-  const hiringDecision = score !== null ? dL(score) : null
-  const hiringColor = score !== null ? dC(score) : TX3
-
-  const candidateAssessmentId = assessmentId || candidate.assessment_id
-
-  return (
-    <div style={{
-      flex: 1,
-      minWidth: 0,
-      background: CARD,
-      border: `1.5px solid ${BD}`,
-      borderRadius: 14,
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: '20px 20px 16px',
-        borderBottom: `1px solid ${BD}`,
-        background: NAVY,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 10,
-      }}>
-        <Avatar name={candidate.name} size={28} />
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 3 }}>
-            {candidate.name}
-          </div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
-            {candidate.assessments?.role_title || '-'}
-          </div>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 18, flex: 1 }}>
-
-        {/* Overall score ring */}
-        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-          {score !== null ? (() => {
-            const sz = 96, sw = 8, r = (sz - sw) / 2
-            const circ = 2 * Math.PI * r
-            const dash = (score / 100) * circ
-            const col = scoreColour(score)
-            return (
-              <div style={{ position: 'relative', width: sz, height: sz }}>
-                <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)' }}>
-                  <circle cx={sz/2} cy={sz/2} r={r} fill="none" stroke={`${col}22`} strokeWidth={sw} />
-                  <circle cx={sz/2} cy={sz/2} r={r} fill="none" stroke={col} strokeWidth={sw}
-                    strokeDasharray={`${dash} ${circ - dash}`} strokeLinecap="round"
-                    style={{ transition: 'stroke-dasharray 0.6s ease' }} />
-                </svg>
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: col, lineHeight: 1 }}>{score}</span>
-                  <span style={{ fontSize: 10, color: TX3, marginTop: 1 }}>/100</span>
+              {/* Skills breakdown */}
+              <div style={{ ...cs, marginBottom: 20 }}>
+                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 14 }}>Skills Breakdown</div>
+                {SKILLS.map(skill => (
+                  <div key={skill} style={{ marginBottom: 14 }}>
+                    <div style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: TX2, marginBottom: 6 }}>{skill}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 10 }}>
+                      {candidates.map(c => {
+                        const r = c.results[0]
+                        const scores = r?.scores || {}
+                        const val = scores[skill] ?? scores[skill.toLowerCase()] ?? '--'
+                        const num = typeof val === 'number' ? val : null
+                        return (
+                          <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ flex: 1, height: 6, background: BG, borderRadius: 3, overflow: 'hidden' }}>
+                              {num != null && <div style={{ width: `${num}%`, height: '100%', background: scolor(num), borderRadius: 3, transition: 'width 0.3s' }} />}
+                            </div>
+                            <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: num != null ? scolor(num) : TX3, minWidth: 28, textAlign: 'right' }}>
+                              {num ?? '--'}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 10, marginTop: 6 }}>
+                  {candidates.map(c => (
+                    <div key={c.id} style={{ fontFamily: F, fontSize: 11, fontWeight: 600, color: TX3, textAlign: 'center' }}>{c.name}</div>
+                  ))}
                 </div>
               </div>
-            )
-          })() : (
-            <div style={{ fontFamily: FM, fontSize: 40, fontWeight: 800, color: TX3, lineHeight: 1 }}>,</div>
-          )}
-          <div style={{ fontSize: 12, color: TX3 }}>
-            {score !== null ? slabel(score) : 'No score'}
-          </div>
-        </div>
 
-        {/* Hiring decision */}
-        {hiringDecision && (
-          <div style={{
-            textAlign: 'center',
-            padding: '10px 12px',
-            background: sbg(score),
-            border: `1px solid ${sbd(score)}`,
-            borderRadius: 9,
-          }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: hiringColor, lineHeight: 1.2 }}>
-              {hiringDecision}
-            </div>
-            <div style={{ fontSize: 11, color: TX3, marginTop: 3 }}>Hiring decision</div>
-          </div>
-        )}
-
-        {/* Risk + percentile */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, alignItems: 'center' }}>
-          <RiskBadge risk={risk} />
-          {percentile && (
-            <span style={{
-              fontFamily: F,
-              fontSize: 11.5,
-              fontWeight: 600,
-              color: TEALD,
-              background: TEALLT,
-              border: `1px solid ${TEAL}55`,
-              borderRadius: 20,
-              padding: '3px 10px',
-              whiteSpace: 'nowrap',
-            }}>
-              {percentile} of candidates
-            </span>
-          )}
-        </div>
-
-        {/* Pressure-Fit Assessment */}
-        {pf !== null && (() => {
-          const pfColor = pf >= 80 ? GRN : pf >= 55 ? TEALD : RED
-          const pfLabel = pf >= 80 ? 'Strong' : pf >= 55 ? 'Moderate' : 'Concern'
-
-          const DIMS = [
-            { key: 'decision_speed_quality',   short: 'Decision Speed' },
-            { key: 'composure_under_conflict',  short: 'Composure' },
-            { key: 'prioritisation_under_load', short: 'Prioritisation' },
-            { key: 'ownership_accountability',  short: 'Ownership' },
-          ]
-
-          function dimColor(s) {
-            if (s == null) return TX3
-            return s >= 80 ? GRN : s >= 55 ? TEALD : RED
-          }
-
-          return (
-            <div style={{
-              background: `linear-gradient(135deg, #0f2137 0%, #0d3349 100%)`,
-              border: '1px solid rgba(91,191,189,0.2)',
-              borderRadius: 10, padding: '12px 14px',
-            }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
-                Pressure-Fit
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 10 }}>
-                <span style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: pfColor, lineHeight: 1 }}>{pf}</span>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>/100</span>
-                <span style={{ fontSize: 11.5, fontWeight: 700, color: pfColor, marginLeft: 4 }}>{pfLabel}</span>
-              </div>
-              {pfDims && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                  {DIMS.map(({ key, short }) => {
-                    const s = pfDims[key]?.score ?? null
-                    const dc = dimColor(s)
+              {/* Strengths */}
+              <div style={{ ...cs, marginBottom: 20 }}>
+                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 14 }}>Top Strengths</div>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(cols, isMobile ? 1 : 4)}, 1fr)`, gap: 14 }}>
+                  {candidates.map(c => {
+                    const r = c.results[0]
+                    const strengths = r?.strengths || []
                     return (
-                      <div key={key}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{short}</span>
-                          <span style={{ fontFamily: FM, fontSize: 11.5, fontWeight: 700, color: dc }}>{s ?? '-'}</span>
-                        </div>
-                        <div style={{ height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-                          {s != null && (
-                            <div style={{ height: '100%', width: `${s}%`, background: dc, borderRadius: 99, opacity: 0.8 }} />
-                          )}
-                        </div>
+                      <div key={c.id}>
+                        <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX2, marginBottom: 8 }}>{c.name}</div>
+                        {strengths.length === 0 ? (
+                          <p style={{ fontFamily: F, fontSize: 12, color: TX3 }}>No strengths data</p>
+                        ) : strengths.slice(0, 3).map((s, i) => (
+                          <div key={i} style={{ borderLeft: `3px solid ${TEAL}`, paddingLeft: 10, marginBottom: 8 }}>
+                            <div style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: TX }}>{typeof s === 'string' ? s : s.label || s.title || '--'}</div>
+                          </div>
+                        ))}
                       </div>
                     )
                   })}
                 </div>
-              )}
-            </div>
-          )
-        })()}
-
-        <div style={{ height: 1, background: BD }} />
-
-        {/* Skills breakdown */}
-        <div>
-          <div style={{
-            fontSize: 11, fontWeight: 700, color: TX3,
-            letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12,
-          }}>
-            Skill scores
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {skillOrder.map(skill => {
-              const s = scores[skill] ?? null
-              const vals = allScores[skill] ?? []
-              const maxVal = vals.length > 0 ? Math.max(...vals.filter(v => v !== null)) : null
-              const isTop = s !== null && s === maxVal && vals.filter(v => v === maxVal).length === 1
-
-              return (
-                <div key={skill}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5, gap: 6 }}>
-                    <span style={{
-                      fontSize: 12, fontWeight: isTop ? 700 : 500,
-                      color: isTop ? TX : TX2, flex: 1,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {skill}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
-                      {isTop && (
-                        <svg width={13} height={13} viewBox="0 0 24 24" fill={AMB_GOLD} stroke={AMB_GOLD} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                        </svg>
-                      )}
-                      <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: s !== null ? scoreColour(s) : TX3 }}>
-                        {s ?? '-'}
-                      </span>
-                    </div>
-                  </div>
-                  <div style={{ height: 6, borderRadius: 4, background: BD, overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%',
-                      width: s !== null ? `${s}%` : '0%',
-                      background: s !== null ? `linear-gradient(90deg, ${scoreColour(s)}88, ${scoreColour(s)})` : 'transparent',
-                      borderRadius: 4,
-                      transition: 'width 0.4s ease',
-                    }} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        <div style={{ height: 1, background: BD }} />
-
-        {/* Strengths + watchouts counts */}
-        <div style={{ display: 'flex', gap: 10 }}>
-          <div style={{
-            flex: 1, background: GRNBG, border: `1px solid ${GRNBD}`,
-            borderRadius: 9, padding: '10px 12px', textAlign: 'center',
-          }}>
-            <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: GRN, lineHeight: 1 }}>
-              {strengths.length}
-            </div>
-            <div style={{ fontSize: 11, color: GRN, marginTop: 4, fontWeight: 600 }}>
-              Strength{strengths.length !== 1 ? 's' : ''}
-            </div>
-          </div>
-          <div style={{
-            flex: 1,
-            background: watchouts.length > 0 ? REDBG : BG,
-            border: `1px solid ${watchouts.length > 0 ? REDBD : BD}`,
-            borderRadius: 9, padding: '10px 12px', textAlign: 'center',
-          }}>
-            <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: watchouts.length > 0 ? RED : TX3, lineHeight: 1 }}>
-              {watchouts.length}
-            </div>
-            <div style={{ fontSize: 11, color: watchouts.length > 0 ? RED : TX3, marginTop: 4, fontWeight: 600 }}>
-              Watch-out{watchouts.length !== 1 ? 's' : ''}
-            </div>
-          </div>
-        </div>
-
-        {/* View full report */}
-        {candidateAssessmentId && (
-          <button
-            onClick={() => router.push(`/assessment/${candidateAssessmentId}/candidate/${candidate.id}`)}
-            style={{
-              width: '100%',
-              padding: '10px 0',
-              background: TEALLT,
-              border: `1.5px solid ${TEAL}55`,
-              borderRadius: 9,
-              cursor: 'pointer',
-              fontFamily: F,
-              fontSize: 13,
-              fontWeight: 700,
-              color: TEALD,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 7,
-            }}
-          >
-            <Ic name="eye" size={14} color={TEALD} />
-            View full report
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ── Main page ──────────────────────────────────────────────────────────────
-
-function ComparePageInner() {
-  const router = useRouter()
-  const isMobile = useIsMobile()
-  const searchParams = useSearchParams()
-  const presetAssessmentId = searchParams.get('assessmentId')
-
-  const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState(null)
-  const [allCandidates, setAllCandidates] = useState([])
-  const [assessments, setAssessments] = useState([])
-  const [selectedAssessmentId, setSelectedAssessmentId] = useState(presetAssessmentId || '')
-  const [selected, setSelected] = useState([null, null, null])
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const supabase = createClient()
-        const { data: { user }, error: authErr } = await supabase.auth.getUser()
-        if (authErr || !user) { router.push('/login'); return }
-
-        const { data: prof } = await supabase.from('users').select('*').eq('id', user.id).single()
-        setProfile({ ...prof, id: user.id })
-
-        const [{ data: cands, error: candsErr }, { data: asmts }] = await Promise.all([
-          supabase
-            .from('candidates')
-            .select('*, assessments(id, role_title), results(overall_score, scores, risk_level, percentile, strengths, watchouts, pressure_fit_score, pressure_fit)')
-            .eq('user_id', user.id)
-            .eq('status', 'completed'),
-          supabase
-            .from('assessments')
-            .select('id, role_title')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false }),
-        ])
-
-        if (candsErr) throw candsErr
-        setAllCandidates(cands || [])
-        setAssessments(asmts || [])
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [router])
-
-  // Reset candidate selections when assessment filter changes
-  function handleAssessmentChange(id) {
-    setSelectedAssessmentId(id)
-    setSelected([null, null, null])
-  }
-
-  function handleSelect(idx, id) {
-    setSelected(prev => { const next = [...prev]; next[idx] = id; return next })
-  }
-
-  if (loading) return <LoadingSpinner />
-
-  // Filter candidates by selected assessment
-  const candidates = selectedAssessmentId
-    ? allCandidates.filter(c => c.assessments?.id === selectedAssessmentId || c.assessment_id === selectedAssessmentId)
-    : allCandidates
-
-  const selectedCandidates = selected.map(id => id ? candidates.find(c => c.id === id) : null)
-
-  const skillOrder = (() => {
-    const seen = new Set()
-    const order = []
-    for (const cand of selectedCandidates) {
-      if (!cand) continue
-      for (const k of Object.keys(cand.results?.[0]?.scores ?? {})) {
-        if (!seen.has(k)) { seen.add(k); order.push(k) }
-      }
-    }
-    return order
-  })()
-
-  const allScores = {}
-  for (const skill of skillOrder) {
-    allScores[skill] = selectedCandidates.map(c => c?.results?.[0]?.scores?.[skill] ?? null)
-  }
-
-  const usedIds = selected.filter(Boolean)
-  const activeCount = selectedCandidates.filter(Boolean).length
-
-  return (
-    <div style={{ display: 'flex', fontFamily: F }}>
-      <Sidebar active="compare" companyName={profile?.company_name} />
-      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '36px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
-
-        {/* Header */}
-        <div style={{ marginBottom: 28 }}>
-          <h1 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            Compare Candidates <InfoTooltip text="Side-by-side comparison of up to 3 candidates across all metrics." />
-          </h1>
-          <p style={{ margin: 0, fontSize: 14, color: TX2 }}>
-            Select up to 3 completed candidates to compare side by side.
-          </p>
-        </div>
-
-        {error && (
-          <div style={{
-            background: REDBG, border: `1px solid ${REDBD}`, color: RED,
-            borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10,
-            marginBottom: 20, padding: '14px 18px',
-          }}>
-            <Ic name="alert" size={16} color={RED} />
-            <span style={{ fontSize: 13.5, fontWeight: 600 }}>{error}</span>
-          </div>
-        )}
-
-        {/* Filter + selector bar */}
-        <div style={{
-          background: CARD, border: `1px solid ${BD}`, borderRadius: 12,
-          padding: '16px 18px', marginBottom: 24,
-          display: 'flex', flexDirection: 'column', gap: 14,
-        }}>
-          {/* Assessment filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-              <Ic name="layers" size={15} color={TEALD} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: TX2, whiteSpace: 'nowrap' }}>Filter by assessment</span>
-            </div>
-            <select
-              value={selectedAssessmentId}
-              onChange={e => handleAssessmentChange(e.target.value)}
-              style={{
-                flex: 1,
-                maxWidth: 340,
-                padding: '8px 12px',
-                borderRadius: 8,
-                border: `1.5px solid ${BD}`,
-                fontFamily: F,
-                fontSize: 13.5,
-                color: TX,
-                background: BG,
-                cursor: 'pointer',
-              }}
-            >
-              <option value="">All assessments</option>
-              {assessments.map(a => (
-                <option key={a.id} value={a.id}>{a.role_title}</option>
-              ))}
-            </select>
-            {selectedAssessmentId && (
-              <span style={{ fontSize: 12.5, color: TX3 }}>
-                {candidates.length} completed candidate{candidates.length !== 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
-
-          {/* Candidate selectors */}
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-              <Ic name="sliders" size={15} color={TEALD} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: TX2, whiteSpace: 'nowrap' }}>Select candidates</span>
-            </div>
-            {[0, 1, 2].map(idx => (
-              <div key={idx} style={{ flex: 1, minWidth: 0 }}>
-                <CandidateSelector
-                  candidates={candidates}
-                  selected={selected[idx]}
-                  onChange={id => handleSelect(idx, id)}
-                  placeholder={`Candidate ${idx + 1}`}
-                  usedIds={usedIds}
-                />
               </div>
-            ))}
-          </div>
+
+              {/* Watch-outs */}
+              <div style={{ ...cs, marginBottom: 20 }}>
+                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 14 }}>Watch-outs</div>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(cols, isMobile ? 1 : 4)}, 1fr)`, gap: 14 }}>
+                  {candidates.map(c => {
+                    const r = c.results[0]
+                    const watchouts = r?.watchouts || []
+                    return (
+                      <div key={c.id}>
+                        <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX2, marginBottom: 8 }}>{c.name}</div>
+                        {watchouts.length === 0 ? (
+                          <p style={{ fontFamily: F, fontSize: 12, color: TX3 }}>No watch-outs</p>
+                        ) : watchouts.slice(0, 3).map((w, i) => (
+                          <div key={i} style={{ borderLeft: `3px solid ${AMB}`, paddingLeft: 10, marginBottom: 8 }}>
+                            <div style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: TX }}>{typeof w === 'string' ? w : w.label || w.title || '--'}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
-
-        {/* Notice if fewer than 2 selected */}
-        {activeCount < 2 && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
-            borderRadius: 9, background: TEALLT, border: `1px solid ${TEAL}55`,
-            marginBottom: 22, fontSize: 13.5, color: TEALD, fontWeight: 600,
-          }}>
-            <Ic name="info" size={16} color={TEALD} />
-            Select at least 2 candidates to start comparing.
-          </div>
-        )}
-
-        <RadarCompare candidates={selectedCandidates} />
-
-        {/* Comparison columns */}
-        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-          {[0, 1, 2].map(idx => {
-            const cand = selectedCandidates[idx]
-            if (cand) {
-              return (
-                <CandidateColumn
-                  key={cand.id}
-                  candidate={cand}
-                  allScores={allScores}
-                  skillOrder={skillOrder}
-                  assessmentId={selectedAssessmentId || cand.assessments?.id}
-                />
-              )
-            }
-            return (
-              <PlaceholderColumn
-                key={idx}
-                label={activeCount < 2
-                  ? `Select candidate ${idx + 1}`
-                  : `Add a ${idx === 2 ? 'third' : 'second'} candidate`}
-              />
-            )
-          })}
-        </div>
-
       </main>
     </div>
   )
@@ -860,8 +304,12 @@ function ComparePageInner() {
 
 export default function ComparePage() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
-      <ComparePageInner />
+    <Suspense fallback={
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#f7f9fb', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 28, height: 28, border: '3px solid #e4e9f0', borderTopColor: '#00BFA5', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+      </div>
+    }>
+      <CompareContent />
     </Suspense>
   )
 }

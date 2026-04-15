@@ -1,579 +1,272 @@
 'use client'
-import { useState, useEffect, useSyncExternalStore } from 'react'
+import { useState, useEffect, useMemo, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
-import InfoTooltip from '@/components/InfoTooltip'
+import {
+  NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
+  GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
+  F, FM, scolor, sbg, slabel, cs, bs, ps,
+} from '@/lib/constants'
 
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
 const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
 function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
-import {
-  NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
-  GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
-  F, FM, cs, bs,
-} from '@/lib/constants'
-
-const DEFAULT_SKILLS = ['Communication', 'Problem solving', 'Prioritisation', 'Leadership']
-
-const thresholdColor = v => v >= 75 ? GRN : v >= 50 ? AMB : RED
-const thresholdBg = v => v >= 75 ? GRNBG : v >= 50 ? AMBBG : REDBG
-const thresholdBd = v => v >= 75 ? GRNBD : v >= 50 ? AMBBD : REDBD
-const thresholdLabel = v => v >= 75 ? 'High bar' : v >= 50 ? 'Moderate bar' : 'Low bar'
-
-function LoadingSpinner() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: BG }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{
-          width: 44, height: 44,
-          border: `3px solid ${BD}`,
-          borderTop: `3px solid ${TEAL}`,
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
-          margin: '0 auto 16px',
-        }} />
-        <div style={{ color: TX2, fontSize: 14, fontFamily: F }}>Loading benchmarks…</div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    </div>
-  )
-}
-
-// candidateData: [{ name, id, assessmentId, score }]
-function SkillRow({ skill, threshold, onChange, candidateData, router }) {
-  const [expanded, setExpanded] = useState(null) // null | 'passing' | 'flagged'
-
-  const isSet = threshold !== null && threshold !== undefined
-  const val = isSet ? threshold : 70
-
-  const col = thresholdColor(val)
-  const bg = thresholdBg(val)
-  const bd = thresholdBd(val)
-
-  const passing = isSet ? candidateData.filter(c => c.score >= val) : []
-  const flagged  = isSet ? candidateData.filter(c => c.score < val)  : []
-  const total    = candidateData.length
-
-  function togglePanel(panel) {
-    setExpanded(prev => prev === panel ? null : panel)
-  }
-
-  return (
-    <div style={{
-      background: CARD,
-      border: `1px solid ${isSet ? col + '55' : BD}`,
-      borderRadius: 12,
-      overflow: 'hidden',
-      transition: 'border-color 0.2s',
-    }}>
-      <div style={{ padding: '20px 24px' }}>
-        {/* Top row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: TX, fontFamily: F }}>{skill}</span>
-            {isSet && (
-              <span style={{
-                fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 20,
-                background: bg, color: col, border: `1px solid ${bd}`,
-              }}>
-                {thresholdLabel(val)}
-              </span>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {isSet && (
-              <div style={{
-                fontFamily: FM, fontSize: 22, fontWeight: 800, color: col,
-                lineHeight: 1, minWidth: 36, textAlign: 'right',
-              }}>
-                {val}
-              </div>
-            )}
-            <button
-              onClick={() => onChange(isSet ? null : 70)}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '6px 12px', borderRadius: 7,
-                border: `1.5px solid ${isSet ? col : BD}`,
-                background: isSet ? bg : 'transparent',
-                color: isSet ? col : TX3,
-                fontFamily: F, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                transition: 'all 0.15s', whiteSpace: 'nowrap',
-              }}
-            >
-              {isSet ? (
-                <><Ic name="x" size={12} color={col} />Remove threshold</>
-              ) : (
-                <><Ic name="sliders" size={12} color={TX3} />Set threshold</>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {isSet ? (
-          <>
-            {/* Slider */}
-            <div style={{ marginBottom: 10 }}>
-              <style>{`
-                .bm-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 6px; outline: none; cursor: pointer; }
-                .bm-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: ${col}; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2); cursor: pointer; transition: background 0.2s; }
-                .bm-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: ${col}; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2); cursor: pointer; }
-              `}</style>
-              <input
-                type="range" min={0} max={100} value={val}
-                onChange={e => onChange(Number(e.target.value))}
-                className="bm-slider"
-                style={{ background: `linear-gradient(to right, ${col} 0%, ${col} ${val}%, ${BD} ${val}%, ${BD} 100%)` }}
-              />
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 11, color: TX3, fontFamily: FM }}>
-                <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
-              </div>
-            </div>
-
-            {/* Number input + candidate pills */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 13, color: TX2, fontFamily: F }}>Minimum score:</span>
-                <input
-                  type="number" min={0} max={100} value={val}
-                  onChange={e => onChange(Math.max(0, Math.min(100, Number(e.target.value))))}
-                  style={{
-                    fontFamily: FM, fontSize: 14, fontWeight: 700,
-                    width: 64, padding: '5px 8px', borderRadius: 7,
-                    border: `1.5px solid ${col}`, background: bg,
-                    color: col, outline: 'none', textAlign: 'center',
-                  }}
-                />
-                <span style={{ fontSize: 13, color: TX2, fontFamily: F }}>out of 100</span>
-              </div>
-
-              {/* Live candidate pills , clickable */}
-              {total > 0 && (
-                <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-                  <button
-                    onClick={() => togglePanel('passing')}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 5,
-                      fontSize: 12, fontWeight: 700,
-                      padding: '4px 10px', borderRadius: 20, cursor: 'pointer',
-                      background: expanded === 'passing' ? GRN : GRNBG,
-                      color: expanded === 'passing' ? '#fff' : GRN,
-                      border: `1px solid ${GRNBD}`,
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    <Ic name="check" size={11} color={expanded === 'passing' ? '#fff' : GRN} />
-                    {passing.length} pass
-                    <Ic name={expanded === 'passing' ? 'chevron-up' : 'chevron-down'} size={10} color={expanded === 'passing' ? '#fff' : GRN} />
-                  </button>
-                  {flagged.length > 0 && (
-                    <button
-                      onClick={() => togglePanel('flagged')}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 5,
-                        fontSize: 12, fontWeight: 700,
-                        padding: '4px 10px', borderRadius: 20, cursor: 'pointer',
-                        background: expanded === 'flagged' ? RED : REDBG,
-                        color: expanded === 'flagged' ? '#fff' : RED,
-                        border: `1px solid ${REDBD}`,
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      <Ic name="alert" size={11} color={expanded === 'flagged' ? '#fff' : RED} />
-                      {flagged.length} flagged
-                      <Ic name={expanded === 'flagged' ? 'chevron-up' : 'chevron-down'} size={10} color={expanded === 'flagged' ? '#fff' : RED} />
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '12px 14px', borderRadius: 8,
-            background: BG, border: `1px dashed ${BD}`,
-          }}>
-            <Ic name="info" size={14} color={TX3} />
-            <span style={{ fontSize: 13, color: TX3, fontFamily: F }}>
-              No threshold set. Candidates will not be flagged for this skill.
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* ── Expandable candidate panel ── */}
-      {isSet && expanded && (
-        <div style={{
-          borderTop: `1px solid ${expanded === 'flagged' ? REDBD : GRNBD}`,
-          background: expanded === 'flagged' ? '#fff8f8' : '#f6fffe',
-          padding: '16px 24px',
-        }}>
-          {expanded === 'flagged' ? (
-            <>
-              <div style={{ fontSize: 12, fontWeight: 700, color: RED, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Flagged: scored below {val}
-              </div>
-              {flagged.length === 0 ? (
-                <div style={{ fontSize: 13, color: TX3 }}>No candidates flagged.</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {flagged
-                    .slice()
-                    .sort((a, b) => a.score - b.score)
-                    .map(c => {
-                      const delta = val - c.score
-                      return (
-                        <div key={c.id} style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '10px 14px', borderRadius: 8,
-                          background: CARD, border: `1px solid ${REDBD}`,
-                          gap: 12,
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                            <Avatar name={c.name} size={28} />
-                            <div style={{ minWidth: 0 }}>
-                              <div style={{
-                                fontSize: 13.5, fontWeight: 600, color: TX,
-                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                              }}>
-                                {c.name}
-                              </div>
-                              <div style={{ fontSize: 12, color: RED, marginTop: 1 }}>
-                                {delta} point{delta !== 1 ? 's' : ''} below threshold
-                              </div>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                            <div style={{
-                              fontFamily: FM, fontSize: 20, fontWeight: 800, color: RED, lineHeight: 1,
-                            }}>
-                              {c.score}
-                            </div>
-                            {c.assessmentId && (
-                              <button
-                                onClick={() => router.push(`/assessment/${c.assessmentId}/candidate/${c.id}`)}
-                                style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                                  padding: '5px 10px', borderRadius: 6,
-                                  border: `1px solid ${BD}`, background: CARD,
-                                  color: TX2, fontSize: 12, fontWeight: 600,
-                                  cursor: 'pointer', fontFamily: F,
-                                }}
-                              >
-                                View report
-                                <Ic name="right" size={11} color={TX3} />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div style={{ fontSize: 12, fontWeight: 700, color: GRN, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Passing: scored {val} or above
-              </div>
-              {passing.length === 0 ? (
-                <div style={{ fontSize: 13, color: TX3 }}>No candidates passing yet.</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {passing
-                    .slice()
-                    .sort((a, b) => b.score - a.score)
-                    .map(c => (
-                      <div key={c.id} style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '10px 14px', borderRadius: 8,
-                        background: CARD, border: `1px solid ${GRNBD}`,
-                        gap: 12,
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                          <Avatar name={c.name} size={28} />
-                          <div style={{
-                            fontSize: 13.5, fontWeight: 600, color: TX,
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                          }}>
-                            {c.name}
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                          <div style={{
-                            fontFamily: FM, fontSize: 20, fontWeight: 800, color: GRN, lineHeight: 1,
-                          }}>
-                            {c.score}
-                          </div>
-                          {c.assessmentId && (
-                            <button
-                              onClick={() => router.push(`/assessment/${c.assessmentId}/candidate/${c.id}`)}
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 5,
-                                padding: '5px 10px', borderRadius: 6,
-                                border: `1px solid ${BD}`, background: CARD,
-                                color: TX2, fontSize: 12, fontWeight: 600,
-                                cursor: 'pointer', fontFamily: F,
-                              }}
-                            >
-                              View report
-                              <Ic name="right" size={11} color={TX3} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
 
 export default function BenchmarksPage() {
   const router = useRouter()
   const isMobile = useIsMobile()
+
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [profile, setProfile] = useState(null)
-  const [thresholds, setThresholds] = useState({})
-  const [candidateDataMap, setCandidateDataMap] = useState({})
-  const [saved, setSaved] = useState(false)
-  const [error, setError] = useState(null)
+  const [companyName, setCompanyName] = useState('')
+  const [assessments, setAssessments] = useState([])
+  const [candidates, setCandidates] = useState([])
 
   useEffect(() => {
     async function load() {
-      try {
-        const supabase = createClient()
-        const { data: { user }, error: authErr } = await supabase.auth.getUser()
-        if (authErr || !user) { router.push('/login'); return }
-
-        const { data: prof } = await supabase.from('users').select('*').eq('id', user.id).single()
-        setProfile({ ...prof, id: user.id })
-
-        // Load saved benchmarks
-        const { data: benchmarks } = await supabase
-          .from('benchmarks')
-          .select('*')
-          .eq('user_id', user.id)
-
-        const initial = {}
-        if (benchmarks) {
-          for (const b of benchmarks) initial[b.skill_name] = b.threshold ?? null
-        }
-        for (const skill of DEFAULT_SKILLS) {
-          if (!(skill in initial)) initial[skill] = null
-        }
-        setThresholds(initial)
-
-        // Load completed candidate skill scores with candidate info for expandable lists
-        const { data: results } = await supabase
-          .from('results')
-          .select('scores, candidates!inner(id, name, user_id, assessments(id))')
-          .eq('candidates.user_id', user.id)
-
-        const dataMap = {}
-        for (const skill of DEFAULT_SKILLS) dataMap[skill] = []
-
-        if (results) {
-          for (const r of results) {
-            const scores = r.scores || {}
-            const cand = r.candidates
-            if (!cand) continue
-            const assessmentId = cand.assessments?.id ?? null
-
-            for (const [skill, scoreVal] of Object.entries(scores)) {
-              if (!dataMap[skill]) dataMap[skill] = []
-              const numScore = typeof scoreVal === 'number' ? scoreVal : scoreVal?.score ?? 0
-              dataMap[skill].push({
-                name: cand.name,
-                id: cand.id,
-                assessmentId,
-                score: numScore,
-              })
-            }
-          }
-        }
-        setCandidateDataMap(dataMap)
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [router])
-
-  function handleChange(skill, val) {
-    setThresholds(prev => ({ ...prev, [skill]: val }))
-    setSaved(false)
-  }
-
-  async function handleSave() {
-    setSaving(true)
-    setError(null)
-    try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      for (const skill of DEFAULT_SKILLS) {
-        await supabase.from('benchmarks').upsert(
-          {
-            user_id: user.id,
-            skill_name: skill,
-            threshold: thresholds[skill] ?? null,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'user_id,skill_name' }
-        )
-      }
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSaving(false)
+      if (!user) { router.push('/login'); return }
+      const { data: prof } = await supabase.from('users').select('company_name').eq('id', user.id).single()
+      if (prof?.company_name) setCompanyName(prof.company_name)
+
+      const { data: assess } = await supabase
+        .from('assessments')
+        .select('id, role_title, detected_role_type')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+      setAssessments(assess || [])
+
+      const { data: cands } = await supabase
+        .from('candidates')
+        .select('id, name, assessment_id, status, results(overall_score, risk_level, candidate_type)')
+        .eq('status', 'scored')
+        .in('assessment_id', (assess || []).map(a => a.id))
+      setCandidates((cands || []).filter(c => c.results && c.results.length > 0))
+      setLoading(false)
     }
+    load()
+  }, [])
+
+  // Derive benchmark data
+  const roleStats = useMemo(() => {
+    const map = {}
+    for (const c of candidates) {
+      const assess = assessments.find(a => a.id === c.assessment_id)
+      if (!assess) continue
+      const role = assess.role_title
+      if (!map[role]) map[role] = { scores: [], passed: 0, total: 0 }
+      const score = c.results[0]?.overall_score
+      if (typeof score === 'number') {
+        map[role].scores.push(score)
+        map[role].total++
+        if (score >= 70) map[role].passed++
+      }
+    }
+    return Object.entries(map).map(([role, d]) => ({
+      role,
+      avg: d.scores.length > 0 ? Math.round(d.scores.reduce((s, v) => s + v, 0) / d.scores.length) : 0,
+      passRate: d.total > 0 ? Math.round((d.passed / d.total) * 100) : 0,
+      count: d.total,
+    })).sort((a, b) => b.avg - a.avg)
+  }, [candidates, assessments])
+
+  const sectorStats = useMemo(() => {
+    const map = {}
+    for (const c of candidates) {
+      const assess = assessments.find(a => a.id === c.assessment_id)
+      if (!assess) continue
+      const sector = assess.detected_role_type || 'general'
+      if (!map[sector]) map[sector] = { scores: [], total: 0 }
+      const score = c.results[0]?.overall_score
+      if (typeof score === 'number') {
+        map[sector].scores.push(score)
+        map[sector].total++
+      }
+    }
+    return Object.entries(map).map(([sector, d]) => ({
+      sector: sector.charAt(0).toUpperCase() + sector.slice(1).replace(/_/g, ' '),
+      avg: d.scores.length > 0 ? Math.round(d.scores.reduce((s, v) => s + v, 0) / d.scores.length) : 0,
+      count: d.total,
+    })).sort((a, b) => b.avg - a.avg)
+  }, [candidates, assessments])
+
+  const topCandidates = useMemo(() => {
+    return [...candidates]
+      .filter(c => typeof c.results[0]?.overall_score === 'number')
+      .sort((a, b) => (b.results[0]?.overall_score || 0) - (a.results[0]?.overall_score || 0))
+      .slice(0, 10)
+  }, [candidates])
+
+  const distribution = useMemo(() => {
+    const buckets = [
+      { label: '90-100', min: 90, max: 100, count: 0 },
+      { label: '75-89', min: 75, max: 89, count: 0 },
+      { label: '60-74', min: 60, max: 74, count: 0 },
+      { label: '45-59', min: 45, max: 59, count: 0 },
+      { label: '0-44', min: 0, max: 44, count: 0 },
+    ]
+    for (const c of candidates) {
+      const score = c.results[0]?.overall_score
+      if (typeof score !== 'number') continue
+      const b = buckets.find(b => score >= b.min && score <= b.max)
+      if (b) b.count++
+    }
+    const maxCount = Math.max(1, ...buckets.map(b => b.count))
+    return buckets.map(b => ({ ...b, pct: Math.round((b.count / maxCount) * 100) }))
+  }, [candidates])
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', minHeight: '100vh', background: BG }}>
+        <Sidebar companyName={companyName} />
+        <main style={{ flex: 1, marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 56 : 0, padding: isMobile ? '24px 16px' : '36px 40px' }}>
+          <div style={{ maxWidth: 900, margin: '0 auto', ...cs, height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 28, height: 28, border: `3px solid ${BD}`, borderTopColor: TEAL, borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+          </div>
+        </main>
+      </div>
+    )
   }
 
-  if (loading) return <LoadingSpinner />
-
-  const setCount = DEFAULT_SKILLS.filter(s => thresholds[s] !== null && thresholds[s] !== undefined).length
-  const totalCandidates = Math.max(...DEFAULT_SKILLS.map(s => (candidateDataMap[s] || []).length), 0)
-
   return (
-    <div style={{ display: 'flex', fontFamily: F }}>
-      <Sidebar active="benchmarks" companyName={profile?.company_name} />
-      <main style={{ marginLeft: isMobile ? 0 : 220, padding: isMobile ? '72px 16px 32px' : '36px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
-
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 10, flexWrap: 'wrap' }}>
-          <div>
-            <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 800, color: NAVY, letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: 10 }}>
-              Benchmarks <InfoTooltip text="Set minimum score thresholds per skill. Candidates scoring below are flagged in their report." />
-            </h1>
-            <p style={{ margin: 0, fontSize: 14, color: TX2, lineHeight: 1.6, maxWidth: 580 }}>
-              Set minimum score thresholds per skill. Any candidate scoring below a threshold will be flagged with a red warning in their results report.
-            </p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            {saved && (
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '7px 14px', borderRadius: 8,
-                background: GRNBG, border: `1px solid ${GRNBD}`, color: GRN,
-                fontSize: 13, fontWeight: 700,
-              }}>
-                <Ic name="check" size={14} color={GRN} />
-                Saved
-              </div>
-            )}
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              style={{ ...bs('primary', 'md'), opacity: saving ? 0.65 : 1, cursor: saving ? 'wait' : 'pointer' }}
-            >
-              <Ic name="check" size={15} color={NAVY} />
-              {saving ? 'Saving…' : 'Save benchmarks'}
+    <div style={{ display: 'flex', minHeight: '100vh', background: BG }}>
+      <Sidebar companyName={companyName} />
+      <main style={{ flex: 1, marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 56 : 0, padding: isMobile ? '24px 16px' : '36px 40px' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+            <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 8, border: `1px solid ${BD}`, background: CARD, cursor: 'pointer', flexShrink: 0 }}>
+              <Ic name="left" size={18} color={TX2} />
             </button>
-          </div>
-        </div>
-
-        {/* Status strip */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '5px 12px', borderRadius: 6,
-            background: setCount > 0 ? TEALLT : BG,
-            border: `1px solid ${setCount > 0 ? TEAL + '55' : BD}`,
-            fontSize: 12.5, fontWeight: 600, color: setCount > 0 ? TEALD : TX3,
-          }}>
-            <Ic name="layers" size={13} color={setCount > 0 ? TEALD : TX3} />
-            {setCount > 0 ? `${setCount} of ${DEFAULT_SKILLS.length} skills have thresholds` : 'No thresholds set'}
-          </div>
-          {totalCandidates > 0 && (
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '5px 12px', borderRadius: 6, background: BG,
-              border: `1px solid ${BD}`, fontSize: 12.5, fontWeight: 600, color: TX3,
-            }}>
-              <Ic name="users" size={13} color={TX3} />
-              Applied to {totalCandidates} scored candidate{totalCandidates !== 1 ? 's' : ''}
+            <div>
+              <h1 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: 0 }}>Benchmarks</h1>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '4px 0 0' }}>Scoring benchmarks and pass rates across your assessments.</p>
             </div>
+          </div>
+
+          {candidates.length === 0 ? (
+            <div style={{ ...cs, textAlign: 'center', padding: '48px 24px' }}>
+              <Ic name="layers" size={28} color={BD} />
+              <p style={{ fontFamily: F, fontSize: 14, color: TX3, margin: '12px 0 0' }}>
+                No scored candidates yet. Benchmarks will appear once assessments are completed.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Score distribution */}
+              <div style={{ ...cs, marginBottom: 20 }}>
+                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 14 }}>Score Distribution</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {distribution.map(b => (
+                    <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: TX2, minWidth: 48, textAlign: 'right' }}>{b.label}</span>
+                      <div style={{ flex: 1, height: 22, background: BG, borderRadius: 4, overflow: 'hidden' }}>
+                        <div style={{
+                          width: `${b.pct}%`, height: '100%', borderRadius: 4,
+                          background: b.min >= 75 ? TEAL : b.min >= 60 ? TEALD : b.min >= 45 ? AMB : RED,
+                          transition: 'width 0.4s ease',
+                          display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 8,
+                        }}>
+                          {b.count > 0 && <span style={{ fontFamily: F, fontSize: 10, fontWeight: 800, color: '#fff' }}>{b.count}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ fontFamily: F, fontSize: 11, color: TX3, margin: '10px 0 0' }}>
+                  {candidates.length} scored candidate{candidates.length !== 1 ? 's' : ''} across {assessments.length} assessment{assessments.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+
+              {/* Average score by role */}
+              {roleStats.length > 0 && (
+                <div style={{ ...cs, marginBottom: 20 }}>
+                  <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 14 }}>Average Score by Role</div>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: F, fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: BG }}>
+                          {['Role', 'Avg Score', 'Pass Rate', 'Candidates'].map(h => (
+                            <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: TX2, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.3, borderBottom: `1px solid ${BD}`, whiteSpace: 'nowrap' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {roleStats.map((r, i) => (
+                          <tr key={r.role} style={{ borderBottom: i < roleStats.length - 1 ? `1px solid ${BD}` : 'none' }}>
+                            <td style={{ padding: '10px 14px', fontWeight: 600, color: TX }}>{r.role}</td>
+                            <td style={{ padding: '10px 14px' }}>
+                              <span style={{ fontFamily: FM, fontWeight: 700, color: scolor(r.avg) }}>{r.avg}</span>
+                            </td>
+                            <td style={{ padding: '10px 14px' }}>
+                              <span style={{ ...ps(r.passRate >= 70 ? GRNBG : r.passRate >= 50 ? AMBBG : REDBG, r.passRate >= 70 ? GRN : r.passRate >= 50 ? AMB : RED), fontSize: 11 }}>
+                                {r.passRate}%
+                              </span>
+                            </td>
+                            <td style={{ padding: '10px 14px', color: TX2 }}>{r.count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Average score by sector */}
+              {sectorStats.length > 0 && (
+                <div style={{ ...cs, marginBottom: 20 }}>
+                  <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 14 }}>Average Score by Sector</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {sectorStats.map(s => (
+                      <div key={s.sector} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX, minWidth: isMobile ? 100 : 160 }}>{s.sector}</span>
+                        <div style={{ flex: 1, height: 8, background: BG, borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ width: `${s.avg}%`, height: '100%', background: scolor(s.avg), borderRadius: 4, transition: 'width 0.3s' }} />
+                        </div>
+                        <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: scolor(s.avg), minWidth: 28, textAlign: 'right' }}>{s.avg}</span>
+                        <span style={{ fontFamily: F, fontSize: 11, color: TX3, minWidth: 20 }}>({s.count})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Top candidates */}
+              {topCandidates.length > 0 && (
+                <div style={{ ...cs, marginBottom: 20 }}>
+                  <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 14 }}>Top Performing Candidates</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {topCandidates.map((c, i) => {
+                      const score = c.results[0]?.overall_score || 0
+                      const assess = assessments.find(a => a.id === c.assessment_id)
+                      return (
+                        <div key={c.id} style={{
+                          display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                          background: i === 0 ? TEALLT : BG, borderRadius: 8,
+                          borderLeft: `3px solid ${i === 0 ? TEAL : scolor(score)}`,
+                        }}>
+                          <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 800, color: TX3, minWidth: 22 }}>#{i + 1}</span>
+                          <Avatar name={c.name} size={28} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{c.name}</div>
+                            <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>{assess?.role_title || '--'}</div>
+                          </div>
+                          <span style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: scolor(score) }}>{score}</span>
+                          <span style={{ ...ps(sbg(score), scolor(score)), fontSize: 10 }}>{slabel(score)}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
-
-        {error && (
-          <div style={{
-            background: REDBG, border: `1px solid ${REDBD}`, color: RED,
-            borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10,
-            marginBottom: 20, padding: '14px 18px',
-          }}>
-            <Ic name="alert" size={16} color={RED} />
-            <span style={{ fontSize: 13.5, fontWeight: 600 }}>{error}</span>
-          </div>
-        )}
-
-        {/* How it works */}
-        <div style={{
-          background: CARD, border: `1px solid ${BD}`, borderRadius: 12,
-          padding: '16px 20px', marginBottom: 24,
-          display: 'flex', gap: 32, flexWrap: 'wrap',
-        }}>
-          {[
-            { icon: 'sliders', title: 'Set a threshold', desc: 'Drag the slider or type a score from 0,100 for any skill.' },
-            { icon: 'alert',   title: 'Candidates are flagged', desc: 'Any candidate scoring below the threshold is highlighted in red on their report.' },
-            { icon: 'check',   title: 'Thresholds are global', desc: 'Benchmarks apply across all your assessments, not per role.' },
-          ].map(({ icon, title, desc }) => (
-            <div key={title} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flex: '1 1 200px' }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 8, background: TEALLT,
-                border: `1px solid ${TEAL}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-                <Ic name={icon} size={15} color={TEALD} />
-              </div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: TX, marginBottom: 2 }}>{title}</div>
-                <div style={{ fontSize: 12.5, color: TX2, lineHeight: 1.5 }}>{desc}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Skill rows */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 720 }}>
-          {DEFAULT_SKILLS.map(skill => (
-            <SkillRow
-              key={skill}
-              skill={skill}
-              threshold={thresholds[skill] ?? null}
-              onChange={val => handleChange(skill, val)}
-              candidateData={candidateDataMap[skill] || []}
-              router={router}
-            />
-          ))}
-        </div>
-
-        {/* Bottom save */}
-        <div style={{ marginTop: 28, maxWidth: 720 }}>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={{ ...bs('primary', 'lg'), opacity: saving ? 0.65 : 1, cursor: saving ? 'wait' : 'pointer' }}
-          >
-            <Ic name="check" size={16} color={NAVY} />
-            {saving ? 'Saving…' : 'Save benchmarks'}
-          </button>
-        </div>
-
       </main>
     </div>
   )
