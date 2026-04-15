@@ -1270,6 +1270,30 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Benchmarks link */}
+        <div style={{
+          background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+          padding: '18px 24px', marginTop: 20,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div>
+            <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>Benchmarks</div>
+            <div style={{ fontFamily: F, fontSize: 12.5, color: TX3, marginTop: 2 }}>View pass/fail thresholds and scoring benchmarks across your assessments.</div>
+          </div>
+          <button
+            onClick={() => router.push('/benchmarks')}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${BD}`,
+              background: CARD, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <Ic name="layers" size={14} color={TEALD} />
+            Open
+          </button>
+        </div>
+
       </main>
     </div>
   )
