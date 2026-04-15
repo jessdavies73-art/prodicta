@@ -183,6 +183,7 @@ export default function NewAssessmentPage() {
   const [templateLoaded, setTemplateLoaded] = useState(false)
   const [mode, setMode] = useState('standard') // 'rapid' | 'quick' | 'standard' | 'advanced'
   const [modeOverridden, setModeOverridden] = useState(false)
+  const [employmentType, setEmploymentType] = useState('') // 'permanent' | 'temporary'
 
   // Context questions
   const [contextAnswers, setContextAnswers] = useState({})
@@ -448,6 +449,7 @@ export default function NewAssessmentPage() {
           template_name: saveAsTemplate ? (templateName.trim() || roleTitle.trim()) : undefined,
           context_answers: Object.keys(serialized).length > 0 ? serialized : undefined,
           assessment_mode: mode,
+          employment_type: employmentType || undefined,
         })
       })
       const data = await res.json()
@@ -552,8 +554,113 @@ export default function NewAssessmentPage() {
           </h1>
         </div>
 
+        {/* Employment type selection */}
+        {!employmentType && (
+          <div style={{
+            background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
+            padding: isMobile ? '28px 20px' : '36px 36px', marginBottom: 24,
+          }}>
+            <p style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>
+              Is this a permanent hire or a temporary placement?
+            </p>
+            <p style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', margin: '0 0 24px' }}>
+              This determines which features and report labels are available.
+            </p>
+            <div style={{ display: 'flex', gap: 16, flexDirection: isMobile ? 'column' : 'row' }}>
+              {/* Permanent hire card */}
+              <button
+                onClick={() => setEmploymentType('permanent')}
+                style={{
+                  flex: 1, padding: '24px 22px', borderRadius: 14,
+                  border: '2px solid #0f2137', background: '#fff',
+                  cursor: 'pointer', textAlign: 'left',
+                  transition: 'box-shadow 0.15s, transform 0.15s',
+                  display: 'flex', flexDirection: 'column', gap: 12,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 20px rgba(15,33,55,0.12)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none' }}
+              >
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: '#f0f4f8', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#0f2137" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <polyline points="16 11 18 13 22 9"/>
+                  </svg>
+                </div>
+                <span style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: '#0f2137' }}>
+                  Permanent Hire
+                </span>
+                <span style={{ fontFamily: F, fontSize: 12.5, color: '#5e6b7f', lineHeight: 1.5 }}>
+                  Full assessment suite. ERA 2025 compliance. Probation tracking.
+                </span>
+              </button>
+
+              {/* Temporary placement card */}
+              <button
+                onClick={() => setEmploymentType('temporary')}
+                style={{
+                  flex: 1, padding: '24px 22px', borderRadius: 14,
+                  border: '2px solid #00BFA5', background: '#fff',
+                  cursor: 'pointer', textAlign: 'left',
+                  transition: 'box-shadow 0.15s, transform 0.15s',
+                  display: 'flex', flexDirection: 'column', gap: 12,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,191,165,0.15)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none' }}
+              >
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: '#e0f2f0', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#00BFA5" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                </div>
+                <span style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: '#0f2137' }}>
+                  Temporary Placement
+                </span>
+                <span style={{ fontFamily: F, fontSize: 12.5, color: '#5e6b7f', lineHeight: 1.5 }}>
+                  Full assessment or Rapid Screen. Placement health tracking. SSP module.
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Employment type badge + change button */}
+        {employmentType && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20,
+          }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 14px', borderRadius: 50, fontSize: 12, fontWeight: 700, fontFamily: F,
+              background: employmentType === 'permanent' ? '#f0f4f8' : '#e0f2f0',
+              color: employmentType === 'permanent' ? '#0f2137' : '#009688',
+              border: `1px solid ${employmentType === 'permanent' ? '#d1d5db' : '#80DFD2'}`,
+            }}>
+              {employmentType === 'permanent' ? 'Permanent Hire' : 'Temporary Placement'}
+            </span>
+            <button
+              onClick={() => setEmploymentType('')}
+              style={{
+                fontFamily: F, fontSize: 12, fontWeight: 600, color: '#94a1b3',
+                background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px',
+              }}
+            >
+              Change
+            </button>
+          </div>
+        )}
+
         {/* Templates dropdown */}
-        {templates.length > 0 && (
+        {employmentType && templates.length > 0 && (
           <div style={{
             background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
             padding: '20px 28px', marginBottom: 20,
@@ -603,7 +710,7 @@ export default function NewAssessmentPage() {
         )}
 
         {/* Template library */}
-        <div style={{
+        {employmentType && <div style={{
           background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
           padding: '28px 32px', marginBottom: 24,
         }}>
@@ -675,12 +782,12 @@ export default function NewAssessmentPage() {
           <p style={{ margin: '16px 0 0', fontSize: 13, color: '#94a1b3', fontFamily: F }}>
             Don't see your role? Paste your own job description below.
           </p>
-        </div>
+        </div>}
 
         {/* ══════════════════════════════════════════════════
             CONFIRMATION SCREEN (shown when analysed)
         ══════════════════════════════════════════════════ */}
-        {analysed && !loading && (
+        {employmentType && analysed && !loading && (
           <>
             <div style={{
               background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
@@ -790,7 +897,7 @@ export default function NewAssessmentPage() {
         )}
 
         {/* Analysing indicator */}
-        {analysing && !analysed && jd.length >= 50 && (
+        {employmentType && analysing && !analysed && jd.length >= 50 && (
           <div style={{
             background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
             padding: '20px 28px', marginBottom: 20, textAlign: 'center',
@@ -809,7 +916,7 @@ export default function NewAssessmentPage() {
         {/* ══════════════════════════════════════════════════
             MAIN FORM (hidden when analysed, unless Adjust is open)
         ══════════════════════════════════════════════════ */}
-        {(!analysed || showAdjust) && (
+        {employmentType && (!analysed || showAdjust) && (
         <>
 
         {/* Card 1: Role details */}

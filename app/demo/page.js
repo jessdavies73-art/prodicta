@@ -245,6 +245,7 @@ function DemoDashboardInner() {
     return searchParams.get('type') === 'employer' ? 'employer' : 'agency'
   })
   const isAgency = demoType === 'agency'
+  const [demoEmploymentType, setDemoEmploymentType] = useState('permanent')
   const [search, setSearch] = useState('')
   const [hoveredRow, setHoveredRow] = useState(null)
   const [searchFocused, setSearchFocused] = useState(false)
@@ -367,6 +368,24 @@ function DemoDashboardInner() {
                 padding: '9px 22px', borderRadius: 8, transition: 'all 0.15s',
                 background: demoType === opt.key ? TEAL : 'transparent',
                 color: demoType === opt.key ? NAVY : TX3,
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Employment type toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 24, background: CARD, borderRadius: 10, border: `1.5px solid ${BD}`, padding: 3, width: 'fit-content' }}>
+          {[{ key: 'permanent', label: 'Permanent Hire' }, { key: 'temporary', label: 'Temporary Placement' }].map(opt => (
+            <button
+              key={opt.key}
+              onClick={() => setDemoEmploymentType(opt.key)}
+              style={{
+                fontFamily: F, fontSize: 13.5, fontWeight: 700, border: 'none', cursor: 'pointer',
+                padding: '9px 22px', borderRadius: 8, transition: 'all 0.15s',
+                background: demoEmploymentType === opt.key ? (opt.key === 'permanent' ? NAVY : TEAL) : 'transparent',
+                color: demoEmploymentType === opt.key ? '#fff' : TX3,
               }}
             >
               {opt.label}
