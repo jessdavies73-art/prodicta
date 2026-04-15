@@ -27,6 +27,15 @@ export default function SSPPage() {
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null)
   const [focusedField, setFocusedField] = useState(null)
+  const [sspRecordId, setSspRecordId] = useState(null)
+
+  // Calculator state (step 2)
+  const [showCalculator, setShowCalculator] = useState(false)
+  const [awe, setAwe] = useState('')
+  const [qualifyingDays, setQualifyingDays] = useState('')
+  const [calculating, setCalculating] = useState(false)
+  const [calcResult, setCalcResult] = useState(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -85,7 +94,7 @@ export default function SSPPage() {
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      await supabase.from('ssp_records').insert({
+      const { data: insertedRow } = await supabase.from('ssp_records').insert({
         user_id: user.id,
         candidate_name: workerName,
         employment_type: employmentType,
@@ -97,12 +106,17 @@ export default function SSPPage() {
         evidence_type: evidenceType,
         step_entitlement_confirmed: eligible,
         step_entitlement_confirmed_at: eligible ? new Date().toISOString() : null,
-      })
+      }).select('id').single()
+      if (insertedRow?.id) setSspRecordId(insertedRow.id)
     } catch (err) {
       // Continue even if save fails — show the result to the user
     }
 
     setResult({ status, message, badgeType, eligible })
+    setShowCalculator(false)
+    setCalcResult(null)
+    setAwe('')
+    setQualifyingDays('')
     setSubmitting(false)
   }
 
@@ -416,20 +430,275 @@ export default function SSPPage() {
                   </div>
 
                   {/* Continue button */}
+                  {!showCalculator && (
+                    <button
+                      onClick={() => setShowCalculator(true)}
+                      style={{
+                        ...bs('primary', 'lg'),
+                        width: '100%',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      Continue to SSP Calculator
+                      <Ic name="right" size={16} color={NAVY} />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+          {/* ── Step 2: SSP Payment Calculator ── */}
+          {showCalculator && result?.eligible && (
+            <>
+              {/* Divider */}
+              <div style={{ height: 1, background: BD, margin: '8px 0 24px' }} />
+
+              {/* Calculator header */}
+              <h2 style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: TX, margin: 0 }}>
+                SSP Payment Calculator
+              </h2>
+              <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: '6px 0 24px' }}>
+                Calculate the correct SSP amount under the 2026 rules.
+              </p>
+
+              {/* Calculator disclaimer */}
+              <div style={{
+                borderLeft: `4px solid ${TEAL}`,
+                background: TEALLT,
+                borderRadius: '0 8px 8px 0',
+                padding: '14px 18px',
+                marginBottom: 24,
+              }}>
+                <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.55 }}>
+                  SSP calculations are provided as guidance only. Always verify with your payroll provider or accountant before processing payment.
+                </p>
+              </div>
+
+              {/* Calculator form */}
+              <div style={{ ...cs, marginBottom: 24 }}>
+                <form onSubmit={async (e) => {
+                  e.preventDefault()
+                  const aweVal = parseFloat(awe)
+                  const daysVal = parseInt(qualifyingDays, 10)
+                  if (!aweVal || aweVal <= 0 || !daysVal || daysVal < 1 || daysVal > 7) return
+
+                  setCalculating(true)
+                  setCopied(false)
+
+                  const eightyPercent = Math.round(aweVal * 0.80 * 100) / 100
+                  const statutoryRate = 123.25
+                  const weeklySSP = Math.round(Math.min(eightyPercent, statutoryRate) * 100) / 100
+                  const dailySSP = Math.round((weeklySSP / daysVal) * 100) / 100
+                  const earningsLinked = eightyPercent < statutoryRate
+
+                  // Update ssp_records row
+                  try {
+                    if (sspRecordId) {
+                      const supabase = createClient()
+                      await supabase.from('ssp_records').update({
+                        average_weekly_earnings: aweVal,
+                        qualifying_days: daysVal,
+                        weekly_ssp: weeklySSP,
+                        daily_ssp: dailySSP,
+                        updated_at: new Date().toISOString(),
+                      }).eq('id', sspRecordId)
+                    }
+                  } catch (err) {
+                    // Continue even if save fails
+                  }
+
+                  setCalcResult({ aweVal, eightyPercent, statutoryRate, weeklySSP, dailySSP, daysVal, earningsLinked })
+                  setCalculating(false)
+                }}>
+                  {/* AWE field */}
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={labelStyle}>Average Weekly Earnings (AWE)</label>
+                    <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 8px', lineHeight: 1.5 }}>
+                      Average Weekly Earnings = Total earnings in the last 8 weeks divided by 8. Include all regular pay but exclude overtime, expenses, and one-off payments.
+                    </p>
+                    <div style={{ position: 'relative' }}>
+                      <span style={{
+                        position: 'absolute',
+                        left: 14,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        fontFamily: F,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: TX2,
+                        pointerEvents: 'none',
+                      }}>
+                        &pound;
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={awe}
+                        onChange={e => setAwe(e.target.value)}
+                        onFocus={() => setFocusedField('awe')}
+                        onBlur={() => setFocusedField(null)}
+                        placeholder="0.00"
+                        style={{ ...inputStyle('awe'), paddingLeft: 30 }}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Qualifying days */}
+                  <div style={{ marginBottom: 24 }}>
+                    <label style={labelStyle}>Number of qualifying days this week</label>
+                    <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 8px', lineHeight: 1.5 }}>
+                      Qualifying days are the days the worker was contracted to work this week.
+                    </p>
+                    <input
+                      type="number"
+                      min="1"
+                      max="7"
+                      step="1"
+                      value={qualifyingDays}
+                      onChange={e => setQualifyingDays(e.target.value)}
+                      onFocus={() => setFocusedField('qualifyingDays')}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="e.g. 5"
+                      style={inputStyle('qualifyingDays')}
+                      required
+                    />
+                  </div>
+
+                  {/* Calculate button */}
                   <button
-                    onClick={() => router.push('/ssp/calculator')}
+                    type="submit"
+                    disabled={calculating || !awe || !qualifyingDays || parseFloat(awe) <= 0 || parseInt(qualifyingDays, 10) < 1 || parseInt(qualifyingDays, 10) > 7}
+                    style={{
+                      ...bs('primary', 'lg'),
+                      width: '100%',
+                      justifyContent: 'center',
+                      opacity: (calculating || !awe || !qualifyingDays) ? 0.5 : 1,
+                      cursor: (calculating || !awe || !qualifyingDays) ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {calculating ? 'Calculating...' : 'Calculate SSP'}
+                  </button>
+                </form>
+              </div>
+
+              {/* Calculator result */}
+              {calcResult && (
+                <div style={{ ...cs, marginBottom: 24 }}>
+                  {/* Working breakdown */}
+                  <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 14px' }}>
+                    Calculation breakdown
+                  </p>
+                  <div style={{
+                    background: BG,
+                    borderRadius: 8,
+                    padding: '14px 16px',
+                    marginBottom: 20,
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                      {[
+                        ['Average Weekly Earnings', `\u00A3${calcResult.aweVal.toFixed(2)}`],
+                        ['80% of AWE', `\u00A3${calcResult.eightyPercent.toFixed(2)}`],
+                        ['Statutory weekly rate', `\u00A3${calcResult.statutoryRate.toFixed(2)}`],
+                        ['Weekly SSP (lower of the two)', `\u00A3${calcResult.weeklySSP.toFixed(2)}`],
+                        ['Qualifying days this week', `${calcResult.daysVal}`],
+                        ['Daily SSP rate', `\u00A3${calcResult.dailySSP.toFixed(2)}`],
+                      ].map(([label, value], i) => (
+                        <div key={i} style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: i === 3 || i === 5 ? '6px 0' : '0',
+                          borderTop: i === 3 ? `1px solid ${BD}` : 'none',
+                          borderBottom: i === 3 ? `1px solid ${BD}` : 'none',
+                        }}>
+                          <span style={{
+                            fontFamily: F,
+                            fontSize: 13,
+                            color: i === 3 || i === 5 ? TX : TX2,
+                            fontWeight: i === 3 || i === 5 ? 700 : 500,
+                          }}>
+                            {label}
+                          </span>
+                          <span style={{
+                            fontFamily: F,
+                            fontSize: 13,
+                            color: i === 3 || i === 5 ? TX : TX2,
+                            fontWeight: i === 3 || i === 5 ? 700 : 600,
+                          }}>
+                            {value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Payroll output box */}
+                  <div style={{
+                    borderLeft: `4px solid ${TEAL}`,
+                    background: TEALLT,
+                    borderRadius: '0 8px 8px 0',
+                    padding: '18px 20px',
+                    marginBottom: 16,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <p style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: NAVY, margin: '0 0 4px' }}>
+                          SSP this week: &pound;{calcResult.weeklySSP.toFixed(2)}
+                        </p>
+                        <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0 }}>
+                          &pound;{calcResult.dailySSP.toFixed(2)} per day for {calcResult.daysVal} qualifying day{calcResult.daysVal !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const text = `SSP this week: \u00A3${calcResult.weeklySSP.toFixed(2)} (\u00A3${calcResult.dailySSP.toFixed(2)} per day for ${calcResult.daysVal} qualifying day${calcResult.daysVal !== 1 ? 's' : ''})`
+                          navigator.clipboard.writeText(text)
+                          setCopied(true)
+                          setTimeout(() => setCopied(false), 2000)
+                        }}
+                        style={{
+                          ...bs('secondary', 'sm'),
+                          flexShrink: 0,
+                          marginLeft: 12,
+                        }}
+                      >
+                        <Ic name={copied ? 'check' : 'copy'} size={13} color={copied ? TEAL : TX2} />
+                        {copied ? 'Copied' : 'Copy'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Which rule applied */}
+                  <div style={{
+                    background: BG,
+                    borderRadius: 8,
+                    padding: '12px 16px',
+                    marginBottom: 20,
+                  }}>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.5 }}>
+                      {calcResult.earningsLinked
+                        ? 'The earnings-linked rate applies (80% of average weekly earnings).'
+                        : 'The standard statutory rate applies (\u00A3123.25 per week).'}
+                    </p>
+                  </div>
+
+                  {/* Continue to Manager Guidance */}
+                  <button
+                    onClick={() => router.push('/ssp/guidance')}
                     style={{
                       ...bs('primary', 'lg'),
                       width: '100%',
                       justifyContent: 'center',
                     }}
                   >
-                    Continue to SSP Calculator
+                    Continue to Manager Guidance Panel
                     <Ic name="right" size={16} color={NAVY} />
                   </button>
-                </>
+                </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </main>
