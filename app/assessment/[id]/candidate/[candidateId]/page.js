@@ -1061,7 +1061,7 @@ export default function CandidateReportPage({ params }) {
         setUser(u)
 
         const [{ data: cand, error: cErr }, { data: res }, { data: bm }, { data: resps }, { data: prof }] = await Promise.all([
-          supabase.from('candidates').select('*, assessments(role_title, job_description, skill_weights, scenarios, assessment_mode, detected_role_type, role_level)').eq('id', params.candidateId).single(),
+          supabase.from('candidates').select('*, assessments(role_title, job_description, skill_weights, scenarios, assessment_mode, detected_role_type, role_level, employment_type)').eq('id', params.candidateId).single(),
           supabase.from('results').select('*').eq('candidate_id', params.candidateId).maybeSingle(),
           supabase.from('benchmarks').select('*').eq('user_id', u.id),
           supabase.from('responses').select('scenario_index, time_taken_seconds, response_text').eq('candidate_id', params.candidateId).order('scenario_index'),
@@ -1839,8 +1839,8 @@ export default function CandidateReportPage({ params }) {
                         }}
                       >
                         <Ic name="award" size={15} color={TEALD} />
-                        Open Probation Co-pilot
-                        <InfoTooltip text="Track this candidate through their probation period with structured check-ins and guidance." />
+                        {candidate?.assessments?.employment_type === 'temporary' ? 'Open Assignment Tracker' : 'Open Probation Co-pilot'}
+                        <InfoTooltip text={candidate?.assessments?.employment_type === 'temporary' ? 'Track this worker through their assignment period with structured check-ins.' : 'Track this candidate through their probation period with structured check-ins and guidance.'} />
                       </button>
                     )}
                     {results && profile?.account_type === 'employer' && existingOutcome?.outcome === 'still_probation' && (
@@ -1910,37 +1910,54 @@ export default function CandidateReportPage({ params }) {
                         }}
                       >
                         <Ic name="clipboard" size={15} color={TEAL} />
-                        Generate Probation Review
+                        {candidate?.assessments?.employment_type === 'temporary' ? 'Generate Assignment Review' : 'Generate Probation Review'}
                       </button>
                     )}
                     {/* COMPLIANCE */}
-                    {profile?.account_type === 'employer' && (
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Compliance</div>
-                    )}
-                    {results && profile?.account_type === 'employer' && (
-                      <button
-                        onClick={() => window.open(`/api/candidates/${params.candidateId}/certificate`, '_blank')}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
-                          fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
-                        }}
-                      >
-                        <Ic name="shield" size={15} color={TEALD} />
-                        ERA 2025 Certificate
-                        <InfoTooltip text="ERA 2025 compliance certificate for this assessment. Download for your legal records." />
-                      </button>
-                    )}
-                    {results && profile?.account_type === 'employer' && !existingOutcome && (
-                      <button onClick={() => setConfirmHireModal(true)} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
-                        fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
-                      }}>
-                        <Ic name="alert" size={15} color={AMB} />
-                        Confirm Offer Decision
-                        <InfoTooltip text="Acknowledge the risks before making an offer. Creates a legal audit trail of your decision." />
-                      </button>
+                    {results && candidate?.assessments?.employment_type === 'temporary' ? (
+                      <>
+                        <button
+                          onClick={() => router.push('/ssp')}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                            fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                          }}
+                        >
+                          <Ic name="shield" size={15} color={TEALD} />
+                          SSP Checker
+                          <InfoTooltip text="Check SSP eligibility and calculate payments for this worker." />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {results && profile?.account_type === 'employer' && (
+                          <button
+                            onClick={() => window.open(`/api/candidates/${params.candidateId}/certificate`, '_blank')}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 6,
+                              background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                              fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                            }}
+                          >
+                            <Ic name="shield" size={15} color={TEALD} />
+                            ERA 2025 Certificate
+                            <InfoTooltip text="ERA 2025 compliance certificate for this assessment. Download for your legal records." />
+                          </button>
+                        )}
+                        {results && profile?.account_type === 'employer' && !existingOutcome && (
+                          <button onClick={() => setConfirmHireModal(true)} style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                            fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                          }}>
+                            <Ic name="alert" size={15} color={AMB} />
+                            Confirm Offer Decision
+                            <InfoTooltip text="Acknowledge the risks before making an offer. Creates a legal audit trail of your decision." />
+                          </button>
+                        )}
+                      </>
                     )}
                     {/* Family Leave Risk Notice */}
                     {results && (
