@@ -55,6 +55,8 @@ const NAV = [
   { key: 'dashboard',    label: 'Dashboard',      icon: 'grid',     href: '/demo' },
   { key: 'assessment',   label: 'New assessment',  icon: 'plus',     restricted: true },
   { key: 'compare',      label: 'Compare',         icon: 'sliders',  href: '/demo/compare' },
+  { key: 'ssp',          label: 'SSP',             icon: 'shield',   href: '/ssp' },
+  { key: 'holiday',      label: 'Holiday',         icon: 'calendar', href: '/holiday' },
   { key: 'archive',      label: 'Archive',         icon: 'archive',  href: '/demo/archive' },
   { key: 'settings',     label: 'Settings',        icon: 'settings', href: '/demo/settings' },
 ]

@@ -1044,9 +1044,9 @@ function DemoCandidateInner({ params }) {
                 )}
 
                 {/* COMPLIANCE */}
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Compliance</div>
                 {!isAgency && (
                 <>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Compliance</div>
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="shield" size={14} color={TEALD} />
                   ERA 2025 Certificate
@@ -1063,6 +1063,8 @@ function DemoCandidateInner({ params }) {
                     Evidence Pack
                   </button>
                 )}
+                </>
+                )}
                 {/* Family Leave Risk Notice */}
                 <div style={{
                   background: TEALLT, borderLeft: `4px solid ${TEAL}`, borderRadius: '0 8px 8px 0',
@@ -1075,8 +1077,12 @@ function DemoCandidateInner({ params }) {
                     Under the Employment Rights Act 2025 this individual is entitled to Paternity Leave and Unpaid Parental Leave from their first day. There is no qualifying period. If a {isAgency ? 'assignment' : 'probation'} review coincides with or follows a period of family leave, seek independent employment law advice before taking any action.
                   </p>
                 </div>
-                </>
-                )}
+
+                {/* DOCUMENTS */}
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Documents</div>
+                <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '12px 14px' }}>
+                  <span style={{ fontFamily: F, fontSize: 12, color: TX3, fontWeight: 600 }}>Document templates coming soon</span>
+                </div>
 
                 {/* CANDIDATE */}
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Candidate</div>
