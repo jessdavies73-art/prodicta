@@ -48,7 +48,6 @@ export default function SSPPage() {
   const [returnDate, setReturnDate] = useState('')
   const [generatingDocs, setGeneratingDocs] = useState(false)
   const [docsGenerated, setDocsGenerated] = useState(false)
-  const [docUrls, setDocUrls] = useState({ absence: null, calculation: null, ssp1: null })
   const [guidanceSteps, setGuidanceSteps] = useState({
     entitlement: { done: false, at: null },
     evidence: { done: false, at: null },
@@ -351,15 +350,23 @@ export default function SSPPage() {
     }
   }
 
+  function downloadPdfBytes(bytes, filename) {
+    const blob = new Blob([bytes], { type: 'application/pdf' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   async function generateDocumentation() {
-    if (!calcResult || !sspRecordId) return
+    if (!calcResult) return
     setGeneratingDocs(true)
 
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
       const sickDateObj = new Date(sickDate + 'T00:00:00')
       const today = new Date(); today.setHours(0, 0, 0, 0)
       const daysSinceSick = Math.max(1, Math.floor((today - sickDateObj) / (1000 * 60 * 60 * 24)) + 1)
@@ -367,8 +374,8 @@ export default function SSPPage() {
       const returnDateObj = returnDate ? new Date(returnDate + 'T00:00:00') : null
       const totalDaysAbsent = returnDateObj ? Math.max(1, Math.floor((returnDateObj - sickDateObj) / (1000 * 60 * 60 * 24))) : daysSinceSick
       const totalSSPPaid = Math.round(calcResult.dailySSP * totalDaysAbsent * 100) / 100
-      const basePath = `ssp-records/${user.id}/${sspRecordId}`
-      const urls = { absence: null, calculation: null, ssp1: null }
+      const safeName = (workerName || 'worker').replace(/\s+/g, '-')
+      const dateStr = new Date().toISOString().slice(0, 10)
 
       // ── 1. Absence Record ──
       const a = await createBrandedPdf('Absence Record')
@@ -402,11 +409,7 @@ export default function SSPPage() {
         a.setY(a.getY() - 16)
       })
       await addFooters(a)
-      const absenceBytes = await a.pdf.save()
-      const absencePath = `${basePath}/absence-record.pdf`
-      await supabase.storage.from('ssp-records').upload(absencePath, absenceBytes, { contentType: 'application/pdf', upsert: true })
-      const { data: absenceUrl } = supabase.storage.from('ssp-records').getPublicUrl(absencePath)
-      urls.absence = absenceUrl?.publicUrl || null
+      downloadPdfBytes(await a.pdf.save(), `Absence-Record-${safeName}-${dateStr}.pdf`)
 
       // ── 2. SSP Calculation Record ──
       const c = await createBrandedPdf('SSP Calculation Record')
@@ -426,11 +429,7 @@ export default function SSPPage() {
       c.kv('Total days absent: ', `${totalDaysAbsent}`)
       c.kv('Total SSP for this absence: ', `\u00A3${totalSSPPaid.toFixed(2)}`)
       await addFooters(c)
-      const calcBytes = await c.pdf.save()
-      const calcPath = `${basePath}/calculation-record.pdf`
-      await supabase.storage.from('ssp-records').upload(calcPath, calcBytes, { contentType: 'application/pdf', upsert: true })
-      const { data: calcUrl } = supabase.storage.from('ssp-records').getPublicUrl(calcPath)
-      urls.calculation = calcUrl?.publicUrl || null
+      downloadPdfBytes(await c.pdf.save(), `SSP-Calculation-${safeName}-${dateStr}.pdf`)
 
       // ── 3. SSP1 Form — only if not eligible OR absence > 28 weeks ──
       const isNotEligible = result && !result.eligible
@@ -454,24 +453,19 @@ export default function SSPPage() {
         s.kv('Employer/agency: ', companyName)
         s.kv('Date issued: ', s.fmtD(new Date().toISOString()))
         await addFooters(s)
-        const ssp1Bytes = await s.pdf.save()
-        const ssp1Path = `${basePath}/ssp1-form.pdf`
-        await supabase.storage.from('ssp-records').upload(ssp1Path, ssp1Bytes, { contentType: 'application/pdf', upsert: true })
-        const { data: ssp1Url } = supabase.storage.from('ssp-records').getPublicUrl(ssp1Path)
-        urls.ssp1 = ssp1Url?.publicUrl || null
+        downloadPdfBytes(await s.pdf.save(), `SSP1-Form-${safeName}-${dateStr}.pdf`)
       }
 
-      // Update ssp_records with URLs and return date
-      const now = new Date().toISOString()
-      await supabase.from('ssp_records').update({
-        return_date: returnDate || null,
-        absence_record_url: urls.absence,
-        calculation_record_url: urls.calculation,
-        ssp1_form_url: urls.ssp1,
-        updated_at: now,
-      }).eq('id', sspRecordId)
+      // Update ssp_records with return date
+      if (sspRecordId) {
+        const supabase = createClient()
+        const now = new Date().toISOString()
+        await supabase.from('ssp_records').update({
+          return_date: returnDate || null,
+          updated_at: now,
+        }).eq('id', sspRecordId)
+      }
 
-      setDocUrls(urls)
       setDocsGenerated(true)
     } catch (err) {
       console.error('Documentation generation error:', err)
@@ -560,7 +554,6 @@ export default function SSPPage() {
     setReturnDate('')
     setGeneratingDocs(false)
     setDocsGenerated(false)
-    setDocUrls({ absence: null, calculation: null, ssp1: null })
     setSubmitting(false)
   }
 
@@ -1547,56 +1540,23 @@ export default function SSPPage() {
                       cursor: generatingDocs ? 'not-allowed' : 'pointer',
                     }}
                   >
-                    {generatingDocs ? 'Generating documents...' : 'Generate and Store Documents'}
+                    {generatingDocs ? 'Generating documents...' : 'Generate Documents'}
                     <Ic name="file" size={16} color={NAVY} />
                   </button>
                 ) : (
-                  /* Success + download links */
-                  <div>
-                    <div style={{
-                      background: GRNBG,
-                      border: `1px solid ${GRNBD}`,
-                      borderRadius: 8,
-                      padding: '14px 16px',
-                      marginBottom: 16,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                    }}>
-                      <Ic name="check" size={16} color={TEAL} />
-                      <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX }}>
-                        All documents generated and stored successfully.
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {docUrls.absence && (
-                        <a href={docUrls.absence} target="_blank" rel="noopener noreferrer" style={{
-                          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8,
-                          border: `1px solid ${BD}`, background: CARD, textDecoration: 'none', fontFamily: F, fontSize: 13, color: TX2, fontWeight: 600,
-                        }}>
-                          <Ic name="download" size={14} color={TEAL} />
-                          Absence Record
-                        </a>
-                      )}
-                      {docUrls.calculation && (
-                        <a href={docUrls.calculation} target="_blank" rel="noopener noreferrer" style={{
-                          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8,
-                          border: `1px solid ${BD}`, background: CARD, textDecoration: 'none', fontFamily: F, fontSize: 13, color: TX2, fontWeight: 600,
-                        }}>
-                          <Ic name="download" size={14} color={TEAL} />
-                          SSP Calculation Record
-                        </a>
-                      )}
-                      {docUrls.ssp1 && (
-                        <a href={docUrls.ssp1} target="_blank" rel="noopener noreferrer" style={{
-                          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8,
-                          border: `1px solid ${BD}`, background: CARD, textDecoration: 'none', fontFamily: F, fontSize: 13, color: TX2, fontWeight: 600,
-                        }}>
-                          <Ic name="download" size={14} color={AMB} />
-                          SSP1 Form
-                        </a>
-                      )}
-                    </div>
+                  <div style={{
+                    background: GRNBG,
+                    border: `1px solid ${GRNBD}`,
+                    borderRadius: 8,
+                    padding: '14px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                  }}>
+                    <Ic name="check" size={16} color={TEAL} />
+                    <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX }}>
+                      All documents generated and downloaded successfully.
+                    </span>
                   </div>
                 )}
               </div>

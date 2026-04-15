@@ -136,7 +136,7 @@ export default function SSPRecordsPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: F, fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: BG }}>
-                      {['Worker', 'Type', 'Sick date', 'Return date', 'Days', 'SSP', 'Status', 'Documents'].map(h => (
+                      {['Worker', 'Type', 'Sick date', 'Return date', 'Days', 'SSP', 'Status', 'Compliance'].map(h => (
                         <th key={h} style={{
                           padding: '12px 14px',
                           textAlign: 'left',
@@ -191,51 +191,17 @@ export default function SSPRecordsPage() {
                               {status === 'complete' ? 'All steps complete' : 'Steps outstanding'}
                             </span>
                           </td>
-                          <td style={{ padding: '12px 14px' }}>
-                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                              {r.compliance_pack_generated && (
-                                <span style={{
-                                  ...ps(TEALLT, TEALD),
-                                  fontSize: 10,
-                                  cursor: 'default',
-                                }}>
-                                  Compliance
-                                </span>
-                              )}
-                              {r.absence_record_url && (
-                                <a href={r.absence_record_url} target="_blank" rel="noopener noreferrer" style={{
-                                  ...ps(BG, TX2),
-                                  fontSize: 10,
-                                  textDecoration: 'none',
-                                  cursor: 'pointer',
-                                }}>
-                                  Absence
-                                </a>
-                              )}
-                              {r.calculation_record_url && (
-                                <a href={r.calculation_record_url} target="_blank" rel="noopener noreferrer" style={{
-                                  ...ps(BG, TX2),
-                                  fontSize: 10,
-                                  textDecoration: 'none',
-                                  cursor: 'pointer',
-                                }}>
-                                  Calculation
-                                </a>
-                              )}
-                              {r.ssp1_form_url && (
-                                <a href={r.ssp1_form_url} target="_blank" rel="noopener noreferrer" style={{
-                                  ...ps(AMBBG, AMB),
-                                  fontSize: 10,
-                                  textDecoration: 'none',
-                                  cursor: 'pointer',
-                                }}>
-                                  SSP1
-                                </a>
-                              )}
-                              {!r.compliance_pack_generated && !r.absence_record_url && !r.calculation_record_url && !r.ssp1_form_url && (
-                                <span style={{ fontFamily: F, fontSize: 11, color: TX3 }}>--</span>
-                              )}
-                            </div>
+                          <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
+                            {r.compliance_pack_generated ? (
+                              <span style={{
+                                ...ps(TEALLT, TEALD),
+                                fontSize: 10,
+                              }}>
+                                Generated
+                              </span>
+                            ) : (
+                              <span style={{ fontFamily: F, fontSize: 11, color: TX3 }}>--</span>
+                            )}
                           </td>
                         </tr>
                       )
