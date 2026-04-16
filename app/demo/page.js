@@ -267,6 +267,12 @@ function DemoDashboardInner() {
     'demo-c11': { health_status: 'RED',   health_reason: 'Redline alert: significant deviation from prediction. Intervention not yet actioned.' },
   }
 
+  // Demo attendance risk data for temp workers
+  const DEMO_ATTENDANCE_RISK = {
+    'demo-c4': { reliability_score: 75, attendance_risk: 'monitor' },  // James O'Brien — 2 lates
+    'demo-c11': { reliability_score: 55, attendance_risk: 'high' },    // Alex Turner — absences
+  }
+
   // Exclude archived from main view
   const allActiveCandidates = DEMO_CANDIDATES.filter(c => c.status !== 'archived')
   const activeCandidates = demoEmploymentType === 'both'
@@ -604,7 +610,7 @@ function DemoDashboardInner() {
                   const isCompleted = c.status === 'completed'; const isHovered = hoveredRow === c.id
                   return (
                     <tr key={c.id} onClick={() => { if (isCompleted) router.push(`/demo/candidate/${c.id}?type=${demoType}`) }} onMouseEnter={() => setHoveredRow(c.id)} onMouseLeave={() => setHoveredRow(null)} style={{ borderBottom: i < verdictFilteredCandidates.length - 1 ? `1px solid ${BD}` : 'none', background: isHovered && isCompleted ? '#f0fdfb' : CARD, cursor: isCompleted ? 'pointer' : 'default', transition: 'background 0.15s', boxShadow: isHovered && isCompleted ? `inset 3px 0 0 ${TEAL}` : 'none' }}>
-                      <td style={{ padding: '10px 8px', overflow: 'hidden' }}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Avatar name={c.name} size={28} /><div style={{ minWidth: 0, flex: 1 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ fontSize: 12.5, fontWeight: 600, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span><span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: c.assessments?.employment_type === 'temporary' ? TEALLT : '#f0f4f8', color: c.assessments?.employment_type === 'temporary' ? TEALD : NAVY, letterSpacing: '0.04em' }}>{c.assessments?.employment_type === 'temporary' ? 'TEMP' : 'PERM'}</span></div><div style={{ fontSize: 11, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div></div></div></td>
+                      <td style={{ padding: '10px 8px', overflow: 'hidden' }}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Avatar name={c.name} size={28} /><div style={{ minWidth: 0, flex: 1 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ fontSize: 12.5, fontWeight: 600, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span><span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: c.assessments?.employment_type === 'temporary' ? TEALLT : '#f0f4f8', color: c.assessments?.employment_type === 'temporary' ? TEALD : NAVY, letterSpacing: '0.04em' }}>{c.assessments?.employment_type === 'temporary' ? 'TEMP' : 'PERM'}</span>{isAgency && c.assessments?.employment_type === 'temporary' && DEMO_ATTENDANCE_RISK[c.id] && (() => { const att = DEMO_ATTENDANCE_RISK[c.id]; const attColor = att.attendance_risk === 'high' ? RED : att.attendance_risk === 'monitor' ? AMB : GRN; const attLabel = att.attendance_risk === 'high' ? 'At Risk' : att.attendance_risk === 'monitor' ? 'Monitor' : 'Reliable'; return <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: '0.04em', padding: '1px 5px', borderRadius: 4, flexShrink: 0, background: `${attColor}18`, color: attColor, border: `1px solid ${attColor}44` }} title={`Reliability: ${att.reliability_score}/100`}>{attLabel}</span> })()}</div><div style={{ fontSize: 11, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div></div></div></td>
                       <td style={{ padding: '10px 8px', overflow: 'hidden', display: isMobile ? 'none' : 'table-cell' }}><span style={{ fontSize: 12, color: TX2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{c.assessments?.role_title || '-'}</span></td>
                       <td style={{ padding: '10px 8px' }}><StatusBadge status={c.status} /></td>
                       <td style={{ padding: '10px 8px' }}>{isCompleted && score !== null ? <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}><span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>{score}</span><span style={{ fontSize: 10, color: TX3 }}>/100</span></div> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}</td>
@@ -873,6 +879,38 @@ function DemoDashboardInner() {
               </div>
             </div>
 
+            {/* SSP Alerts panel (agency + temporary) */}
+            <div style={{
+              background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+              borderTop: '3px solid #D97706', padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <Ic name="alert" size={15} color="#D97706" />
+                <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: TX }}>SSP Alerts</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#D97706', background: '#fffbeb', border: '1px solid #fbbf24', padding: '1px 8px', borderRadius: 50 }}>1</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{
+                  display: 'flex', alignItems: isMobile ? 'flex-start' : 'center',
+                  flexDirection: isMobile ? 'column' : 'row',
+                  gap: isMobile ? 6 : 12, padding: '10px 14px',
+                  background: BG, border: `1px solid ${BD}`, borderRadius: 8,
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>James O'Brien</div>
+                    <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>Sales Executive</div>
+                    <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 2 }}>Reported sick 14 Apr (2 days ago)</div>
+                  </div>
+                  <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 50, fontSize: 10, fontWeight: 800, fontFamily: F, background: '#fffbeb', color: '#D97706', border: '1px solid #fbbf24' }}>Pending</span>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button onClick={() => router.push('/ssp')} style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid #00BFA5', background: '#e0f7f1', fontFamily: F, fontSize: 12, fontWeight: 700, color: '#0F2137', cursor: 'pointer' }}>
+                      Complete SSP Check
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </>
         )}
 
@@ -954,7 +992,7 @@ function DemoDashboardInner() {
                   const isCompleted = c.status === 'completed'; const isHovered = hoveredRow === c.id
                   return (
                     <tr key={c.id} onClick={() => { if (isCompleted) router.push(`/demo/candidate/${c.id}?type=${demoType}`) }} onMouseEnter={() => setHoveredRow(c.id)} onMouseLeave={() => setHoveredRow(null)} style={{ borderBottom: i < verdictFilteredCandidates.length - 1 ? `1px solid ${BD}` : 'none', background: isHovered && isCompleted ? '#f0fdfb' : CARD, cursor: isCompleted ? 'pointer' : 'default', transition: 'background 0.15s', boxShadow: isHovered && isCompleted ? `inset 3px 0 0 ${TEAL}` : 'none' }}>
-                      <td style={{ padding: '10px 8px', overflow: 'hidden' }}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Avatar name={c.name} size={28} /><div style={{ minWidth: 0, flex: 1 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ fontSize: 12.5, fontWeight: 600, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span><span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: c.assessments?.employment_type === 'temporary' ? TEALLT : '#f0f4f8', color: c.assessments?.employment_type === 'temporary' ? TEALD : NAVY, letterSpacing: '0.04em' }}>{c.assessments?.employment_type === 'temporary' ? 'TEMP' : 'PERM'}</span></div><div style={{ fontSize: 11, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div></div></div></td>
+                      <td style={{ padding: '10px 8px', overflow: 'hidden' }}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Avatar name={c.name} size={28} /><div style={{ minWidth: 0, flex: 1 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ fontSize: 12.5, fontWeight: 600, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span><span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: c.assessments?.employment_type === 'temporary' ? TEALLT : '#f0f4f8', color: c.assessments?.employment_type === 'temporary' ? TEALD : NAVY, letterSpacing: '0.04em' }}>{c.assessments?.employment_type === 'temporary' ? 'TEMP' : 'PERM'}</span>{isAgency && c.assessments?.employment_type === 'temporary' && DEMO_ATTENDANCE_RISK[c.id] && (() => { const att = DEMO_ATTENDANCE_RISK[c.id]; const attColor = att.attendance_risk === 'high' ? RED : att.attendance_risk === 'monitor' ? AMB : GRN; const attLabel = att.attendance_risk === 'high' ? 'At Risk' : att.attendance_risk === 'monitor' ? 'Monitor' : 'Reliable'; return <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: '0.04em', padding: '1px 5px', borderRadius: 4, flexShrink: 0, background: `${attColor}18`, color: attColor, border: `1px solid ${attColor}44` }} title={`Reliability: ${att.reliability_score}/100`}>{attLabel}</span> })()}</div><div style={{ fontSize: 11, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div></div></div></td>
                       <td style={{ padding: '10px 8px', overflow: 'hidden', display: isMobile ? 'none' : 'table-cell' }}><span style={{ fontSize: 12, color: TX2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{c.assessments?.role_title || '-'}</span></td>
                       <td style={{ padding: '10px 8px' }}><StatusBadge status={c.status} /></td>
                       <td style={{ padding: '10px 8px' }}>{isCompleted && score !== null ? <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}><span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>{score}</span><span style={{ fontSize: 10, color: TX3 }}>/100</span></div> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}</td>

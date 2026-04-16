@@ -874,6 +874,114 @@ function DemoCandidateInner({ params }) {
           </div>
         )}
 
+        {/* ── Attendance Risk Signal (agency + temp, James O'Brien demo) ── */}
+        {isAgency && isTemp && params.candidateId === 'demo-c4' && (
+          <Card style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', gap: 16, flexDirection: isMobile ? 'column' : 'row' }}>
+              {/* Reliability Score Ring */}
+              <div style={{ textAlign: 'center', minWidth: 140, padding: '8px 0' }}>
+                <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Reliability Score</div>
+                {(() => {
+                  const rs = 90, rsColor = GRN, rsLabel = 'Reliable'
+                  const size = 88, sw = 7, r = (size - sw * 2) / 2, circ = 2 * Math.PI * r, offset = circ * (1 - rs / 100)
+                  return (
+                    <>
+                      <div style={{ position: 'relative', width: size, height: size, margin: '0 auto' }}>
+                        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+                          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={sw} />
+                          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={rsColor} strokeWidth={sw} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
+                        </svg>
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: F, fontSize: 24, fontWeight: 800, color: rsColor }}>{rs}</div>
+                      </div>
+                      <div style={{ marginTop: 8, display: 'inline-block', padding: '3px 12px', borderRadius: 50, fontSize: 11, fontWeight: 800, fontFamily: F, background: GRNBG, color: GRN }}>{rsLabel}</div>
+                    </>
+                  )
+                })()}
+              </div>
+              {/* Attendance Summary */}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 10 }}>Attendance</div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+                  <div style={{ flex: 1, minWidth: 120, background: BG, borderRadius: 8, padding: '10px 14px' }}>
+                    <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', marginBottom: 4 }}>This week</div>
+                    <div style={{ fontFamily: F, fontSize: 13, color: TX }}><span style={{ color: GRN, fontWeight: 700 }}>3</span> present, <span style={{ color: AMB, fontWeight: 700 }}>2</span> late</div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 120, background: BG, borderRadius: 8, padding: '10px 14px' }}>
+                    <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', marginBottom: 4 }}>Running total</div>
+                    <div style={{ fontFamily: F, fontSize: 13, color: TX }}><span style={{ fontWeight: 700 }}>10</span> days logged, <span style={{ color: AMB, fontWeight: 700 }}>2</span> issues</div>
+                  </div>
+                </div>
+                <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', marginBottom: 6 }}>Recent</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {[
+                    { date: '16 Apr 2026', status: 'Present', color: GRN },
+                    { date: '15 Apr 2026', status: 'Late', color: AMB },
+                    { date: '14 Apr 2026', status: 'Present', color: GRN },
+                    { date: '11 Apr 2026', status: 'Late', color: AMB },
+                    { date: '10 Apr 2026', status: 'Present', color: GRN },
+                  ].map((r, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 6, background: BG }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
+                      <span style={{ fontFamily: F, fontSize: 12, color: TX2, flex: 1 }}>{r.date}</span>
+                      <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: r.color }}>{r.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* ── Replacement Trigger (agency + temp, James O'Brien demo) ── */}
+        {isAgency && isTemp && params.candidateId === 'demo-c4' && (
+          <Card style={{ marginBottom: 20, borderTop: `3px solid ${RED}`, background: 'linear-gradient(135deg, #fef2f2 0%, #fff 40%)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <Ic name="alert" size={16} color={RED} />
+              <span style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX }}>Do you need to replace this worker?</span>
+            </div>
+            <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 16px', lineHeight: 1.55 }}>
+              We have found 2 previously screened candidates for Sales Executive who scored above 70.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+              {[
+                { name: 'Priya Patel', score: 61, date: '1 Apr 2026', verdict: 'Review' },
+                { name: 'Marcus Williams', score: 74, date: '3 Apr 2026', verdict: 'Review' },
+              ].map((rc, i) => {
+                const rcColor = rc.score >= 80 ? GRN : rc.score >= 70 ? TEAL : AMB
+                const size = 44, sw = 4, r = (size - sw * 2) / 2, circ = 2 * Math.PI * r, offset = circ * (1 - rc.score / 100)
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: CARD, border: `1px solid ${BD}`, borderRadius: 10, flexWrap: 'wrap' }}>
+                    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+                      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={sw} />
+                        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={rcColor} strokeWidth={sw} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
+                      </svg>
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: F, fontSize: 14, fontWeight: 800, color: rcColor }}>{rc.score}</div>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 120 }}>
+                      <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{rc.name}</div>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX3 }}>Assessed {rc.date}</div>
+                      <span style={{ display: 'inline-block', marginTop: 3, padding: '2px 10px', borderRadius: 50, fontSize: 10, fontWeight: 800, fontFamily: F, background: AMBBG, color: AMB }}>{rc.verdict}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                      <button onClick={() => setSignupPrompt(true)} style={{ padding: '7px 14px', borderRadius: 7, border: `1px solid ${BD}`, background: CARD, fontFamily: F, fontSize: 12, fontWeight: 700, color: TX, cursor: 'pointer' }}>View Report</button>
+                      <button onClick={() => setSignupPrompt(true)} style={{ padding: '7px 14px', borderRadius: 7, border: 'none', background: TEAL, fontFamily: F, fontSize: 12, fontWeight: 700, color: NAVY, cursor: 'pointer' }}>Contact</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button onClick={() => setSignupPrompt(true)} style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: NAVY, color: '#fff', fontFamily: F, fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>
+                Yes, find a replacement
+              </button>
+              <button style={{ padding: '10px 22px', borderRadius: 8, border: `1.5px solid ${BD}`, background: CARD, color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 700, cursor: 'default', opacity: 0.5 }}>
+                No, not needed
+              </button>
+            </div>
+          </Card>
+        )}
+
         {/* ── CANDIDATE HEADER — three-column layout ── */}
         <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 16 : 20, flexDirection: isMobile ? 'column' : 'row' }}>
