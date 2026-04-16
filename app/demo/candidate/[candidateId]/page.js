@@ -897,6 +897,36 @@ function DemoCandidateInner({ params }) {
           </Card>
         )}
 
+        {/* ── Pre-Start Risk Check (agency + temp, James O'Brien demo) ── */}
+        {isAgency && isTemp && params.candidateId === 'demo-c4' && (
+          <Card style={{ marginBottom: 20, borderTop: `3px solid ${AMB}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Ic name="shield" size={15} color={AMB} />
+                <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>Pre-Start Risk Check</span>
+              </div>
+              <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 50, fontSize: 11, fontWeight: 800, fontFamily: F, background: AMBBG, color: AMB }}>Medium Risk</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+              {[
+                { label: 'Ghosting risk', value: 'Low', color: GRN },
+                { label: 'Counter-offer risk', value: 'Medium', color: AMB },
+                { label: 'Overall', value: 'Medium', color: AMB },
+              ].map((f, i) => (
+                <div key={i} style={{ background: BG, borderRadius: 8, padding: '10px 14px' }}>
+                  <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{f.label}</div>
+                  <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: f.color }}>{f.value}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ background: AMBBG, borderLeft: `4px solid ${AMB}`, borderRadius: '0 8px 8px 0', padding: '10px 14px' }}>
+              <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>
+                Start date confirmed but limited contact since accepting. Original assessment flagged moderate counter-offer susceptibility. Follow up with a call to confirm engagement.
+              </p>
+            </div>
+          </Card>
+        )}
+
         {/* ── Attendance Risk Signal (agency + temp, James O'Brien demo) ── */}
         {isAgency && isTemp && params.candidateId === 'demo-c4' && (
           <Card style={{ marginBottom: 20 }}>

@@ -99,6 +99,15 @@ export default function AssignmentReviewPage({ params }) {
   const [savingReplacement, setSavingReplacement] = useState(false)
   const [replacementLogged, setReplacementLogged] = useState(false)
 
+  // Pre-start check
+  const [prestartCheck, setPrestartCheck] = useState(null)
+  const [psStartConfirmed, setPsStartConfirmed] = useState(null)
+  const [psInContact, setPsInContact] = useState('')
+  const [psHesitation, setPsHesitation] = useState(null)
+  const [psNotes, setPsNotes] = useState('')
+  const [savingPrestart, setSavingPrestart] = useState(false)
+  const [showPrestartForm, setShowPrestartForm] = useState(false)
+
   // Attendance
   const [attendanceRecords, setAttendanceRecords] = useState([])
   const [attDate, setAttDate] = useState(() => new Date().toISOString().slice(0, 10))
@@ -163,6 +172,15 @@ export default function AssignmentReviewPage({ params }) {
         if (attRes.ok) {
           const attData = await attRes.json()
           setAttendanceRecords(attData.records || [])
+        }
+      } catch {}
+
+      // Load existing prestart check
+      try {
+        const psRes = await fetch(`/api/prestart-check?candidate_id=${params.candidateId}`)
+        if (psRes.ok) {
+          const psData = await psRes.json()
+          if (psData.check) setPrestartCheck(psData.check)
         }
       } catch {}
 
@@ -388,6 +406,36 @@ export default function AssignmentReviewPage({ params }) {
 
   const shareUrl = shareToken ? `${typeof window !== 'undefined' ? window.location.origin : 'https://app.prodicta.co.uk'}/placement/${shareToken}` : ''
 
+  async function handleSavePrestartCheck() {
+    if (psStartConfirmed === null || !psInContact || psHesitation === null) return
+    setSavingPrestart(true)
+    try {
+      const res = await fetch('/api/prestart-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidate_id: params.candidateId,
+          assessment_id: params.id,
+          worker_name: candidate?.name || '',
+          role_title: candidate?.assessments?.role_title || '',
+          client_company: record?.client_company || '',
+          start_date: record?.assignment_start_date || '',
+          start_confirmed: psStartConfirmed,
+          in_contact: psInContact,
+          hesitation: psHesitation,
+          counter_offer_flag: false,
+          notes: psNotes || null,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setPrestartCheck(data.check)
+        setShowPrestartForm(false)
+      }
+    } catch (err) { console.error(err) }
+    finally { setSavingPrestart(false) }
+  }
+
   const inputStyle = (field) => ({
     fontFamily: F, fontSize: 14, width: '100%', padding: '10px 14px', borderRadius: 8,
     border: `1.5px solid ${focusedField === field ? TEAL : BD}`, background: CARD, color: TX,
@@ -488,6 +536,118 @@ export default function AssignmentReviewPage({ params }) {
                   ))}
                 </div>
               </div>
+
+              {/* Pre-Start Check — show when start date is in the future or within 7 days */}
+              {record?.assignment_start_date && (() => {
+                const startDate = new Date(record.assignment_start_date + 'T00:00:00')
+                const today = new Date(); today.setHours(0, 0, 0, 0)
+                const daysUntil = Math.ceil((startDate - today) / 86400000)
+                if (daysUntil < -7) return null // past start, no longer relevant
+                const riskColor = (r) => r === 'high' ? DRED : r === 'medium' ? AMB : GRN
+                const riskBg = (r) => r === 'high' ? DREDBG : r === 'medium' ? AMBBG : GRNBG
+                const riskLabel = (r) => r === 'high' ? 'High' : r === 'medium' ? 'Medium' : 'Low'
+
+                return (
+                  <div style={{
+                    ...cs, marginBottom: 20,
+                    borderTop: `3px solid ${prestartCheck?.overall_risk === 'high' ? DRED : prestartCheck?.overall_risk === 'medium' ? AMB : TEAL}`,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Ic name="shield" size={15} color={prestartCheck ? riskColor(prestartCheck.overall_risk) : TEALD} />
+                        <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>Pre-Start Risk Check</span>
+                        {daysUntil > 0 && <span style={{ fontFamily: F, fontSize: 12, color: TX3 }}>{daysUntil} day{daysUntil !== 1 ? 's' : ''} until start</span>}
+                      </div>
+                      {prestartCheck && (
+                        <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 50, fontSize: 11, fontWeight: 800, fontFamily: F, background: riskBg(prestartCheck.overall_risk), color: riskColor(prestartCheck.overall_risk) }}>
+                          {riskLabel(prestartCheck.overall_risk)} Risk
+                        </span>
+                      )}
+                    </div>
+
+                    {prestartCheck && !showPrestartForm ? (
+                      <>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+                          {[
+                            { label: 'Ghosting risk', value: prestartCheck.ghosting_risk },
+                            { label: 'Counter-offer risk', value: prestartCheck.counter_offer_risk },
+                            { label: 'Overall', value: prestartCheck.overall_risk },
+                          ].map((f, i) => (
+                            <div key={i} style={{ background: BG, borderRadius: 8, padding: '10px 14px' }}>
+                              <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{f.label}</div>
+                              <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: riskColor(f.value) }}>{riskLabel(f.value)}</div>
+                            </div>
+                          ))}
+                        </div>
+                        {prestartCheck.overall_risk === 'high' && (
+                          <div style={{ background: DREDBG, borderLeft: `4px solid ${DRED}`, borderRadius: '0 8px 8px 0', padding: '12px 16px', marginBottom: 14 }}>
+                            <p style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: DRED, margin: '0 0 6px' }}>Recommended actions</p>
+                            <ul style={{ fontFamily: F, fontSize: 12.5, color: TX, margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
+                              <li>Call the worker today to confirm their start date</li>
+                              <li>Check for counter-offer signals</li>
+                              <li>Have a backup candidate ready</li>
+                            </ul>
+                          </div>
+                        )}
+                        {prestartCheck.overall_risk === 'high' && (
+                          <button onClick={() => { if (typeof loadReplacementCandidates === 'function') loadReplacementCandidates() }} style={{ padding: '8px 18px', borderRadius: 8, border: `1.5px solid ${BD}`, background: CARD, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, cursor: 'pointer', marginBottom: 8 }}>
+                            Find Backup Candidate
+                          </button>
+                        )}
+                        <button onClick={() => setShowPrestartForm(true)} style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                          Update check
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {!showPrestartForm && !prestartCheck && (
+                          <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 14px', lineHeight: 1.55 }}>
+                            Complete a pre-start check to identify ghosting risk and counter-offer risk before day one.
+                          </p>
+                        )}
+                        {(showPrestartForm || !prestartCheck) && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                            <div>
+                              <label style={labelStyle}>Has the worker confirmed their start date?</label>
+                              <div style={{ display: 'flex', gap: 8 }}>
+                                {[{ v: true, l: 'Yes' }, { v: false, l: 'No' }].map(o => (
+                                  <button key={o.l} onClick={() => setPsStartConfirmed(o.v)} style={{ padding: '7px 16px', borderRadius: 7, fontSize: 13, fontWeight: 700, fontFamily: F, cursor: 'pointer', background: psStartConfirmed === o.v ? `${o.v ? GRN : DRED}14` : BG, border: `1.5px solid ${psStartConfirmed === o.v ? (o.v ? GRN : DRED) : BD}`, color: psStartConfirmed === o.v ? (o.v ? GRN : DRED) : TX2 }}>{o.l}</button>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <label style={labelStyle}>Have they been in contact since accepting?</label>
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                {[{ v: 'yes', l: 'Yes' }, { v: 'no', l: 'No' }, { v: 'not_attempted', l: 'Not attempted' }].map(o => (
+                                  <button key={o.v} onClick={() => setPsInContact(o.v)} style={{ padding: '7px 16px', borderRadius: 7, fontSize: 13, fontWeight: 700, fontFamily: F, cursor: 'pointer', background: psInContact === o.v ? `${o.v === 'yes' ? GRN : o.v === 'no' ? DRED : AMB}14` : BG, border: `1.5px solid ${psInContact === o.v ? (o.v === 'yes' ? GRN : o.v === 'no' ? DRED : AMB) : BD}`, color: psInContact === o.v ? (o.v === 'yes' ? GRN : o.v === 'no' ? DRED : AMB) : TX2 }}>{o.l}</button>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <label style={labelStyle}>Any signs of hesitation or second thoughts?</label>
+                              <div style={{ display: 'flex', gap: 8 }}>
+                                {[{ v: true, l: 'Yes' }, { v: false, l: 'No' }].map(o => (
+                                  <button key={o.l} onClick={() => setPsHesitation(o.v)} style={{ padding: '7px 16px', borderRadius: 7, fontSize: 13, fontWeight: 700, fontFamily: F, cursor: 'pointer', background: psHesitation === o.v ? `${o.v ? DRED : GRN}14` : BG, border: `1.5px solid ${psHesitation === o.v ? (o.v ? DRED : GRN) : BD}`, color: psHesitation === o.v ? (o.v ? DRED : GRN) : TX2 }}>{o.l}</button>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <label style={labelStyle}>Notes (optional)</label>
+                              <input type="text" value={psNotes} onChange={e => setPsNotes(e.target.value)} onFocus={() => setFocusedField('psn')} onBlur={() => setFocusedField(null)} placeholder="Any additional context" style={inputStyle('psn')} />
+                            </div>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <button onClick={handleSavePrestartCheck} disabled={psStartConfirmed === null || !psInContact || psHesitation === null || savingPrestart} style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: (psStartConfirmed === null || !psInContact || psHesitation === null || savingPrestart) ? BD : TEAL, color: (psStartConfirmed === null || !psInContact || psHesitation === null || savingPrestart) ? TX3 : NAVY, fontFamily: F, fontSize: 13.5, fontWeight: 700, cursor: (psStartConfirmed === null || !psInContact || psHesitation === null || savingPrestart) ? 'not-allowed' : 'pointer' }}>
+                                {savingPrestart ? 'Saving...' : 'Complete Check'}
+                              </button>
+                              {showPrestartForm && <button onClick={() => setShowPrestartForm(false)} style={{ padding: '10px 22px', borderRadius: 8, border: `1.5px solid ${BD}`, background: CARD, fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX2, cursor: 'pointer' }}>Cancel</button>}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* Share with Client */}
               <div style={{ ...cs, marginBottom: 20 }}>

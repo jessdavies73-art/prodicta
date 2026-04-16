@@ -580,6 +580,7 @@ function DashboardPageInner() {
   const [assignmentAlerts, setAssignmentAlerts] = useState([])
   const [attendanceByCandidate, setAttendanceByCandidate] = useState({})
   const [shareByCandidate, setShareByCandidate] = useState({})
+  const [upcomingStarts, setUpcomingStarts] = useState([])
   const [placementHealth, setPlacementHealth] = useState(null) // { placements, counts, total_active, rebate_ending_this_month }
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
   const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
@@ -815,6 +816,15 @@ function DashboardPageInner() {
             }
             setAttendanceByCandidate(attMap)
             setShareByCandidate(shareMap)
+          }
+        } catch {}
+
+        // Load upcoming starts for pre-start risk panel
+        try {
+          const psRes = await fetch('/api/prestart-check')
+          if (psRes.ok) {
+            const psData = await psRes.json()
+            setUpcomingStarts(psData.upcoming || [])
           }
         } catch {}
 
@@ -1575,6 +1585,65 @@ function DashboardPageInner() {
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Pre-Start Risk panel (agency, upcoming temp starts) ── */}
+        {isAgencyAccount && upcomingStarts.length > 0 && (
+          <div style={{
+            background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+            borderTop: `3px solid ${AMB}`, padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <Ic name="shield" size={15} color={AMB} />
+              <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: TX }}>
+                Pre-Start Checks
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: AMB, background: AMBBG, border: `1px solid ${AMBBD}`, padding: '1px 8px', borderRadius: 50 }}>
+                {upcomingStarts.length}
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {upcomingStarts.map(s => {
+                const risk = s.prestart_check?.overall_risk
+                const riskColor = risk === 'high' ? RED : risk === 'medium' ? AMB : risk ? GRN : TX3
+                const riskLabel = risk === 'high' ? 'High' : risk === 'medium' ? 'Medium' : risk === 'low' ? 'Low' : 'Pending'
+                return (
+                  <div key={s.candidate_id} style={{
+                    display: 'flex', alignItems: isMobile ? 'flex-start' : 'center',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: isMobile ? 6 : 12, padding: '10px 14px',
+                    background: BG, border: `1px solid ${BD}`, borderRadius: 8,
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{s.worker_name}</div>
+                      <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>{s.role_title}{s.client_company ? ` at ${s.client_company}` : ''}</div>
+                      <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 2 }}>
+                        Starts {new Date(s.assignment_start_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} ({s.days_until_start} day{s.days_until_start !== 1 ? 's' : ''})
+                      </div>
+                    </div>
+                    <span style={{
+                      display: 'inline-block', padding: '2px 10px', borderRadius: 50,
+                      fontSize: 10, fontWeight: 800, fontFamily: F, flexShrink: 0,
+                      background: risk ? `${riskColor}18` : BG,
+                      color: riskColor, border: `1px solid ${riskColor}44`,
+                    }}>
+                      {riskLabel} Risk
+                    </span>
+                    <button
+                      onClick={() => router.push(`/assessment/${s.assessment_id}/candidate/${s.candidate_id}/assignment-review`)}
+                      style={{
+                        padding: '6px 14px', borderRadius: 7, border: `1px solid ${TEAL}`,
+                        background: TEALLT, fontFamily: F, fontSize: 12, fontWeight: 700,
+                        color: NAVY, cursor: 'pointer', flexShrink: 0,
+                      }}
+                    >
+                      {s.prestart_check ? 'View Check' : 'Complete Check'}
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

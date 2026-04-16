@@ -884,6 +884,34 @@ function DemoDashboardInner() {
               </div>
             </div>
 
+            {/* Pre-Start Risk panel */}
+            <div style={{
+              background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+              borderTop: '3px solid #D97706', padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <Ic name="shield" size={15} color={AMB} />
+                <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: TX }}>Pre-Start Checks</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: AMB, background: AMBBG, border: `1px solid ${AMBBD}`, padding: '1px 8px', borderRadius: 50 }}>1</span>
+              </div>
+              <div style={{
+                display: 'flex', alignItems: isMobile ? 'flex-start' : 'center',
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? 6 : 12, padding: '10px 14px',
+                background: BG, border: `1px solid ${BD}`, borderRadius: 8,
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>Aisha Johnson</div>
+                  <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>Sales Executive</div>
+                  <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 2 }}>Starts 19 Apr (3 days)</div>
+                </div>
+                <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 50, fontSize: 10, fontWeight: 800, fontFamily: F, background: AMBBG, color: AMB, border: `1px solid ${AMBBD}` }}>Medium Risk</span>
+                <button onClick={() => setModal(true)} style={{ padding: '6px 14px', borderRadius: 7, border: `1px solid ${TEAL}`, background: TEALLT, fontFamily: F, fontSize: 12, fontWeight: 700, color: NAVY, cursor: 'pointer', flexShrink: 0 }}>
+                  View Check
+                </button>
+              </div>
+            </div>
+
             {/* SSP Alerts panel (agency + temporary) */}
             <div style={{
               background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
