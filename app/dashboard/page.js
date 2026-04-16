@@ -585,6 +585,8 @@ function DashboardPageInner() {
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
   const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
   const [showFirstTime, setShowFirstTime] = useState(false)
+  const [installPrompt, setInstallPrompt] = useState(null)
+  const [showInstallBanner, setShowInstallBanner] = useState(false)
   // SSP Alert system (agency temp workers)
   const [sspAlerts, setSspAlerts] = useState([])
   const [reportSicknessCandidate, setReportSicknessCandidate] = useState(null)
@@ -878,6 +880,15 @@ function DashboardPageInner() {
 
   // Reset selection when filter changes (must be before early returns to preserve hook order)
   useEffect(() => { setSelectedCandidates(new Set()) }, [activeFilter])
+
+  // PWA install prompt
+  useEffect(() => {
+    const dismissed = typeof window !== 'undefined' && localStorage.getItem('prodicta_pwa_dismissed')
+    if (dismissed) return
+    function handlePrompt(e) { e.preventDefault(); setInstallPrompt(e); setShowInstallBanner(true) }
+    window.addEventListener('beforeinstallprompt', handlePrompt)
+    return () => window.removeEventListener('beforeinstallprompt', handlePrompt)
+  }, [])
 
   if (loading) return <LoadingSkeleton />
 
@@ -1380,6 +1391,44 @@ function DashboardPageInner() {
         flex: 1,
         minWidth: 0,
       }}>
+
+        {/* ── PWA Install Banner ── */}
+        {showInstallBanner && installPrompt && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: 12, padding: '10px 18px', marginBottom: 16,
+            background: NAVY, borderRadius: 10, flexWrap: 'wrap',
+          }}>
+            <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
+              Install PRODICTA on your desktop or phone for quick access.
+            </span>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <button
+                onClick={async () => {
+                  installPrompt.prompt()
+                  const { outcome } = await installPrompt.userChoice
+                  if (outcome === 'accepted') { setShowInstallBanner(false) }
+                  setInstallPrompt(null)
+                }}
+                style={{
+                  padding: '6px 16px', borderRadius: 7, border: 'none',
+                  background: TEAL, color: NAVY, fontFamily: F, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Install
+              </button>
+              <button
+                onClick={() => { setShowInstallBanner(false); localStorage.setItem('prodicta_pwa_dismissed', '1') }}
+                style={{
+                  padding: '6px 12px', borderRadius: 7, border: 'none',
+                  background: 'transparent', color: 'rgba(255,255,255,0.4)', fontFamily: F, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── Header ── */}
         <div style={{

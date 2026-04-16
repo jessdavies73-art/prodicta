@@ -13,6 +13,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
+  themeColor: '#00BFA5',
 }
 
 export const metadata = {
@@ -20,12 +21,26 @@ export const metadata = {
   description: 'The Hiring Decision Engine with built-in Probation Insurance. Prodicta helps UK businesses identify whether candidates will succeed through probation using AI-powered work simulations.',
   icons: {
     icon: '/favicon.ico',
+    apple: '/icon-192.svg',
+  },
+  manifest: '/manifest.json',
+  other: {
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'apple-mobile-web-app-title': 'PRODICTA',
   },
 }
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js')})}`,
+          }}
+        />
+      </head>
       <body
         className={`${outfit.variable} ${ibmPlexMono.variable}`}
         style={{
