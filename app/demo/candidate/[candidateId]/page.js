@@ -1102,13 +1102,26 @@ function DemoCandidateInner({ params }) {
                   </button>
                 )}
 
-                {/* WORKSPACE */}
+                {/* REPORT SICKNESS (agency + temporary only) */}
+                {isAgency && ['demo-c6','demo-c4','demo-c7'].includes(params.candidateId) && (
+                  <button onClick={() => setSignupPrompt(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fffbeb', border: '1.5px solid #fbbf24', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: '#D97706', padding: '9px 16px', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}>
+                    <Ic name="alert" size={14} color="#D97706" />
+                    Report Sickness
+                    <InfoTooltip text="Report this worker as sick to trigger SSP eligibility checks and alerts." />
+                  </button>
+                )}
+
+                {/* WORKSPACE (Strategy-Fit only) */}
+                {candidate?.assessments?.assessment_mode === 'advanced' && (
+                <>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Workspace</div>
                 <a href="/demo/workspace" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', textDecoration: 'none', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}>
                   <Ic name="grid" size={14} color={TEALD} />
                   View Day 1 Simulation
                   <InfoTooltip text="See how this candidate performed in the virtual Day 1 workspace — emails, tasks, messages and calendar." />
                 </a>
+                </>
+                )}
               </div>
               )}
               </div>
@@ -1129,6 +1142,131 @@ function DemoCandidateInner({ params }) {
             </p>
           </div>
         </Card>
+
+        {/* ── Placement Health Score (agency only) ── */}
+        {isAgency && (() => {
+          const prs = score >= 75 ? 82 : score >= 60 ? 61 : 38
+          const prsColor = prs >= 75 ? GRN : prs >= 50 ? AMB : RED
+          const prsBg = prs >= 75 ? GRNBG : prs >= 50 ? AMBBG : REDBG
+          const prsBd = prs >= 75 ? GRNBD : prs >= 50 ? AMBBD : REDBD
+          const prsLabel = prs >= 75 ? 'Low Risk' : prs >= 50 ? 'Medium Risk' : 'High Risk'
+          const prsDesc = prs >= 75
+            ? 'Strong chance of successful placement. Candidate profile aligns well with role demands.'
+            : prs >= 50
+            ? 'Moderate placement risk. Review watch-outs and consider probing questions before placing.'
+            : 'High placement risk. Significant gaps detected. Discuss concerns with client before proceeding.'
+          return (
+            <Card style={{ marginBottom: 16, border: `1.5px solid ${prsBd}`, background: `linear-gradient(135deg, ${prsBg} 0%, #fff 60%)` }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 220 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+                    <span style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TX, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Placement Risk Score
+                    </span>
+                    <InfoTooltip text="Combines assessment score, pressure-fit, seniority fit, industry turnover risk, and response integrity to estimate placement success likelihood." />
+                  </div>
+                  <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.65 }}>
+                    {prsDesc}
+                  </p>
+                </div>
+                <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 80, height: 80, borderRadius: '50%', border: `6px solid ${prsColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 24, fontWeight: 800, color: prsColor }}>{prs}</div>
+                  <div style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', padding: '4px 14px', borderRadius: 50, fontFamily: F, fontSize: 12, fontWeight: 800, background: prsBg, color: prsColor, border: `1px solid ${prsBd}` }}>
+                    {prsLabel}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )
+        })()}
+
+        {/* ── Rebate Period Tracker (agency only) ── */}
+        {isAgency && demoOutcome && (
+          <Card style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Ic name="clock" size={14} color={TEAL} />
+              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TX, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Rebate Period Tracker
+              </span>
+            </div>
+            {(() => {
+              const week = 6
+              const total = 12
+              const pct = Math.round((week / total) * 100)
+              return (
+                <div style={{ padding: '12px 16px', background: BG, border: `1px solid ${BD}`, borderRadius: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: TX }}>{candidate?.name}</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: TEAL, background: `${TEAL}18`, padding: '2px 10px', borderRadius: 20 }}>On track</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+                    <div style={{ flex: 1, height: 8, background: `${TEAL}22`, borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: TEAL, borderRadius: 4 }} />
+                    </div>
+                    <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: TX3, flexShrink: 0 }}>Week {week}/{total}</span>
+                  </div>
+                </div>
+              )
+            })()}
+          </Card>
+        )}
+
+        {/* ── Probation Timeline Tracker (employer only) ── */}
+        {!isAgency && demoOutcome && (
+          <Card style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Ic name="clock" size={14} color={TEAL} />
+              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TX, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Probation Timeline
+              </span>
+            </div>
+            {(() => {
+              const month = 2
+              const total = 6
+              const pct = Math.round((month / total) * 100)
+              return (
+                <div style={{ padding: '12px 16px', background: BG, border: `1px solid ${BD}`, borderRadius: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: TX }}>{candidate?.name}</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: TEAL, background: `${TEAL}18`, padding: '2px 10px', borderRadius: 20 }}>On track</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+                    <div style={{ flex: 1, height: 8, background: `${TEAL}22`, borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: TEAL, borderRadius: 4 }} />
+                    </div>
+                    <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: TX3, flexShrink: 0 }}>Month {month}/{total}</span>
+                  </div>
+                  <div style={{ marginTop: 10, fontSize: 12, color: TX3, lineHeight: 1.55 }}>
+                    Next review: Month 3 check-in. ERA 2025 compliance tracked automatically.
+                  </div>
+                </div>
+              )
+            })()}
+          </Card>
+        )}
+
+        {/* ── Accountability Trail / Document This Assessment (agency only) ── */}
+        {isAgency && (
+          <Card style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Ic name="shield" size={14} color={TEAL} />
+              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TX }}>Document This Assessment</span>
+              <InfoTooltip text="Documentation that this assessment was conducted using objective, evidence-based methods in compliance with the Equality Act 2010." />
+            </div>
+            <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 16px', lineHeight: 1.7 }}>
+              Generate a timestamped accountability record containing key findings, watch-outs, and recommended interview questions. Store it for your records and share with clients.
+            </p>
+            <button onClick={() => setSignupPrompt(true)} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              padding: '10px 22px', borderRadius: 9, border: 'none',
+              background: TEAL, color: NAVY,
+              fontFamily: F, fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+            }}>
+              <Ic name="file" size={15} color={NAVY} />
+              Generate Accountability Record
+            </button>
+          </Card>
+        )}
 
         {/* Documents placeholder */}
         <Card style={{ marginBottom: 16 }}>

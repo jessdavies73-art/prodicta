@@ -1835,6 +1835,23 @@ export default function CandidateReportPage({ params }) {
                     {profile?.account_type === 'employer' && (
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Onboarding</div>
                     )}
+                    {results?.coaching_plan && profile?.account_type === 'employer' && (
+                      <button
+                        onClick={() => {
+                          const el = document.getElementById('coaching-plan')
+                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                        }}
+                      >
+                        <Ic name="file" size={15} color={TEALD} />
+                        {candidate?.assessments?.employment_type === 'temporary' ? 'Assignment Success Plan' : '90-Day Manager Coaching Plan'}
+                        <InfoTooltip text={candidate?.assessments?.employment_type === 'temporary' ? 'A structured assignment guide with objectives for the placement period.' : 'A structured probation guide with SMART objectives and Alchemy Training UK coach support.'} />
+                      </button>
+                    )}
                     {profile?.account_type === 'employer' && existingOutcome && (
                       <button
                         onClick={() => router.push(
