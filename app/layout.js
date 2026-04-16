@@ -24,7 +24,7 @@ export const metadata = {
   description: 'The Hiring Decision Engine with built-in Probation Insurance. Prodicta helps UK businesses identify whether candidates will succeed through probation using AI-powered work simulations.',
   icons: {
     icon: '/icon-192.svg',
-    apple: '/icon-192.png',
+    apple: '/icon-192.svg',
     shortcut: '/icon-192.svg',
   },
   manifest: '/manifest.json',
