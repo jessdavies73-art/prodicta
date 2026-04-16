@@ -1027,6 +1027,23 @@ function DemoCandidateInner({ params }) {
                   <InfoTooltip text="Add new information and re-analyse the existing responses. The candidate does nothing. Shows a before and after comparison." />
                 </button>
 
+                {/* ASSIGNMENT (agency + temporary only) */}
+                {isAgency && isTemp && (
+                <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Assignment</div>
+                <button onClick={() => setSignupPrompt(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}>
+                  <Ic name="award" size={14} color={TEALD} />
+                  Open Assignment Tracker
+                  <InfoTooltip text="Track this worker through their assignment period with structured check-ins, attendance logging, and placement health monitoring." />
+                </button>
+                <button onClick={() => setSignupPrompt(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}>
+                  <Ic name="clock" size={14} color={TEALD} />
+                  Log Attendance
+                  <InfoTooltip text="Log daily attendance for this worker. Builds a reliability score that feeds into placement health." />
+                </button>
+                </>
+                )}
+
                 {/* ONBOARDING */}
                 {!isAgency && (
                 <>

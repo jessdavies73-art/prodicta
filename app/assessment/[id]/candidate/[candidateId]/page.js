@@ -1831,6 +1831,36 @@ export default function CandidateReportPage({ params }) {
                         <InfoTooltip text="Targeted interview questions generated from this candidate's specific watch-outs" />
                       </button>
                     )}
+                    {/* ASSIGNMENT (agency + temporary only) */}
+                    {profile?.account_type === 'agency' && candidate?.assessments?.employment_type === 'temporary' && (
+                    <>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Assignment</div>
+                    <button
+                      onClick={() => router.push(`/assessment/${params.id}/candidate/${params.candidateId}/assignment-review`)}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                        fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                      }}
+                    >
+                      <Ic name="award" size={15} color={TEALD} />
+                      Open Assignment Tracker
+                      <InfoTooltip text="Track this worker through their assignment period with structured check-ins, attendance logging, and placement health monitoring." />
+                    </button>
+                    <button
+                      onClick={() => { router.push(`/assessment/${params.id}/candidate/${params.candidateId}/assignment-review`); setTimeout(() => { const el = document.getElementById('attendance-section'); if (el) el.scrollIntoView({ behavior: 'smooth' }) }, 500) }}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                        fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                      }}
+                    >
+                      <Ic name="clock" size={15} color={TEALD} />
+                      Log Attendance
+                      <InfoTooltip text="Log daily attendance for this worker. Builds a reliability score that feeds into placement health." />
+                    </button>
+                    </>
+                    )}
                     {/* ONBOARDING */}
                     {profile?.account_type === 'employer' && (
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Onboarding</div>
