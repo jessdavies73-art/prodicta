@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import ProdictaLogo from '@/components/ProdictaLogo'
 
 const NAVY = '#0f2137'
 const TEAL = '#00BFA5'
@@ -72,7 +73,7 @@ export default function AuditPage() {
     <div style={{ minHeight: '100vh', background: BG, fontFamily: F, color: TX }}>
       <header style={{ background: NAVY, padding: '18px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ fontSize: 22, fontWeight: 800, color: TEAL, letterSpacing: '-0.5px' }}>PRODICTA</span>
+          <ProdictaLogo textColor="#ffffff" size={32} />
         </Link>
         <Link href="/" style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Back to home</Link>
       </header>

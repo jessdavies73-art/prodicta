@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getAllPosts, excerpt } from '@/lib/blog-posts'
+import ProdictaLogo from '@/components/ProdictaLogo'
 
 const NAVY = '#0f2137'
 const TEAL = '#00BFA5'
@@ -32,7 +33,7 @@ export default function BlogIndex() {
     <div style={{ minHeight: '100vh', background: BG, fontFamily: F, color: TX }}>
       <header style={{ background: NAVY, padding: '18px clamp(16px, 3vw, 32px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ fontSize: 22, fontWeight: 800, color: TEAL, letterSpacing: '-0.5px' }}>PRODICTA</span>
+          <ProdictaLogo textColor="#ffffff" size={32} />
         </Link>
         <nav style={{ display: 'flex', gap: 18 }}>
           <Link href="/" style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Home</Link>

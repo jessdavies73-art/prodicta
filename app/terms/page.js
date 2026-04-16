@@ -1,3 +1,5 @@
+import ProdictaLogo from '@/components/ProdictaLogo'
+
 const NAVY  = '#0f2137'
 const TEAL  = '#009688'
 const F     = "'Outfit', system-ui, sans-serif"
@@ -15,11 +17,8 @@ function Nav() {
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       borderBottom: '1px solid rgba(255,255,255,0.08)',
     }}>
-      <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-        <div style={{ width: 30, height: 30, borderRadius: 7, background: 'linear-gradient(135deg, #00BFA5, #009688)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: 12, height: 12, border: '2.5px solid #fff', borderRadius: 2 }} />
-        </div>
-        <span style={{ fontFamily: F, fontSize: 17, fontWeight: 700, color: '#fff', letterSpacing: '-0.3px' }}>PRODICTA</span>
+      <a href="/" style={{ textDecoration: 'none' }}>
+        <ProdictaLogo textColor="#ffffff" size={32} />
       </a>
       <a href="/login" style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.65)', textDecoration: 'none' }}>Sign in</a>
     </nav>

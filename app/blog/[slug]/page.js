@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getAllPosts, getPostBySlug, readingTime } from '@/lib/blog-posts'
+import ProdictaLogo from '@/components/ProdictaLogo'
 
 const NAVY = '#0f2137'
 const TEAL = '#00BFA5'
@@ -74,7 +75,7 @@ export default function BlogPostPage({ params }) {
 
       <header style={{ background: NAVY, padding: '18px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ fontSize: 22, fontWeight: 800, color: TEAL, letterSpacing: '-0.5px' }}>PRODICTA</span>
+          <ProdictaLogo textColor="#ffffff" size={32} />
         </Link>
         <nav style={{ display: 'flex', gap: 18 }}>
           <Link href="/" style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Home</Link>
