@@ -578,6 +578,7 @@ function DashboardPageInner() {
   const [assessmentCredits, setAssessmentCredits] = useState([])
   const [redlineCandidates, setRedlineCandidates] = useState(new Set())
   const [assignmentAlerts, setAssignmentAlerts] = useState([])
+  const [attendanceByCandidate, setAttendanceByCandidate] = useState({})
   const [placementHealth, setPlacementHealth] = useState(null) // { placements, counts, total_active, rebate_ending_this_month }
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
   const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
@@ -796,6 +797,20 @@ function DashboardPageInner() {
             .eq('resolved', false)
             .order('created_at', { ascending: false })
           if (alertRows) setAssignmentAlerts(alertRows)
+        } catch {}
+
+        // Load attendance risk data from assignment_reviews
+        try {
+          const { data: attRows } = await supabase
+            .from('assignment_reviews')
+            .select('candidate_id, reliability_score, attendance_risk')
+            .eq('user_id', user.id)
+            .not('reliability_score', 'is', null)
+          if (attRows) {
+            const map = {}
+            for (const r of attRows) map[r.candidate_id] = r
+            setAttendanceByCandidate(map)
+          }
         } catch {}
 
         // Load active SSP alerts for agency accounts
@@ -2200,6 +2215,21 @@ function DashboardPageInner() {
                                     }}>
                                       {c.assessments?.employment_type === 'temporary' ? 'TEMP' : 'PERM'}
                                     </span>
+                                    {isAgencyAccount && c.assessments?.employment_type === 'temporary' && attendanceByCandidate[c.id] && (() => {
+                                      const att = attendanceByCandidate[c.id]
+                                      const attColor = att.attendance_risk === 'high' ? RED : att.attendance_risk === 'monitor' ? AMB : GRN
+                                      const attLabel = att.attendance_risk === 'high' ? 'At Risk' : att.attendance_risk === 'monitor' ? 'Monitor' : 'Reliable'
+                                      return (
+                                        <span style={{
+                                          fontSize: 8, fontWeight: 800, letterSpacing: '0.04em',
+                                          padding: '1px 5px', borderRadius: 4, flexShrink: 0,
+                                          background: `${attColor}18`, color: attColor,
+                                          border: `1px solid ${attColor}44`,
+                                        }} title={`Reliability: ${att.reliability_score}/100`}>
+                                          {attLabel}
+                                        </span>
+                                      )
+                                    })()}
                                     {redlineCandidates.has(c.id) && (
                                       <a
                                         href={`/assessment/${c.assessments?.id}/candidate/${c.id}/copilot`}

@@ -85,6 +85,14 @@ export default function AssignmentReviewPage({ params }) {
   const [latestAlert, setLatestAlert] = useState(null)
   const [resolvingAlert, setResolvingAlert] = useState(false)
 
+  // Attendance
+  const [attendanceRecords, setAttendanceRecords] = useState([])
+  const [attDate, setAttDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [attStatus, setAttStatus] = useState('')
+  const [attNotes, setAttNotes] = useState('')
+  const [savingAtt, setSavingAtt] = useState(false)
+  const [showAttForm, setShowAttForm] = useState(false)
+
   useEffect(() => {
     async function load() {
       const supabase = createClient()
@@ -132,6 +140,15 @@ export default function AssignmentReviewPage({ params }) {
         const unresolved = existingAlerts.find(a => !a.resolved)
         if (unresolved) setLatestAlert(unresolved)
       }
+
+      // Load attendance records
+      try {
+        const attRes = await fetch(`/api/attendance?candidate_id=${params.candidateId}`)
+        if (attRes.ok) {
+          const attData = await attRes.json()
+          setAttendanceRecords(attData.records || [])
+        }
+      } catch {}
 
       setLoading(false)
     }
@@ -220,6 +237,38 @@ export default function AssignmentReviewPage({ params }) {
       if (saved) setRecord(saved)
     } catch (err) { console.error(err) }
     finally { setSavingFeedback(false) }
+  }
+
+  async function handleLogAttendance() {
+    if (!attDate || !attStatus) return
+    setSavingAtt(true)
+    try {
+      const res = await fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidate_id: params.candidateId,
+          assessment_id: params.id,
+          worker_name: candidate?.name || '',
+          role_title: candidate?.assessments?.role_title || '',
+          client_company: record?.client_company || '',
+          record_date: attDate,
+          status: attStatus,
+          notes: attNotes || null,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setAttendanceRecords(prev => [data.record, ...prev])
+        if (data.reliability_score != null) {
+          setRecord(prev => prev ? { ...prev, reliability_score: data.reliability_score, attendance_risk: data.attendance_risk } : prev)
+        }
+        setAttStatus('')
+        setAttNotes('')
+        setShowAttForm(false)
+      }
+    } catch (err) { console.error(err) }
+    finally { setSavingAtt(false) }
   }
 
   const inputStyle = (field) => ({
@@ -320,6 +369,142 @@ export default function AssignmentReviewPage({ params }) {
                       <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: s.color || TX }}>{s.value}</div>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Reliability Score + Attendance */}
+              <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexDirection: isMobile ? 'column' : 'row' }}>
+                {/* Reliability Score Ring */}
+                <div style={{ ...cs, flex: '0 0 auto', textAlign: 'center', minWidth: 160 }}>
+                  <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Reliability Score</div>
+                  {(() => {
+                    const rs = record?.reliability_score ?? 100
+                    const rsColor = rs >= 80 ? GRN : rs >= 60 ? AMB : DRED
+                    const rsLabel = rs >= 80 ? 'Reliable' : rs >= 60 ? 'Monitor' : 'At Risk'
+                    const size = 100, sw = 8, r = (size - sw * 2) / 2, circ = 2 * Math.PI * r
+                    const offset = circ * (1 - rs / 100)
+                    return (
+                      <>
+                        <div style={{ position: 'relative', width: size, height: size, margin: '0 auto' }}>
+                          <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+                            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={sw} />
+                            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={rsColor} strokeWidth={sw} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
+                          </svg>
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: F, fontSize: 28, fontWeight: 800, color: rsColor }}>{rs}</div>
+                        </div>
+                        <div style={{ marginTop: 8, display: 'inline-block', padding: '3px 12px', borderRadius: 50, fontSize: 11, fontWeight: 800, fontFamily: F, background: rs >= 80 ? GRNBG : rs >= 60 ? AMBBG : DREDBG, color: rsColor }}>
+                          {rsLabel}
+                        </div>
+                      </>
+                    )
+                  })()}
+                </div>
+
+                {/* Attendance Summary + Log Button */}
+                <div style={{ ...cs, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>Attendance</div>
+                    <button onClick={() => setShowAttForm(!showAttForm)} style={{
+                      padding: '6px 14px', borderRadius: 7, border: `1px solid ${TEAL}`, background: showAttForm ? TEALLT : 'transparent',
+                      fontFamily: F, fontSize: 12, fontWeight: 700, color: TEALD, cursor: 'pointer',
+                    }}>
+                      {showAttForm ? 'Cancel' : 'Log Attendance'}
+                    </button>
+                  </div>
+
+                  {/* Log form */}
+                  {showAttForm && (
+                    <div style={{ background: BG, borderRadius: 10, padding: '14px 16px', marginBottom: 14, border: `1px solid ${BD}` }}>
+                      <div style={{ marginBottom: 10 }}>
+                        <label style={labelStyle}>Date</label>
+                        <input type="date" value={attDate} onChange={e => setAttDate(e.target.value)}
+                          onFocus={() => setFocusedField('ad')} onBlur={() => setFocusedField(null)} style={inputStyle('ad')} />
+                      </div>
+                      <div style={{ marginBottom: 10 }}>
+                        <label style={labelStyle}>Status</label>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {[
+                            { key: 'present', label: 'Present', color: GRN },
+                            { key: 'late', label: 'Late', color: AMB },
+                            { key: 'left_early', label: 'Left Early', color: AMB },
+                            { key: 'absent', label: 'Absent', color: DRED },
+                            { key: 'unauthorised_absence', label: 'Unauthorised', color: DRED },
+                          ].map(s => (
+                            <button key={s.key} onClick={() => setAttStatus(s.key)} style={{
+                              padding: '6px 12px', borderRadius: 7, fontSize: 12, fontWeight: 700, fontFamily: F, cursor: 'pointer',
+                              background: attStatus === s.key ? `${s.color}18` : BG,
+                              border: `1.5px solid ${attStatus === s.key ? s.color : BD}`,
+                              color: attStatus === s.key ? s.color : TX2,
+                            }}>
+                              {s.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: 12 }}>
+                        <label style={labelStyle}>Notes (optional)</label>
+                        <input type="text" value={attNotes} onChange={e => setAttNotes(e.target.value)}
+                          onFocus={() => setFocusedField('an')} onBlur={() => setFocusedField(null)}
+                          placeholder="e.g. Called in late, 20 minutes" style={inputStyle('an')} />
+                      </div>
+                      <button onClick={handleLogAttendance} disabled={!attDate || !attStatus || savingAtt}
+                        style={{ padding: '8px 18px', borderRadius: 7, border: 'none', background: (!attDate || !attStatus || savingAtt) ? BD : TEAL, color: (!attDate || !attStatus || savingAtt) ? TX3 : NAVY, fontFamily: F, fontSize: 13, fontWeight: 700, cursor: (!attDate || !attStatus || savingAtt) ? 'not-allowed' : 'pointer' }}>
+                        {savingAtt ? 'Saving...' : 'Save'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Weekly summary */}
+                  {(() => {
+                    const now = new Date()
+                    const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay() + 1); startOfWeek.setHours(0,0,0,0)
+                    const weekRecords = attendanceRecords.filter(r => new Date(r.record_date + 'T00:00:00') >= startOfWeek)
+                    const present = weekRecords.filter(r => r.status === 'present').length
+                    const late = weekRecords.filter(r => r.status === 'late' || r.status === 'left_early').length
+                    const absent = weekRecords.filter(r => r.status === 'absent' || r.status === 'unauthorised_absence').length
+                    const totalPresent = attendanceRecords.filter(r => r.status === 'present').length
+                    const totalIssues = attendanceRecords.length - totalPresent
+                    return (
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: 120, background: BG, borderRadius: 8, padding: '10px 14px' }}>
+                          <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', marginBottom: 4 }}>This week</div>
+                          <div style={{ fontFamily: F, fontSize: 13, color: TX }}>
+                            <span style={{ color: GRN, fontWeight: 700 }}>{present}</span> present
+                            {late > 0 && <>, <span style={{ color: AMB, fontWeight: 700 }}>{late}</span> late</>}
+                            {absent > 0 && <>, <span style={{ color: DRED, fontWeight: 700 }}>{absent}</span> absent</>}
+                            {weekRecords.length === 0 && <span style={{ color: TX3 }}>No records</span>}
+                          </div>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 120, background: BG, borderRadius: 8, padding: '10px 14px' }}>
+                          <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', marginBottom: 4 }}>Running total</div>
+                          <div style={{ fontFamily: F, fontSize: 13, color: TX }}>
+                            <span style={{ fontWeight: 700 }}>{attendanceRecords.length}</span> days logged, <span style={{ color: totalIssues > 0 ? AMB : GRN, fontWeight: 700 }}>{totalIssues}</span> issue{totalIssues !== 1 ? 's' : ''}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Recent records */}
+                  {attendanceRecords.length > 0 && (
+                    <div style={{ marginTop: 14 }}>
+                      <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', marginBottom: 8 }}>Recent</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {attendanceRecords.slice(0, 7).map(r => {
+                          const sc = r.status === 'present' ? GRN : (r.status === 'late' || r.status === 'left_early') ? AMB : DRED
+                          const sl = r.status === 'present' ? 'Present' : r.status === 'late' ? 'Late' : r.status === 'left_early' ? 'Left Early' : r.status === 'absent' ? 'Absent' : 'Unauthorised'
+                          return (
+                            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: BG }}>
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', background: sc, flexShrink: 0 }} />
+                              <span style={{ fontFamily: F, fontSize: 12, color: TX2, flex: 1 }}>{fmtDate(r.record_date)}</span>
+                              <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: sc }}>{sl}</span>
+                              {r.notes && <span style={{ fontFamily: F, fontSize: 11, color: TX3, marginLeft: 4 }}>{r.notes}</span>}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

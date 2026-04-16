@@ -97,6 +97,14 @@ export async function GET(request) {
     const copilotByCandidate = {}
     for (const row of copilotRows || []) copilotByCandidate[row.candidate_id] = row
 
+    // Pull assignment reviews for attendance/reliability data
+    const { data: assignmentReviews } = await admin
+      .from('assignment_reviews')
+      .select('candidate_id, reliability_score, attendance_risk')
+      .eq('user_id', user.id)
+    const reviewByCandidate = {}
+    for (const row of assignmentReviews || []) reviewByCandidate[row.candidate_id] = row
+
     const placements = []
     const transitionsToAmber = []
 
@@ -115,6 +123,20 @@ export async function GET(request) {
 
       const copilot = copilotByCandidate[cand.id] || null
       const health = classifyHealth({ copilot, score, outcome: o })
+
+      // Factor in attendance reliability score
+      const review = reviewByCandidate[cand.id]
+      if (review?.reliability_score != null) {
+        if (review.reliability_score < 60 && health.health_status !== 'RED') {
+          health.health_status = 'RED'
+          health.health_reason = `Attendance reliability score is ${review.reliability_score}/100. Immediate action required.`
+          health.health_score = Math.min(health.health_score, 35)
+        } else if (review.reliability_score < 80 && health.health_status === 'GREEN') {
+          health.health_status = 'AMBER'
+          health.health_reason = `Attendance reliability score is ${review.reliability_score}/100. Monitor closely.`
+          health.health_score = Math.min(health.health_score, 65)
+        }
+      }
 
       const placementDate = o.placement_date || o.outcome_date || o.created_at || cand.completed_at
       const days_in_probation = daysBetween(placementDate, new Date())
