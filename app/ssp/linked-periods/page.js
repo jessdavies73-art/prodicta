@@ -431,9 +431,24 @@ export default function LinkedPeriodsPage() {
                 )}
                 {totalDaysUsed >= 150 && totalDaysUsed < 176 && (
                   <div style={{ background: AMBERBG, border: `1px solid ${AMBERBD}`, borderRadius: 8, padding: '12px 16px', marginTop: 14 }}>
-                    <p style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: AMBER, margin: 0 }}>
+                    <p style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: AMBER, margin: '0 0 10px' }}>
                       This worker is approaching the 28-week SSP limit. Consider issuing an SSP1 form soon.
                     </p>
+                    <button
+                      onClick={generateSsp1}
+                      disabled={generatingSsp1}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        padding: '8px 18px', borderRadius: 8, border: 'none',
+                        background: generatingSsp1 ? BD : DRED, color: generatingSsp1 ? TX3 : '#fff',
+                        fontFamily: F, fontSize: 13, fontWeight: 700,
+                        cursor: generatingSsp1 ? 'not-allowed' : 'pointer',
+                        opacity: generatingSsp1 ? 0.6 : 1,
+                      }}
+                    >
+                      <Ic name="file" size={14} color={generatingSsp1 ? TX3 : '#fff'} />
+                      {generatingSsp1 ? 'Generating...' : 'Generate SSP1 Now'}
+                    </button>
                   </div>
                 )}
               </div>

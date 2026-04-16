@@ -218,6 +218,17 @@ export default function SSPRecordsPage() {
               </div>
             </div>
           )}
+          {/* Next action */}
+          <div style={{ marginTop: 24, textAlign: 'center' }}>
+            <button onClick={() => router.push('/ssp')} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '12px 28px', borderRadius: 10, border: 'none',
+              background: TEAL, color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+            }}>
+              <Ic name="plus" size={15} color={NAVY} />
+              Run a new SSP check
+            </button>
+          </div>
         </div>
       </main>
     </div>

@@ -925,6 +925,10 @@ export default function AssignmentReviewPage({ params }) {
               })()}
 
               {/* Review milestones */}
+              {(() => {
+                const firstIncompleteKey = MILESTONES.find(m => !record[`${m.key}_review_done`])?.key || null
+                return null
+              })()}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
                 {MILESTONES.map(m => {
                   const done = record[`${m.key}_review_done`]
@@ -936,12 +940,18 @@ export default function AssignmentReviewPage({ params }) {
                   const isOverdue = scheduledDate && !done && new Date() > scheduledDate
                   const isActive = activeReview === m.key
                   const ratingColor = rating === 'Concern Raised' ? DRED : rating === 'Below Expectations' ? AMB : rating === 'Exceeding Expectations' ? TEAL : GRN
+                  const isNextStep = !done && m.key === MILESTONES.find(mm => !record[`${mm.key}_review_done`])?.key
 
                   return (
                     <div key={m.key} style={{
                       ...cs, padding: '18px 22px',
-                      borderLeft: `4px solid ${done ? GRN : isOverdue ? DRED : BD}`,
+                      borderLeft: `4px solid ${done ? GRN : isNextStep ? TEAL : isOverdue ? DRED : BD}`,
+                      boxShadow: isNextStep ? `0 0 0 1px ${TEAL}44` : 'none',
+                      position: 'relative',
                     }}>
+                      {isNextStep && (
+                        <span style={{ position: 'absolute', top: -8, right: 14, fontSize: 10, fontWeight: 800, padding: '2px 10px', borderRadius: 4, background: TEAL, color: '#fff', fontFamily: F }}>Do this now</span>
+                      )}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap', gap: 8 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span style={{
@@ -1053,6 +1063,31 @@ export default function AssignmentReviewPage({ params }) {
                   {savingFeedback ? 'Saving...' : 'Save Feedback'}
                 </button>
               </div>
+
+              {/* All done prompt */}
+              {allDone && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 12, padding: '14px 20px', marginBottom: 20,
+                  background: GRNBG, borderRadius: 10, border: `1px solid ${GRN}44`, flexWrap: 'wrap',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: GRN, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Ic name="check" size={15} color="#fff" />
+                    </div>
+                    <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>All done. Share the placement update with your client.</span>
+                  </div>
+                  {!shareToken ? (
+                    <button onClick={handleGenerateShareLink} disabled={generatingShare} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: generatingShare ? BD : TEAL, color: generatingShare ? TX3 : NAVY, fontFamily: F, fontSize: 13, fontWeight: 700, cursor: generatingShare ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
+                      {generatingShare ? 'Generating...' : 'Share with Client'}
+                    </button>
+                  ) : (
+                    <button onClick={() => { navigator.clipboard.writeText(shareUrl); setShareCopied(true); setTimeout(() => setShareCopied(false), 2000) }} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+                      {shareCopied ? 'Copied' : 'Copy Client Link'}
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Assignment summary — shown when all reviews done */}
               {allDone && (

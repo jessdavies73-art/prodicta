@@ -492,6 +492,17 @@ export default function LandingPage() {
             : 'Whether you are hiring permanently or using temps, PRODICTA puts every candidate through real work scenarios built from the role itself. Predict who will pass probation or succeed on assignment. Generate ERA 2025 compliance documentation automatically. Track every hire through probation with early warning alerts. Manage SSP, holiday pay, and Fair Work Agency compliance. From first assessment to end of probation \u2014 fully covered.'}
         </p>
 
+        {/* Fear line (agency only) */}
+        {heroPersona === 'agency' && (
+          <p style={{
+            fontFamily: F, fontSize: 'clamp(13px, 1.3vw, 15px)', fontWeight: 600,
+            color: '#D97706', lineHeight: 1.6,
+            maxWidth: 600, marginBottom: 28, position: 'relative', zIndex: 1,
+          }}>
+            Every failed placement costs you the fee, the relationship, and the rebate. PRODICTA stops that before it starts.
+          </p>
+        )}
+
         {/* Proof points */}
         <div style={{
           display: 'flex', gap: 28, justifyContent: 'center', flexWrap: 'wrap',

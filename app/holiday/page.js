@@ -209,6 +209,25 @@ export default function HolidayPage() {
             )}
           </div>
 
+          {/* Quick log prompt */}
+          {selectedRecord && !showNewEntry && (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              gap: 10, padding: '10px 18px', marginBottom: 16,
+              background: TEALLT, borderRadius: 10, border: `1px solid ${TEAL}40`, flexWrap: 'wrap',
+            }}>
+              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX }}>
+                Log holiday for {selectedRecord.worker_name}
+              </span>
+              <button onClick={() => setShowNewEntry(true)} style={{
+                padding: '7px 18px', borderRadius: 8, border: 'none',
+                background: TEAL, color: NAVY, fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+              }}>
+                Log Holiday
+              </button>
+            </div>
+          )}
+
           {/* Retention notice */}
           <div style={{
             borderLeft: `4px solid ${TEAL}`, background: TEALLT, borderRadius: '0 8px 8px 0',
