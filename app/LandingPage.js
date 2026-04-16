@@ -492,16 +492,16 @@ export default function LandingPage() {
             : 'Whether you are hiring permanently or using temps, PRODICTA puts every candidate through real work scenarios built from the role itself. Predict who will pass probation or succeed on assignment. Generate ERA 2025 compliance documentation automatically. Track every hire through probation with early warning alerts. Manage SSP, holiday pay, and Fair Work Agency compliance. From first assessment to end of probation \u2014 fully covered.'}
         </p>
 
-        {/* Fear line (agency only) */}
-        {heroPersona === 'agency' && (
-          <p style={{
-            fontFamily: F, fontSize: 'clamp(13px, 1.3vw, 15px)', fontWeight: 600,
-            color: '#D97706', lineHeight: 1.6,
-            maxWidth: 600, marginBottom: 28, position: 'relative', zIndex: 1,
-          }}>
-            Every failed placement costs you the fee, the relationship, and the rebate. PRODICTA stops that before it starts.
-          </p>
-        )}
+        {/* Fear line */}
+        <p style={{
+          fontFamily: F, fontSize: 'clamp(13px, 1.3vw, 15px)', fontWeight: 600,
+          color: '#D97706', lineHeight: 1.6,
+          maxWidth: 620, marginBottom: 28, position: 'relative', zIndex: 1,
+        }}>
+          {heroPersona === 'agency'
+            ? 'Every failed placement costs you the fee, the relationship, and the rebate. PRODICTA stops that before it starts.'
+            : 'Every bad hire costs between \u00A312,000 and \u00A330,000. Most hiring decisions still rely on interviews and gut feel. PRODICTA replaces guesswork with evidence before you commit.'}
+        </p>
 
         {/* Proof points */}
         <div style={{
@@ -648,6 +648,29 @@ export default function LandingPage() {
             <polyline points="6 9 12 15 18 9"/>
           </svg>
         </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          PROOF STATEMENT
+      ════════════════════════════════════════════════════════════════════ */}
+      <section style={{
+        background: NAVY, padding: '64px 24px',
+        textAlign: 'center',
+      }}>
+        <p style={{
+          fontFamily: F, fontSize: 'clamp(22px, 3vw, 34px)', fontWeight: 400,
+          color: 'rgba(255,255,255,0.7)', margin: '0 auto 12px',
+          maxWidth: 700, lineHeight: 1.35, letterSpacing: '-0.5px',
+        }}>
+          Most hiring decisions are based on opinion.
+        </p>
+        <p style={{
+          fontFamily: F, fontSize: 'clamp(24px, 3.2vw, 38px)', fontWeight: 800,
+          color: TEAL, margin: '0 auto',
+          maxWidth: 700, lineHeight: 1.25, letterSpacing: '-0.5px',
+        }}>
+          PRODICTA gives you proof.
+        </p>
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════

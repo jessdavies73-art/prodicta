@@ -410,17 +410,35 @@ function DemoDashboardInner() {
           </div>
         </div>
 
-        {/* ── Agency motivational line ── */}
-        {isAgency && !(() => { try { return localStorage.getItem('prodicta_demo_motto_dismissed') } catch { return false } })() && (
+        {/* ── Proof statement banner (both) ── */}
+        {!(() => { try { return localStorage.getItem('prodicta_demo_proof_dismissed') } catch { return false } })() && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: 12, padding: '12px 20px', marginBottom: 16,
+            background: NAVY, borderRadius: 10, borderLeft: `4px solid ${TEAL}`,
+          }}>
+            <p style={{ fontFamily: F, fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.8)', margin: 0, lineHeight: 1.5 }}>
+              Most hiring decisions are based on opinion. <span style={{ fontWeight: 700, color: TEAL }}>PRODICTA gives you proof.</span>
+            </p>
+            <button onClick={e => { e.currentTarget.parentElement.style.display = 'none'; try { localStorage.setItem('prodicta_demo_proof_dismissed', '1') } catch {} }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}>
+              <Ic name="x" size={16} color="rgba(255,255,255,0.35)" />
+            </button>
+          </div>
+        )}
+
+        {/* ── Motivational line (persona-specific) ── */}
+        {!(() => { try { return localStorage.getItem(isAgency ? 'prodicta_demo_motto_dismissed' : 'prodicta_demo_employer_motto_dismissed') } catch { return false } })() && (
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             gap: 12, padding: '14px 20px', marginBottom: 20,
             background: NAVY, borderRadius: 10, borderLeft: `4px solid ${TEAL}`,
           }}>
             <p style={{ fontFamily: F, fontSize: 16, fontWeight: 500, fontStyle: 'italic', color: 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.5 }}>
-              You are the consultant who sees it coming. Not the one who gets the call.
+              {isAgency
+                ? 'You are the consultant who sees it coming. Not the one who gets the call.'
+                : 'You are the employer who knew from day one you made the right hire. Not the one hoping you did.'}
             </p>
-            <button onClick={e => { e.currentTarget.parentElement.style.display = 'none'; try { localStorage.setItem('prodicta_demo_motto_dismissed', '1') } catch {} }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}>
+            <button onClick={e => { e.currentTarget.parentElement.style.display = 'none'; try { localStorage.setItem(isAgency ? 'prodicta_demo_motto_dismissed' : 'prodicta_demo_employer_motto_dismissed', '1') } catch {} }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}>
               <Ic name="x" size={16} color="rgba(255,255,255,0.35)" />
             </button>
           </div>
