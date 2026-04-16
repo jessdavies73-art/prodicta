@@ -1037,6 +1037,60 @@ function DemoDashboardInner() {
               </div>
             </div>
 
+            {/* Pre-Start Engagement panel (agency + temporary, demo) */}
+            <div style={{
+              background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+              borderTop: `3px solid ${TEAL}`, padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <Ic name="pulse" size={15} color={TEAL} />
+                <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: TX }}>Pre-Start Engagement</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: TEAL, background: TEALLT, border: `1px solid ${TEAL}55`, padding: '1px 8px', borderRadius: 50 }}>1</span>
+              </div>
+              <div style={{
+                display: 'flex', alignItems: isMobile ? 'flex-start' : 'center',
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? 6 : 12, padding: '10px 14px',
+                background: BG, border: `1px solid ${BD}`, borderRadius: 8,
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>Aisha Johnson</div>
+                  <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>Sales Executive</div>
+                  <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 2 }}>Starts 19 Apr (3 days)</div>
+                  {/* Pulse status indicators */}
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                    {[
+                      { num: 1, label: 'Confirmed', color: GRN },
+                      { num: 2, label: 'No response', color: RED },
+                      { num: 3, label: 'Pending', color: BD },
+                    ].map(p => (
+                      <div key={p.num} title={`Pulse ${p.num}: ${p.label}`} style={{
+                        display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px',
+                        borderRadius: 50, background: `${p.color}14`, border: `1px solid ${p.color}44`,
+                      }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.color }} />
+                        <span style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: p.color }}>P{p.num}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <span style={{
+                  display: 'inline-block', padding: '2px 10px', borderRadius: 50,
+                  fontSize: 10, fontWeight: 800, fontFamily: F, flexShrink: 0,
+                  background: AMBBG, color: AMB, border: `1px solid ${AMBBD}`,
+                }}>
+                  Medium Risk
+                </span>
+                <button onClick={() => router.push('/demo/candidate/demo-c7?type=agency')} style={{
+                  padding: '6px 14px', borderRadius: 7, border: `1px solid ${TEAL}`,
+                  background: TEALLT, fontFamily: F, fontSize: 12, fontWeight: 700,
+                  color: NAVY, cursor: 'pointer', flexShrink: 0,
+                }}>
+                  View Tracker
+                </button>
+              </div>
+            </div>
+
             {/* SSP Alerts panel (agency + temporary) */}
             <div style={{
               background: CARD, border: `1px solid ${BD}`, borderRadius: 14,

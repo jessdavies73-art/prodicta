@@ -582,6 +582,7 @@ function DashboardPageInner() {
   const [shareByCandidate, setShareByCandidate] = useState({})
   const [upcomingStarts, setUpcomingStarts] = useState([])
   const [placementHealth, setPlacementHealth] = useState(null) // { placements, counts, total_active, rebate_ending_this_month }
+  const [engagementSequences, setEngagementSequences] = useState([])
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
   const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
   const [showFirstTime, setShowFirstTime] = useState(false)
@@ -852,6 +853,17 @@ function DashboardPageInner() {
             .order('reported_at', { ascending: false })
           if (sspRows) setSspAlerts(sspRows)
         } catch {}
+
+        // Load engagement pulse sequences for agency accounts
+        if (prof?.account_type === 'agency') {
+          try {
+            const epRes = await fetch('/api/engagement-pulses')
+            if (epRes.ok) {
+              const epData = await epRes.json()
+              if (epData.sequences) setEngagementSequences(epData.sequences)
+            }
+          } catch {}
+        }
       } catch (err) {
         console.error(err)
         setError(err.message || 'Failed to load dashboard')
@@ -1120,6 +1132,14 @@ function DashboardPageInner() {
       if (att.reliability_score < 60) {
         const c = candidates.find(x => x.id === cid)
         if (c) todaysActions.push({ priority: 'urgent', text: `${c.name} attendance critical. Call client.`, link: `/assessment/${c.assessments?.id}/candidate/${c.id}/assignment-review`, who: c.name })
+      }
+    }
+    // URGENT: engagement ghosting risk HIGH/CRITICAL
+    for (const seq of engagementSequences) {
+      if (seq.ghosting_risk === 'critical') {
+        todaysActions.push({ priority: 'urgent', text: `Critical ghosting risk for ${seq.worker_name}. Call immediately.`, link: `/assessment/${seq.assessment_id}/candidate/${seq.candidate_id}/assignment-review`, who: seq.worker_name })
+      } else if (seq.ghosting_risk === 'high') {
+        todaysActions.push({ priority: 'urgent', text: `High ghosting risk for ${seq.worker_name}. Follow up now.`, link: `/assessment/${seq.assessment_id}/candidate/${seq.candidate_id}/assignment-review`, who: seq.worker_name })
       }
     }
 
@@ -2116,6 +2136,103 @@ function DashboardPageInner() {
                     >
                       {s.prestart_check ? 'View Check' : 'Complete Check'}
                     </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Pre-Start Engagement panel (agency, active pulse sequences) ── */}
+        {isAgencyAccount && engagementSequences.length > 0 && (
+          <div style={{
+            background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+            borderTop: `3px solid ${TEAL}`, padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <Ic name="pulse" size={15} color={TEAL} />
+              <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: TX }}>
+                Pre-Start Engagement
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: TEAL, background: TEALLT, border: `1px solid ${TEAL}55`, padding: '1px 8px', borderRadius: 50 }}>
+                {engagementSequences.length}
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {engagementSequences.map(seq => {
+                const grColor = seq.ghosting_risk === 'critical' ? RED : seq.ghosting_risk === 'high' ? RED : seq.ghosting_risk === 'medium' ? AMB : GRN
+                const grBg = seq.ghosting_risk === 'critical' ? REDBG : seq.ghosting_risk === 'high' ? REDBG : seq.ghosting_risk === 'medium' ? AMBBG : GRNBG
+                const grBd = seq.ghosting_risk === 'critical' ? REDBD : seq.ghosting_risk === 'high' ? REDBD : seq.ghosting_risk === 'medium' ? AMBBD : GRNBD
+                const grLabel = seq.ghosting_risk.charAt(0).toUpperCase() + seq.ghosting_risk.slice(1)
+                return (
+                  <div key={seq.candidate_id} style={{
+                    display: 'flex', alignItems: isMobile ? 'flex-start' : 'center',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: isMobile ? 6 : 12, padding: '10px 14px',
+                    background: BG, border: `1px solid ${BD}`, borderRadius: 8,
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{seq.worker_name}</div>
+                      <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 2 }}>
+                        Starts {new Date(seq.start_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        {seq.days_until_start != null && ` (${seq.days_until_start} day${seq.days_until_start !== 1 ? 's' : ''})`}
+                      </div>
+                      {/* Pulse indicators */}
+                      <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                        {seq.pulses.map(p => {
+                          const pColor = p.response === 'confirmed' ? GRN
+                            : p.response === 'concern' || p.response === 'no_response' ? RED
+                            : p.response === 'question' ? AMB
+                            : p.pulse_opened ? TEAL
+                            : p.pulse_sent_at ? TX3
+                            : BD
+                          const pLabel = p.response === 'confirmed' ? 'Confirmed'
+                            : p.response === 'concern' ? 'Concern'
+                            : p.response === 'no_response' ? 'No response'
+                            : p.response === 'question' ? 'Question'
+                            : p.pulse_opened ? 'Opened'
+                            : p.pulse_sent_at ? 'Sent'
+                            : 'Pending'
+                          return (
+                            <div key={p.id} title={`Pulse ${p.pulse_number}: ${pLabel}`} style={{
+                              display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px',
+                              borderRadius: 50, background: `${pColor}14`, border: `1px solid ${pColor}44`,
+                            }}>
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: pColor }} />
+                              <span style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: pColor }}>P{p.pulse_number}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <span style={{
+                      display: 'inline-block', padding: '2px 10px', borderRadius: 50,
+                      fontSize: 10, fontWeight: 800, fontFamily: F, flexShrink: 0,
+                      background: grBg, color: grColor, border: `1px solid ${grBd}`,
+                    }}>
+                      {grLabel} Risk
+                    </span>
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      {seq.worker_email && (
+                        <a href={`tel:${seq.worker_email}`} style={{
+                          padding: '6px 12px', borderRadius: 7, border: `1px solid ${BD}`,
+                          background: CARD, fontFamily: F, fontSize: 11, fontWeight: 700,
+                          color: TX, textDecoration: 'none', cursor: 'pointer',
+                        }}>
+                          Call Worker
+                        </a>
+                      )}
+                      <button
+                        onClick={() => router.push(`/assessment/${seq.assessment_id}/candidate/${seq.candidate_id}/assignment-review`)}
+                        style={{
+                          padding: '6px 14px', borderRadius: 7, border: `1px solid ${TEAL}`,
+                          background: TEALLT, fontFamily: F, fontSize: 11, fontWeight: 700,
+                          color: NAVY, cursor: 'pointer',
+                        }}
+                      >
+                        View Tracker
+                      </button>
+                    </div>
                   </div>
                 )
               })}

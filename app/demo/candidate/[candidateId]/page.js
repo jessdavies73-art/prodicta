@@ -927,6 +927,52 @@ function DemoCandidateInner({ params }) {
           </Card>
         )}
 
+        {/* ── Pre-Start Engagement (agency + temp, Aisha Johnson demo) ── */}
+        {isAgency && isTemp && params.candidateId === 'demo-c7' && (
+          <Card style={{ marginBottom: 20, borderTop: `3px solid ${AMB}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Ic name="pulse" size={15} color={AMB} />
+                <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>Pre-Start Engagement</span>
+              </div>
+              <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 50, fontSize: 11, fontWeight: 800, fontFamily: F, background: AMBBG, color: AMB }}>Medium Risk</span>
+            </div>
+
+            {/* Pulse status indicators */}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+              {[
+                { num: 1, status: 'Confirmed', color: GRN, bg: GRNBG, date: '9 Apr 2026' },
+                { num: 2, status: 'No response', color: RED, bg: REDBG, date: '17 Apr 2026' },
+                { num: 3, status: 'Pending', color: TX3, bg: BG, date: '18 Apr 2026' },
+              ].map(p => (
+                <div key={p.num} style={{ flex: '1 1 140px', background: p.bg, borderRadius: 8, padding: '10px 14px', border: `1px solid ${p.color}33` }}>
+                  <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Pulse {p.num}</div>
+                  <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: p.color }}>{p.status}</div>
+                  <div style={{ fontFamily: F, fontSize: 10, color: TX3, marginTop: 2 }}>{p.date}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, marginBottom: 12 }}>
+              Last engagement: 9 April 2026, 14:23
+            </div>
+
+            <div style={{ background: AMBBG, borderLeft: `4px solid ${AMB}`, borderRadius: '0 8px 8px 0', padding: '10px 14px', marginBottom: 14 }}>
+              <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>
+                Pulse 1 confirmed but Pulse 2 received no response after 24 hours. This worker may be disengaging before start date. Follow up with a call to re-confirm commitment.
+              </p>
+            </div>
+
+            <button onClick={() => setSignupPrompt(true)} style={{
+              padding: '8px 18px', borderRadius: 7, border: `1px solid ${TEAL}`,
+              background: TEALLT, fontFamily: F, fontSize: 12, fontWeight: 700,
+              color: NAVY, cursor: 'pointer',
+            }}>
+              Send Engagement Pulse Now
+            </button>
+          </Card>
+        )}
+
         {/* ── Attendance Risk Signal (agency + temp, James O'Brien demo) ── */}
         {isAgency && isTemp && params.candidateId === 'demo-c4' && (
           <Card style={{ marginBottom: 20 }}>

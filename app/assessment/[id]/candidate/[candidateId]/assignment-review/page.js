@@ -116,6 +116,10 @@ export default function AssignmentReviewPage({ params }) {
   const [savingAtt, setSavingAtt] = useState(false)
   const [showAttForm, setShowAttForm] = useState(false)
 
+  // Engagement pulses
+  const [engagementPulses, setEngagementPulses] = useState([])
+  const [sendingPulse, setSendingPulse] = useState(false)
+
   useEffect(() => {
     async function load() {
       const supabase = createClient()
@@ -184,6 +188,15 @@ export default function AssignmentReviewPage({ params }) {
         }
       } catch {}
 
+      // Load engagement pulses
+      try {
+        const epRes = await fetch(`/api/engagement-pulses?candidate_id=${params.candidateId}`)
+        if (epRes.ok) {
+          const epData = await epRes.json()
+          if (epData.pulses) setEngagementPulses(epData.pulses)
+        }
+      } catch {}
+
       setLoading(false)
     }
     load()
@@ -205,7 +218,28 @@ export default function AssignmentReviewPage({ params }) {
         assignment_start_date: setupStart,
         assignment_end_date: setupEnd || null,
       }).select('*').single()
-      if (newRec) setRecord(newRec)
+      if (newRec) {
+        setRecord(newRec)
+        // Schedule engagement pulses for this temp placement
+        try {
+          const epRes = await fetch('/api/engagement-pulses', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              candidate_id: params.candidateId,
+              assessment_id: params.id,
+              worker_name: candidate?.name || '',
+              worker_email: candidate?.email || '',
+              client_company: setupClient,
+              start_date: setupStart,
+            }),
+          })
+          if (epRes.ok) {
+            const epData = await epRes.json()
+            if (epData.pulses) setEngagementPulses(epData.pulses)
+          }
+        } catch {}
+      }
     } catch (err) { console.error(err) }
     finally { setSaving(false) }
   }
@@ -829,6 +863,98 @@ export default function AssignmentReviewPage({ params }) {
                   )}
                 </div>
               </div>
+
+              {/* ── Pre-Start Engagement ── */}
+              {engagementPulses.length > 0 && (() => {
+                const ghostRisk = record?.ghosting_risk || 'low'
+                const grColor = ghostRisk === 'critical' ? DRED : ghostRisk === 'high' ? DRED : ghostRisk === 'medium' ? AMB : GRN
+                const grBg = ghostRisk === 'critical' ? DREDBG : ghostRisk === 'high' ? DREDBG : ghostRisk === 'medium' ? AMBBG : GRNBG
+                const grLabel = ghostRisk.charAt(0).toUpperCase() + ghostRisk.slice(1)
+
+                async function handleSendPulseNow() {
+                  setSendingPulse(true)
+                  try {
+                    const res = await fetch('/api/engagement-pulses', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        candidate_id: params.candidateId,
+                        assessment_id: params.id,
+                        worker_name: candidate?.name || '',
+                        worker_email: candidate?.email || '',
+                        client_company: record?.client_company || '',
+                        start_date: record?.assignment_start_date || '',
+                      }),
+                    })
+                    if (res.ok) {
+                      const data = await res.json()
+                      if (data.pulses) setEngagementPulses(data.pulses)
+                    }
+                  } catch {} finally { setSendingPulse(false) }
+                }
+
+                return (
+                  <div style={{ ...cs, marginBottom: 20, borderTop: `3px solid ${grColor}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Ic name="pulse" size={15} color={grColor} />
+                        <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>Pre-Start Engagement</span>
+                      </div>
+                      <span style={{
+                        display: 'inline-block', padding: '4px 12px', borderRadius: 50, fontSize: 11, fontWeight: 800, fontFamily: F,
+                        background: grBg, color: grColor,
+                      }}>
+                        {grLabel} Risk
+                      </span>
+                    </div>
+
+                    {/* Pulse status indicators */}
+                    <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+                      {engagementPulses.map(p => {
+                        const status = p.response === 'confirmed' ? 'Confirmed'
+                          : p.response === 'question' ? 'Question'
+                          : p.response === 'concern' ? 'Concern'
+                          : p.response === 'no_response' ? 'No response'
+                          : p.pulse_opened ? 'Opened'
+                          : p.pulse_sent_at ? 'Sent'
+                          : 'Scheduled'
+                        const pColor = p.response === 'confirmed' ? GRN
+                          : p.response === 'concern' || p.response === 'no_response' ? DRED
+                          : p.response === 'question' ? AMB
+                          : p.pulse_sent_at ? TEAL
+                          : TX3
+                        const pBg = p.response === 'confirmed' ? GRNBG
+                          : p.response === 'concern' || p.response === 'no_response' ? DREDBG
+                          : p.response === 'question' ? AMBBG
+                          : BG
+                        return (
+                          <div key={p.id} style={{ flex: '1 1 140px', background: pBg, borderRadius: 8, padding: '10px 14px', border: `1px solid ${pColor}33` }}>
+                            <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Pulse {p.pulse_number}</div>
+                            <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: pColor }}>{status}</div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* Last engagement */}
+                    {record?.last_engagement_at && (
+                      <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, marginBottom: 12 }}>
+                        Last engagement: {new Date(record.last_engagement_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    )}
+
+                    {/* Manual trigger */}
+                    <button onClick={handleSendPulseNow} disabled={sendingPulse}
+                      style={{
+                        padding: '8px 18px', borderRadius: 7, border: `1px solid ${TEAL}`,
+                        background: sendingPulse ? BD : TEALLT, fontFamily: F, fontSize: 12, fontWeight: 700,
+                        color: sendingPulse ? TX3 : NAVY, cursor: sendingPulse ? 'not-allowed' : 'pointer',
+                      }}>
+                      {sendingPulse ? 'Sending...' : 'Send Engagement Pulse Now'}
+                    </button>
+                  </div>
+                )
+              })()}
 
               {/* Alert banner */}
               {latestAlert && !latestAlert.resolved && (() => {
