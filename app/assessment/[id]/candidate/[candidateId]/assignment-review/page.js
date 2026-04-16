@@ -85,6 +85,14 @@ export default function AssignmentReviewPage({ params }) {
   const [latestAlert, setLatestAlert] = useState(null)
   const [resolvingAlert, setResolvingAlert] = useState(false)
 
+  // Replacement trigger
+  const [showReplacementPrompt, setShowReplacementPrompt] = useState(false)
+  const [replacementCandidates, setReplacementCandidates] = useState(null) // null = not loaded, [] = none found
+  const [loadingReplacements, setLoadingReplacements] = useState(false)
+  const [replacementReason, setReplacementReason] = useState('')
+  const [savingReplacement, setSavingReplacement] = useState(false)
+  const [replacementLogged, setReplacementLogged] = useState(false)
+
   // Attendance
   const [attendanceRecords, setAttendanceRecords] = useState([])
   const [attDate, setAttDate] = useState(() => new Date().toISOString().slice(0, 10))
@@ -269,6 +277,73 @@ export default function AssignmentReviewPage({ params }) {
       }
     } catch (err) { console.error(err) }
     finally { setSavingAtt(false) }
+  }
+
+  async function loadReplacementCandidates() {
+    setLoadingReplacements(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      const roleTitle = candidate?.assessments?.role_title || ''
+
+      // Find completed candidates for similar roles who scored 70+
+      const { data: allCands } = await supabase
+        .from('candidates')
+        .select('id, name, email, completed_at, status, assessment_id, assessments!inner(role_title, employment_type), results(overall_score, risk_level)')
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+
+      // Filter: same or similar role, score >= 70, not the current candidate
+      const matches = (allCands || []).filter(c => {
+        if (c.id === params.candidateId) return false
+        const score = c.results?.[0]?.overall_score ?? 0
+        if (score < 70) return false
+        // Match by role title similarity (exact or contains key words)
+        const cRole = (c.assessments?.role_title || '').toLowerCase()
+        const targetRole = roleTitle.toLowerCase()
+        if (cRole === targetRole) return true
+        const words = targetRole.split(/\s+/).filter(w => w.length > 3)
+        return words.some(w => cRole.includes(w))
+      })
+
+      // Check which ones are NOT on active placements
+      const { data: activeOutcomes } = await supabase
+        .from('candidate_outcomes')
+        .select('candidate_id, outcome')
+        .eq('user_id', user.id)
+        .in('outcome', ['still_in_probation', 'still_employed', 'placed', 'passing'])
+      const activeCandIds = new Set((activeOutcomes || []).map(o => o.candidate_id))
+
+      const available = matches
+        .filter(c => !activeCandIds.has(c.id))
+        .sort((a, b) => (b.results?.[0]?.overall_score ?? 0) - (a.results?.[0]?.overall_score ?? 0))
+        .slice(0, 10)
+
+      setReplacementCandidates(available)
+    } catch (err) {
+      console.error('Replacement search error:', err)
+      setReplacementCandidates([])
+    } finally {
+      setLoadingReplacements(false)
+    }
+  }
+
+  async function handleLogReplacement(selectedCandidateId) {
+    if (!replacementReason || savingReplacement) return
+    setSavingReplacement(true)
+    try {
+      const supabase = createClient()
+      const { data: saved } = await supabase.from('assignment_reviews').update({
+        replacement_triggered: true,
+        replacement_triggered_at: new Date().toISOString(),
+        replacement_candidate_id: selectedCandidateId,
+        replacement_reason: replacementReason,
+        updated_at: new Date().toISOString(),
+      }).eq('id', record.id).select('*').single()
+      if (saved) setRecord(saved)
+      setReplacementLogged(true)
+    } catch (err) { console.error(err) }
+    finally { setSavingReplacement(false) }
   }
 
   const inputStyle = (field) => ({
@@ -784,6 +859,179 @@ export default function AssignmentReviewPage({ params }) {
                         Recommendation recorded: <strong>{recommendation}</strong>
                       </p>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Replacement Trigger ── */}
+              {record && !record.replacement_triggered && !replacementLogged && (health === 'red' || recommendation === 'End Early') && (
+                <div style={{
+                  ...cs, marginBottom: 20,
+                  borderTop: `3px solid ${DRED}`,
+                  background: 'linear-gradient(135deg, #fef2f2 0%, #fff 40%)',
+                }}>
+                  {!showReplacementPrompt ? (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                        <Ic name="alert" size={16} color={DRED} />
+                        <span style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX }}>Do you need to replace this worker?</span>
+                      </div>
+                      <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 16px', lineHeight: 1.55 }}>
+                        {replacementCandidates === null
+                          ? `PRODICTA can search your previously screened candidates for ${candidate?.assessments?.role_title || 'this role'}.`
+                          : `We have found ${replacementCandidates.length} previously screened candidate${replacementCandidates.length !== 1 ? 's' : ''} for ${candidate?.assessments?.role_title || 'this role'} who scored above 70.`}
+                      </p>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => { setShowReplacementPrompt(true); if (replacementCandidates === null) loadReplacementCandidates() }}
+                          style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: NAVY, color: '#fff', fontFamily: F, fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}
+                        >
+                          Yes, find a replacement
+                        </button>
+                        <button
+                          onClick={() => setShowReplacementPrompt(false)}
+                          style={{ padding: '10px 22px', borderRadius: 8, border: `1.5px solid ${BD}`, background: CARD, color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}
+                        >
+                          No, not needed
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+                        <span style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX }}>Replacement Candidates</span>
+                        <button onClick={() => setShowReplacementPrompt(false)} style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, background: 'none', border: 'none', cursor: 'pointer' }}>
+                          Cancel
+                        </button>
+                      </div>
+
+                      {/* Reason selector */}
+                      <div style={{ marginBottom: 16 }}>
+                        <label style={labelStyle}>Reason for replacement</label>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {['End Early', 'Performance', 'Attendance', 'Client Request'].map(r => (
+                            <button key={r} onClick={() => setReplacementReason(r)} style={{
+                              padding: '6px 14px', borderRadius: 7, fontSize: 12, fontWeight: 700, fontFamily: F, cursor: 'pointer',
+                              background: replacementReason === r ? `${DRED}14` : BG,
+                              border: `1.5px solid ${replacementReason === r ? DRED : BD}`,
+                              color: replacementReason === r ? DRED : TX2,
+                            }}>
+                              {r}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {loadingReplacements && (
+                        <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                          <div style={{ width: 24, height: 24, border: `3px solid ${BD}`, borderTopColor: TEAL, borderRadius: '50%', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+                          <p style={{ fontFamily: F, fontSize: 13, color: TX3, marginTop: 10 }}>Searching your assessed candidates...</p>
+                        </div>
+                      )}
+
+                      {replacementCandidates && !loadingReplacements && replacementCandidates.length === 0 && (
+                        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                          <p style={{ fontFamily: F, fontSize: 14, color: TX3, margin: '0 0 14px' }}>
+                            No previously screened candidates available for this role.
+                          </p>
+                          <button
+                            onClick={() => router.push(`/assessment/new?role=${encodeURIComponent(candidate?.assessments?.role_title || '')}&type=temporary`)}
+                            style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}
+                          >
+                            Start New Rapid Screen
+                          </button>
+                        </div>
+                      )}
+
+                      {replacementCandidates && !loadingReplacements && replacementCandidates.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          {replacementCandidates.map(rc => {
+                            const rcScore = rc.results?.[0]?.overall_score ?? 0
+                            const rcRisk = rc.results?.[0]?.risk_level || 'N/A'
+                            const rcColor = rcScore >= 80 ? GRN : rcScore >= 70 ? TEAL : AMB
+                            const rcVerdict = rcScore >= 80 ? 'Strong Hire' : 'Review'
+                            const size = 48, sw = 4, r = (size - sw * 2) / 2, circ = 2 * Math.PI * r
+                            const offset = circ * (1 - rcScore / 100)
+                            return (
+                              <div key={rc.id} style={{
+                                display: 'flex', alignItems: 'center', gap: 14,
+                                padding: '14px 16px', background: CARD, border: `1px solid ${BD}`, borderRadius: 10,
+                                flexWrap: 'wrap',
+                              }}>
+                                {/* Score ring */}
+                                <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+                                  <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+                                    <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e4e9f0" strokeWidth={sw} />
+                                    <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={rcColor} strokeWidth={sw} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
+                                  </svg>
+                                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: F, fontSize: 16, fontWeight: 800, color: rcColor }}>{rcScore}</div>
+                                </div>
+
+                                {/* Info */}
+                                <div style={{ flex: 1, minWidth: 140 }}>
+                                  <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{rc.name}</div>
+                                  <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 2 }}>
+                                    {rc.assessments?.role_title || 'Role'} — Assessed {fmtDate(rc.completed_at)}
+                                  </div>
+                                  <span style={{
+                                    display: 'inline-block', marginTop: 4,
+                                    padding: '2px 10px', borderRadius: 50, fontSize: 10, fontWeight: 800, fontFamily: F,
+                                    background: rcScore >= 80 ? GRNBG : TEALLT, color: rcScore >= 80 ? GRN : TEALD,
+                                  }}>
+                                    {rcVerdict}
+                                  </span>
+                                </div>
+
+                                {/* Actions */}
+                                <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+                                  <button
+                                    onClick={() => router.push(`/assessment/${rc.assessment_id}/candidate/${rc.id}`)}
+                                    style={{ padding: '7px 14px', borderRadius: 7, border: `1px solid ${BD}`, background: CARD, fontFamily: F, fontSize: 12, fontWeight: 700, color: TX, cursor: 'pointer' }}
+                                  >
+                                    View Report
+                                  </button>
+                                  <a
+                                    href={`mailto:${rc.email || ''}?subject=${encodeURIComponent(`${candidate?.assessments?.role_title || 'Role'} — Replacement Opportunity`)}&body=${encodeURIComponent(`Hi ${rc.name},\n\nWe have a ${candidate?.assessments?.role_title || 'role'} opportunity available${record?.client_company ? ' at ' + record.client_company : ''}. Based on your previous assessment you are a strong match for this role.\n\nPlease let me know if you are interested and available.\n\nBest regards,\n${profile?.company_name || ''}`)}`}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, border: 'none', background: TEAL, fontFamily: F, fontSize: 12, fontWeight: 700, color: NAVY, cursor: 'pointer', textDecoration: 'none' }}
+                                  >
+                                    Contact
+                                  </a>
+                                  {replacementReason && (
+                                    <button
+                                      onClick={() => handleLogReplacement(rc.id)}
+                                      disabled={savingReplacement}
+                                      style={{ padding: '7px 14px', borderRadius: 7, border: 'none', background: NAVY, fontFamily: F, fontSize: 12, fontWeight: 700, color: '#fff', cursor: savingReplacement ? 'not-allowed' : 'pointer', opacity: savingReplacement ? 0.6 : 1 }}
+                                    >
+                                      {savingReplacement ? 'Logging...' : 'Select as Replacement'}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Replacement logged confirmation */}
+              {(record?.replacement_triggered || replacementLogged) && (
+                <div style={{
+                  ...cs, marginBottom: 20,
+                  borderLeft: `4px solid ${GRN}`, background: GRNBG,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Ic name="check" size={16} color={GRN} />
+                    <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>
+                      Replacement triggered{record?.replacement_reason ? ` — ${record.replacement_reason}` : ''}
+                    </span>
+                  </div>
+                  {record?.replacement_triggered_at && (
+                    <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: '6px 0 0' }}>
+                      Logged on {fmtDate(record.replacement_triggered_at)}
+                    </p>
                   )}
                 </div>
               )}
