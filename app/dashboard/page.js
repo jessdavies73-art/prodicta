@@ -583,6 +583,7 @@ function DashboardPageInner() {
   const [upcomingStarts, setUpcomingStarts] = useState([])
   const [placementHealth, setPlacementHealth] = useState(null) // { placements, counts, total_active, rebate_ending_this_month }
   const [engagementSequences, setEngagementSequences] = useState([])
+  const [ediCertifiedAssessments, setEdiCertifiedAssessments] = useState(new Set())
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
   const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
   const [showFirstTime, setShowFirstTime] = useState(false)
@@ -864,6 +865,16 @@ function DashboardPageInner() {
             }
           } catch {}
         }
+
+        // Load EDI certified assessments
+        try {
+          const { data: ediRows } = await supabase
+            .from('edi_reports')
+            .select('assessment_id')
+            .eq('user_id', user.id)
+            .eq('certificate_generated', true)
+          if (ediRows) setEdiCertifiedAssessments(new Set(ediRows.map(r => r.assessment_id)))
+        } catch {}
       } catch (err) {
         console.error(err)
         setError(err.message || 'Failed to load dashboard')
@@ -2948,6 +2959,11 @@ function DashboardPageInner() {
                                 }}>
                                   {c.assessments?.role_title || '-'}
                                 </span>
+                                {c.assessments?.id && ediCertifiedAssessments.has(c.assessments.id) && (
+                                  <span title="Bias-Free Certificate" style={{ flexShrink: 0 }}>
+                                    <Ic name="shield" size={12} color={GRN} />
+                                  </span>
+                                )}
                               </div>
                             </td>
 

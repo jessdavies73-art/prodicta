@@ -278,6 +278,9 @@ function DemoDashboardInner() {
     'demo-c4': true,  // James O'Brien has a share link active
   }
 
+  // Demo EDI certified assessments
+  const DEMO_EDI_CERTIFIED = new Set(['demo-assess-1', 'demo-assess-2'])
+
   // Exclude archived from main view
   const allActiveCandidates = DEMO_CANDIDATES.filter(c => c.status !== 'archived')
   const activeCandidates = demoEmploymentType === 'both'
@@ -878,7 +881,12 @@ function DemoDashboardInner() {
                             </div>
                           </td>
                           <td style={{ padding: '10px 8px', overflow: 'hidden', display: isMobile ? 'none' : 'table-cell' }}>
-                            <span style={{ fontSize: 12, color: TX2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{c.assessments?.role_title || '-'}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
+                              <span style={{ fontSize: 12, color: TX2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.assessments?.role_title || '-'}</span>
+                              {c.assessments?.id && DEMO_EDI_CERTIFIED.has(c.assessments.id) && (
+                                <span title="Bias-Free Certificate" style={{ flexShrink: 0 }}><Ic name="shield" size={12} color={GRN} /></span>
+                              )}
+                            </div>
                           </td>
                           <td style={{ padding: '10px 8px' }}><StatusBadge status={c.status} /></td>
                           <td style={{ padding: '10px 8px' }}>

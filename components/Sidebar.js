@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { key: 'compare',      label: 'Compare',        icon: 'sliders',  href: '/compare' },
   { key: 'ssp',          label: 'SSP',            icon: 'shield',   href: '/ssp' },
   { key: 'holiday',      label: 'Holiday',        icon: 'calendar', href: '/holiday' },
+  { key: 'edi',           label: 'EDI',             icon: 'shield',   href: '/edi' },
   { key: 'documents',    label: 'Documents',      icon: 'file',     href: '/documents' },
   { key: 'archive',      label: 'Archive',        icon: 'archive',  href: '/archive' },
   { key: 'settings',     label: 'Settings',       icon: 'settings', href: '/settings' },
