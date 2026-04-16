@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import { getReskilingSuggestion } from '@/lib/reskilling'
+import { calculateSurvivalScore } from '@/lib/survival-score'
 
 /* Inline mobile detection — no external hook dependency */
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
@@ -2245,6 +2246,44 @@ export default function CandidateReportPage({ params }) {
                     }}>
                       {verdictSub}
                     </div>
+                    {/* Placement Survival Score */}
+                    {(() => {
+                      const survival = calculateSurvivalScore({
+                        overallScore: score,
+                        hiringConfidence: results.hiring_confidence,
+                        watchouts: results.watchouts || [],
+                        executionReliability: results.execution_reliability,
+                        trainingPotential: results.training_potential,
+                      })
+                      const risk = 100 - survival
+                      const riskColor = risk > 40 ? '#fca5a5' : risk > 25 ? '#fcd34d' : 'rgba(255,255,255,0.7)'
+                      const isAgency = profile?.account_type === 'agency'
+                      const isTemp = candidate?.assessments?.employment_type === 'temporary'
+                      const survivalLabel = isAgency
+                        ? `chance this placement completes the assignment`
+                        : isTemp
+                        ? `chance this worker completes the assignment`
+                        : `chance this hire passes probation`
+                      const costOfRisk = isAgency && survival < 80
+                        ? Math.round((2500 * (1 - survival / 100)) / 100) * 100
+                        : null
+                      return (
+                        <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.18)' }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span style={{ fontFamily: FM, fontSize: isMobile ? 32 : 40, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{survival}%</span>
+                            <span style={{ fontFamily: F, fontSize: isMobile ? 13 : 14, fontWeight: 500, color: 'rgba(255,255,255,0.85)' }}>{survivalLabel}</span>
+                          </div>
+                          <div style={{ fontFamily: F, fontSize: isMobile ? 12 : 13, fontWeight: 600, color: riskColor, marginTop: 4 }}>
+                            {risk}% risk of early exit
+                          </div>
+                          {costOfRisk != null && (
+                            <div style={{ fontFamily: F, fontSize: 11.5, color: 'rgba(255,255,255,0.55)', marginTop: 6 }}>
+                              If this placement fails: estimated &pound;{costOfRisk.toLocaleString('en-GB')} in lost fees and replacement time
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
                   </div>
                   {/* White content */}
                   <div style={{ background: '#fff', padding: isMobile ? '20px 20px' : '24px 36px' }}>
