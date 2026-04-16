@@ -704,6 +704,7 @@ function DemoCandidateInner({ params }) {
   const candidate = DEMO_CANDIDATES.find(c => c.id === params.candidateId)
   const results = DEMO_RESULTS[params.candidateId] || null
   const responses = DEMO_RESPONSES[params.candidateId] || []
+  const isTemp = candidate?.assessments?.employment_type === 'temporary'
 
   // IntersectionObserver for sticky nav
   useEffect(() => {
@@ -1032,20 +1033,20 @@ function DemoCandidateInner({ params }) {
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Onboarding</div>
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="file" size={14} color={TEALD} />
-                  {['demo-c6','demo-c4','demo-c7'].includes(params.candidateId) ? 'Assignment Success Plan' : '90-Day Manager Coaching Plan'}
-                  <InfoTooltip text={['demo-c6','demo-c4','demo-c7'].includes(params.candidateId) ? 'A structured assignment guide with objectives for the placement period.' : 'A structured probation guide with SMART objectives and Alchemy Training UK coach support.'} />
+                  {isTemp ? 'Assignment Success Plan' : '90-Day Manager Coaching Plan'}
+                  <InfoTooltip text={isTemp ? 'A structured assignment guide with objectives for the placement period.' : 'A structured probation guide with SMART objectives and Alchemy Training UK coach support.'} />
                 </button>
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="award" size={14} color={TEALD} />
-                  {['demo-c6','demo-c4','demo-c7'].includes(params.candidateId) ? 'Open Assignment Tracker' : 'Open Probation Co-pilot'}
-                  <InfoTooltip text={['demo-c6','demo-c4','demo-c7'].includes(params.candidateId) ? 'Track this worker through their assignment period with structured check-ins.' : 'Track this candidate through their probation period with structured check-ins and guidance.'} />
+                  {isTemp ? 'Open Assignment Tracker' : 'Open Probation Co-pilot'}
+                  <InfoTooltip text={isTemp ? 'Track this worker through their assignment period with structured check-ins.' : 'Track this candidate through their probation period with structured check-ins and guidance.'} />
                 </button>
                 </>
                 )}
 
                 {/* COMPLIANCE */}
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Compliance</div>
-                {['demo-c6','demo-c4','demo-c7'].includes(params.candidateId) ? (
+                {isTemp ? (
                   <>
                   <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                     <Ic name="shield" size={14} color={TEALD} />
@@ -1103,7 +1104,7 @@ function DemoCandidateInner({ params }) {
                 )}
 
                 {/* REPORT SICKNESS (agency + temporary only) */}
-                {isAgency && ['demo-c6','demo-c4','demo-c7'].includes(params.candidateId) && (
+                {isAgency && isTemp && (
                   <button onClick={() => setSignupPrompt(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fffbeb', border: '1.5px solid #fbbf24', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: '#D97706', padding: '9px 16px', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}>
                     <Ic name="alert" size={14} color="#D97706" />
                     Report Sickness
