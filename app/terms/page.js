@@ -3,7 +3,8 @@ const TEAL  = '#009688'
 const F     = "'Outfit', system-ui, sans-serif"
 
 const EFFECTIVE_DATE = '1 April 2025'
-const COMPANY        = 'Prodicta Ltd'
+const LAST_UPDATED   = '16 April 2026'
+const COMPANY        = 'AIAURA Group Ltd'
 const EMAIL          = 'hello@prodicta.co.uk'
 const DOMAIN         = 'prodicta.co.uk'
 
@@ -50,7 +51,7 @@ export default function TermsPage() {
         <div style={{ marginBottom: 48 }}>
           <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Legal</div>
           <h1 style={{ fontFamily: F, fontSize: 36, fontWeight: 800, color: NAVY, letterSpacing: '-0.8px', margin: '0 0 12px' }}>Terms of Service</h1>
-          <p style={{ fontFamily: F, fontSize: 14, color: '#6b7280' }}>Effective date: {EFFECTIVE_DATE} · Last updated: {EFFECTIVE_DATE}</p>
+          <p style={{ fontFamily: F, fontSize: 14, color: '#6b7280' }}>Effective date: {EFFECTIVE_DATE} · Last updated: {LAST_UPDATED}</p>
           <div style={{ marginTop: 20, padding: '14px 20px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10 }}>
             <p style={{ fontFamily: F, fontSize: 13.5, color: '#166534', margin: 0, lineHeight: 1.65 }}>
               Please read these Terms of Service carefully before using Prodicta. By creating an account or using our platform, you agree to be bound by these terms.
@@ -83,7 +84,7 @@ export default function TermsPage() {
 
         <H2>3. The Service</H2>
         <P>
-          Prodicta provides tools for creating scenario-based assessments, inviting candidates to complete those assessments, and receiving AI-generated scoring and analysis. The Service is intended for use in legitimate recruitment and hiring processes.
+          Prodicta provides tools for creating scenario-based assessments, inviting candidates to complete those assessments, receiving AI-generated scoring and analysis, managing statutory sick pay calculations and compliance documentation, tracking holiday pay entitlements, monitoring placement health for recruitment agencies, generating employment-related document templates, and supporting Fair Work Agency compliance record keeping. The Service is intended for use in legitimate recruitment and hiring processes.
         </P>
         <P>You agree to use the Service only for its intended purpose. You must not:</P>
         <UL items={[
@@ -119,6 +120,14 @@ export default function TermsPage() {
           'Prodicta does not guarantee the accuracy, completeness, or fitness for purpose of any AI-generated output',
           'You remain solely responsible for any hiring decisions made using the Service',
         ]} />
+
+        <H2>5a. SSP Calculations and Compliance Tools</H2>
+        <P>
+          PRODICTA provides tools to assist with Statutory Sick Pay calculations, Fair Work Agency compliance documentation, and employment record keeping. These tools are provided as guidance only and do not constitute legal or payroll advice. SSP calculations are based on legislation effective as of the date shown and may not reflect subsequent changes in law.
+        </P>
+        <P>
+          You remain solely responsible for verifying all SSP calculations with a qualified payroll provider or accountant and for ensuring your employment practices comply with applicable legislation including the Employment Rights Act 2025 and SSP regulations. PRODICTA's compliance packs and documentation tools create records of process but do not guarantee legal compliance or protect against tribunal claims.
+        </P>
 
         <H2>6. Subscription and Billing</H2>
         <P>
@@ -187,7 +196,7 @@ export default function TermsPage() {
 
         <div style={{ marginTop: 56, padding: '20px 24px', background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb' }}>
           <p style={{ fontFamily: F, fontSize: 13, color: '#6b7280', margin: 0, lineHeight: 1.65 }}>
-            <strong style={{ color: '#374151' }}>{COMPANY}</strong> · Registered in England and Wales ·{' '}
+            PRODICTA is a product of <strong style={{ color: '#374151' }}>{COMPANY}</strong> · Registered in England and Wales ·{' '}
             <a href={`mailto:${EMAIL}`} style={{ color: TEAL, textDecoration: 'none' }}>{EMAIL}</a>
           </p>
         </div>
