@@ -420,16 +420,23 @@ function DemoDashboardInner() {
 
 
         {/* ── Quick Actions (agency only) ── */}
-        {isAgency && (
+        {isAgency && (() => {
+          const demoHasTemps = activeCandidates.some(c => c.assessments?.employment_type === 'temporary')
+          return (
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Quick Actions</div>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 12 }}>
-              {[
+              {(demoHasTemps ? [
                 { icon: 'alert', label: 'Report Sickness', desc: 'Create SSP alert', color: AMB, bg: AMBBG },
                 { icon: 'clock', label: 'Log Attendance', desc: 'Daily attendance', color: GRN, bg: GRNBG },
                 { icon: 'users', label: 'Replace Worker', desc: 'Find a replacement', color: RED, bg: REDBG },
                 { icon: 'send', label: 'Client Update', desc: 'Share placement link', color: NAVY, bg: BG },
-              ].map(a => (
+              ] : [
+                { icon: 'alert', label: 'Report Sickness', desc: 'Create SSP alert', color: AMB, bg: AMBBG },
+                { icon: 'send', label: 'Client Update', desc: 'Share report with client', color: NAVY, bg: BG },
+                { icon: 'file-text', label: 'Interview Brief', desc: 'Generate interview brief', color: GRN, bg: GRNBG },
+                { icon: 'zap', label: 'Highlight Reel', desc: 'Copy shareable link', color: GRN, bg: GRNBG },
+              ]).map(a => (
                 <button key={a.label} onClick={() => setModal(true)} style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
                   padding: isMobile ? '18px 12px' : '20px 16px', borderRadius: 12,
@@ -448,7 +455,8 @@ function DemoDashboardInner() {
               ))}
             </div>
           </div>
-        )}
+          )
+        })()}
 
         {/* Red flag banner */}
         {flaggedCandidates.length > 0 && (
