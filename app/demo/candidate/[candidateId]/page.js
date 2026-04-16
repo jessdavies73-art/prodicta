@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import ProdictaLogo from '@/components/ProdictaLogo'
+import { getReskilingSuggestion } from '@/lib/reskilling'
 import { DemoBanner, DemoSidebar, SignUpModal } from '@/components/DemoShell'
 import { DEMO_CANDIDATES, DEMO_RESULTS, DEMO_RESPONSES } from '@/lib/demo-data'
 import {
@@ -2212,6 +2213,63 @@ function DemoCandidateInner({ params }) {
                           <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 8px' }}>{title}</p>
                           {explanation && <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 6px', lineHeight: 1.7 }}>{explanation}</p>}
                           {evidence && <EvidenceBox color={sev.color}>{evidence}</EvidenceBox>}
+                          {/* Re-skilling suggestion */}
+                          <div style={{
+                            background: TEALLT, border: `1px solid ${TEAL}33`,
+                            borderLeft: `3px solid ${TEAL}`,
+                            borderRadius: '0 8px 8px 0', padding: '10px 14px', marginTop: 10,
+                            display: 'flex', gap: 8, alignItems: 'flex-start',
+                          }}>
+                            <Ic name="zap" size={13} color={TEAL} />
+                            <div>
+                              <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Week 1 Intervention</div>
+                              <p style={{ fontFamily: F, fontSize: 13, color: NAVY, margin: 0, lineHeight: 1.55 }}>
+                                {getReskilingSuggestion(title)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </Card>
+              </ScrollReveal>
+            )}
+
+            {/* ── TARGETED WEEK 1 INTERVENTIONS (re-skilling summary) ── */}
+            {results.watchouts?.length > 0 && (
+              <ScrollReveal delay={60}>
+                <Card style={{ marginBottom: 20 }} topColor={TEAL}>
+                  <SectionHeading tooltip="Targeted re-skilling interventions for the first week, based on each watch-out identified in the assessment.">
+                    {isAgency ? 'Placement Preparation — Week 1 Interventions'
+                     : isTemp ? 'Assignment Success — Week 1 Interventions'
+                     : 'Targeted Week 1 Interventions'}
+                  </SectionHeading>
+                  <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-4px 0 18px', lineHeight: 1.6 }}>
+                    Each watch-out has a practical, structured intervention for the first week. Share these with the line manager before the candidate starts.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {results.watchouts.map((w, i) => {
+                      const wTitle = typeof w === 'object' ? (w.watchout || w.title || w.text) : w
+                      const wSeverity = typeof w === 'object' ? w.severity : null
+                      const wSev = sevStyle(wSeverity)
+                      return (
+                        <div key={i} style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            {wSeverity && <Badge label={wSeverity} bg={wSev.bg} color={wSev.color} border={wSev.border} />}
+                            <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{wTitle}</span>
+                          </div>
+                          <div style={{
+                            background: TEALLT, border: `1px solid ${TEAL}33`,
+                            borderLeft: `3px solid ${TEAL}`,
+                            borderRadius: '0 8px 8px 0', padding: '10px 14px',
+                            display: 'flex', gap: 8, alignItems: 'flex-start',
+                          }}>
+                            <Ic name="zap" size={13} color={TEAL} />
+                            <p style={{ fontFamily: F, fontSize: 13, color: NAVY, margin: 0, lineHeight: 1.55 }}>
+                              {getReskilingSuggestion(wTitle)}
+                            </p>
+                          </div>
                         </div>
                       )
                     })}

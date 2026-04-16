@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
+import { getReskilingSuggestion } from '@/lib/reskilling'
 
 /* Inline mobile detection — no external hook dependency */
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
@@ -4469,6 +4470,21 @@ export default function CandidateReportPage({ params }) {
                                 </p>
                               </div>
                             )}
+                            {/* Re-skilling suggestion */}
+                            <div style={{
+                              background: TEALLT, border: `1px solid ${TEAL}33`,
+                              borderLeft: `3px solid ${TEAL}`,
+                              borderRadius: '0 8px 8px 0', padding: '10px 14px', marginTop: 10,
+                              display: 'flex', gap: 8, alignItems: 'flex-start',
+                            }}>
+                              <Ic name="zap" size={13} color={TEAL} />
+                              <div>
+                                <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Week 1 Intervention</div>
+                                <p style={{ fontFamily: F, fontSize: 13, color: NAVY, margin: 0, lineHeight: 1.55 }}>
+                                  {getReskilingSuggestion(title)}
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         )
                       })}
@@ -4522,6 +4538,53 @@ export default function CandidateReportPage({ params }) {
                                 <strong>Mitigation:</strong> {w.action}
                               </div>
                             )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </Card>
+                  </ScrollReveal>
+                )}
+
+                {/* ══════════════════════════════════════════════════
+                    TARGETED WEEK 1 INTERVENTIONS (re-skilling summary)
+                ══════════════════════════════════════════════════ */}
+                {results.watchouts?.length > 0 && (
+                  <ScrollReveal delay={60}>
+                  <Card style={{ marginBottom: 20 }} topColor={TEAL}>
+                    <SectionHeading tooltip="Targeted re-skilling interventions for the first week, based on each watch-out identified in the assessment.">
+                      {profile?.account_type === 'agency' ? 'Placement Preparation — Week 1 Interventions'
+                       : candidate?.assessments?.employment_type === 'temporary' ? 'Assignment Success — Week 1 Interventions'
+                       : 'Targeted Week 1 Interventions'}
+                    </SectionHeading>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-4px 0 18px', lineHeight: 1.6 }}>
+                      Each watch-out has a practical, structured intervention for the first week. Share these with the line manager before the candidate starts.
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {results.watchouts.map((w, i) => {
+                        const title = typeof w === 'object' ? (w.watchout || w.title || w.text) : w
+                        const severity = typeof w === 'object' ? w.severity : null
+                        const sev = sevStyle(severity)
+                        return (
+                          <div key={i} style={{
+                            background: CARD, border: `1px solid ${BD}`, borderRadius: 10,
+                            padding: '14px 16px',
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                              {severity && <Badge label={severity} bg={sev.bg} color={sev.color} border={sev.border} />}
+                              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{title}</span>
+                            </div>
+                            <div style={{
+                              background: TEALLT, border: `1px solid ${TEAL}33`,
+                              borderLeft: `3px solid ${TEAL}`,
+                              borderRadius: '0 8px 8px 0', padding: '10px 14px',
+                              display: 'flex', gap: 8, alignItems: 'flex-start',
+                            }}>
+                              <Ic name="zap" size={13} color={TEAL} />
+                              <p style={{ fontFamily: F, fontSize: 13, color: NAVY, margin: 0, lineHeight: 1.55 }}>
+                                {getReskilingSuggestion(title)}
+                              </p>
+                            </div>
                           </div>
                         )
                       })}
