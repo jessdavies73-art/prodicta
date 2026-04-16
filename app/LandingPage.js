@@ -1830,7 +1830,7 @@ export default function LandingPage() {
                 },
                 {
                   q: 'What is the Virtual Job Tryout Workspace?',
-                  a: 'The Workspace is available in Strategy-Fit assessments for senior hires. After completing their scenarios, candidates enter a browser-based simulation of Day 1 on the job — a real inbox, task list, Slack-style messages, and a calendar. They handle their first morning exactly as they would in the role. You see exactly how they perform before you commit to them.',
+                  a: 'Strategy-Fit assessments include a Virtual Job Tryout Workspace. After completing their work scenarios, candidates spend 15 minutes inside a browser-based simulation of their first morning in the role. They work through a real inbox, a prioritised task list, team messages, and a calendar packed with meetings. No guidance. No hints. Just them and the job. You see exactly how they think, prioritise, and perform under pressure before you make the offer. Available for senior and leadership hires.',
                 },
               ].map((item, i) => (
                 <div key={i} style={{
