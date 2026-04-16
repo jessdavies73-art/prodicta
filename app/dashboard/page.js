@@ -1088,6 +1088,90 @@ function DashboardPageInner() {
     ? { strong: 'Strong Hire Candidates', maybe: 'Review Candidates', risk: 'High Risk Candidates' }[activeFilter.value]
     : ''
 
+  // ── today's actions builder (agency only) ──────────────────────────────────
+  const todaysActions = []
+  if (isAgencyAccount) {
+    const now = new Date()
+    const todayStr = now.toISOString().slice(0, 10)
+
+    // URGENT: placement health RED
+    if (placementHealth?.placements) {
+      for (const p of placementHealth.placements) {
+        if (p.health_status === 'RED') todaysActions.push({ priority: 'urgent', text: `${p.candidate_name}${p.client_name ? ' at ' + p.client_name : ''} is critical. View intervention plan.`, link: `/assessment/${p.candidate_id}/candidate/${p.candidate_id}/assignment-review`, who: p.candidate_name })
+      }
+    }
+    // URGENT: unresolved REDLINE assignment alerts
+    for (const a of assignmentAlerts) {
+      if (a.deviation_severity === 'REDLINE' && !a.resolved) todaysActions.push({ priority: 'urgent', text: `Performance alert for ${a.worker_name}. Act now.`, link: `/assessment/${a.assessment_id}/candidate/${a.candidate_id}/assignment-review`, who: a.worker_name })
+    }
+    // URGENT: SSP alerts uncompleted > 24h
+    for (const a of sspAlerts) {
+      if (!a.ssp_check_completed) {
+        const hrs = (now.getTime() - new Date(a.reported_at).getTime()) / 3600000
+        if (hrs > 24) todaysActions.push({ priority: 'urgent', text: `SSP check overdue for ${a.worker_name}.`, link: '/ssp', who: a.worker_name })
+      }
+    }
+    // URGENT: pre-start HIGH risk
+    for (const s of upcomingStarts) {
+      if (s.prestart_check?.overall_risk === 'high') todaysActions.push({ priority: 'urgent', text: `High risk pre-start for ${s.worker_name} starting ${new Date(s.assignment_start_date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long' })}.`, link: `/assessment/${s.assessment_id}/candidate/${s.candidate_id}/assignment-review`, who: s.worker_name })
+    }
+    // URGENT: attendance below 60
+    for (const [cid, att] of Object.entries(attendanceByCandidate)) {
+      if (att.reliability_score < 60) {
+        const c = candidates.find(x => x.id === cid)
+        if (c) todaysActions.push({ priority: 'urgent', text: `${c.name} attendance critical. Call client.`, link: `/assessment/${c.assessments?.id}/candidate/${c.id}/assignment-review`, who: c.name })
+      }
+    }
+
+    // TODAY: placement health AMBER
+    if (placementHealth?.placements) {
+      for (const p of placementHealth.placements) {
+        if (p.health_status === 'AMBER') todaysActions.push({ priority: 'today', text: `${p.candidate_name}${p.client_name ? ' at ' + p.client_name : ''} is at risk. Check in with client.`, link: `/assessment/${p.candidate_id}/candidate/${p.candidate_id}/copilot`, who: p.candidate_name })
+      }
+    }
+    // TODAY: SSP alerts same day
+    for (const a of sspAlerts) {
+      if (!a.ssp_check_completed) {
+        const hrs = (now.getTime() - new Date(a.reported_at).getTime()) / 3600000
+        if (hrs <= 24) todaysActions.push({ priority: 'today', text: `SSP check needed for ${a.worker_name}.`, link: '/ssp', who: a.worker_name })
+      }
+    }
+    // TODAY: pre-start MEDIUM risk within 3 days
+    for (const s of upcomingStarts) {
+      if (s.prestart_check?.overall_risk === 'medium' && s.days_until_start <= 3) todaysActions.push({ priority: 'today', text: `Check in with ${s.worker_name} before ${new Date(s.assignment_start_date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long' })}.`, link: `/assessment/${s.assessment_id}/candidate/${s.candidate_id}/assignment-review`, who: s.worker_name })
+    }
+    // TODAY: attendance 60-79
+    for (const [cid, att] of Object.entries(attendanceByCandidate)) {
+      if (att.reliability_score >= 60 && att.reliability_score < 80) {
+        const c = candidates.find(x => x.id === cid)
+        if (c) todaysActions.push({ priority: 'today', text: `Monitor ${c.name} attendance.`, link: `/assessment/${c.assessments?.id}/candidate/${c.id}/assignment-review`, who: c.name })
+      }
+    }
+
+    // THIS WEEK: pre-start checks needed (no check done, start within 7 days)
+    for (const s of upcomingStarts) {
+      if (!s.prestart_check) todaysActions.push({ priority: 'week', text: `Pre-start check needed for ${s.worker_name}.`, link: `/assessment/${s.assessment_id}/candidate/${s.candidate_id}/assignment-review`, who: s.worker_name })
+    }
+    // THIS WEEK: rebate ending this month
+    if (placementHealth?.rebate_ending_this_month > 0 && placementHealth?.placements) {
+      for (const p of placementHealth.placements) {
+        if (p.days_until_rebate_ends != null && p.days_until_rebate_ends >= 0 && p.days_until_rebate_ends <= 7) {
+          todaysActions.push({ priority: 'week', text: `Rebate period ends soon for ${p.candidate_name}.`, link: `/assessment/${p.candidate_id}/candidate/${p.candidate_id}`, who: p.candidate_name })
+        }
+      }
+    }
+
+    // Deduplicate by who + priority
+    const seen = new Set()
+    const deduped = []
+    for (const a of todaysActions) {
+      const key = `${a.priority}:${a.who}`
+      if (!seen.has(key)) { seen.add(key); deduped.push(a) }
+    }
+    todaysActions.length = 0
+    todaysActions.push(...deduped)
+  }
+
   // ── render ──────────────────────────────────────────────────────────────────
 
   return (
@@ -1598,6 +1682,72 @@ function DashboardPageInner() {
             fillPercent={completed.length > 0 ? Math.round((recommendedCount / completed.length) * 100) : 0}
           />
         </div>
+
+        {/* ── Today's Actions (agency only) ── */}
+        {isAgencyAccount && (
+          <div style={{
+            background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+            padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 24,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: todaysActions.length > 0 ? 14 : 0, flexWrap: 'wrap', gap: 8 }}>
+              <div>
+                <h2 style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: NAVY, margin: 0 }}>Today's Actions</h2>
+                <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: '4px 0 0' }}>
+                  {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — {todaysActions.length > 0 ? 'Here is what needs your attention.' : ''}
+                </p>
+              </div>
+              {todaysActions.length > 0 && (
+                <span style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: todaysActions.some(a => a.priority === 'urgent') ? RED : AMB, background: todaysActions.some(a => a.priority === 'urgent') ? REDBG : AMBBG, padding: '3px 10px', borderRadius: 50 }}>
+                  {todaysActions.length} action{todaysActions.length !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+
+            {todaysActions.length === 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: GRNBG, borderRadius: 10, border: `1px solid ${GRNBD}` }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: GRN, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Ic name="check" size={18} color="#fff" />
+                </div>
+                <span style={{ fontFamily: F, fontSize: 14, fontWeight: 600, color: TX }}>All placements on track. Nothing urgent today.</span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {todaysActions.slice(0, 8).map((a, i) => {
+                  const pc = a.priority === 'urgent' ? RED : a.priority === 'today' ? AMB : GRN
+                  const pbg = a.priority === 'urgent' ? REDBG : a.priority === 'today' ? AMBBG : GRNBG
+                  const plabel = a.priority === 'urgent' ? 'URGENT' : a.priority === 'today' ? 'TODAY' : 'THIS WEEK'
+                  return (
+                    <div key={i} onClick={() => router.push(a.link)} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '12px 16px', borderRadius: 10, cursor: 'pointer',
+                      background: CARD, border: `1px solid ${BD}`,
+                      borderLeft: `4px solid ${pc}`,
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = BG}
+                    onMouseLeave={e => e.currentTarget.style.background = CARD}
+                    >
+                      <span style={{
+                        fontSize: 9, fontWeight: 800, letterSpacing: '0.05em',
+                        padding: '2px 8px', borderRadius: 4, flexShrink: 0,
+                        background: pbg, color: pc,
+                      }}>
+                        {plabel}
+                      </span>
+                      <span style={{ fontFamily: F, fontSize: 13, color: TX, flex: 1, lineHeight: 1.4 }}>{a.text}</span>
+                      <Ic name="right" size={14} color={TX3} />
+                    </div>
+                  )
+                })}
+                {todaysActions.length > 8 && (
+                  <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: '6px 0 0', textAlign: 'center' }}>
+                    and {todaysActions.length - 8} more action{todaysActions.length - 8 !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Mobile banner (agency only, mobile only) ── */}
         {isAgencyAccount && isMobile && !mobileBannerDismissed && (

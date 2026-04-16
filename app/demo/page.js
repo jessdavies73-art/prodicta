@@ -410,6 +410,58 @@ function DemoDashboardInner() {
           </div>
         </div>
 
+        {/* ── Today's Actions (agency only) ── */}
+        {isAgency && (() => {
+          const demoActions = [
+            { priority: 'urgent', text: "James O'Brien at DemoRecruit is critical. Placement health RED.", link: '/demo/candidate/demo-c4?type=agency' },
+            { priority: 'today', text: 'SSP check needed for Tom Fletcher.', link: '/ssp' },
+            { priority: 'today', text: 'Week 4 review overdue for Aisha Johnson.', link: '/demo/candidate/demo-c7?type=agency' },
+            { priority: 'week', text: 'Rebate period ends Friday for Sophie Chen.', link: '/demo/candidate/demo-c1?type=agency' },
+            { priority: 'week', text: 'Pre-start check needed for Ryan Murphy starting Thursday.', link: '/demo/candidate/demo-c8?type=agency' },
+          ]
+          return (
+            <div style={{
+              background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+              padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 24,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+                <div>
+                  <h2 style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: NAVY, margin: 0 }}>Today's Actions</h2>
+                  <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: '4px 0 0' }}>
+                    {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — Here is what needs your attention.
+                  </p>
+                </div>
+                <span style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: RED, background: REDBG, padding: '3px 10px', borderRadius: 50 }}>
+                  {demoActions.length} actions
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {demoActions.map((a, i) => {
+                  const pc = a.priority === 'urgent' ? RED : a.priority === 'today' ? AMB : GRN
+                  const pbg = a.priority === 'urgent' ? REDBG : a.priority === 'today' ? AMBBG : GRNBG
+                  const plabel = a.priority === 'urgent' ? 'URGENT' : a.priority === 'today' ? 'TODAY' : 'THIS WEEK'
+                  return (
+                    <div key={i} onClick={() => router.push(a.link)} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '12px 16px', borderRadius: 10, cursor: 'pointer',
+                      background: CARD, border: `1px solid ${BD}`,
+                      borderLeft: `4px solid ${pc}`,
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = BG}
+                    onMouseLeave={e => e.currentTarget.style.background = CARD}
+                    >
+                      <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.05em', padding: '2px 8px', borderRadius: 4, flexShrink: 0, background: pbg, color: pc }}>{plabel}</span>
+                      <span style={{ fontFamily: F, fontSize: 13, color: TX, flex: 1, lineHeight: 1.4 }}>{a.text}</span>
+                      <Ic name="right" size={14} color={TX3} />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* Stats */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
           <StatCard icon="check" label="Completed" value={completed.length} sub="Completed assessments" accent={TEAL} fillPercent={activeCandidates.length > 0 ? Math.round((completed.length / activeCandidates.length) * 100) : 0} />
