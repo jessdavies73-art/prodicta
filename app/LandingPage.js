@@ -1281,52 +1281,33 @@ export default function LandingPage() {
             {[
               {
                 tag: 'For Recruitment Agencies',
-                headline: 'Your competitors send CVs. You send hiring certainty.',
-                body: 'Every candidate you present comes with a professional AI assessment showing exactly how they will perform on the job. You are not just submitting profiles. You are removing risk, proving value, and making the decision obvious.',
+                headline: 'Place faster. Protect every placement.',
+                sub: 'One platform for permanent and temporary placements. From first assessment to final day.',
                 points: [
-                  'Pressure-Fit Assessment: real work simulations that test how candidates handle pressure, not how they talk about it in an interview',
-                  'Monday Morning Reality: plain English description of what managing this candidate actually looks like day-to-day, not the interview version',
-                  'Watch-outs framed as what gets tolerated if your client does not address it, with specific triggers and timelines',
-                  '90-Day Hiring Manager Coaching Plan developed with Alchemy Training UK, giving your client a structured probation guide for every hire',
-                  'Placement Health Score: traffic light dashboard showing the health of every active placement. Green, amber, red. Automatic alert when a placement goes at risk',
-                  'Day 1 Highlight Reel: a 60-second animated visual summary of the candidate with a shareable link. Send clients a reel instead of a report',
-                  'Manager Brief PDF: a 2-page hiring manager summary with QR code. Everything a line manager needs to make a decision',
-                  'Team Dynamics: profile your client\'s existing team and see exactly how a new candidate will fit, where friction will occur, and what gap they fill',
-                  'Predicted outcomes for the first 90 days with milestones your client can track',
-                  'AI-generated interview questions specific to each candidate\'s gaps',
-                  'ERA 2025 Compliance Certificate documenting the objective, evidence-based hiring decision',
-                  'Brief Health Check that analyses the job description before assessment and flags mismatches',
-                  'Response integrity checks detect AI-assisted or rushed answers before you present the candidate',
-                  'Configurable reports: choose exactly what your client sees',
-                  'Candidate Development Portal: give candidates professional feedback with strengths, development areas, and a downloadable PDF, even the ones you do not place get something useful',
-                  'Accountability trail that documents every risk you flagged, protecting your fees',
+                  'Real work simulations — Every candidate assessed on the actual situations they will face in the role. Perm or temp. Not a personality test.',
+                  'Day 1 Highlight Reel — Send clients a 60-second video of how the candidate performed. No other agency offers that.',
+                  'Placement Health Score — Live traffic light dashboard for every active placement. Amber alert before the client calls. Never be the one who did not see it coming.',
+                  'ERA 2025 and Fair Work Agency ready — Compliance documentation generated automatically for every perm hire and every temp placement.',
+                  'Full SSP Management — Eligibility checker, payment calculator, compliance pack. 2026 rules built in. Nothing falls through the cracks.',
+                  'Works on your phone — Log attendance, report sickness, check placements on the go. Installs as an app on any phone or desktop.',
                 ],
+                more: 'And so much more. Rapid Screen at \u00A36, Replacement Trigger, Attendance Risk Signal, Client Visibility Layer, Document Templates, Holiday Pay Tracker, Assignment Review Tracker, and more.',
                 bg: NAVY,
                 dark: true,
               },
               {
                 tag: 'For Direct Employers',
-                headline: 'Know who will perform before you hire them.',
-                body: 'Every candidate is tested in real work scenarios tailored to your role. You get clear, evidence-backed insight into how they will actually perform, not how they interview.',
+                headline: 'Hire with evidence. Protect every decision.',
+                sub: 'Most hiring decisions are based on opinion. PRODICTA gives you proof.',
                 points: [
-                  'Pressure-Fit Assessment: real work simulations built from your actual job description, testing how candidates handle conflict, deadlines, and competing priorities',
-                  'Monday Morning Reality: what managing this person actually looks like day-to-day when everything is happening at once',
-                  'Watch-outs framed as what gets tolerated if you do not address it, so you know exactly what to act on and when',
-                  '90-Day Hiring Manager Coaching Plan developed with Alchemy Training UK, telling your managers exactly how to support each new hire through probation with structured check-ins, SMART objectives, and Alchemy coach sign-off at each phase',
-                  'Fair Dismissal Audit Trail: if a hire does not work out during probation, generate a Probation Evidence Pack combining assessment data and probation records. Legally defensible documentation for ERA 2025',
-                  'Manager DNA Assessment: the hiring manager completes a 10-minute assessment. Every candidate is then compared against the manager\'s actual decision-making profile',
-                  'Team Dynamics: profile your existing team and see exactly how a new candidate will fit, where friction will occur, and what gap they fill',
-                  'Candidate Self-Preview: after completing the assessment, candidates see a positive-framed preview of their own results. Reduces post-offer ghosting',
-                  'Virtual Job Tryout Workspace: available in Strategy-Fit assessments. Candidates handle a real inbox, task list, messages, and calendar on Day 1 of the job before they are offered it',
-                  'Predicted outcomes for the first 90 days with specific milestones',
-                  'Probation Co-pilot: live dashboard tracking whether predictions are materialising, with traffic lights for each watch-out and manager notes',
-                  'Outcome Tracking: automatic check-ins at 3, 6, and 12 months to track whether the hire is still in role',
-                  'ERA 2025 Compliance Certificate for every assessment, documenting the objective hiring decision',
-                  'Brief Health Check that analyses your job description and flags mismatches before you start assessing',
-                  'Rejected Candidate Development Plan: send candidates who were not hired a professional development plan with strengths and growth areas, building your employer brand',
-                  'Every score backed by evidence: specific examples from what the candidate actually wrote',
-                  'Track your hiring accuracy over time and see which predictions matched real outcomes',
+                  'Real work simulations — Built from the role itself. Not a personality test. See exactly how candidates perform under real pressure before you commit.',
+                  'ERA 2025 protected — Every hiring decision documented automatically. Legally defensible from day one with no qualifying period.',
+                  'Probation early warning — Detects when a hire is deviating from predictions at week three. Not month four when it is too late.',
+                  'SSP and holiday compliance — 2026 SSP rules built in. Holiday pay records kept for 6 years automatically. Fair Work Agency ready.',
+                  'Document templates — Probation letters, family leave acknowledgements, SSP forms. Pre-filled from the candidate profile. Built to current legislation.',
+                  'Perm and temp — One platform whether you hire permanently or use temporary workers. Same evidence. Same protection.',
                 ],
+                more: 'And so much more. Manager DNA Assessment, Team Dynamics, Probation Co-pilot, Outcome Tracking, Candidate Development Portal, Rejected Candidate Development Plan, and more.',
                 bg: '#f0fdf8',
                 dark: false,
               },
@@ -1346,21 +1327,35 @@ export default function LandingPage() {
                   e.currentTarget.style.boxShadow = 'none'
                 }}>
                   <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 18 }}>{col.tag}</div>
-                  <h3 style={{ fontFamily: F, fontSize: 'clamp(20px, 2vw, 26px)', fontWeight: 800, color: col.dark ? '#fff' : NAVY, letterSpacing: '-0.5px', lineHeight: 1.25, marginBottom: 18 }}>{col.headline}</h3>
-                  <p style={{ fontFamily: F, fontSize: 14.5, color: col.dark ? 'rgba(255,255,255,0.6)' : '#5e6b7f', lineHeight: 1.75, marginBottom: 28 }}>{col.body}</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {col.points.map(p => (
-                      <div key={p} style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
-                        <Check color={TEAL} size={15} />
-                        <span style={{ fontFamily: F, fontSize: 14, color: col.dark ? 'rgba(255,255,255,0.78)' : '#374151', lineHeight: 1.5 }}>{p}</span>
-                      </div>
-                    ))}
+                  <h3 style={{ fontFamily: F, fontSize: 'clamp(20px, 2vw, 26px)', fontWeight: 800, color: col.dark ? '#fff' : NAVY, letterSpacing: '-0.5px', lineHeight: 1.25, marginBottom: 10 }}>{col.headline}</h3>
+                  <p style={{ fontFamily: F, fontSize: 14.5, color: col.dark ? 'rgba(255,255,255,0.5)' : '#5e6b7f', lineHeight: 1.65, marginBottom: 28 }}>{col.sub}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {col.points.map(p => {
+                      const dash = p.indexOf(' \u2014 ')
+                      const emIdx = p.indexOf(' — ')
+                      const splitAt = dash > -1 ? dash : emIdx
+                      const title = splitAt > -1 ? p.slice(0, splitAt) : p
+                      const desc = splitAt > -1 ? p.slice(splitAt + 3) : ''
+                      return (
+                        <div key={p} style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
+                          <Check color={TEAL} size={15} />
+                          <span style={{ fontFamily: F, fontSize: 14, color: col.dark ? 'rgba(255,255,255,0.85)' : '#374151', lineHeight: 1.6 }}>
+                            <strong>{title}</strong>{desc ? ` \u2014 ${desc}` : ''}
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
-                  <div style={{ marginTop: 36 }}>
+                  {col.more && (
+                    <p style={{ fontFamily: F, fontSize: 12.5, fontStyle: 'italic', color: col.dark ? 'rgba(255,255,255,0.35)' : '#94a1b3', lineHeight: 1.6, marginTop: 20, marginBottom: 0 }}>
+                      {col.more}
+                    </p>
+                  )}
+                  <div style={{ marginTop: 28 }}>
                     <a href="/login" style={{
                       display: 'inline-block', fontFamily: F, fontSize: 14, fontWeight: 700,
                       color: col.dark ? NAVY : '#fff',
-                      background: col.dark ? TEAL : TEAL,
+                      background: TEAL,
                       textDecoration: 'none', padding: '12px 26px', borderRadius: 9,
                     }}>
                       Get started →
