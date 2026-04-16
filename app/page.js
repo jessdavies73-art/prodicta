@@ -3,7 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import LandingPage from './LandingPage'
 
 export const metadata = {
-  title: 'PRODICTA | Predict Hiring Outcomes Before You Hire | AI Assessment Platform',
+  title: 'PRODICTA \u2014 Hire right. Keep them there.',
   description: 'PRODICTA predicts probation outcomes before you make the offer. AI-powered work simulations that show you how candidates actually perform under pressure. Built for ERA 2025. From £49/month.',
   keywords: ['hiring assessment', 'predict hiring outcomes', 'ERA 2025 compliance', 'pre-employment assessment UK', 'probation prediction', 'work simulation', 'AI hiring tool'],
   alternates: { canonical: 'https://prodicta.co.uk' },
