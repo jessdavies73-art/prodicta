@@ -587,6 +587,18 @@ function DashboardPageInner() {
   const [showFirstTime, setShowFirstTime] = useState(false)
   const [installPrompt, setInstallPrompt] = useState(null)
   const [showInstallBanner, setShowInstallBanner] = useState(false)
+  const [mobileBannerDismissed, setMobileBannerDismissed] = useState(() => typeof window !== 'undefined' && localStorage.getItem('prodicta_mobile_banner_dismissed'))
+
+  // Quick actions modals
+  const [qaModal, setQaModal] = useState(null) // 'sickness' | 'attendance' | 'replace' | 'client-update' | null
+  const [qaSearch, setQaSearch] = useState('')
+  const [qaSelectedCandidate, setQaSelectedCandidate] = useState(null)
+  const [qaAttStatus, setQaAttStatus] = useState('')
+  const [qaAttDate, setQaAttDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [qaReplaceReason, setQaReplaceReason] = useState('')
+  const [qaSaving, setQaSaving] = useState(false)
+  const [qaDone, setQaDone] = useState(false)
+  const [qaCopied, setQaCopied] = useState(false)
   // SSP Alert system (agency temp workers)
   const [sspAlerts, setSspAlerts] = useState([])
   const [reportSicknessCandidate, setReportSicknessCandidate] = useState(null)
@@ -889,6 +901,47 @@ function DashboardPageInner() {
     window.addEventListener('beforeinstallprompt', handlePrompt)
     return () => window.removeEventListener('beforeinstallprompt', handlePrompt)
   }, [])
+
+  const tempCandidates = candidates.filter(c => c.assessments?.employment_type === 'temporary' && c.status === 'completed')
+  const qaFilteredCandidates = qaSearch.length >= 2
+    ? tempCandidates.filter(c => c.name.toLowerCase().includes(qaSearch.toLowerCase())).slice(0, 6)
+    : []
+
+  function resetQaModal() { setQaModal(null); setQaSearch(''); setQaSelectedCandidate(null); setQaAttStatus(''); setQaReplaceReason(''); setQaSaving(false); setQaDone(false); setQaCopied(false) }
+
+  async function handleQaAttendance() {
+    if (!qaSelectedCandidate || !qaAttStatus) return
+    setQaSaving(true)
+    try {
+      await fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidate_id: qaSelectedCandidate.id, assessment_id: qaSelectedCandidate.assessments?.id, worker_name: qaSelectedCandidate.name, role_title: qaSelectedCandidate.assessments?.role_title, record_date: qaAttDate, status: qaAttStatus }),
+      })
+      setQaDone(true)
+    } catch {} finally { setQaSaving(false) }
+  }
+
+  async function handleQaClientUpdate() {
+    if (!qaSelectedCandidate) return
+    setQaSaving(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: review } = await supabase.from('assignment_reviews').select('client_share_token, client_share_enabled').eq('candidate_id', qaSelectedCandidate.id).eq('user_id', user.id).maybeSingle()
+      let url = ''
+      if (review?.client_share_token && review?.client_share_enabled) {
+        url = `${window.location.origin}/placement/${review.client_share_token}`
+      } else {
+        const token = crypto.randomUUID()
+        await supabase.from('assignment_reviews').update({ client_share_token: token, client_share_enabled: true }).eq('candidate_id', qaSelectedCandidate.id).eq('user_id', user.id)
+        url = `${window.location.origin}/placement/${token}`
+      }
+      await navigator.clipboard.writeText(url)
+      setQaCopied(true)
+      setQaDone(true)
+    } catch {} finally { setQaSaving(false) }
+  }
 
   if (loading) return <LoadingSkeleton />
 
@@ -1542,6 +1595,188 @@ function DashboardPageInner() {
             fillPercent={completed.length > 0 ? Math.round((recommendedCount / completed.length) * 100) : 0}
           />
         </div>
+
+        {/* ── Mobile banner (agency only, mobile only) ── */}
+        {isAgencyAccount && isMobile && !mobileBannerDismissed && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+            padding: '10px 16px', marginBottom: 16, background: NAVY, borderRadius: 10, flexWrap: 'wrap',
+          }}>
+            <span style={{ fontFamily: F, fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>
+              PRODICTA works on your phone. Log attendance, report sickness, and check placements on the go.
+            </span>
+            <button onClick={() => { setMobileBannerDismissed(true); localStorage.setItem('prodicta_mobile_banner_dismissed', '1') }} style={{ fontFamily: F, fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: '4px 8px' }}>
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* ── Quick Actions (agency only) ── */}
+        {isAgencyAccount && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Quick Actions</div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 12 }}>
+              {[
+                { key: 'sickness', icon: 'alert', label: 'Report Sickness', desc: 'Create SSP alert', color: AMB, bg: AMBBG },
+                { key: 'attendance', icon: 'clock', label: 'Log Attendance', desc: 'Daily attendance', color: GRN, bg: GRNBG },
+                { key: 'replace', icon: 'users', label: 'Replace Worker', desc: 'Find a replacement', color: RED, bg: REDBG },
+                { key: 'client-update', icon: 'send', label: 'Client Update', desc: 'Share placement link', color: NAVY, bg: BG },
+              ].map(a => (
+                <button key={a.key} onClick={() => { resetQaModal(); setQaModal(a.key) }} style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  padding: isMobile ? '18px 12px' : '20px 16px', borderRadius: 12,
+                  border: `1.5px solid ${BD}`, background: CARD, cursor: 'pointer',
+                  transition: 'all 0.15s', textAlign: 'center',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = a.color; e.currentTarget.style.background = a.bg; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = BD; e.currentTarget.style.background = CARD; e.currentTarget.style.transform = 'none' }}
+                >
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: a.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ic name={a.icon} size={20} color={a.color} />
+                  </div>
+                  <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{a.label}</div>
+                  <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>{a.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Quick Action Modal ── */}
+        {qaModal && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1500, background: 'rgba(15,33,55,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => { if (!qaSaving) resetQaModal() }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: CARD, borderRadius: 16, padding: '28px 24px', maxWidth: 440, width: '100%', boxShadow: '0 24px 72px rgba(0,0,0,0.35)', maxHeight: '85vh', overflowY: 'auto' }}>
+              <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: NAVY, margin: '0 0 16px' }}>
+                {qaModal === 'sickness' ? 'Report Sickness' : qaModal === 'attendance' ? 'Log Attendance' : qaModal === 'replace' ? 'Replace Worker' : 'Send Client Update'}
+              </h3>
+
+              {qaDone ? (
+                <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: GRNBG, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                    <Ic name="check" size={22} color={GRN} />
+                  </div>
+                  <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 4px' }}>
+                    {qaModal === 'sickness' ? 'SSP alert created' : qaModal === 'attendance' ? 'Attendance logged' : qaModal === 'replace' ? 'Replacement search started' : 'Link copied to clipboard'}
+                  </p>
+                  <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 16px' }}>
+                    {qaModal === 'sickness' ? 'Complete the SSP check in the SSP module.' : qaModal === 'client-update' ? 'Paste the link into an email to your client.' : 'Done.'}
+                  </p>
+                  <button onClick={resetQaModal} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Close</button>
+                </div>
+              ) : (
+                <>
+                  {/* Worker search */}
+                  {!qaSelectedCandidate ? (
+                    <div>
+                      <label style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX, display: 'block', marginBottom: 6 }}>Search for a worker</label>
+                      <input type="text" value={qaSearch} onChange={e => setQaSearch(e.target.value)} placeholder="Type a name..." style={{ fontFamily: F, fontSize: 14, width: '100%', padding: '12px 14px', borderRadius: 8, border: `1.5px solid ${BD}`, background: CARD, color: TX, outline: 'none', boxSizing: 'border-box' }} autoFocus />
+                      {qaFilteredCandidates.length > 0 && (
+                        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          {qaFilteredCandidates.map(c => (
+                            <button key={c.id} onClick={() => { setQaSelectedCandidate(c); setQaSearch(c.name) }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, border: `1px solid ${BD}`, background: BG, fontFamily: F, fontSize: 13, color: TX, cursor: 'pointer', textAlign: 'left' }}
+                            onMouseEnter={e => e.currentTarget.style.background = TEALLT} onMouseLeave={e => e.currentTarget.style.background = BG}>
+                              <div>
+                                <div style={{ fontWeight: 600 }}>{c.name}</div>
+                                <div style={{ fontSize: 11, color: TX3 }}>{c.assessments?.role_title}</div>
+                              </div>
+                              <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: TEALLT, color: TEALD }}>TEMP</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {qaSearch.length >= 2 && qaFilteredCandidates.length === 0 && (
+                        <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: '10px 0 0' }}>No temporary workers found matching that name.</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: TEALLT, borderRadius: 8, marginBottom: 16, border: `1px solid ${TEAL}40` }}>
+                        <Ic name="check" size={14} color={TEALD} />
+                        <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD, flex: 1 }}>{qaSelectedCandidate.name}</span>
+                        <button onClick={() => { setQaSelectedCandidate(null); setQaSearch('') }} style={{ fontFamily: F, fontSize: 11, color: TX3, background: 'none', border: 'none', cursor: 'pointer' }}>Change</button>
+                      </div>
+
+                      {/* Sickness: date + confirm */}
+                      {qaModal === 'sickness' && (
+                        <div>
+                          <label style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX, display: 'block', marginBottom: 6 }}>Sick date</label>
+                          <input type="date" value={sickDate} onChange={e => setSickDate(e.target.value)} style={{ fontFamily: F, fontSize: 14, width: '100%', padding: '12px 14px', borderRadius: 8, border: `1.5px solid ${BD}`, background: CARD, color: TX, outline: 'none', boxSizing: 'border-box', marginBottom: 16 }} />
+                          <button onClick={() => { setReportSicknessCandidate(qaSelectedCandidate); resetQaModal() }} style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: AMB, color: '#fff', fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                            Report Sickness
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Attendance: date + status */}
+                      {qaModal === 'attendance' && (
+                        <div>
+                          <label style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX, display: 'block', marginBottom: 6 }}>Date</label>
+                          <input type="date" value={qaAttDate} onChange={e => setQaAttDate(e.target.value)} style={{ fontFamily: F, fontSize: 14, width: '100%', padding: '12px 14px', borderRadius: 8, border: `1.5px solid ${BD}`, background: CARD, color: TX, outline: 'none', boxSizing: 'border-box', marginBottom: 12 }} />
+                          <label style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX, display: 'block', marginBottom: 6 }}>Status</label>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+                            {[
+                              { key: 'present', label: 'Present', color: GRN },
+                              { key: 'late', label: 'Late', color: AMB },
+                              { key: 'left_early', label: 'Left Early', color: AMB },
+                              { key: 'absent', label: 'Absent', color: RED },
+                              { key: 'unauthorised_absence', label: 'Unauthorised', color: RED },
+                            ].map(s => (
+                              <button key={s.key} onClick={() => setQaAttStatus(s.key)} style={{
+                                padding: '10px 16px', borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: F, cursor: 'pointer',
+                                background: qaAttStatus === s.key ? `${s.color}18` : BG,
+                                border: `1.5px solid ${qaAttStatus === s.key ? s.color : BD}`,
+                                color: qaAttStatus === s.key ? s.color : TX2,
+                              }}>{s.label}</button>
+                            ))}
+                          </div>
+                          <button onClick={handleQaAttendance} disabled={!qaAttStatus || qaSaving} style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: (!qaAttStatus || qaSaving) ? BD : GRN, color: (!qaAttStatus || qaSaving) ? TX3 : '#fff', fontFamily: F, fontSize: 14, fontWeight: 700, cursor: (!qaAttStatus || qaSaving) ? 'not-allowed' : 'pointer' }}>
+                            {qaSaving ? 'Saving...' : 'Log Attendance'}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Replace: reason + go */}
+                      {qaModal === 'replace' && (
+                        <div>
+                          <label style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX, display: 'block', marginBottom: 6 }}>Reason</label>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+                            {['End Early', 'Performance', 'Attendance', 'Client Request'].map(r => (
+                              <button key={r} onClick={() => setQaReplaceReason(r)} style={{
+                                padding: '10px 16px', borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: F, cursor: 'pointer',
+                                background: qaReplaceReason === r ? `${RED}14` : BG,
+                                border: `1.5px solid ${qaReplaceReason === r ? RED : BD}`,
+                                color: qaReplaceReason === r ? RED : TX2,
+                              }}>{r}</button>
+                            ))}
+                          </div>
+                          <button onClick={() => { router.push(`/assessment/${qaSelectedCandidate.assessments?.id}/candidate/${qaSelectedCandidate.id}/assignment-review`); resetQaModal() }} disabled={!qaReplaceReason} style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: !qaReplaceReason ? BD : RED, color: !qaReplaceReason ? TX3 : '#fff', fontFamily: F, fontSize: 14, fontWeight: 700, cursor: !qaReplaceReason ? 'not-allowed' : 'pointer' }}>
+                            Find Replacement
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Client update */}
+                      {qaModal === 'client-update' && (
+                        <div>
+                          <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 16px', lineHeight: 1.55 }}>
+                            Generate or copy the client placement summary link for <strong>{qaSelectedCandidate.name}</strong>.
+                          </p>
+                          <button onClick={handleQaClientUpdate} disabled={qaSaving} style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: qaSaving ? BD : NAVY, color: qaSaving ? TX3 : '#fff', fontFamily: F, fontSize: 14, fontWeight: 700, cursor: qaSaving ? 'not-allowed' : 'pointer' }}>
+                            {qaSaving ? 'Generating...' : 'Copy Client Link'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <button onClick={resetQaModal} style={{ width: '100%', padding: '10px 0', borderRadius: 8, border: `1.5px solid ${BD}`, background: 'transparent', color: TX3, fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 12 }}>
+                    Cancel
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {flaggedCandidates.length > 0 && (
           <div style={{

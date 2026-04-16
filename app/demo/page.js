@@ -419,6 +419,37 @@ function DemoDashboardInner() {
         </div>
 
 
+        {/* ── Quick Actions (agency only) ── */}
+        {isAgency && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Quick Actions</div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 12 }}>
+              {[
+                { icon: 'alert', label: 'Report Sickness', desc: 'Create SSP alert', color: AMB, bg: AMBBG },
+                { icon: 'clock', label: 'Log Attendance', desc: 'Daily attendance', color: GRN, bg: GRNBG },
+                { icon: 'users', label: 'Replace Worker', desc: 'Find a replacement', color: RED, bg: REDBG },
+                { icon: 'send', label: 'Client Update', desc: 'Share placement link', color: NAVY, bg: BG },
+              ].map(a => (
+                <button key={a.label} onClick={() => setModal(true)} style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  padding: isMobile ? '18px 12px' : '20px 16px', borderRadius: 12,
+                  border: `1.5px solid ${BD}`, background: CARD, cursor: 'pointer',
+                  transition: 'all 0.15s', textAlign: 'center',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = a.color; e.currentTarget.style.background = a.bg; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = BD; e.currentTarget.style.background = CARD; e.currentTarget.style.transform = 'none' }}
+                >
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: a.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ic name={a.icon} size={20} color={a.color} />
+                  </div>
+                  <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{a.label}</div>
+                  <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>{a.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Red flag banner */}
         {flaggedCandidates.length > 0 && (
           <div style={{
