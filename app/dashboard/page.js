@@ -102,8 +102,8 @@ const HEALTH_PALETTE = {
 
 function HealthDot({ health, open, onToggle }) {
   let color = '#cbd5e1'
-  let label = 'No probation data yet'
-  let reason = 'No probation data has been recorded for this candidate yet.'
+  let label = 'No placement data yet'
+  let reason = 'No placement data has been recorded for this candidate yet.'
   if (health) {
     const p = HEALTH_PALETTE[health.health_status] || null
     if (p) {
@@ -415,7 +415,7 @@ function FirstTimeScreen({ onDismiss, isMobile }) {
           fontFamily: F, fontSize: isMobile ? 16 : 18, fontWeight: 700,
           color: TEAL, margin: '0 0 12px', lineHeight: 1.4,
         }}>
-          The Hiring Decision Engine with built-in Probation Insurance.
+          {defaultIsTemp ? 'The Hiring Decision Engine with built-in Placement Insurance.' : 'The Hiring Decision Engine with built-in Probation Insurance.'}
         </p>
         <p style={{
           fontFamily: F, fontSize: isMobile ? 14 : 16, fontWeight: 400,
@@ -940,6 +940,7 @@ function DashboardPageInner() {
 
   // ── placement health lookup ────────────────────────────────────────────────
   const isAgencyAccount = profile?.account_type === 'agency'
+  const defaultIsTemp = profile?.default_employment_type === 'temporary'
   const healthByCandidate = {}
   if (placementHealth?.placements) {
     for (const p of placementHealth.placements) healthByCandidate[p.candidate_id] = p
@@ -2014,8 +2015,8 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Probation Tracker (employer only) ── */}
-        {profile?.account_type === 'employer' && (
+        {/* ── Probation Tracker (employer only, hidden for pure-temp accounts) ── */}
+        {profile?.account_type === 'employer' && !defaultIsTemp && (
           <ProbationTracker hires={probationHires} router={router} />
         )}
 

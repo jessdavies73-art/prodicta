@@ -245,7 +245,7 @@ function DemoDashboardInner() {
     return searchParams.get('type') === 'employer' ? 'employer' : 'agency'
   })
   const isAgency = demoType === 'agency'
-  const [demoEmploymentType, setDemoEmploymentType] = useState('permanent')
+  const [demoEmploymentType, setDemoEmploymentType] = useState('both')
   const [search, setSearch] = useState('')
   const [hoveredRow, setHoveredRow] = useState(null)
   const [searchFocused, setSearchFocused] = useState(false)
@@ -268,7 +268,10 @@ function DemoDashboardInner() {
   }
 
   // Exclude archived from main view
-  const activeCandidates = DEMO_CANDIDATES.filter(c => c.status !== 'archived')
+  const allActiveCandidates = DEMO_CANDIDATES.filter(c => c.status !== 'archived')
+  const activeCandidates = demoEmploymentType === 'both'
+    ? allActiveCandidates
+    : allActiveCandidates.filter(c => c.assessments?.employment_type === demoEmploymentType)
   const completed = activeCandidates.filter(c => c.status === 'completed')
   const pendingCandidates = activeCandidates.filter(c => c.status === 'pending')
 
@@ -376,21 +379,24 @@ function DemoDashboardInner() {
         </div>
 
         {/* Employment type toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 24, background: CARD, borderRadius: 10, border: `1.5px solid ${BD}`, padding: 3, width: 'fit-content' }}>
-          {[{ key: 'permanent', label: 'Permanent Hire' }, { key: 'temporary', label: 'Temporary Placement' }].map(opt => (
-            <button
-              key={opt.key}
-              onClick={() => setDemoEmploymentType(opt.key)}
-              style={{
-                fontFamily: F, fontSize: 13.5, fontWeight: 700, border: 'none', cursor: 'pointer',
-                padding: '9px 22px', borderRadius: 8, transition: 'all 0.15s',
-                background: demoEmploymentType === opt.key ? (opt.key === 'permanent' ? NAVY : TEAL) : 'transparent',
-                color: demoEmploymentType === opt.key ? '#fff' : TX3,
-              }}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 24 }}>
+          <span style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, marginRight: 8 }}>Default to:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: CARD, borderRadius: 10, border: `1.5px solid ${BD}`, padding: 3 }}>
+            {[{ key: 'permanent', label: 'Permanent' }, { key: 'temporary', label: 'Temporary' }, { key: 'both', label: 'Both' }].map(opt => (
+              <button
+                key={opt.key}
+                onClick={() => setDemoEmploymentType(opt.key)}
+                style={{
+                  fontFamily: F, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer',
+                  padding: '8px 18px', borderRadius: 8, transition: 'all 0.15s',
+                  background: demoEmploymentType === opt.key ? (opt.key === 'temporary' ? TEAL : NAVY) : 'transparent',
+                  color: demoEmploymentType === opt.key ? '#fff' : TX3,
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Stats */}

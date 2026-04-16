@@ -181,6 +181,11 @@ export default function SettingsPage() {
   const [candidateFeedbackEnabled, setCandidateFeedbackEnabled] = useState(false)
   const [savingFeedback, setSavingFeedback] = useState(false)
   const [feedbackToast, setFeedbackToast] = useState(null)
+  // Default employment type
+  const [defaultEmploymentType, setDefaultEmploymentType] = useState('ask')
+  const [savingEmploymentType, setSavingEmploymentType] = useState(false)
+  const [employmentTypeToast, setEmploymentTypeToast] = useState(null)
+
   // Logo upload (agency only)
   const [companyLogoUrl, setCompanyLogoUrl] = useState('')
   const [uploadingLogo, setUploadingLogo] = useState(false)
@@ -214,6 +219,7 @@ export default function SettingsPage() {
         setWeights({ ...DEFAULT_WEIGHTS, ...(prof?.default_weightings || {}) })
         setAlertThreshold(prof?.alert_threshold ?? 50)
         setCandidateFeedbackEnabled(prof?.candidate_feedback_enabled === true)
+        setDefaultEmploymentType(prof?.default_employment_type || 'ask')
         setCompanyLogoUrl(prof?.company_logo_url || '')
 
         // Monthly assessment count for billing tab
@@ -358,6 +364,23 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleSaveEmploymentType() {
+    setSavingEmploymentType(true)
+    setEmploymentTypeToast(null)
+    try {
+      const supabase = createClient()
+      const { error: e } = await supabase.from('users').update({ default_employment_type: defaultEmploymentType }).eq('id', profile.id)
+      if (e) throw e
+      setProfile(prev => ({ ...prev, default_employment_type: defaultEmploymentType }))
+      setEmploymentTypeToast({ type: 'success', message: 'Default assessment type saved.' })
+      setTimeout(() => setEmploymentTypeToast(null), 3500)
+    } catch (err) {
+      setEmploymentTypeToast({ type: 'error', message: err.message })
+    } finally {
+      setSavingEmploymentType(false)
+    }
+  }
+
   if (loading) return <LoadingSpinner />
 
   const TABS = [
@@ -365,6 +388,7 @@ export default function SettingsPage() {
     { key: 'billing',    label: 'Billing' },
     { key: 'team',       label: 'Team' },
     { key: 'alerts',     label: 'Alerts' },
+    { key: 'assessments', label: 'Assessments' },
     ...(profile?.account_type === 'employer' ? [{ key: 'weightings', label: 'Score Weightings' }] : []),
   ]
 
@@ -1270,6 +1294,65 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* Assessments tab — default employment type */}
+        {activeTab === 'assessments' && (
+          <div style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ ...cs }}>
+              <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX }}>
+                Default Assessment Type
+              </h2>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 20px', lineHeight: 1.55 }}>
+                Set your default to save time when creating assessments. You can always change it on a per-assessment basis.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                {[
+                  { value: 'permanent', label: 'Always Permanent Hire', desc: 'Every new assessment defaults to Permanent Hire.' },
+                  { value: 'temporary', label: 'Always Temporary Placement', desc: 'Every new assessment defaults to Temporary Placement.' },
+                  { value: 'ask', label: 'Ask Every Time', desc: 'Choose each time you create a new assessment.' },
+                ].map(opt => (
+                  <label
+                    key={opt.value}
+                    onClick={() => setDefaultEmploymentType(opt.value)}
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 12,
+                      padding: '14px 16px', borderRadius: 10, cursor: 'pointer',
+                      border: `1.5px solid ${defaultEmploymentType === opt.value ? TEAL : BD}`,
+                      background: defaultEmploymentType === opt.value ? TEALLT : CARD,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="defaultEmploymentType"
+                      value={opt.value}
+                      checked={defaultEmploymentType === opt.value}
+                      onChange={() => setDefaultEmploymentType(opt.value)}
+                      style={{ accentColor: TEAL, marginTop: 2, flexShrink: 0 }}
+                    />
+                    <div>
+                      <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{opt.label}</div>
+                      <div style={{ fontFamily: F, fontSize: 12.5, color: TX3, marginTop: 2 }}>{opt.desc}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              <button
+                onClick={handleSaveEmploymentType}
+                disabled={savingEmploymentType}
+                style={{
+                  ...bs('primary', 'md'),
+                  opacity: savingEmploymentType ? 0.6 : 1,
+                  cursor: savingEmploymentType ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {savingEmploymentType ? 'Saving...' : 'Save'}
+              </button>
+              {employmentTypeToast && <Toast message={employmentTypeToast.message} type={employmentTypeToast.type} />}
+            </div>
+          </div>
+        )}
 
       </main>
     </div>

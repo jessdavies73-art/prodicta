@@ -184,6 +184,7 @@ export default function NewAssessmentPage() {
   const [mode, setMode] = useState('standard') // 'rapid' | 'quick' | 'standard' | 'advanced'
   const [modeOverridden, setModeOverridden] = useState(false)
   const [employmentType, setEmploymentType] = useState('') // 'permanent' | 'temporary'
+  const [employmentTypeDefaulted, setEmploymentTypeDefaulted] = useState(false) // true if pre-set from settings
 
   // Context questions
   const [contextAnswers, setContextAnswers] = useState({})
@@ -275,9 +276,13 @@ export default function NewAssessmentPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: profile } = await supabase.from('users').select('company_name, plan, account_type, subscription_status').eq('id', user.id).single()
+      const { data: profile } = await supabase.from('users').select('company_name, plan, account_type, subscription_status, default_employment_type').eq('id', user.id).single()
       if (profile?.company_name) setCompanyName(profile.company_name)
       if (profile?.account_type) setAccountType(profile.account_type)
+      if (profile?.default_employment_type === 'permanent' || profile?.default_employment_type === 'temporary') {
+        setEmploymentType(profile.default_employment_type)
+        setEmploymentTypeDefaulted(true)
+      }
 
       // Check monthly usage limit or credits
       const planKey = (profile?.plan || 'starter').toLowerCase()
@@ -648,7 +653,7 @@ export default function NewAssessmentPage() {
               {employmentType === 'permanent' ? 'Permanent Hire' : 'Temporary Placement'}
             </span>
             <button
-              onClick={() => setEmploymentType('')}
+              onClick={() => { setEmploymentType(''); setEmploymentTypeDefaulted(false) }}
               style={{
                 fontFamily: F, fontSize: 12, fontWeight: 600, color: '#94a1b3',
                 background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px',
@@ -656,6 +661,12 @@ export default function NewAssessmentPage() {
             >
               Change
             </button>
+          </div>
+        )}
+        {employmentType && employmentTypeDefaulted && (
+          <div style={{ fontFamily: F, fontSize: 12, color: '#94a1b3', marginTop: -14, marginBottom: 16 }}>
+            Defaulting to {employmentType === 'permanent' ? 'Permanent Hire' : 'Temporary Placement'} based on your settings.{' '}
+            <a href="/settings" style={{ color: '#00BFA5', fontWeight: 600, textDecoration: 'none' }}>Change in Settings</a>
           </div>
         )}
 
