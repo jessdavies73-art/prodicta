@@ -579,6 +579,7 @@ function DashboardPageInner() {
   const [redlineCandidates, setRedlineCandidates] = useState(new Set())
   const [assignmentAlerts, setAssignmentAlerts] = useState([])
   const [attendanceByCandidate, setAttendanceByCandidate] = useState({})
+  const [shareByCandidate, setShareByCandidate] = useState({})
   const [placementHealth, setPlacementHealth] = useState(null) // { placements, counts, total_active, rebate_ending_this_month }
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
   const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
@@ -799,17 +800,21 @@ function DashboardPageInner() {
           if (alertRows) setAssignmentAlerts(alertRows)
         } catch {}
 
-        // Load attendance risk data from assignment_reviews
+        // Load attendance risk + share data from assignment_reviews
         try {
           const { data: attRows } = await supabase
             .from('assignment_reviews')
-            .select('candidate_id, reliability_score, attendance_risk')
+            .select('candidate_id, reliability_score, attendance_risk, client_share_enabled')
             .eq('user_id', user.id)
-            .not('reliability_score', 'is', null)
           if (attRows) {
-            const map = {}
-            for (const r of attRows) map[r.candidate_id] = r
-            setAttendanceByCandidate(map)
+            const attMap = {}
+            const shareMap = {}
+            for (const r of attRows) {
+              if (r.reliability_score != null) attMap[r.candidate_id] = r
+              if (r.client_share_enabled) shareMap[r.candidate_id] = true
+            }
+            setAttendanceByCandidate(attMap)
+            setShareByCandidate(shareMap)
           }
         } catch {}
 
@@ -2230,6 +2235,11 @@ function DashboardPageInner() {
                                         </span>
                                       )
                                     })()}
+                                    {isAgencyAccount && c.assessments?.employment_type === 'temporary' && shareByCandidate[c.id] && (
+                                      <span style={{ fontSize: 8, flexShrink: 0, color: TEALD }} title="Client share link active">
+                                        <Ic name="send" size={10} color={TEALD} />
+                                      </span>
+                                    )}
                                     {redlineCandidates.has(c.id) && (
                                       <a
                                         href={`/assessment/${c.assessments?.id}/candidate/${c.id}/copilot`}

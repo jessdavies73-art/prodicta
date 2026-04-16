@@ -874,6 +874,29 @@ function DemoCandidateInner({ params }) {
           </div>
         )}
 
+        {/* ── Client Visibility Layer (agency + temp) ── */}
+        {isAgency && isTemp && params.candidateId === 'demo-c4' && (
+          <Card style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Ic name="send" size={15} color={TEALD} />
+                <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>Client Visibility</span>
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: F, fontSize: 12, fontWeight: 600, color: GRN }}>
+                <input type="checkbox" checked={true} readOnly style={{ accentColor: TEAL }} />
+                Sharing enabled
+              </label>
+            </div>
+            <div style={{ background: BG, borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <input type="text" value="prodicta.co.uk/placement/demo-abc-123" readOnly style={{ flex: 1, fontFamily: F, fontSize: 12, color: TX, background: 'transparent', border: 'none', outline: 'none' }} />
+              <button onClick={() => setSignupPrompt(true)} style={{ padding: '5px 12px', borderRadius: 6, border: `1px solid ${BD}`, background: CARD, fontFamily: F, fontSize: 11, fontWeight: 700, color: TX2, cursor: 'pointer', flexShrink: 0 }}>Copy</button>
+            </div>
+            <p style={{ fontFamily: F, fontSize: 11.5, color: TX3, margin: 0, lineHeight: 1.5 }}>
+              Your client can view a live placement summary at this link. No login required.
+            </p>
+          </Card>
+        )}
+
         {/* ── Attendance Risk Signal (agency + temp, James O'Brien demo) ── */}
         {isAgency && isTemp && params.candidateId === 'demo-c4' && (
           <Card style={{ marginBottom: 20 }}>

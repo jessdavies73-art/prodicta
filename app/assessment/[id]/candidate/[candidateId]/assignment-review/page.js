@@ -85,6 +85,12 @@ export default function AssignmentReviewPage({ params }) {
   const [latestAlert, setLatestAlert] = useState(null)
   const [resolvingAlert, setResolvingAlert] = useState(false)
 
+  // Client share
+  const [shareEnabled, setShareEnabled] = useState(false)
+  const [shareToken, setShareToken] = useState('')
+  const [shareCopied, setShareCopied] = useState(false)
+  const [generatingShare, setGeneratingShare] = useState(false)
+
   // Replacement trigger
   const [showReplacementPrompt, setShowReplacementPrompt] = useState(false)
   const [replacementCandidates, setReplacementCandidates] = useState(null) // null = not loaded, [] = none found
@@ -134,6 +140,8 @@ export default function AssignmentReviewPage({ params }) {
       if (existing) {
         setRecord(existing)
         setClientFeedback(existing.client_feedback || '')
+        if (existing.client_share_token) setShareToken(existing.client_share_token)
+        if (existing.client_share_enabled) setShareEnabled(true)
       }
 
       // Load existing alerts
@@ -346,6 +354,40 @@ export default function AssignmentReviewPage({ params }) {
     finally { setSavingReplacement(false) }
   }
 
+  async function handleGenerateShareLink() {
+    if (!record) return
+    setGeneratingShare(true)
+    try {
+      const supabase = createClient()
+      const token = crypto.randomUUID()
+      const { data: saved } = await supabase.from('assignment_reviews').update({
+        client_share_token: token,
+        client_share_enabled: true,
+        updated_at: new Date().toISOString(),
+      }).eq('id', record.id).select('*').single()
+      if (saved) {
+        setRecord(saved)
+        setShareToken(token)
+        setShareEnabled(true)
+      }
+    } catch (err) { console.error(err) }
+    finally { setGeneratingShare(false) }
+  }
+
+  async function handleToggleShare(enabled) {
+    if (!record) return
+    try {
+      const supabase = createClient()
+      const { data: saved } = await supabase.from('assignment_reviews').update({
+        client_share_enabled: enabled,
+        updated_at: new Date().toISOString(),
+      }).eq('id', record.id).select('*').single()
+      if (saved) { setRecord(saved); setShareEnabled(enabled) }
+    } catch (err) { console.error(err) }
+  }
+
+  const shareUrl = shareToken ? `${typeof window !== 'undefined' ? window.location.origin : 'https://app.prodicta.co.uk'}/placement/${shareToken}` : ''
+
   const inputStyle = (field) => ({
     fontFamily: F, fontSize: 14, width: '100%', padding: '10px 14px', borderRadius: 8,
     border: `1.5px solid ${focusedField === field ? TEAL : BD}`, background: CARD, color: TX,
@@ -445,6 +487,51 @@ export default function AssignmentReviewPage({ params }) {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Share with Client */}
+              <div style={{ ...cs, marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: shareToken ? 12 : 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Ic name="send" size={15} color={TEALD} />
+                    <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>Client Visibility</span>
+                  </div>
+                  {!shareToken ? (
+                    <button
+                      onClick={handleGenerateShareLink}
+                      disabled={generatingShare}
+                      style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: generatingShare ? BD : TEAL, color: generatingShare ? TX3 : NAVY, fontFamily: F, fontSize: 13, fontWeight: 700, cursor: generatingShare ? 'not-allowed' : 'pointer' }}
+                    >
+                      {generatingShare ? 'Generating...' : 'Share with Client'}
+                    </button>
+                  ) : (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: F, fontSize: 12, fontWeight: 600, color: shareEnabled ? GRN : TX3 }}>
+                      <input type="checkbox" checked={shareEnabled} onChange={e => handleToggleShare(e.target.checked)} style={{ accentColor: TEAL }} />
+                      {shareEnabled ? 'Sharing enabled' : 'Sharing disabled'}
+                    </label>
+                  )}
+                </div>
+                {shareToken && (
+                  <div style={{ background: BG, borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <input
+                      type="text"
+                      value={shareUrl}
+                      readOnly
+                      style={{ flex: 1, fontFamily: F, fontSize: 12, color: shareEnabled ? TX : TX3, background: 'transparent', border: 'none', outline: 'none', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
+                    />
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(shareUrl); setShareCopied(true); setTimeout(() => setShareCopied(false), 2000) }}
+                      style={{ padding: '5px 12px', borderRadius: 6, border: `1px solid ${BD}`, background: CARD, fontFamily: F, fontSize: 11, fontWeight: 700, color: shareCopied ? GRN : TX2, cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      {shareCopied ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                )}
+                {shareToken && (
+                  <p style={{ fontFamily: F, fontSize: 11.5, color: TX3, margin: '8px 0 0', lineHeight: 1.5 }}>
+                    {shareEnabled ? 'Your client can view a live placement summary at this link. No login required.' : 'Sharing is disabled. The client cannot access this link.'}
+                  </p>
+                )}
               </div>
 
               {/* Reliability Score + Attendance */}
