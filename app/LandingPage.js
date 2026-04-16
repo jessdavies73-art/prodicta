@@ -475,7 +475,9 @@ export default function LandingPage() {
           color: 'rgba(255,255,255,0.6)', lineHeight: 1.75,
           maxWidth: 660, marginBottom: 32, position: 'relative', zIndex: 1,
         }}>
-          PRODICTA is the only platform that predicts who will succeed before you hire them and helps you keep them once you do.
+          {heroPersona === 'agency'
+            ? 'Place faster. Protect every placement.'
+            : 'PRODICTA is the only platform that predicts who will succeed before you hire them and helps you keep them once you do.'}
         </p>
 
         {/* Toggle subtext */}
@@ -486,7 +488,7 @@ export default function LandingPage() {
           minHeight: 72,
         }}>
           {heroPersona === 'agency'
-            ? 'Screen temps at \u00A36 each. Track every placement in real time. Manage SSP, holiday, and compliance automatically. The only platform built for the full temp and perm placement journey.'
+            ? 'Whether you place permanent hires or temps, PRODICTA gives you evidence not guesswork. Screen candidates with real work simulations. Predict who will pass probation or succeed on assignment. Track every active placement in real time. Manage SSP, holiday pay, and Fair Work Agency compliance automatically. When something goes wrong surface a replacement in seconds. The only platform that covers the full journey from first assessment to final day.'
             : 'Assess every candidate with real work simulations. Predict who will pass probation. Generate ERA 2025 compliance documentation automatically. Protect every hiring decision from day one.'}
         </p>
 
@@ -496,9 +498,9 @@ export default function LandingPage() {
           marginBottom: 44, position: 'relative', zIndex: 1, maxWidth: 720,
         }}>
           {(heroPersona === 'agency' ? [
-            { label: '\u00A36 Rapid Screen', sub: 'Screen candidates in 5 minutes' },
-            { label: 'Live Placement Health', sub: 'Know before the client calls' },
-            { label: 'Full SSP Management', sub: '2026 rules handled automatically' },
+            { label: 'Perm and Temp', sub: 'One platform for every type of placement' },
+            { label: 'Placement Health Score', sub: 'Know before the client calls' },
+            { label: 'Full Compliance', sub: 'ERA 2025, SSP 2026, Fair Work Agency ready' },
           ] : [
             { label: 'Real work simulations', sub: 'Not a personality test' },
             { label: 'ERA 2025 compliant', sub: 'Every hire documented' },
