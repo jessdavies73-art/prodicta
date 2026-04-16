@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
   <rect width="192" height="192" rx="32" fill="#0F2137"/>
-  <text x="96" y="108" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-weight="900" font-size="48">
-    <tspan fill="#ffffff">PRO</tspan><tspan fill="#00BFA5">DICTA</tspan>
-  </text>
+  <text x="96" y="82" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-weight="900" font-size="52" fill="#ffffff">PRO</text>
+  <text x="96" y="128" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-weight="900" font-size="40" fill="#00BFA5">DICTA</text>
 </svg>
