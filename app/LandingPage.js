@@ -477,7 +477,7 @@ export default function LandingPage() {
         }}>
           {heroPersona === 'agency'
             ? 'Place faster. Protect every placement.'
-            : 'PRODICTA is the only platform that predicts who will succeed before you hire them and helps you keep them once you do.'}
+            : 'Hire with evidence. Protect every decision.'}
         </p>
 
         {/* Toggle subtext */}
@@ -489,7 +489,7 @@ export default function LandingPage() {
         }}>
           {heroPersona === 'agency'
             ? 'Whether you place permanent hires or temps, PRODICTA gives you evidence not guesswork. Screen candidates with real work simulations. Predict who will pass probation or succeed on assignment. Track every active placement in real time. Manage SSP, holiday pay, and Fair Work Agency compliance automatically. When something goes wrong surface a replacement in seconds. The only platform that covers the full journey from first assessment to final day.'
-            : 'Assess every candidate with real work simulations. Predict who will pass probation. Generate ERA 2025 compliance documentation automatically. Protect every hiring decision from day one.'}
+            : 'Whether you are hiring permanently or using temps, PRODICTA puts every candidate through real work scenarios built from the role itself. Predict who will pass probation or succeed on assignment. Generate ERA 2025 compliance documentation automatically. Track every hire through probation with early warning alerts. Manage SSP, holiday pay, and Fair Work Agency compliance. From first assessment to end of probation \u2014 fully covered.'}
         </p>
 
         {/* Proof points */}
@@ -502,9 +502,9 @@ export default function LandingPage() {
             { label: 'Placement Health Score', sub: 'Know before the client calls' },
             { label: 'Full Compliance', sub: 'ERA 2025, SSP 2026, Fair Work Agency ready' },
           ] : [
-            { label: 'Real work simulations', sub: 'Not a personality test' },
-            { label: 'ERA 2025 compliant', sub: 'Every hire documented' },
-            { label: 'Probation tracking', sub: 'Catch problems at week three' },
+            { label: 'Perm and Temp', sub: 'One platform for every type of hire' },
+            { label: 'ERA 2025 protected', sub: 'Every decision documented automatically' },
+            { label: 'Probation early warning', sub: 'Catch problems at week three not month four' },
           ]).map((pt, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: '1 1 200px', maxWidth: 220 }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
