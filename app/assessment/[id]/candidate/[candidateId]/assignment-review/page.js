@@ -93,8 +93,20 @@ export default function AssignmentReviewPage({ params }) {
       const { data: prof } = await supabase.from('users').select('company_name, account_type').eq('id', user.id).single()
       setProfile(prof)
 
+      // Gate: assignment review is agency-only
+      if (prof?.account_type !== 'agency') {
+        router.push(`/assessment/${params.id}/candidate/${params.candidateId}`)
+        return
+      }
+
       const { data: cand } = await supabase.from('candidates').select('*, assessments(role_title, employment_type)').eq('id', params.candidateId).single()
       setCandidate(cand)
+
+      // Gate: assignment review is temporary-only
+      if (cand?.assessments?.employment_type !== 'temporary') {
+        router.push(`/assessment/${params.id}/candidate/${params.candidateId}`)
+        return
+      }
 
       const { data: existing } = await supabase
         .from('assignment_reviews')

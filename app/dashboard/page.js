@@ -1512,8 +1512,8 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* Assignment alerts banner */}
-        {assignmentAlerts.length > 0 && (
+        {/* Assignment alerts banner (agency only) */}
+        {isAgencyAccount && assignmentAlerts.length > 0 && (
           <div style={{
             background: 'linear-gradient(135deg, #fef2f2, #fff5f5)', border: `1.5px solid #fecaca`,
             borderLeft: `4px solid #B91C1C`, borderRadius: '0 12px 12px 0',
@@ -1558,8 +1558,8 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── SSP Alerts panel (agency only) ── */}
-        {isAgencyAccount && sspAlerts.length > 0 && (
+        {/* ── SSP Alerts panel (agency + temporary only) ── */}
+        {isAgencyAccount && sspAlerts.filter(a => a.employment_type === 'temporary').length > 0 && (
           <div style={{
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
             borderTop: '3px solid #D97706', padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
@@ -2191,6 +2191,14 @@ function DashboardPageInner() {
                                       />
                                     )}
                                     {c.name}
+                                    <span style={{
+                                      fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
+                                      padding: '1px 6px', borderRadius: 4, flexShrink: 0,
+                                      background: c.assessments?.employment_type === 'temporary' ? TEAL : '#e4e9f0',
+                                      color: c.assessments?.employment_type === 'temporary' ? '#fff' : NAVY,
+                                    }}>
+                                      {c.assessments?.employment_type === 'temporary' ? 'TEMP' : 'PERM'}
+                                    </span>
                                     {redlineCandidates.has(c.id) && (
                                       <a
                                         href={`/assessment/${c.assessments?.id}/candidate/${c.id}/copilot`}

@@ -2024,8 +2024,47 @@ export default function CandidateReportPage({ params }) {
                       </button>
                     )}
 
+                    {/* WORKSPACE */}
+                    {results && candidate?.assessments?.assessment_mode === 'advanced' && (
+                    <>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Workspace</div>
+                    <a
+                      href={`/assessment/${params.id}/candidate/${params.candidateId}/day-1-simulation`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                        fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <Ic name="monitor" size={15} color={TEALD} />
+                      View Day 1 Simulation
+                      <InfoTooltip text="See what this candidate's first day would look like based on their assessment responses. Strategy-Fit only." />
+                    </a>
+                    </>
+                    )}
+
                     {/* CANDIDATE */}
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Candidate</div>
+                    {results && (
+                      <a
+                        href={`/assessment/${params.id}/candidate/${params.candidateId}/preview`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        <Ic name="eye" size={15} color={TEALD} />
+                        Candidate Preview
+                        <InfoTooltip text="Open a self-preview view of this candidate's assessment summary." />
+                      </a>
+                    )}
                     {results && (profile?.account_type === 'employer' || profile?.account_type === 'agency') && (
                       <button onClick={() => setOutcomeModal(true)} style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -4750,10 +4789,74 @@ export default function CandidateReportPage({ params }) {
                 )}
 
                 {/* ══════════════════════════════════════════════════
-                    90-DAY HIRING MANAGER COACHING PLAN
+                    ASSIGNMENT SUCCESS PLAN (employer + temporary)
+                ══════════════════════════════════════════════════ */}
+                {results?.coaching_plan && profile?.account_type === 'employer' && candidate?.assessments?.employment_type === 'temporary' && (
+                  <ScrollReveal id="coaching-plan" delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                        <SectionHeading tooltip="A structured assignment success plan to guide this worker through their assignment period.">
+                          Assignment Success Plan
+                        </SectionHeading>
+                        <SectionToggle expanded={expandedSections.coachingPlan} onToggle={() => toggleSection('coachingPlan')} />
+                      </div>
+                      <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '-4px 0 14px', lineHeight: 1.6 }}>
+                        Provided by PRODICTA in partnership with Alchemy Training UK. Coaching plan content developed by Liz Harris, Founder, Alchemy Training UK.
+                      </p>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+                        <a href={`/assessment/${params.id}/candidate/${params.candidateId}/coaching-plan`} target="_blank" rel="noreferrer" style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: '#fff', background: NAVY, padding: '9px 14px', borderRadius: 8, textDecoration: 'none' }}>View Full Assignment Plan</a>
+                        <a href={`/api/assessment/${params.id}/candidate/${params.candidateId}/coaching-plan-pdf`} style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: NAVY, background: '#fff', border: `1.5px solid ${NAVY}`, padding: '9px 14px', borderRadius: 8, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}>Assignment Plan PDF <InfoTooltip text="The assignment success plan from Alchemy Training UK" /></a>
+                      </div>
+                      {expandedSections.coachingPlan && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                          {Array.isArray(results.coaching_plan.key_stakeholders) && results.coaching_plan.key_stakeholders.length > 0 && (
+                            <div style={{ border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px', background: CARD }}>
+                              <div style={{ fontFamily: FM, fontSize: 13, fontWeight: 800, color: NAVY, letterSpacing: '0.03em', textTransform: 'uppercase', marginBottom: 10 }}>Key Stakeholders</div>
+                              <div style={{ fontSize: 12, color: TX3, marginBottom: 10 }}>The key relationships this worker will need to manage during their assignment.</div>
+                              {results.coaching_plan.key_stakeholders.map((s, i) => (
+                                <div key={i} style={{ padding: '10px 14px', borderLeft: `3px solid ${TEAL}`, background: '#f8fafc', borderRadius: '0 6px 6px 0', marginBottom: 8 }}>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: TX }}>{s.role}</div>
+                                  {s.what_hire_needs_from_them && <div style={{ fontSize: 12, color: TX2, marginTop: 2 }}>What the worker needs from them: {s.what_hire_needs_from_them}</div>}
+                                  {s.what_they_need_from_hire && <div style={{ fontSize: 12, color: TX2, marginTop: 2 }}>What they need from the worker: {s.what_they_need_from_hire}</div>}
+                                  {s.pressure_point && <div style={{ fontSize: 12, color: '#d97706', fontWeight: 600, marginTop: 2 }}>Pressure point: {s.pressure_point}</div>}
+                                  {s.watch_for && <div style={{ fontSize: 12, color: TX2, marginTop: 2, fontStyle: 'italic' }}>Watch for: {s.watch_for}</div>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {['phase1','phase2','phase3'].map(pk => {
+                            const p = results.coaching_plan[pk]
+                            if (!p) return null
+                            return (
+                              <div key={pk} style={{ border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px', background: CARD }}>
+                                <div style={{ fontFamily: FM, fontSize: 13, fontWeight: 800, color: NAVY, letterSpacing: '0.03em', textTransform: 'uppercase', marginBottom: 4 }}>{p.title}</div>
+                                <div style={{ fontSize: 11, color: TX3, marginBottom: 10 }}>{p.days}</div>
+                                {Array.isArray(p.smart_objectives) && p.smart_objectives.length > 0 && (
+                                  <div style={{ marginBottom: 12 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>SMART Objectives</div>
+                                    {p.smart_objectives.map((o, i) => (
+                                      <div key={i} style={{ padding: '8px 12px', borderLeft: `3px solid ${TEAL}`, background: '#f8fafc', borderRadius: '0 6px 6px 0', marginBottom: 6 }}>
+                                        <div style={{ fontSize: 13, fontWeight: 700, color: TX }}>{o.objective}</div>
+                                        {o.measure && <div style={{ fontSize: 12, color: TX2 }}>Measure: {o.measure}</div>}
+                                        {o.deadline && <div style={{ fontSize: 12, color: TX2 }}>Deadline: {o.deadline}</div>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </Card>
+                  </ScrollReveal>
+                )}
+
+                {/* ══════════════════════════════════════════════════
+                    90-DAY HIRING MANAGER COACHING PLAN (employer + permanent)
                     PRODICTA x Alchemy Training UK
                 ══════════════════════════════════════════════════ */}
-                {results?.coaching_plan && (
+                {results?.coaching_plan && profile?.account_type === 'employer' && candidate?.assessments?.employment_type !== 'temporary' && (
                   <ScrollReveal id="coaching-plan" delay={60}>
                     <Card style={{ marginBottom: 20 }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
