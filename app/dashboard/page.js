@@ -2346,6 +2346,57 @@ function DashboardPageInner() {
           </div>
         )}
 
+        {/* ── PAYG balance banner (prominent for payg users) ── */}
+        {(profile?.plan === 'payg' || profile?.plan_type === 'payg') && (() => {
+          const totalRemaining = assessmentCredits.reduce((sum, c) => sum + (c.credits_remaining || 0), 0)
+          const low = totalRemaining > 0 && totalRemaining < 3
+          const empty = totalRemaining === 0
+          const bannerColor = empty ? '#B91C1C' : low ? '#D97706' : TEAL
+          const bannerBg = empty ? '#fef2f2' : low ? '#fffbeb' : TEALLT
+          const bannerBd = empty ? '#fecaca' : low ? '#fde68a' : `${TEAL}55`
+          return (
+            <div style={{
+              background: bannerBg, border: `1px solid ${bannerBd}`, borderLeft: `4px solid ${bannerColor}`,
+              borderRadius: '0 14px 14px 0', padding: isMobile ? '16px 18px' : '20px 26px',
+              marginBottom: 20, display: 'flex', alignItems: isMobile ? 'flex-start' : 'center',
+              flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 14 : 18,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1 }}>
+                <div style={{
+                  fontFamily: FM, fontSize: 36, fontWeight: 800,
+                  color: bannerColor, lineHeight: 1, minWidth: 54, textAlign: 'right',
+                }}>
+                  {totalRemaining}
+                </div>
+                <div>
+                  <div style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: TX, marginBottom: 2 }}>
+                    {empty ? 'No credits remaining' : low ? 'Low credits' : 'Credits available'}
+                  </div>
+                  <div style={{ fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.5 }}>
+                    {empty
+                      ? 'Buy a bundle to start sending assessments.'
+                      : low
+                      ? 'You have fewer than 3 credits left. Top up to avoid disruption.'
+                      : 'Pay-as-you-go balance across all assessment types.'}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => router.push('/billing/credits')}
+                style={{
+                  padding: '11px 20px', borderRadius: 10, border: 'none',
+                  background: TEAL, color: NAVY,
+                  fontFamily: F, fontSize: 13.5, fontWeight: 800, cursor: 'pointer',
+                  flexShrink: 0, whiteSpace: 'nowrap',
+                }}
+              >
+                Buy more credits
+              </button>
+            </div>
+          )
+        })()}
+
         {/* ── Assessment Credits (pay-per-assessment users + promo-granted Rapid Screens) ── */}
         {assessmentCredits.length > 0 && (!profile?.plan || assessmentCredits.some(c => c.credit_type === 'rapid-screen' && (c.credits_remaining || 0) > 0)) && (
           <div style={{
@@ -2358,7 +2409,7 @@ function DashboardPageInner() {
                 <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>Your Assessment Credits</span>
                 <InfoTooltip text="Pay-per-use Rapid Screen assessments credited to your account. Each credit allows one 5-8 minute candidate assessment at no additional charge." />
               </div>
-              <a href="/#pricing" style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD, textDecoration: 'none' }}>
+              <a href="/billing/credits" style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD, textDecoration: 'none' }}>
                 Buy more credits
               </a>
             </div>

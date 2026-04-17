@@ -235,6 +235,7 @@ function SignUpForm() {
   const [email,       setEmail]       = useState('')
   const [password,    setPassword]    = useState('')
   const [accountType, setAccountType] = useState('employer')
+  const [planPath,    setPlanPath]    = useState('monthly') // 'monthly' | 'payg'
   const [plan,        setPlan]        = useState('professional')
   const [postcode,    setPostcode]    = useState('')
   const [promoCode,   setPromoCode]   = useState('')
@@ -251,6 +252,33 @@ function SignUpForm() {
     if (!company.trim())     { setError('Please enter your company name.'); return }
     if (!email.trim())       { setError('Please enter your email address.'); return }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+
+    // Pay-as-you-go branch: no Stripe subscription, no card at signup.
+    if (planPath === 'payg') {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/billing/create-payg-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email:       email.trim(),
+            password,
+            companyName: company.trim(),
+            accountType,
+            promoCode:   promoCode.trim() || null,
+          }),
+        })
+        const data = await res.json()
+        if (data.error) { setError(data.error); setLoading(false); return }
+        if (data.promoMessage) setPromoMessage(data.promoMessage)
+        setDone(true)
+      } catch (err) {
+        setError(err?.message || 'An unexpected error occurred. Please try again.')
+        setLoading(false)
+      }
+      return
+    }
+
     if (!postcode.trim())    { setError('Please enter your postcode.'); return }
     if (!stripe || !elements) { setError('Payment form is loading. Please wait a moment.'); return }
 
@@ -390,7 +418,11 @@ function SignUpForm() {
   return (
     <form onSubmit={handleSubmit} noValidate>
       <h1 style={styles.heading}>Create your account</h1>
-      <p style={styles.subheading}>Payment taken now. Cancel any time.</p>
+      <p style={styles.subheading}>
+        {planPath === 'payg'
+          ? 'No monthly fee. Buy credits after signup.'
+          : 'Payment taken now. Cancel any time.'}
+      </p>
 
       {error && <div role="alert" style={styles.error}>{error}</div>}
 
@@ -439,34 +471,96 @@ function SignUpForm() {
         </div>
 
         <div>
-          <label style={styles.label}>Choose your plan</label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {PLAN_OPTIONS.map(opt => {
-              const active = plan === opt.value
+          <label style={styles.label}>How would you like to pay?</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+            {[
+              { value: 'monthly', label: 'Monthly subscription', sub: 'Includes assessments each month' },
+              { value: 'payg',    label: 'Pay as you go',        sub: 'No monthly fee, pay per assessment' },
+            ].map(opt => {
+              const active = planPath === opt.value
               return (
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setPlan(opt.value)}
+                  onClick={() => setPlanPath(opt.value)}
                   style={{
-                    padding: '9px 10px',
+                    padding: '11px 12px',
                     borderRadius: 8,
                     border: `1.5px solid ${active ? TEAL : 'rgba(255,255,255,0.18)'}`,
                     background: active ? 'rgba(0,191,165,0.15)' : 'rgba(255,255,255,0.06)',
-                    color: active ? TEAL : 'rgba(255,255,255,0.55)',
+                    color: active ? TEAL : 'rgba(255,255,255,0.6)',
                     fontFamily: "'Outfit', system-ui, sans-serif",
                     cursor: 'pointer',
                     textAlign: 'left',
                     transition: 'all 0.15s',
                   }}
                 >
-                  <div style={{ fontSize: 13, fontWeight: active ? 700 : 500 }}>{opt.label}</div>
-                  <div style={{ fontSize: 11.5, opacity: 0.75, marginTop: 1 }}>{opt.price}</div>
+                  <div style={{ fontSize: 13, fontWeight: active ? 700 : 600 }}>{opt.label}</div>
+                  <div style={{ fontSize: 11, opacity: 0.75, marginTop: 2 }}>{opt.sub}</div>
                 </button>
               )
             })}
           </div>
         </div>
+
+        {planPath === 'monthly' && (
+          <div>
+            <label style={styles.label}>Choose your plan</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {PLAN_OPTIONS.map(opt => {
+                const active = plan === opt.value
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setPlan(opt.value)}
+                    style={{
+                      padding: '9px 10px',
+                      borderRadius: 8,
+                      border: `1.5px solid ${active ? TEAL : 'rgba(255,255,255,0.18)'}`,
+                      background: active ? 'rgba(0,191,165,0.15)' : 'rgba(255,255,255,0.06)',
+                      color: active ? TEAL : 'rgba(255,255,255,0.55)',
+                      fontFamily: "'Outfit', system-ui, sans-serif",
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: active ? 700 : 500 }}>{opt.label}</div>
+                    <div style={{ fontSize: 11.5, opacity: 0.75, marginTop: 1 }}>{opt.price}</div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {planPath === 'payg' && (
+          <div style={{
+            padding: '14px 16px', borderRadius: 10,
+            background: 'rgba(0,191,165,0.08)', border: '1px solid rgba(0,191,165,0.25)',
+            fontFamily: "'Outfit', system-ui, sans-serif",
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+              Pay per assessment
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}>
+              {[
+                { label: 'Rapid Screen', price: '£6 per candidate', time: '5-8 minutes' },
+                { label: 'Speed-Fit',    price: '£18 per candidate', time: '15 minutes' },
+                { label: 'Depth-Fit',    price: '£35 per candidate', time: '25 minutes' },
+              ].map(p => (
+                <div key={p.label} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, fontSize: 12.5 }}>
+                  <span style={{ color: '#fff', fontWeight: 600 }}>{p.label} <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 400 }}>({p.time})</span></span>
+                  <span style={{ color: TEAL, fontWeight: 700 }}>{p.price}</span>
+                </div>
+              ))}
+            </div>
+            <p style={{ margin: 0, fontSize: 11.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
+              Buy assessment credits in bundles after signup. No monthly commitment. Credits do not expire.
+            </p>
+          </div>
+        )}
 
         <Field
           label="Work email"
@@ -487,25 +581,29 @@ function SignUpForm() {
           autoComplete="new-password"
         />
 
-        <div>
-          <label style={styles.label}>Card details</label>
-          <div style={styles.cardInput(cardFocused)}>
-            <CardElement
-              options={CARD_ELEMENT_OPTIONS}
-              onFocus={() => setCardFocused(true)}
-              onBlur={() => setCardFocused(false)}
-            />
-          </div>
-        </div>
+        {planPath === 'monthly' && (
+          <>
+            <div>
+              <label style={styles.label}>Card details</label>
+              <div style={styles.cardInput(cardFocused)}>
+                <CardElement
+                  options={CARD_ELEMENT_OPTIONS}
+                  onFocus={() => setCardFocused(true)}
+                  onBlur={() => setCardFocused(false)}
+                />
+              </div>
+            </div>
 
-        <Field
-          label="Postcode"
-          id="su-postcode"
-          value={postcode}
-          onChange={e => setPostcode(e.target.value)}
-          placeholder="SW1A 1AA"
-          autoComplete="postal-code"
-        />
+            <Field
+              label="Postcode"
+              id="su-postcode"
+              value={postcode}
+              onChange={e => setPostcode(e.target.value)}
+              placeholder="SW1A 1AA"
+              autoComplete="postal-code"
+            />
+          </>
+        )}
 
         <Field
           label="Promo code (optional)"
@@ -519,10 +617,14 @@ function SignUpForm() {
 
       <button
         type="submit"
-        disabled={loading || !stripe}
+        disabled={loading || (planPath === 'monthly' && !stripe)}
         style={styles.btn(loading)}
       >
-        {loading ? 'Processing...' : `Create account and pay ${planPrice}`}
+        {loading
+          ? 'Processing...'
+          : planPath === 'payg'
+          ? 'Create account'
+          : `Create account and pay ${planPrice}`}
       </button>
     </form>
   )
