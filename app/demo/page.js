@@ -348,7 +348,7 @@ function DemoDashboardInner() {
   })
 
   return (
-    <DemoLayout active="dashboard">
+    <DemoLayout active="dashboard" demoEmploymentType={demoEmploymentType}>
       {modal && <SignUpModal onClose={() => setModal(false)} />}
 
       <main style={{ marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 96 : 46, padding: isMobile ? '16px 16px 32px' : '32px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>

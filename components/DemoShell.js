@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useSyncExternalStore } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ic } from './Icons'
 import ProdictaLogo from './ProdictaLogo'
@@ -75,41 +75,19 @@ function buildDemoGroups({ showDocuments }) {
   ]
 }
 
-export function DemoSidebar({ active }) {
+export function DemoSidebar({ active, demoEmploymentType }) {
   const router = useRouter()
   const isMobile = useIsMobile()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [signupModal, setSignupModal] = useState(false)
 
-  // Gate: show Documents unless the demo is explicitly set to permanent-only.
-  // Reads the same localStorage keys that the demo dashboard uses so the
-  // sidebar tracks the user's demo toggle without a prop.
-  const [showDocuments, setShowDocuments] = useState(true)
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const applyGate = () => {
-      const demoType = (() => {
-        try { return localStorage.getItem('prodicta_demo_account_type') } catch { return null }
-      })()
-      const demoEmploymentType = (() => {
-        try { return localStorage.getItem('prodicta_demo_employment_type') } catch { return null }
-      })()
-      const show =
-        demoType === 'temporary' ||
-        demoEmploymentType === 'temporary' ||
-        demoEmploymentType === 'both' ||
-        demoEmploymentType == null // default (nothing set) → show
-      setShowDocuments(show)
-    }
-    applyGate()
-    const onStorage = (e) => {
-      if (!e.key || e.key === 'prodicta_demo_employment_type' || e.key === 'prodicta_demo_account_type') {
-        applyGate()
-      }
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
+  // Documents visibility is driven by the toggle on the demo dashboard.
+  // When demoEmploymentType is not passed (other demo pages that don't own the
+  // toggle), default to showing Documents — the demo default is 'both'.
+  const showDocuments =
+    demoEmploymentType == null ||
+    demoEmploymentType === 'temporary' ||
+    demoEmploymentType === 'both'
 
   function handleNavClick(href) {
     router.push(href)
@@ -355,14 +333,14 @@ export function SignUpModal({ onClose }) {
 }
 
 // ── Demo page wrapper (banner + sidebar + main) ────────────────────────────────
-export function DemoLayout({ active, children }) {
+export function DemoLayout({ active, demoEmploymentType, children }) {
   const isMobile = useIsMobile()
   return (
     <div style={{ display: 'flex', fontFamily: F, flexDirection: 'column', minHeight: '100vh' }}>
       <div style={{ position: 'fixed', top: isMobile ? 56 : 0, left: 0, right: 0, zIndex: 300 }}>
         <DemoBanner />
       </div>
-      <DemoSidebar active={active} />
+      <DemoSidebar active={active} demoEmploymentType={demoEmploymentType} />
       {children}
     </div>
   )

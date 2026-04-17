@@ -58,11 +58,13 @@ export default function Sidebar({ active, companyName }) {
         .maybeSingle()
 
       const defaultType = prof?.default_employment_type
-      if (defaultType === 'temporary' || defaultType === 'both') {
+      if (defaultType === 'temporary') {
         if (!cancelled) setShowDocuments(true)
         return
       }
 
+      // Hide for 'permanent', 'ask', 'both', or unset — unless the account has
+      // at least one assessment with employment_type === 'temporary'.
       const { count } = await supabase.from('assessments')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
