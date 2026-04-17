@@ -344,7 +344,7 @@ function EmptyState() {
 
 // ── First-time welcome screen ────────────────────────────────────────────────
 
-function FirstTimeScreen({ onDismiss, isMobile }) {
+function FirstTimeScreen({ onDismiss, isMobile, defaultIsTemp }) {
   const router = useRouter()
   const steps = [
     {
@@ -995,6 +995,7 @@ function DashboardPageInner() {
     return (
       <FirstTimeScreen
         isMobile={isMobile}
+        defaultIsTemp={profile?.default_employment_type === 'temporary'}
         onDismiss={() => {
           try { localStorage.setItem('prodicta_first_time_dismissed', '1') } catch (_) {}
           setShowFirstTime(false)
