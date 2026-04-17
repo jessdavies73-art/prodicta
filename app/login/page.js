@@ -269,7 +269,6 @@ function SignUpForm() {
   const [password,    setPassword]    = useState('')
   const [accountType, setAccountType] = useState('employer')
   const [planPath,    setPlanPath]    = useState('monthly') // 'monthly' | 'payg'
-  const [paygMode,    setPaygMode]    = useState('bundle')  // 'bundle' | 'free'
   const [selectedType, setSelectedType] = useState(null) // credit_type id
   const [plan,        setPlan]        = useState('professional')
   const [postcode,    setPostcode]    = useState('')
@@ -288,34 +287,8 @@ function SignUpForm() {
     if (!email.trim())       { setError('Please enter your email address.'); return }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
 
-    // Pay-as-you-go — free account path (no bundle, no card).
-    if (planPath === 'payg' && paygMode === 'free') {
-      setLoading(true)
-      try {
-        const res = await fetch('/api/billing/create-payg-account', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email:       email.trim(),
-            password,
-            companyName: company.trim(),
-            accountType,
-            promoCode:   promoCode.trim() || null,
-          }),
-        })
-        const data = await res.json()
-        if (data.error) { setError(data.error); setLoading(false); return }
-        if (data.promoMessage) setPromoMessage(data.promoMessage)
-        setDone(true)
-      } catch (err) {
-        setError(err?.message || 'An unexpected error occurred. Please try again.')
-        setLoading(false)
-      }
-      return
-    }
-
     // Pay-as-you-go — single assessment credit purchase.
-    if (planPath === 'payg' && paygMode === 'bundle') {
+    if (planPath === 'payg') {
       if (!selectedType) { setError('Please choose an assessment type.'); return }
       if (!stripe || !elements) { setError('Payment form is loading. Please wait a moment.'); return }
       const qty = 1
@@ -532,10 +505,8 @@ function SignUpForm() {
     <form onSubmit={handleSubmit} noValidate>
       <h1 style={styles.heading}>Create your account</h1>
       <p style={styles.subheading}>
-        {planPath === 'payg' && paygMode === 'bundle'
+        {planPath === 'payg'
           ? 'One-off payment. Credits do not expire.'
-          : planPath === 'payg'
-          ? 'No monthly fee. Buy credits later or redeem a promo code.'
           : 'Payment taken now. Cancel any time.'}
       </p>
 
@@ -650,7 +621,7 @@ function SignUpForm() {
           </div>
         )}
 
-        {planPath === 'payg' && paygMode === 'bundle' && (() => {
+        {planPath === 'payg' && (() => {
           const sel = PAYG_ASSESSMENT_TYPES.find(t => t.id === selectedType)
           return (
             <div>
@@ -712,49 +683,9 @@ function SignUpForm() {
                 </div>
               )}
 
-              <button
-                type="button"
-                onClick={() => { setPaygMode('free'); setSelectedType(null) }}
-                style={{
-                  display: 'inline-block', marginTop: 12,
-                  background: 'none', border: 'none', padding: 0,
-                  fontFamily: "'Outfit', system-ui, sans-serif",
-                  fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)',
-                  textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer',
-                }}
-              >
-                Start with free credits instead
-              </button>
             </div>
           )
         })()}
-
-        {planPath === 'payg' && paygMode === 'free' && (
-          <div style={{
-            padding: '14px 16px', borderRadius: 10,
-            background: 'rgba(0,191,165,0.08)', border: '1px solid rgba(0,191,165,0.25)',
-            fontFamily: "'Outfit', system-ui, sans-serif",
-          }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-              Free account
-            </div>
-            <p style={{ margin: '0 0 10px', fontSize: 12.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.55 }}>
-              Create an account with no payment. Buy assessment credits later from the Billing page, or redeem a promo code below for free credits.
-            </p>
-            <button
-              type="button"
-              onClick={() => setPaygMode('bundle')}
-              style={{
-                background: 'none', border: 'none', padding: 0,
-                fontFamily: "'Outfit', system-ui, sans-serif",
-                fontSize: 12, fontWeight: 600, color: TEAL,
-                textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer',
-              }}
-            >
-              Back to paid assessments
-            </button>
-          </div>
-        )}
 
         <Field
           label="Work email"
@@ -775,7 +706,7 @@ function SignUpForm() {
           autoComplete="new-password"
         />
 
-        {(planPath === 'monthly' || (planPath === 'payg' && paygMode === 'bundle' && selectedType)) && (
+        {(planPath === 'monthly' || (planPath === 'payg' && selectedType)) && (
           <div>
             <label style={styles.label}>Card details</label>
             <div style={styles.cardInput(cardFocused)}>
@@ -811,17 +742,16 @@ function SignUpForm() {
 
       <button
         type="submit"
-        disabled={loading || (planPath === 'monthly' && !stripe) || (planPath === 'payg' && paygMode === 'bundle' && (!stripe || !selectedType))}
+        disabled={loading || !stripe || (planPath === 'payg' && !selectedType)}
         style={styles.btn(loading)}
       >
         {(() => {
           if (loading) return 'Processing...'
-          if (planPath === 'payg' && paygMode === 'bundle') {
+          if (planPath === 'payg') {
             const sel = PAYG_ASSESSMENT_TYPES.find(t => t.id === selectedType)
             if (!sel) return 'Choose an assessment type above'
             return `Create account and pay £${sel.unitPrice}`
           }
-          if (planPath === 'payg') return 'Create account'
           return `Create account and pay ${planPrice}`
         })()}
       </button>
