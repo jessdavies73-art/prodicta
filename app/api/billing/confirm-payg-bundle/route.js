@@ -1,22 +1,30 @@
 import { NextResponse } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-import { getStripeClient } from '@/lib/stripe'
+import { getStripeClient, CREDIT_PRICES } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase-server'
 import { redeemPromoCode } from '@/lib/promo-redeem'
-import { CREDIT_BUNDLES } from '../create-payg-with-bundle/route'
+
+const SELECTABLE_TYPES = ['rapid-screen', 'speed-fit', 'depth-fit', 'strategy-fit']
+const MIN_QTY = 5
+const MAX_QTY = 100
 
 // Runs after the client completes 3D Secure / SCA authentication on a payg
-// bundle purchase. Verifies the PaymentIntent succeeded, then creates the
-// Supabase user and grants the purchased credits.
+// assessment purchase. Verifies the PaymentIntent succeeded, creates the
+// Supabase user, and grants the purchased credits.
 export async function POST(request) {
   try {
-    const { paymentIntentId, email, password, companyName, accountType, promoCode, bundle_id } = await request.json()
+    const { paymentIntentId, email, password, companyName, accountType, promoCode, credit_type, quantity } = await request.json()
 
-    if (!paymentIntentId || !email || !password || !companyName || !accountType || !bundle_id) {
+    if (!paymentIntentId || !email || !password || !companyName || !accountType || !credit_type) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
     }
-    const bundle = CREDIT_BUNDLES[bundle_id]
-    if (!bundle) return NextResponse.json({ error: 'Unknown bundle.' }, { status: 400 })
+    if (!SELECTABLE_TYPES.includes(credit_type)) {
+      return NextResponse.json({ error: 'Unknown assessment type.' }, { status: 400 })
+    }
+    const qty = parseInt(quantity, 10)
+    if (!Number.isFinite(qty) || qty < MIN_QTY || qty > MAX_QTY) {
+      return NextResponse.json({ error: `Quantity must be between ${MIN_QTY} and ${MAX_QTY}.` }, { status: 400 })
+    }
 
     const stripe = getStripeClient()
     const intent = await stripe.paymentIntents.retrieve(paymentIntentId, { expand: ['customer'] })
@@ -34,6 +42,13 @@ export async function POST(request) {
         { error: 'Email address does not match the payment record. Please contact support.' },
         { status: 403 }
       )
+    }
+
+    // Cross-check amount to stop someone re-using a PaymentIntent for a bigger
+    // purchase than they paid for.
+    const expectedAmount = (CREDIT_PRICES[credit_type]?.price || 0) * qty
+    if (expectedAmount === 0 || intent.amount !== expectedAmount) {
+      return NextResponse.json({ error: 'Purchase details do not match the payment record.' }, { status: 403 })
     }
 
     const customerId = typeof intent.customer === 'string' ? intent.customer : intent.customer?.id
@@ -87,23 +102,22 @@ export async function POST(request) {
       stripe_customer_id: customerId,
     })
 
-    const qty = bundle.quantity
     const { data: existing } = await admin
       .from('assessment_credits')
       .select('credits_remaining, credits_purchased')
       .eq('user_id', userId)
-      .eq('credit_type', bundle.credit_type)
+      .eq('credit_type', credit_type)
       .maybeSingle()
     if (existing) {
       await admin.from('assessment_credits').update({
         credits_remaining: (existing.credits_remaining || 0) + qty,
         credits_purchased: (existing.credits_purchased || 0) + qty,
         last_purchased_at: new Date().toISOString(),
-      }).eq('user_id', userId).eq('credit_type', bundle.credit_type)
+      }).eq('user_id', userId).eq('credit_type', credit_type)
     } else {
       await admin.from('assessment_credits').insert({
         user_id: userId,
-        credit_type: bundle.credit_type,
+        credit_type,
         credits_remaining: qty,
         credits_purchased: qty,
         last_purchased_at: new Date().toISOString(),
@@ -120,7 +134,13 @@ export async function POST(request) {
       }
     }
 
-    return NextResponse.json({ success: true, promoMessage, bundle: bundle.label, amount: bundle.priceGBP })
+    return NextResponse.json({
+      success: true,
+      promoMessage,
+      credit_type,
+      quantity: qty,
+      amount: expectedAmount / 100,
+    })
   } catch (err) {
     console.error('[confirm-payg-bundle] error:', err)
     return NextResponse.json(

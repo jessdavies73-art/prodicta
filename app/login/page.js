@@ -21,14 +21,41 @@ const PLAN_OPTIONS = [
   { value: 'unlimited',    label: 'Unlimited',       price: '£159/month' },
 ]
 
-// Must match server catalogue at /api/billing/create-payg-with-bundle/route.js
-const PAYG_BUNDLES = [
-  { id: 'rapid-10', group: 'Rapid Screen', label: '10 Rapid Screens', price: 60,  baseline: 60,  popular: true },
-  { id: 'rapid-25', group: 'Rapid Screen', label: '25 Rapid Screens', price: 140, baseline: 150 },
-  { id: 'rapid-50', group: 'Rapid Screen', label: '50 Rapid Screens', price: 275, baseline: 300 },
-  { id: 'speed-10', group: 'Speed-Fit',    label: '10 Speed-Fits',     price: 170, baseline: 180 },
-  { id: 'depth-10', group: 'Depth-Fit',    label: '10 Depth-Fits',     price: 330, baseline: 350 },
+// Per-assessment pricing. Unit price in GBP. Matches server CREDIT_PRICES.
+const PAYG_ASSESSMENT_TYPES = [
+  {
+    id:          'rapid-screen',
+    label:       'Rapid Screen',
+    unitPrice:   6,
+    duration:    '5-8 minutes, 1 scenario + prioritisation test',
+    description: 'For high volume screening of operational roles',
+  },
+  {
+    id:          'speed-fit',
+    label:       'Speed-Fit',
+    unitPrice:   18,
+    duration:    '15 minutes, 2 scenarios',
+    description: 'For urgent hires and high volume roles',
+  },
+  {
+    id:          'depth-fit',
+    label:       'Depth-Fit',
+    unitPrice:   35,
+    duration:    '25 minutes, 3 scenarios',
+    description: 'For most roles',
+  },
+  {
+    id:          'strategy-fit',
+    label:       'Strategy-Fit',
+    unitPrice:   65,
+    duration:    '45 minutes, 4 scenarios + Workspace',
+    description: 'For senior and high stakes hires',
+  },
 ]
+
+const PAYG_MIN_QTY = 5
+const PAYG_MAX_QTY = 100
+const PAYG_DEFAULT_QTY = 10
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
@@ -246,7 +273,8 @@ function SignUpForm() {
   const [accountType, setAccountType] = useState('employer')
   const [planPath,    setPlanPath]    = useState('monthly') // 'monthly' | 'payg'
   const [paygMode,    setPaygMode]    = useState('bundle')  // 'bundle' | 'free'
-  const [selectedBundle, setSelectedBundle] = useState(null) // bundle id key
+  const [selectedType, setSelectedType] = useState(null) // credit_type id
+  const [selectedQuantity, setSelectedQuantity] = useState(PAYG_DEFAULT_QTY)
   const [plan,        setPlan]        = useState('professional')
   const [postcode,    setPostcode]    = useState('')
   const [promoCode,   setPromoCode]   = useState('')
@@ -290,9 +318,13 @@ function SignUpForm() {
       return
     }
 
-    // Pay-as-you-go — bundle purchase path.
+    // Pay-as-you-go — assessment credit purchase with user-chosen quantity.
     if (planPath === 'payg' && paygMode === 'bundle') {
-      if (!selectedBundle) { setError('Please select a credit bundle.'); return }
+      if (!selectedType) { setError('Please choose an assessment type.'); return }
+      const qty = parseInt(selectedQuantity, 10)
+      if (!Number.isFinite(qty) || qty < PAYG_MIN_QTY || qty > PAYG_MAX_QTY) {
+        setError(`Quantity must be between ${PAYG_MIN_QTY} and ${PAYG_MAX_QTY}.`); return
+      }
       if (!stripe || !elements) { setError('Payment form is loading. Please wait a moment.'); return }
 
       setLoading(true)
@@ -318,7 +350,8 @@ function SignUpForm() {
             accountType,
             promoCode:      promoCode.trim() || null,
             paymentMethodId: paymentMethod.id,
-            bundle_id:      selectedBundle,
+            credit_type:    selectedType,
+            quantity:       qty,
           }),
         })
         const data = await res.json()
@@ -346,7 +379,8 @@ function SignUpForm() {
               companyName:     company.trim(),
               accountType,
               promoCode:       promoCode.trim() || null,
-              bundle_id:       selectedBundle,
+              credit_type:     selectedType,
+              quantity:        qty,
             }),
           })
           const confirmData = await confirmRes.json()
@@ -623,108 +657,127 @@ function SignUpForm() {
           </div>
         )}
 
-        {planPath === 'payg' && paygMode === 'bundle' && (
-          <div>
-            <label style={styles.label}>Choose a credit bundle</label>
-            {['Rapid Screen', 'Speed-Fit', 'Depth-Fit'].map(group => {
-              const bundles = PAYG_BUNDLES.filter(b => b.group === group)
-              if (bundles.length === 0) return null
-              return (
-                <div key={group} style={{ marginBottom: 12 }}>
-                  <div style={{
+        {planPath === 'payg' && paygMode === 'bundle' && (() => {
+          const sel = PAYG_ASSESSMENT_TYPES.find(t => t.id === selectedType)
+          const qty = parseInt(selectedQuantity, 10)
+          const qtyValid = Number.isFinite(qty) && qty >= PAYG_MIN_QTY && qty <= PAYG_MAX_QTY
+          const total = sel && qtyValid ? sel.unitPrice * qty : 0
+          return (
+            <div>
+              <label style={styles.label}>Choose an assessment type</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
+                {PAYG_ASSESSMENT_TYPES.map(t => {
+                  const active = selectedType === t.id
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setSelectedType(t.id)}
+                      style={{
+                        padding: '13px 16px',
+                        borderRadius: 10,
+                        border: `1.5px solid ${active ? TEAL : 'rgba(255,255,255,0.18)'}`,
+                        background: active ? 'rgba(0,191,165,0.15)' : 'rgba(255,255,255,0.06)',
+                        color: active ? '#fff' : 'rgba(255,255,255,0.75)',
+                        fontFamily: "'Outfit', system-ui, sans-serif",
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: active ? TEAL : '#fff' }}>
+                          {t.label}
+                        </span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: active ? TEAL : '#fff' }}>
+                          £{t.unitPrice} per assessment
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)', marginBottom: 2 }}>
+                        {t.duration}
+                      </div>
+                      <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)' }}>
+                        {t.description}
+                      </div>
+                      <div style={{
+                        marginTop: 8, fontSize: 11, fontWeight: 700,
+                        color: active ? TEAL : 'rgba(255,255,255,0.55)',
+                      }}>
+                        {active ? 'Selected' : 'Select'}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {sel && (
+                <div style={{
+                  marginTop: 14, padding: '12px 14px', borderRadius: 10,
+                  background: 'rgba(0,191,165,0.08)', border: '1px solid rgba(0,191,165,0.3)',
+                }}>
+                  <label style={{
+                    display: 'block',
                     fontFamily: "'Outfit', system-ui, sans-serif",
-                    fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
-                    textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)',
+                    fontSize: 11, fontWeight: 700, color: TEAL,
+                    textTransform: 'uppercase', letterSpacing: '0.06em',
                     marginBottom: 6,
                   }}>
-                    {group}
+                    How many assessments do you want to buy?
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <input
+                      type="number"
+                      min={PAYG_MIN_QTY}
+                      max={PAYG_MAX_QTY}
+                      step={1}
+                      value={selectedQuantity}
+                      onChange={e => setSelectedQuantity(e.target.value)}
+                      style={{
+                        width: 110, padding: '9px 12px',
+                        borderRadius: 8, border: '1.5px solid rgba(255,255,255,0.2)',
+                        background: 'rgba(255,255,255,0.08)',
+                        color: '#fff', fontFamily: "'Outfit', system-ui, sans-serif",
+                        fontSize: 15, fontWeight: 700, outline: 'none',
+                      }}
+                    />
+                    <span style={{
+                      fontFamily: "'Outfit', system-ui, sans-serif",
+                      fontSize: 13, color: 'rgba(255,255,255,0.65)',
+                    }}>
+                      {qtyValid
+                        ? `${qty} x £${sel.unitPrice} = £${total}`
+                        : `Between ${PAYG_MIN_QTY} and ${PAYG_MAX_QTY}`}
+                    </span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: bundles.length > 1 ? 'repeat(auto-fit, minmax(160px, 1fr))' : '1fr', gap: 8 }}>
-                    {bundles.map(b => {
-                      const active = selectedBundle === b.id
-                      const saving = b.baseline - b.price
-                      return (
-                        <button
-                          key={b.id}
-                          type="button"
-                          onClick={() => setSelectedBundle(b.id)}
-                          style={{
-                            padding: '11px 12px',
-                            borderRadius: 8,
-                            border: `1.5px solid ${active ? TEAL : 'rgba(255,255,255,0.18)'}`,
-                            background: active ? 'rgba(0,191,165,0.18)' : 'rgba(255,255,255,0.06)',
-                            color: active ? TEAL : 'rgba(255,255,255,0.7)',
-                            fontFamily: "'Outfit', system-ui, sans-serif",
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.15s',
-                            position: 'relative',
-                          }}
-                        >
-                          {b.popular && (
-                            <span style={{
-                              position: 'absolute', top: -7, right: 10,
-                              fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
-                              background: TEAL, color: NAVY,
-                              padding: '2px 7px', borderRadius: 50, textTransform: 'uppercase',
-                            }}>
-                              Most popular
-                            </span>
-                          )}
-                          <div style={{ fontSize: 13, fontWeight: active ? 700 : 600 }}>{b.label}</div>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 3 }}>
-                            <span style={{ fontSize: 14, fontWeight: 800, color: active ? TEAL : '#fff' }}>£{b.price}</span>
-                            {saving > 0 && (
-                              <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.45)', textDecoration: 'line-through' }}>£{b.baseline}</span>
-                            )}
-                            {saving > 0 && (
-                              <span style={{ fontSize: 10, fontWeight: 700, color: TEAL, marginLeft: 'auto' }}>
-                                save £{saving}
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
+                  {qtyValid && (
+                    <div style={{
+                      marginTop: 10,
+                      fontFamily: "'Outfit', system-ui, sans-serif",
+                      fontSize: 13.5, color: '#fff',
+                    }}>
+                      <strong style={{ color: TEAL }}>Total: £{total}</strong>
+                      {' '}for {qty} {sel.label}{qty === 1 ? '' : 's'}
+                    </div>
+                  )}
                 </div>
-              )
-            })}
+              )}
 
-            <button
-              type="button"
-              onClick={() => { setPaygMode('free'); setSelectedBundle(null) }}
-              style={{
-                display: 'inline-block', marginTop: 6,
-                background: 'none', border: 'none', padding: 0,
-                fontFamily: "'Outfit', system-ui, sans-serif",
-                fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)',
-                textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer',
-              }}
-            >
-              Start with free credits instead
-            </button>
-
-            {selectedBundle && (() => {
-              const b = PAYG_BUNDLES.find(x => x.id === selectedBundle)
-              return (
-                <div style={{
-                  marginTop: 14, padding: '11px 14px', borderRadius: 8,
-                  background: 'rgba(0,191,165,0.12)', border: '1px solid rgba(0,191,165,0.4)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: 10, flexWrap: 'wrap',
-                }}>
-                  <span style={{
-                    fontFamily: "'Outfit', system-ui, sans-serif",
-                    fontSize: 13, fontWeight: 600, color: '#fff',
-                  }}>
-                    You have selected: <strong style={{ color: TEAL }}>{b.label} — £{b.price}</strong>
-                  </span>
-                </div>
-              )
-            })()}
-          </div>
-        )}
+              <button
+                type="button"
+                onClick={() => { setPaygMode('free'); setSelectedType(null) }}
+                style={{
+                  display: 'inline-block', marginTop: 12,
+                  background: 'none', border: 'none', padding: 0,
+                  fontFamily: "'Outfit', system-ui, sans-serif",
+                  fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)',
+                  textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer',
+                }}
+              >
+                Start with free credits instead
+              </button>
+            </div>
+          )
+        })()}
 
         {planPath === 'payg' && paygMode === 'free' && (
           <div style={{
@@ -748,7 +801,7 @@ function SignUpForm() {
                 textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer',
               }}
             >
-              Back to credit bundles
+              Back to paid assessments
             </button>
           </div>
         )}
@@ -772,7 +825,7 @@ function SignUpForm() {
           autoComplete="new-password"
         />
 
-        {(planPath === 'monthly' || (planPath === 'payg' && paygMode === 'bundle' && selectedBundle)) && (
+        {(planPath === 'monthly' || (planPath === 'payg' && paygMode === 'bundle' && selectedType)) && (
           <div>
             <label style={styles.label}>Card details</label>
             <div style={styles.cardInput(cardFocused)}>
@@ -808,18 +861,30 @@ function SignUpForm() {
 
       <button
         type="submit"
-        disabled={loading || (planPath === 'monthly' && !stripe) || (planPath === 'payg' && paygMode === 'bundle' && (!stripe || !selectedBundle))}
+        disabled={(() => {
+          if (loading) return true
+          if (planPath === 'monthly') return !stripe
+          if (planPath === 'payg' && paygMode === 'bundle') {
+            if (!stripe || !selectedType) return true
+            const q = parseInt(selectedQuantity, 10)
+            return !Number.isFinite(q) || q < PAYG_MIN_QTY || q > PAYG_MAX_QTY
+          }
+          return false
+        })()}
         style={styles.btn(loading)}
       >
-        {loading
-          ? 'Processing...'
-          : planPath === 'payg' && paygMode === 'bundle'
-          ? (selectedBundle
-              ? `Create account and pay £${PAYG_BUNDLES.find(b => b.id === selectedBundle)?.price}`
-              : 'Select a credit bundle above')
-          : planPath === 'payg'
-          ? 'Create account'
-          : `Create account and pay ${planPrice}`}
+        {(() => {
+          if (loading) return 'Processing...'
+          if (planPath === 'payg' && paygMode === 'bundle') {
+            const sel = PAYG_ASSESSMENT_TYPES.find(t => t.id === selectedType)
+            if (!sel) return 'Choose an assessment type above'
+            const q = parseInt(selectedQuantity, 10)
+            if (!Number.isFinite(q) || q < PAYG_MIN_QTY || q > PAYG_MAX_QTY) return 'Set a quantity above'
+            return `Create account and pay £${sel.unitPrice * q}`
+          }
+          if (planPath === 'payg') return 'Create account'
+          return `Create account and pay ${planPrice}`
+        })()}
       </button>
     </form>
   )
