@@ -277,7 +277,7 @@ function DemoDashboardInner() {
     'demo-c1':  { health_status: 'GREEN', health_reason: 'Co-pilot check-ins on track. Performing as predicted.' },
     'demo-c2':  { health_status: 'GREEN', health_reason: 'Within rebate period. No concerns recorded.' },
     'demo-c3':  { health_status: 'AMBER', health_reason: 'Manager review positive overall but flagged occasional missed deadlines in week 3 check-in.' },
-    'demo-c4':  { health_status: 'AMBER', health_reason: "James O'Brien — early signs of accountability avoidance. Predicted in assessment." },
+    'demo-c4':  { health_status: 'AMBER', health_reason: "James O'Brien, early signs of accountability avoidance. Predicted in assessment." },
     'demo-c5':  { health_status: 'GREEN', health_reason: 'Steady performer. No deviation from prediction.' },
     'demo-c10': { health_status: 'GREEN', health_reason: 'Strong placement. Hire confidence confirmed in practice.' },
     'demo-c11': { health_status: 'RED',   health_reason: 'Redline alert: significant deviation from prediction. Intervention not yet actioned.' },
@@ -285,8 +285,8 @@ function DemoDashboardInner() {
 
   // Demo attendance risk data for temp workers
   const DEMO_ATTENDANCE_RISK = {
-    'demo-c4': { reliability_score: 75, attendance_risk: 'monitor' },  // James O'Brien — 2 lates
-    'demo-c11': { reliability_score: 55, attendance_risk: 'high' },    // Alex Turner — absences
+    'demo-c4': { reliability_score: 75, attendance_risk: 'monitor' },  // James O'Brien, 2 lates
+    'demo-c11': { reliability_score: 55, attendance_risk: 'high' },    // Alex Turner, absences
   }
 
   // Demo client share data
@@ -484,7 +484,7 @@ function DemoDashboardInner() {
                     <InfoTooltip text="A prioritised list of everything that needs your attention today. URGENT actions need immediate response. TODAY actions should be handled before end of day." />
                   </h2>
                   <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: '4px 0 0' }}>
-                    {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — Here is what needs your attention.
+                    {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}. Here is what needs your attention.
                   </p>
                 </div>
                 <span style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: RED, background: REDBG, padding: '3px 10px', borderRadius: 50 }}>
@@ -1654,7 +1654,7 @@ function DemoDashboardInner() {
             </button>
           </div>
           <div style={{ background: BG, borderRadius: 8, padding: '14px 16px', marginBottom: 12, borderLeft: `3px solid ${TEAL}` }}>
-            <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, marginBottom: 4 }}>James O'Brien — Temp Customer Service Advisor</div>
+            <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, marginBottom: 4 }}>James O'Brien, Temp Customer Service Advisor</div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontFamily: F, fontSize: 12, color: TX2 }}>
               <span>Sick date: 8 Apr 2026</span>
               <span>Status: <strong style={{ color: TEAL }}>Eligible from day one</strong></span>
@@ -1683,7 +1683,7 @@ function DemoDashboardInner() {
             </button>
           </div>
           <div style={{ background: BG, borderRadius: 8, padding: '14px 16px', borderLeft: `3px solid ${TEAL}` }}>
-            <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, marginBottom: 6 }}>Sophie Chen — Marketing Manager</div>
+            <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, marginBottom: 6 }}>Sophie Chen, Marketing Manager</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontFamily: F, fontSize: 12, color: TX2 }}>
               <span>8 of 28 days used</span>
               <span style={{ fontWeight: 700, color: TX }}>20 remaining</span>
@@ -1692,7 +1692,7 @@ function DemoDashboardInner() {
               <div style={{ width: '28.6%', height: '100%', background: TEAL, borderRadius: 3 }} />
             </div>
             <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 6 }}>
-              Holiday year: 1 Apr 2026 — 31 Mar 2027 | Records retained for 6 years (HMRC)
+              Holiday year: 1 Apr 2026 to 31 Mar 2027 | Records retained for 6 years (HMRC)
             </div>
           </div>
         </div>
@@ -1721,7 +1721,7 @@ function DemoDashboardInner() {
                 }}
                 disabled
               >
-                Copy Shortlist — Available with subscription
+                Copy Shortlist. Available with subscription
               </button>
               <button
                 onClick={() => setSelectedCandidates(new Set())}

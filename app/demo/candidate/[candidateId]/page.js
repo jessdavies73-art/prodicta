@@ -834,7 +834,7 @@ function DemoCandidateInner({ params }) {
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
               <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 8, border: 'none', background: RED, color: '#fff', fontFamily: F, fontSize: 13, fontWeight: 700, opacity: 0.5, cursor: 'default', pointerEvents: 'none' }}>
-                Generate Intervention Plan — Available with subscription
+                Generate Intervention Plan. Available with subscription
               </button>
             </div>
 
@@ -869,7 +869,7 @@ function DemoCandidateInner({ params }) {
               </div>
               <div style={{ marginTop: 12 }}>
                 <button style={{ padding: '5px 12px', borderRadius: 6, border: `1px solid ${BD}`, background: '#fff', color: TX2, fontFamily: F, fontSize: 12, fontWeight: 600, opacity: 0.5, cursor: 'default', pointerEvents: 'none' }}>
-                  Email to HR — Available with subscription
+                  Email to HR. Available with subscription
                 </button>
               </div>
             </div>
@@ -1083,11 +1083,11 @@ function DemoCandidateInner({ params }) {
           </Card>
         )}
 
-        {/* ── CANDIDATE HEADER — three-column layout ── */}
+        {/* ── CANDIDATE HEADER, three-column layout ── */}
         <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 16 : 20, flexDirection: isMobile ? 'column' : 'row' }}>
 
-            {/* LEFT COLUMN — candidate info */}
+            {/* LEFT COLUMN: candidate info */}
             <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
                 <Avatar name={candidate.name} size={52} />
@@ -1126,7 +1126,7 @@ function DemoCandidateInner({ params }) {
               )}
             </div>
 
-            {/* CENTRE COLUMN — score ring (25%) */}
+            {/* CENTRE COLUMN: score ring (25%) */}
             {results && (
               <div style={{ flexShrink: 0, textAlign: 'center', width: isMobile ? '100%' : 160 }}>
                 <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>Overall Score <InfoTooltip text="Comprehensive performance score across all scenarios. 50 is average, 75+ is strong." /></div>
@@ -1160,7 +1160,7 @@ function DemoCandidateInner({ params }) {
               </div>
             )}
 
-            {/* RIGHT COLUMN — actions (35%) */}
+            {/* RIGHT COLUMN: actions (35%) */}
             <div className="no-print" style={{ flexShrink: 0, width: isMobile ? '100%' : 220 }}>
               {/* Primary actions */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
@@ -1182,7 +1182,7 @@ function DemoCandidateInner({ params }) {
                 >
                   <Ic name="zap" size={14} color="#fff" />
                   Highlight Reel
-                  <InfoTooltip text="A 60-second animated visual summary with a shareable link — send to clients instead of a PDF" light />
+                  <InfoTooltip text="A 60-second animated visual summary with a shareable link, send to clients instead of a PDF" light />
                 </a>
               </div>
 
@@ -1202,7 +1202,7 @@ function DemoCandidateInner({ params }) {
                 </svg>
               </button>
 
-              {/* Secondary actions — categorised */}
+              {/* Secondary actions, categorised */}
               {moreActionsOpen && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
 
@@ -1617,7 +1617,7 @@ function DemoCandidateInner({ params }) {
                       <div>
                         <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                           Watch-outs
-                          <InfoTooltip text="Specific areas that need monitoring or management. These are not reasons to reject — they are things to address proactively." />
+                          <InfoTooltip text="Specific areas that need monitoring or management. These are not reasons to reject. They are things to address proactively." />
                         </div>
                         {(results.watchouts || []).slice(0, 2).map((w, i) => (
                           <div key={i} style={{ borderLeft: `4px solid ${AMB}`, paddingLeft: 12, marginBottom: 8 }}>
@@ -1709,7 +1709,7 @@ function DemoCandidateInner({ params }) {
               marginBottom: 20, transition: 'background 0.15s',
             }}
           >
-            {layer2Open ? 'Hide detail' : 'See why — pressure-fit, predictions and risks'}
+            {layer2Open ? 'Hide detail' : 'See why: pressure-fit, predictions and risks'}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: layer2Open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
               <polyline points="6 9 12 15 18 9" />
             </svg>
@@ -2008,7 +2008,7 @@ function DemoCandidateInner({ params }) {
 
             {/* ── END LAYER 2 / LAYER 3 BOUNDARY ── */}
 
-            {/* Layer 3 button — show for Sophie (Strategy-Fit), hide for James (failed) and Alex (rapid) */}
+            {/* Layer 3 button: show for Sophie (Strategy-Fit), hide for James (failed) and Alex (rapid) */}
             {candidate?.assessments?.assessment_mode !== 'rapid' && !(score < 55 && results.risk_level === 'High') && (
               <button
                 onClick={() => setLayer3Open(v => !v)}
@@ -2020,7 +2020,7 @@ function DemoCandidateInner({ params }) {
                   marginBottom: 20, transition: 'background 0.15s',
                 }}
               >
-                {layer3Open ? 'Hide full analysis' : 'Full analysis — onboarding, compliance and everything else'}
+                {layer3Open ? 'Hide full analysis' : 'Full analysis: onboarding, compliance and everything else'}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: layer3Open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
@@ -2295,8 +2295,8 @@ function DemoCandidateInner({ params }) {
               <ScrollReveal delay={60}>
                 <Card style={{ marginBottom: 20 }} topColor={TEAL}>
                   <SectionHeading tooltip="Targeted re-skilling interventions for the first week, based on each watch-out identified in the assessment.">
-                    {isAgency ? 'Placement Preparation — Week 1 Interventions'
-                     : isTemp ? 'Assignment Success — Week 1 Interventions'
+                    {isAgency ? 'Placement Preparation: Week 1 Interventions'
+                     : isTemp ? 'Assignment Success: Week 1 Interventions'
                      : 'Targeted Week 1 Interventions'}
                   </SectionHeading>
                   <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-4px 0 18px', lineHeight: 1.6 }}>
@@ -2493,7 +2493,7 @@ function DemoCandidateInner({ params }) {
                 <span style={{ fontFamily: F, fontSize: 12.5, color: '#92400e' }}>Demo preview. Sign up to upload real documents and send candidate packs.</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
-                {/* CV — shown as pre-uploaded to demo the filled state */}
+                {/* CV: shown as pre-uploaded to demo the filled state */}
                 <div style={{ border: `2px solid ${TEAL}`, borderRadius: 12, padding: '20px 20px', textAlign: 'center', background: TEALLT }}>
                   <Ic name="file" size={28} color={TEAL} />
                   <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '10px 0 4px' }}>CV / Résumé</div>
@@ -2510,7 +2510,7 @@ function DemoCandidateInner({ params }) {
                     </button>
                   </div>
                 </div>
-                {/* Cover Letter — shown as empty to demo the upload state */}
+                {/* Cover Letter: shown as empty to demo the upload state */}
                 <div style={{ border: `2px solid ${BD}`, borderRadius: 12, padding: '20px 20px', textAlign: 'center', background: BG }}>
                   <Ic name="file" size={28} color={TX3} />
                   <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, margin: '10px 0 4px' }}>Cover Letter</div>
@@ -2737,7 +2737,7 @@ function DemoCandidateInner({ params }) {
                   </div>
                   <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '12px 16px' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Interruption handling</div>
-                    <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0 }}>Manager asked for a quick budget update mid-scenario. Sophie chose <strong>Note for later</strong> — maintained focus on the current task.</p>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0 }}>Manager asked for a quick budget update mid-scenario. Sophie chose <strong>Note for later</strong>. She maintained focus on the current task.</p>
                   </div>
                 </div>
               </ScrollReveal>
@@ -2760,18 +2760,18 @@ function DemoCandidateInner({ params }) {
                       </div>
                     </div>
                     <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.65, margin: 0 }}>
-                      Sophie is a strong overall fit for this team. Her data-driven decision making and direct communication style will complement the team's fast-moving culture. The most likely friction point is with Marcus, the operations lead, whose consensus-seeking approach may feel slow to Sophie under pressure. The biggest gap she fills is strategic thinking — the team currently lacks someone who naturally zooms out to see the bigger picture.
+                      Sophie is a strong overall fit for this team. Her data-driven decision making and direct communication style will complement the team's fast-moving culture. The most likely friction point is with Marcus, the operations lead, whose consensus-seeking approach may feel slow to Sophie under pressure. The biggest gap she fills is strategic thinking. The team currently lacks someone who naturally zooms out to see the bigger picture.
                     </p>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
                     <div style={{ background: GRNBG, border: `1px solid ${GRNBD}`, borderRadius: 10, padding: '14px 16px' }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: GRN, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Best match</div>
-                      <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: 4 }}>Jamie — Sales Director</div>
+                      <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: 4 }}>Jamie, Sales Director</div>
                       <div style={{ fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.5 }}>Both move fast, communicate directly, and are outcome-focused.</div>
                     </div>
                     <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 10, padding: '14px 16px' }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Watch this relationship</div>
-                      <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: 4 }}>Marcus — Operations Lead</div>
+                      <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, marginBottom: 4 }}>Marcus, Operations Lead</div>
                       <div style={{ fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.5 }}>Different decision speeds. Manage expectations in week one.</div>
                     </div>
                     <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px', borderTop: `3px solid ${NAVY}` }}>
@@ -2939,6 +2939,17 @@ function DemoCandidateInner({ params }) {
           </div>
         )}
       </main>
+
+      <footer style={{
+        marginLeft: isMobile ? 0 : 220,
+        padding: '16px',
+        textAlign: 'center',
+        fontFamily: F,
+        fontSize: 11.5,
+        color: TX3,
+      }}>
+        Powered by AIAURA Group Ltd
+      </footer>
 
       {signupPrompt && <SignUpModal onClose={() => setSignupPrompt(false)} />}
 

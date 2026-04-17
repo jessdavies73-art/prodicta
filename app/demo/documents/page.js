@@ -172,7 +172,7 @@ export default function DemoDocumentsPage() {
             </div>
           </div>
 
-          {/* Assignment Documents — agency only */}
+          {/* Assignment Documents, agency only */}
           {isAgency && (
             <div style={{ marginBottom: 28 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>

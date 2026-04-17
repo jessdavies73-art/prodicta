@@ -18,7 +18,7 @@ function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
 const BUCKETS = ['0-49', '50-64', '65-74', '75-84', '85-100']
 
-// Sample assessment shown in detail — scores designed so all 3 adverse
+// Sample assessment shown in detail: scores designed so all 3 adverse
 // impact checks pass (range >= 20, min >= 30, no bucket > 60% of candidates).
 const SAMPLE_ASSESSMENT = {
   id: 'demo-edi-marketing',

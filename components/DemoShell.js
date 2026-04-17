@@ -332,7 +332,7 @@ export function SignUpModal({ onClose }) {
   )
 }
 
-// ── Demo page wrapper (banner + sidebar + main) ────────────────────────────────
+// ── Demo page wrapper (banner + sidebar + main + footer) ───────────────────────
 export function DemoLayout({ active, demoEmploymentType, children }) {
   const isMobile = useIsMobile()
   return (
@@ -342,6 +342,16 @@ export function DemoLayout({ active, demoEmploymentType, children }) {
       </div>
       <DemoSidebar active={active} demoEmploymentType={demoEmploymentType} />
       {children}
+      <footer style={{
+        marginLeft: isMobile ? 0 : 220,
+        padding: '16px',
+        textAlign: 'center',
+        fontFamily: F,
+        fontSize: 11.5,
+        color: TX3,
+      }}>
+        Powered by AIAURA Group Ltd
+      </footer>
     </div>
   )
 }
