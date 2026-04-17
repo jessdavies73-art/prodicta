@@ -715,28 +715,32 @@ export default function AssessmentPage({ params }) {
                 Generate Shortlist
               </button>
             )}
-            <button
-              onClick={() => router.push(`/assessment/${id}/manager-dna`)}
-              style={{
-                padding: '8px 18px', borderRadius: 8, border: `1px solid ${TEAL}`,
-                background: TEALLT, color: TEALD, fontSize: 13, fontWeight: 600,
-                cursor: 'pointer', fontFamily: F, display: 'flex', alignItems: 'center', gap: 7,
-              }}
-            >
-              <Ic name="zap" size={14} color={TEALD} />
-              Manager DNA
-            </button>
-            <button
-              onClick={() => router.push(`/assessment/${id}/team`)}
-              style={{
-                padding: '8px 18px', borderRadius: 8, border: `1px solid ${TEAL}`,
-                background: TEALLT, color: TEALD, fontSize: 13, fontWeight: 600,
-                cursor: 'pointer', fontFamily: F, display: 'flex', alignItems: 'center', gap: 7,
-              }}
-            >
-              <Ic name="users" size={14} color={TEALD} />
-              Team Profile
-            </button>
+            {accountType === 'employer' && (
+              <button
+                onClick={() => router.push(`/assessment/${id}/manager-dna`)}
+                style={{
+                  padding: '8px 18px', borderRadius: 8, border: `1px solid ${TEAL}`,
+                  background: TEALLT, color: TEALD, fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: F, display: 'flex', alignItems: 'center', gap: 7,
+                }}
+              >
+                <Ic name="zap" size={14} color={TEALD} />
+                Manager DNA
+              </button>
+            )}
+            {accountType === 'employer' && (
+              <button
+                onClick={() => router.push(`/assessment/${id}/team`)}
+                style={{
+                  padding: '8px 18px', borderRadius: 8, border: `1px solid ${TEAL}`,
+                  background: TEALLT, color: TEALD, fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: F, display: 'flex', alignItems: 'center', gap: 7,
+                }}
+              >
+                <Ic name="users" size={14} color={TEALD} />
+                Team Profile
+              </button>
+            )}
             <button
               onClick={() => router.push(`/compare?assessmentId=${id}`)}
               style={{

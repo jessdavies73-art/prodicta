@@ -82,11 +82,16 @@ export default function TeamProfilePage({ params }) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
+      // Employer-only feature. Agencies are redirected back to the assessment page.
+      const { data: prof } = await supabase.from('users').select('company_name, account_type').eq('id', user.id).maybeSingle()
+      if (prof?.account_type && prof.account_type !== 'employer') {
+        router.push(`/assessment/${params.id}`)
+        return
+      }
+      if (prof?.company_name) setCompanyName(prof.company_name)
+
       const { data: assess } = await supabase.from('assessments').select('id, role_title').eq('id', params.id).single()
       setAssessment(assess)
-
-      const { data: prof } = await supabase.from('users').select('company_name').eq('id', user.id).maybeSingle()
-      if (prof?.company_name) setCompanyName(prof.company_name)
 
       const { data: teamData } = await supabase
         .from('team_profiles')

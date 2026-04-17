@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
+import { createClient } from '@/lib/supabase'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -36,6 +37,16 @@ export default function ManagerDnaPage({ params }) {
   useEffect(() => {
     async function load() {
       try {
+        // Employer-only feature. Agencies are redirected back to the assessment page.
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/login'); return }
+        const { data: prof } = await supabase.from('users').select('account_type').eq('id', user.id).maybeSingle()
+        if (prof?.account_type && prof.account_type !== 'employer') {
+          router.push(`/assessment/${params.id}`)
+          return
+        }
+
         const res = await fetch(`/api/assessment/${params.id}/manager-dna`)
         const data = await res.json()
         if (!res.ok) { setError(data.error); setLoading(false); return }
@@ -52,7 +63,7 @@ export default function ManagerDnaPage({ params }) {
       }
     }
     load()
-  }, [params.id])
+  }, [params.id, router])
 
   // Timer for active scenario
   useEffect(() => {

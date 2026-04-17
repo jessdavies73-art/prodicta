@@ -1141,14 +1141,16 @@ export default function CandidateReportPage({ params }) {
         }
         setAccountRecord(acRec || null)
         if (acRec?.shared_with_client_at) setRecordSharedDate(acRec.shared_with_client_at)
-        // Load manager DNA if available
-        try {
-          const dnaRes = await fetch(`/api/assessment/${params.id}/manager-dna`)
-          if (dnaRes.ok) {
-            const dnaData = await dnaRes.json()
-            if (dnaData.dna) setManagerDna(dnaData.dna)
-          }
-        } catch {}
+        // Load manager DNA (employer-only feature)
+        if (prof?.account_type === 'employer') {
+          try {
+            const dnaRes = await fetch(`/api/assessment/${params.id}/manager-dna`)
+            if (dnaRes.ok) {
+              const dnaData = await dnaRes.json()
+              if (dnaData.dna) setManagerDna(dnaData.dna)
+            }
+          } catch {}
+        }
       } catch (e) {
         setError(e.message)
       } finally {
@@ -3769,9 +3771,9 @@ export default function CandidateReportPage({ params }) {
                 })()}
 
                 {/* ══════════════════════════════════════════════════
-                    MANAGER ALIGNMENT (from Manager DNA)
+                    MANAGER ALIGNMENT (from Manager DNA) — employer only
                 ══════════════════════════════════════════════════ */}
-                {managerDna && managerDna.alignment_dimensions && (
+                {profile?.account_type === 'employer' && managerDna && managerDna.alignment_dimensions && (
                   <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }} topColor={TEAL}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
