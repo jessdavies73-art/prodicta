@@ -12,8 +12,12 @@ const MAX_QTY = 100
 // assessment purchase. Verifies the PaymentIntent succeeded, creates the
 // Supabase user, and grants the purchased credits.
 export async function POST(request) {
+  let currentStep = 'init'
   try {
+    currentStep = 'parse-body'
     const { paymentIntentId, email, password, companyName, accountType, promoCode, credit_type, quantity } = await request.json()
+
+    console.log('[confirm-payg-bundle] start', { paymentIntentId, credit_type, quantity, accountType })
 
     if (!paymentIntentId || !email || !password || !companyName || !accountType || !credit_type) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
@@ -26,8 +30,10 @@ export async function POST(request) {
       return NextResponse.json({ error: `Quantity must be between ${MIN_QTY} and ${MAX_QTY}.` }, { status: 400 })
     }
 
+    currentStep = 'retrieve-intent'
     const stripe = getStripeClient()
     const intent = await stripe.paymentIntents.retrieve(paymentIntentId, { expand: ['customer'] })
+    console.log('[confirm-payg-bundle] intent retrieved', { intentId: intent.id, status: intent.status, amount: intent.amount })
 
     if (intent.status !== 'succeeded') {
       return NextResponse.json(
@@ -53,6 +59,7 @@ export async function POST(request) {
 
     const customerId = typeof intent.customer === 'string' ? intent.customer : intent.customer?.id
 
+    currentStep = 'create-user'
     const anonClient = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -81,7 +88,9 @@ export async function POST(request) {
     }
     const userId = signUpData.user?.id
     if (!userId) throw new Error('Sign up did not return a user id')
+    console.log('[confirm-payg-bundle] user created', { userId })
 
+    currentStep = 'grant-credits'
     const admin = createServiceClient()
     await admin.auth.admin.updateUserById(userId, {
       app_metadata: {
@@ -134,6 +143,7 @@ export async function POST(request) {
       }
     }
 
+    console.log('[confirm-payg-bundle] credits granted', { userId, credit_type, quantity: qty, amountGBP: expectedAmount / 100 })
     return NextResponse.json({
       success: true,
       promoMessage,
@@ -142,9 +152,14 @@ export async function POST(request) {
       amount: expectedAmount / 100,
     })
   } catch (err) {
-    console.error('[confirm-payg-bundle] error:', err)
+    console.error('[confirm-payg-bundle] error at step', currentStep, {
+      message: err?.message,
+      type: err?.type,
+      code: err?.code,
+      statusCode: err?.statusCode,
+    })
     return NextResponse.json(
-      { error: 'Something went wrong finalising your account. Please contact support at hello@prodicta.co.uk.' },
+      { error: 'Something went wrong finalising your account. Please contact support at hello@prodicta.co.uk.', step: currentStep },
       { status: 500 }
     )
   }

@@ -95,9 +95,17 @@ async function createSupabaseUserAndGrantCredits({ email, password, companyName,
 
 export async function POST(request) {
   let stripeCustomerId = null
+  let currentStep = 'init'
   try {
+    currentStep = 'parse-body'
     const body = await request.json()
     const { email, password, companyName, accountType, promoCode, paymentMethodId, credit_type, quantity } = body
+
+    console.log('[payg-with-bundle] start', {
+      hasEmail: !!email, hasPaymentMethodId: !!paymentMethodId, credit_type, quantity, accountType,
+      hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
+      stripeKeyPrefix: (process.env.STRIPE_SECRET_KEY || '').slice(0, 7),
+    })
 
     if (!email || !password || !companyName || !accountType || !paymentMethodId || !credit_type) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
@@ -119,8 +127,10 @@ export async function POST(request) {
     if (!unitPrice) {
       return NextResponse.json({ error: 'Unknown assessment type.' }, { status: 400 })
     }
-    const amount = unitPrice * qty // in pence
+    const amount = unitPrice * qty // already in pence (lib/stripe.js stores minor units)
+    console.log('[payg-with-bundle] amount calc', { unitPrice, qty, amount })
 
+    currentStep = 'stripe-customer'
     const stripe = getStripeClient()
 
     const customer = await stripe.customers.create({
@@ -129,29 +139,43 @@ export async function POST(request) {
       metadata: { plan: 'payg', accountType, credit_type, quantity: String(qty) },
     })
     stripeCustomerId = customer.id
+    console.log('[payg-with-bundle] customer created', { customerId: customer.id })
 
+    currentStep = 'attach-payment-method'
     await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id })
     await stripe.customers.update(customer.id, {
       invoice_settings: { default_payment_method: paymentMethodId },
     })
 
+    currentStep = 'create-payment-intent'
     const intent = await stripe.paymentIntents.create({
       amount,
       currency: 'gbp',
       customer: customer.id,
       payment_method: paymentMethodId,
       confirm: true,
-      off_session: false,
-      automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
-      description: `PRODICTA — ${qty} x ${labelFor(credit_type)}`,
+      // When a specific payment_method is passed, we don't need automatic_payment_methods.
+      // Using payment_method_types keeps the intent card-only and avoids any redirect flows.
+      payment_method_types: ['card'],
+      description: `PRODICTA ${qty} x ${labelFor(credit_type)}`,
       metadata: {
         credit_type,
         quantity: String(qty),
         signup: 'true',
       },
     })
+    console.log('[payg-with-bundle] intent created', {
+      intentId: intent.id, status: intent.status,
+      lastError: intent.last_payment_error ? {
+        code: intent.last_payment_error.code,
+        decline_code: intent.last_payment_error.decline_code,
+        message: intent.last_payment_error.message,
+        type: intent.last_payment_error.type,
+      } : null,
+    })
 
     if (intent.status === 'requires_action') {
+      console.log('[payg-with-bundle] requires_action, returning clientSecret for SCA')
       return NextResponse.json({
         requiresAction: true,
         clientSecret: intent.client_secret,
@@ -163,21 +187,27 @@ export async function POST(request) {
     if (intent.status === 'requires_payment_method') {
       const msg = intent.last_payment_error?.message
         || 'Your card was declined. Please try a different card.'
+      console.warn('[payg-with-bundle] requires_payment_method (declined)', { msg })
       await stripe.customers.del(customer.id).catch(() => {})
       stripeCustomerId = null
       return NextResponse.json({ error: msg }, { status: 402 })
     }
 
     if (intent.status !== 'succeeded') {
+      console.warn('[payg-with-bundle] unexpected intent status', { status: intent.status })
       await stripe.customers.del(customer.id).catch(() => {})
       stripeCustomerId = null
-      return NextResponse.json({ error: 'Payment could not be completed. Please try again.' }, { status: 402 })
+      return NextResponse.json({ error: `Payment could not be completed (status: ${intent.status}). Please try again.` }, { status: 402 })
     }
 
+    currentStep = 'create-user-and-credits'
     try {
-      const { promoMessage } = await createSupabaseUserAndGrantCredits({
+      const { userId, promoMessage } = await createSupabaseUserAndGrantCredits({
         email, password, companyName, accountType,
         customerId: customer.id, credit_type, quantity: qty, promoCode,
+      })
+      console.log('[payg-with-bundle] user created and credits granted', {
+        userId, credit_type, quantity: qty, amountGBP: amount / 100,
       })
       return NextResponse.json({
         success: true,
@@ -187,29 +217,38 @@ export async function POST(request) {
         amount: amount / 100,
       })
     } catch (createErr) {
-      console.error('[payg-with-bundle] user creation failed after payment:', createErr)
+      console.error('[payg-with-bundle] user creation failed after payment (payment captured)', {
+        message: createErr?.message, code: createErr?.code,
+      })
       const msg = createErr.message || ''
       if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('registered')) {
         return NextResponse.json(
-          { error: 'An account with this email already exists. Your payment has been received — please contact support at hello@prodicta.co.uk to apply the credits.' },
+          { error: 'An account with this email already exists. Your payment has been received, please contact support at hello@prodicta.co.uk to apply the credits.' },
           { status: 409 }
         )
       }
       throw createErr
     }
   } catch (err) {
-    console.error('[payg-with-bundle] error:', err)
+    console.error('[payg-with-bundle] error at step', currentStep, {
+      message: err?.message,
+      type: err?.type,
+      code: err?.code,
+      decline_code: err?.decline_code,
+      statusCode: err?.statusCode,
+      raw: err?.raw ? { code: err.raw.code, message: err.raw.message, type: err.raw.type } : null,
+    })
     try {
       if (stripeCustomerId) {
         const stripe = getStripeClient()
         await stripe.customers.del(stripeCustomerId).catch(() => {})
       }
     } catch {}
-    const isCardError = err.type === 'StripeCardError'
-    return NextResponse.json({
-      error: isCardError
-        ? (err.message || 'Your card was declined. Please try a different card.')
-        : 'Something went wrong creating your account. Please try again.'
-    }, { status: 402 })
+    const stripeTypes = ['StripeCardError', 'StripeInvalidRequestError', 'StripeAuthenticationError', 'StripeAPIError', 'StripeConnectionError', 'StripeRateLimitError']
+    const isStripeErr = stripeTypes.includes(err?.type)
+    const userMessage = err?.message && (isStripeErr || err?.type === 'StripeCardError')
+      ? err.message
+      : 'Something went wrong creating your account. Please try again.'
+    return NextResponse.json({ error: userMessage, step: currentStep }, { status: 402 })
   }
 }

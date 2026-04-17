@@ -293,6 +293,17 @@ function SignUpForm() {
       if (!stripe || !elements) { setError('Payment form is loading. Please wait a moment.'); return }
       const qty = 1
 
+      // Safely parse a fetch response; surface server errors even when the
+      // response isn't JSON (e.g. Vercel 500 HTML page).
+      const readJson = async (res) => {
+        let body = null
+        try { body = await res.json() } catch { body = null }
+        if (!res.ok && !body?.error) {
+          body = { error: `Server returned ${res.status}. Please try again or contact support.` }
+        }
+        return body || {}
+      }
+
       setLoading(true)
       try {
         const cardElement = elements.getElement(CardElement)
@@ -320,17 +331,22 @@ function SignUpForm() {
             quantity:       qty,
           }),
         })
-        const data = await res.json()
-        if (data.error) { setError(data.error); setLoading(false); return }
+        const data = await readJson(res)
+        if (data.error) {
+          console.error('[signup] create-payg-with-bundle error', { step: data.step, error: data.error, status: res.status })
+          setError(data.error); setLoading(false); return
+        }
 
         if (data.requiresAction) {
           const { error: confirmErr, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret)
           if (confirmErr) {
+            console.error('[signup] confirmCardPayment error', confirmErr)
             setError(confirmErr.message || 'Card authentication failed. Please try again.')
             setLoading(false)
             return
           }
           if (paymentIntent?.status !== 'succeeded') {
+            console.warn('[signup] SCA did not succeed', { status: paymentIntent?.status })
             setError('Card authentication was not completed. Please try again.')
             setLoading(false)
             return
@@ -349,8 +365,11 @@ function SignUpForm() {
               quantity:        qty,
             }),
           })
-          const confirmData = await confirmRes.json()
-          if (confirmData.error) { setError(confirmData.error); setLoading(false); return }
+          const confirmData = await readJson(confirmRes)
+          if (confirmData.error) {
+            console.error('[signup] confirm-payg-bundle error', { step: confirmData.step, error: confirmData.error, status: confirmRes.status })
+            setError(confirmData.error); setLoading(false); return
+          }
           if (confirmData.promoMessage) setPromoMessage(confirmData.promoMessage)
           setDone(true)
           return
@@ -359,6 +378,7 @@ function SignUpForm() {
         if (data.promoMessage) setPromoMessage(data.promoMessage)
         setDone(true)
       } catch (err) {
+        console.error('[signup] payg flow threw', err)
         setError(err?.message || 'An unexpected error occurred. Please try again.')
         setLoading(false)
       }
