@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useSyncExternalStore } from 'react'
+import { useState, useEffect, useSyncExternalStore, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
@@ -30,6 +30,14 @@ const CREDIT_LABELS = {
 }
 
 export default function CreditsPage() {
+  return (
+    <Suspense fallback={null}>
+      <CreditsPageInner />
+    </Suspense>
+  )
+}
+
+function CreditsPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isMobile = useIsMobile()
