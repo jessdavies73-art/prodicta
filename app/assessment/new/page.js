@@ -178,9 +178,11 @@ export default function NewAssessmentPage() {
   const [templates, setTemplates] = useState([])
   const [userTemplates, setUserTemplates] = useState([])
   const [selectedTemplate, setSelectedTemplate] = useState('')
+  const [selectedRoleTemplateId, setSelectedRoleTemplateId] = useState('')
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
   const [templateName, setTemplateName] = useState('')
   const [templateLoaded, setTemplateLoaded] = useState(false)
+  const confirmationRef = useRef(null)
   const [mode, setMode] = useState('standard') // 'rapid' | 'quick' | 'standard' | 'advanced'
   const [modeOverridden, setModeOverridden] = useState(false)
   const [employmentType, setEmploymentType] = useState('') // 'permanent' | 'temporary'
@@ -341,6 +343,7 @@ export default function NewAssessmentPage() {
   }
 
   function applyRoleTemplate(tpl) {
+    setSelectedRoleTemplateId(tpl.id)
     setRoleTitle(tpl.role_title)
     const jdParts = [
       `Role: ${tpl.role_title}`,
@@ -358,11 +361,13 @@ export default function NewAssessmentPage() {
     setMode(modeMap[tpl.recommended_mode] || 'standard')
     setModeOverridden(true)
     if (tpl.context_prefill) setContextAnswers(tpl.context_prefill)
-    // Skip to confirmation
+    // Skip to confirmation and surface it to the user
     runAutoAnalyse(tpl.role_title, builtJd)
+    scrollToConfirmation()
   }
 
   function applyUserTemplate(ut) {
+    setSelectedRoleTemplateId('')
     setRoleTitle(ut.role_title || '')
     if (ut.jd_text) setJd(ut.jd_text)
     if (ut.recommended_mode) {
@@ -373,6 +378,17 @@ export default function NewAssessmentPage() {
     if (ut.context_answers) setContextAnswers(ut.context_answers)
     // Skip to confirmation
     runAutoAnalyse(ut.role_title || '', ut.jd_text || '')
+    scrollToConfirmation()
+  }
+
+  function scrollToConfirmation() {
+    // Wait a tick so the confirmation card mounts, then scroll it into view.
+    if (typeof window === 'undefined') return
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        confirmationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    })
   }
 
   const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0)
@@ -765,18 +781,24 @@ export default function NewAssessmentPage() {
             {(employmentType === 'temporary' ? TEMPORARY_TEMPLATES : PERMANENT_TEMPLATES).map(tpl => {
               const modeLabel = tpl.recommended_mode === 'rapid' ? 'Rapid Screen' : tpl.recommended_mode === 'speed-fit' ? 'Speed-Fit' : tpl.recommended_mode === 'depth-fit' ? 'Depth-Fit' : 'Strategy-Fit'
               const levelLabel = tpl.role_level === 'OPERATIONAL' ? 'Entry level' : tpl.role_level === 'LEADERSHIP' ? 'Leadership' : 'Senior'
+              const isSelected = selectedRoleTemplateId === tpl.id
               return (
                 <button
                   key={tpl.id}
                   type="button"
                   onClick={() => applyRoleTemplate(tpl)}
                   style={{
-                    textAlign: 'left', background: '#fff', border: '1px solid #e4e9f0',
-                    borderRadius: 10, padding: '14px 16px', cursor: 'pointer', fontFamily: F,
-                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                    textAlign: 'left',
+                    background: isSelected ? '#e0f2f0' : '#fff',
+                    border: `${isSelected ? 2 : 1}px solid ${isSelected ? '#00BFA5' : '#e4e9f0'}`,
+                    borderRadius: 10,
+                    padding: isSelected ? '13px 15px' : '14px 16px',
+                    cursor: 'pointer', fontFamily: F,
+                    transition: 'border-color 0.15s, box-shadow 0.15s, background 0.15s',
+                    boxShadow: isSelected ? '0 2px 8px rgba(0,191,165,0.2)' : 'none',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#00BFA5'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,191,165,0.1)' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e4e9f0'; e.currentTarget.style.boxShadow = 'none' }}
+                  onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.borderColor = '#00BFA5'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,191,165,0.1)' } }}
+                  onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.borderColor = '#e4e9f0'; e.currentTarget.style.boxShadow = 'none' } }}
                 >
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{tpl.role_title}</div>
                   <div style={{ fontSize: 11, color: '#94a1b3', fontWeight: 600, marginBottom: 8, fontFamily: F }}>{levelLabel}</div>
@@ -788,7 +810,9 @@ export default function NewAssessmentPage() {
                   }}>
                     {modeLabel}
                   </span>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#009688', marginTop: 8 }}>Use template</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#009688', marginTop: 8 }}>
+                    {isSelected ? 'Selected — see details below' : 'Use template'}
+                  </div>
                 </button>
               )
             })}
@@ -816,10 +840,11 @@ export default function NewAssessmentPage() {
         ══════════════════════════════════════════════════ */}
         {employmentType && analysed && !loading && (
           <>
-            <div style={{
+            <div ref={confirmationRef} style={{
               background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
               padding: isMobile ? '28px 20px' : '36px 36px', marginBottom: 24,
               boxShadow: '0 2px 12px rgba(15,33,55,0.06)',
+              scrollMarginTop: 20,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: '#e0f2f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
