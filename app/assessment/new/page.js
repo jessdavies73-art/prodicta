@@ -183,6 +183,15 @@ export default function NewAssessmentPage() {
   const [templateName, setTemplateName] = useState('')
   const [templateLoaded, setTemplateLoaded] = useState(false)
   const confirmationRef = useRef(null)
+
+  // Inline candidate details — collapsed one-step flow
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [candidateEmail, setCandidateEmail] = useState('')
+  const [createdAssessmentId, setCreatedAssessmentId] = useState(null)
+  const [sendingInvite, setSendingInvite] = useState(false)
+  const [sentResult, setSentResult] = useState(null)
+  const [sendError, setSendError] = useState('')
   const [mode, setMode] = useState('standard') // 'rapid' | 'quick' | 'standard' | 'advanced'
   const [modeOverridden, setModeOverridden] = useState(false)
   const [employmentType, setEmploymentType] = useState('') // 'permanent' | 'temporary'
@@ -343,6 +352,11 @@ export default function NewAssessmentPage() {
   }
 
   function applyRoleTemplate(tpl) {
+    // Picking a different template means a different assessment. Reset the
+    // cached id + any previous send confirmation.
+    setCreatedAssessmentId(null)
+    setSentResult(null)
+    setSendError('')
     setSelectedRoleTemplateId(tpl.id)
     setRoleTitle(tpl.role_title)
     const jdParts = [
@@ -367,6 +381,9 @@ export default function NewAssessmentPage() {
   }
 
   function applyUserTemplate(ut) {
+    setCreatedAssessmentId(null)
+    setSentResult(null)
+    setSendError('')
     setSelectedRoleTemplateId('')
     setRoleTitle(ut.role_title || '')
     if (ut.jd_text) setJd(ut.jd_text)
@@ -451,9 +468,11 @@ export default function NewAssessmentPage() {
 
   const resetEqual = () => setWeights({ Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 })
 
-  const handleGenerate = async () => {
+  // Creates the assessment if we don't yet have one. Returns the assessment id
+  // (or null on failure). Sets `error` on failure so callers can bail out.
+  const ensureAssessment = async () => {
+    if (createdAssessmentId) return createdAssessmentId
     setError('')
-    setLoading(true)
     try {
       const contextQs = smartQuestions && smartQuestions.length > 0
         ? smartQuestions
@@ -474,38 +493,93 @@ export default function NewAssessmentPage() {
         })
       })
       const data = await res.json()
-      if (data.id) {
-        // Save to user_templates if checkbox is checked
-        if (saveAsTemplate) {
-          try {
-            const supabase = createClient()
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user) {
-              const contextQsSave = smartQuestions && smartQuestions.length > 0
-                ? smartQuestions
-                : (accountType === 'agency' ? AGENCY_QUESTIONS : EMPLOYER_QUESTIONS)
-              await supabase.from('user_templates').insert({
-                user_id: user.id,
-                role_title: templateName.trim() || roleTitle.trim(),
-                role_level: null,
-                recommended_mode: mode === 'rapid' ? 'rapid' : mode === 'quick' ? 'speed-fit' : mode === 'advanced' ? 'strategy-fit' : 'depth-fit',
-                jd_text: jd,
-                context_answers: serializeContextAnswers(contextQsSave, contextAnswers),
-              })
-            }
-          } catch (_) {}
-        }
-        toast('Assessment created')
-        router.push(`/assessment/${data.id}`)
+      if (!data.id) {
+        if (data.error === 'unsuitable_role') setError(data.message || 'This role type may not be suitable for scenario-based assessment.')
+        else setError(data.error || 'Failed to generate')
+        return null
       }
-      else if (data.error === 'unsuitable_role') setError(data.message || 'This role type may not be suitable for scenario-based assessment.')
-      else setError(data.error || 'Failed to generate')
+      if (saveAsTemplate) {
+        try {
+          const supabase = createClient()
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            const contextQsSave = smartQuestions && smartQuestions.length > 0
+              ? smartQuestions
+              : (accountType === 'agency' ? AGENCY_QUESTIONS : EMPLOYER_QUESTIONS)
+            await supabase.from('user_templates').insert({
+              user_id: user.id,
+              role_title: templateName.trim() || roleTitle.trim(),
+              role_level: null,
+              recommended_mode: mode === 'rapid' ? 'rapid' : mode === 'quick' ? 'speed-fit' : mode === 'advanced' ? 'strategy-fit' : 'depth-fit',
+              jd_text: jd,
+              context_answers: serializeContextAnswers(contextQsSave, contextAnswers),
+            })
+          }
+        } catch (_) {}
+      }
+      setCreatedAssessmentId(data.id)
+      return data.id
     } catch {
       setError('Something went wrong. Please try again.')
-    } finally {
-      setLoading(false)
+      return null
     }
   }
+
+  // One-step: create assessment (if needed) + send invite to the named candidate.
+  const handleSendAssessment = async () => {
+    setSendError('')
+    const fn = firstName.trim()
+    const ln = lastName.trim()
+    const em = candidateEmail.trim()
+    if (!fn || !ln) { setSendError('Please enter the candidate\u2019s first and last name.'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { setSendError('Please enter a valid email address.'); return }
+
+    setLoading(true)
+    const assessmentId = await ensureAssessment()
+    if (!assessmentId) { setLoading(false); return }
+
+    setLoading(false)
+    setSendingInvite(true)
+    try {
+      const name = `${fn} ${ln}`.trim()
+      const res = await fetch('/api/candidates/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assessment_id: assessmentId, candidates: [{ name, email: em }] }),
+      })
+      const data = await res.json()
+      const first = Array.isArray(data?.results) ? data.results[0] : null
+      if (!res.ok || !first?.success) {
+        setSendError(first?.error || data?.error || 'Failed to send the invite. Please try again.')
+        return
+      }
+      setSentResult({ assessmentId, name, email: em })
+    } catch {
+      setSendError('Something went wrong sending the invite. Please try again.')
+    } finally {
+      setSendingInvite(false)
+    }
+  }
+
+  // Legacy two-step: create assessment, then navigate to /assessment/[id] so
+  // the user can invite multiple candidates from there.
+  const handleSetupOnly = async () => {
+    setLoading(true)
+    const assessmentId = await ensureAssessment()
+    setLoading(false)
+    if (!assessmentId) return
+    toast('Assessment created')
+    router.push(`/assessment/${assessmentId}`)
+  }
+
+  const handleSendAnother = () => {
+    setFirstName('')
+    setLastName('')
+    setCandidateEmail('')
+    setSentResult(null)
+    setSendError('')
+  }
+
 
   const badgeStyle = roleTypeBadgeStyle(roleType)
 
@@ -900,33 +974,199 @@ export default function NewAssessmentPage() {
                 )}
               </div>
 
-              {error && (
+              {/* Inline candidate details — collapsed one-step flow */}
+              {sentResult ? (
                 <div style={{
-                  marginBottom: 16, padding: '12px 16px', borderRadius: 8,
-                  background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: 14
+                  padding: '20px 22px', borderRadius: 12,
+                  background: '#e0f2f0', border: '1px solid #80DFD2',
                 }}>
-                  {error}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%',
+                      background: '#00BFA5',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <Ic name="check" size={16} color="#fff" />
+                    </div>
+                    <div style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: '#0f2137' }}>
+                      Assessment sent to {sentResult.name} at {sentResult.email}.
+                    </div>
+                  </div>
+                  <p style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', margin: '0 0 16px', lineHeight: 1.55 }}>
+                    They will receive an email from PRODICTA with a unique link to start the assessment.
+                  </p>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={handleSendAnother}
+                      style={{
+                        padding: '11px 20px', borderRadius: 10, border: 'none',
+                        background: '#00BFA5', color: '#0f2137',
+                        fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                      }}
+                    >
+                      Send another
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/assessment/${sentResult.assessmentId}`)}
+                      style={{
+                        padding: '11px 20px', borderRadius: 10, border: '1.5px solid #0f2137',
+                        background: 'transparent', color: '#0f2137',
+                        fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      View assessment
+                    </button>
+                  </div>
                 </div>
-              )}
-
-              {loading ? (
+              ) : loading ? (
                 <GeneratingLoader />
               ) : (
-                <button
-                  onClick={handleGenerate}
-                  disabled={!canGenerate}
-                  style={{
-                    width: '100%', padding: '16px 0', borderRadius: 12, border: 'none',
-                    background: canGenerate ? '#00BFA5' : '#e4e9f0',
-                    color: canGenerate ? '#fff' : '#94a1b3',
-                    fontSize: 17, fontWeight: 800, fontFamily: F,
-                    cursor: canGenerate ? 'pointer' : 'not-allowed',
-                    transition: 'background 0.15s',
-                    boxShadow: canGenerate ? '0 4px 16px rgba(0,191,165,0.25)' : 'none',
-                  }}
-                >
-                  Send Assessment
-                </button>
+                <>
+                  {/* Candidate details */}
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                    <div>
+                      <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                        First name
+                      </label>
+                      <input
+                        type="text"
+                        value={firstName}
+                        onChange={e => setFirstName(e.target.value)}
+                        placeholder="Jane"
+                        style={{
+                          width: '100%', padding: '11px 14px', borderRadius: 8,
+                          border: '1.5px solid #e4e9f0', fontFamily: F, fontSize: 14,
+                          color: '#0f2137', outline: 'none', boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                        Last name
+                      </label>
+                      <input
+                        type="text"
+                        value={lastName}
+                        onChange={e => setLastName(e.target.value)}
+                        placeholder="Smith"
+                        style={{
+                          width: '100%', padding: '11px 14px', borderRadius: 8,
+                          border: '1.5px solid #e4e9f0', fontFamily: F, fontSize: 14,
+                          color: '#0f2137', outline: 'none', boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                      Candidate email
+                    </label>
+                    <input
+                      type="email"
+                      value={candidateEmail}
+                      onChange={e => setCandidateEmail(e.target.value)}
+                      placeholder="jane@example.com"
+                      style={{
+                        width: '100%', padding: '11px 14px', borderRadius: 8,
+                        border: '1.5px solid #e4e9f0', fontFamily: F, fontSize: 14,
+                        color: '#0f2137', outline: 'none', boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 18 }}>
+                    <div>
+                      <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                        Role title
+                      </label>
+                      <input
+                        type="text"
+                        value={roleTitle}
+                        onChange={e => setRoleTitle(e.target.value)}
+                        style={{
+                          width: '100%', padding: '11px 14px', borderRadius: 8,
+                          border: '1.5px solid #e4e9f0', fontFamily: F, fontSize: 14,
+                          color: '#0f2137', outline: 'none', boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                        Employment type
+                      </label>
+                      <div style={{ display: 'flex', gap: 6, border: '1.5px solid #e4e9f0', borderRadius: 8, padding: 3, background: '#f8fafc' }}>
+                        {[
+                          { key: 'permanent', label: 'Permanent' },
+                          { key: 'temporary', label: 'Temporary' },
+                        ].map(opt => {
+                          const active = employmentType === opt.key
+                          return (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              onClick={() => setEmploymentType(opt.key)}
+                              style={{
+                                flex: 1, padding: '7px 10px', borderRadius: 6, border: 'none',
+                                background: active ? '#fff' : 'transparent',
+                                color: active ? '#0f2137' : '#94a1b3',
+                                fontFamily: F, fontSize: 13, fontWeight: active ? 700 : 600,
+                                cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
+                                boxShadow: active ? '0 1px 3px rgba(15,33,55,0.08)' : 'none',
+                              }}
+                            >
+                              {opt.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {(error || sendError) && (
+                    <div style={{
+                      marginBottom: 16, padding: '12px 16px', borderRadius: 8,
+                      background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: 14
+                    }}>
+                      {sendError || error}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleSendAssessment}
+                    disabled={!canGenerate || sendingInvite}
+                    style={{
+                      width: '100%', padding: '16px 0', borderRadius: 12, border: 'none',
+                      background: (canGenerate && !sendingInvite) ? '#00BFA5' : '#e4e9f0',
+                      color: (canGenerate && !sendingInvite) ? '#fff' : '#94a1b3',
+                      fontSize: 17, fontWeight: 800, fontFamily: F,
+                      cursor: (canGenerate && !sendingInvite) ? 'pointer' : 'not-allowed',
+                      transition: 'background 0.15s',
+                      boxShadow: (canGenerate && !sendingInvite) ? '0 4px 16px rgba(0,191,165,0.25)' : 'none',
+                    }}
+                  >
+                    {sendingInvite ? 'Sending…' : 'Send Assessment'}
+                  </button>
+
+                  <div style={{ textAlign: 'center', marginTop: 14 }}>
+                    <button
+                      type="button"
+                      onClick={handleSetupOnly}
+                      disabled={!canGenerate}
+                      style={{
+                        background: 'none', border: 'none', padding: '4px 8px',
+                        fontFamily: F, fontSize: 13, fontWeight: 600,
+                        color: canGenerate ? '#5e6b7f' : '#cbd2d9',
+                        cursor: canGenerate ? 'pointer' : 'not-allowed',
+                        textDecoration: 'underline', textUnderlineOffset: 3,
+                      }}
+                    >
+                      Want to invite multiple candidates? Set up the assessment first.
+                    </button>
+                  </div>
+                </>
               )}
             </div>
 
@@ -1475,7 +1715,7 @@ export default function NewAssessmentPage() {
                 <GeneratingLoader />
               ) : (
                 <button
-                  onClick={handleGenerate}
+                  onClick={handleSetupOnly}
                   disabled={!canGenerate}
                   style={{
                     width: '100%', padding: '14px 0', borderRadius: 10, border: 'none',
