@@ -2272,7 +2272,10 @@ export default function CandidateReportPage({ params }) {
                         <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.18)' }}>
                           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
                             <span style={{ fontFamily: FM, fontSize: isMobile ? 32 : 40, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{survival}%</span>
-                            <span style={{ fontFamily: F, fontSize: isMobile ? 13 : 14, fontWeight: 500, color: 'rgba(255,255,255,0.85)' }}>{survivalLabel}</span>
+                            <span style={{ fontFamily: F, fontSize: isMobile ? 13 : 14, fontWeight: 500, color: 'rgba(255,255,255,0.85)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              {survivalLabel}
+                              <InfoTooltip text="The predicted likelihood this placement or hire will succeed. Calculated from assessment score, confidence level, and watch-out severity." light />
+                            </span>
                           </div>
                           <div style={{ fontFamily: F, fontSize: isMobile ? 12 : 13, fontWeight: 600, color: riskColor, marginTop: 4 }}>
                             {risk}% risk of early exit
@@ -2312,7 +2315,10 @@ export default function CandidateReportPage({ params }) {
                       )}
                       {(results.watchouts || []).length > 0 && (
                         <div>
-                          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Watch-outs</div>
+                          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            Watch-outs
+                            <InfoTooltip text="Specific areas that need monitoring or management. These are not reasons to reject — they are things to address proactively." />
+                          </div>
                           {(results.watchouts || []).slice(0, 2).map((w, i) => (
                             <div key={i} style={{ borderLeft: `4px solid ${AMB}`, paddingLeft: 12, marginBottom: 8 }}>
                               <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY }}>{typeof w === 'object' ? (w.watchout || w.title || '') : w}</span>
@@ -2710,7 +2716,7 @@ export default function CandidateReportPage({ params }) {
                   return (
                     <ScrollReveal delay={60}>
                     <Card style={{ marginBottom: 20 }}>
-                      <SectionHeading tooltip="Probability predictions for this candidate's first 6 months, calibrated to the role and seniority level.">
+                      <SectionHeading tooltip="PRODICTA's prediction of how this candidate will perform over the first 90 days based on their assessment responses.">
                         Predicted Outcome Panel
                       </SectionHeading>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -2822,7 +2828,7 @@ export default function CandidateReportPage({ params }) {
                   return (
                     <ScrollReveal delay={60}>
                       <Card style={{ marginBottom: 20, borderLeft: `5px solid ${accent}`, background: `linear-gradient(135deg, ${accentBg} 0%, #fff 60%)` }}>
-                        <SectionHeading tooltip="A measure of whether the candidate's motivation looks genuine, or whether they may waver if their current employer counter-offers.">
+                        <SectionHeading tooltip="How likely this candidate is to accept and stay once an offer is made, based on their commitment and motivation responses.">
                           Will they accept the offer?
                         </SectionHeading>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 10 }}>
@@ -4523,7 +4529,10 @@ export default function CandidateReportPage({ params }) {
                             }}>
                               <Ic name="zap" size={13} color={TEAL} />
                               <div>
-                                <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Week 1 Intervention</div>
+                                <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  Week 1 Intervention
+                                  <InfoTooltip text="A targeted action to take in the first week to address this specific watch-out before it becomes a problem." />
+                                </div>
                                 <p style={{ fontFamily: F, fontSize: 13, color: NAVY, margin: 0, lineHeight: 1.55 }}>
                                   {getReskilingSuggestion(title)}
                                 </p>

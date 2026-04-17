@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
+import InfoTooltip from '@/components/InfoTooltip'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -288,7 +289,10 @@ export default function EdiPage() {
                     {/* Adverse impact checks */}
                     {checks.length > 0 && (
                       <div style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Adverse Impact Checks</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          Adverse Impact Checks
+                          <InfoTooltip text="A statistical check for patterns that could indicate unintentional bias in assessment scoring. PRODICTA tests on work performance not personal characteristics." />
+                        </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                           {checks.map((ck, i) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -319,21 +323,24 @@ export default function EdiPage() {
                     )}
 
                     {/* Generate Certificate */}
-                    <button
-                      onClick={() => handleGenerateCertificate(a.id)}
-                      disabled={a.candidateCount < 3 || generating === a.id}
-                      style={{
-                        padding: '8px 18px', borderRadius: 8, border: 'none',
-                        background: (a.candidateCount < 3 || generating === a.id) ? BD : TEAL,
-                        color: (a.candidateCount < 3 || generating === a.id) ? TX3 : NAVY,
-                        fontFamily: F, fontSize: 12.5, fontWeight: 700,
-                        cursor: (a.candidateCount < 3 || generating === a.id) ? 'not-allowed' : 'pointer',
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                      }}
-                    >
-                      <Ic name="shield" size={14} color={(a.candidateCount < 3 || generating === a.id) ? TX3 : NAVY} />
-                      {generating === a.id ? 'Generating...' : hasCert ? 'Regenerate Certificate' : a.candidateCount < 3 ? 'Requires 3+ candidates' : 'Generate Certificate'}
-                    </button>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <button
+                        onClick={() => handleGenerateCertificate(a.id)}
+                        disabled={a.candidateCount < 3 || generating === a.id}
+                        style={{
+                          padding: '8px 18px', borderRadius: 8, border: 'none',
+                          background: (a.candidateCount < 3 || generating === a.id) ? BD : TEAL,
+                          color: (a.candidateCount < 3 || generating === a.id) ? TX3 : NAVY,
+                          fontFamily: F, fontSize: 12.5, fontWeight: 700,
+                          cursor: (a.candidateCount < 3 || generating === a.id) ? 'not-allowed' : 'pointer',
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                        }}
+                      >
+                        <Ic name="shield" size={14} color={(a.candidateCount < 3 || generating === a.id) ? TX3 : NAVY} />
+                        {generating === a.id ? 'Generating...' : hasCert ? 'Regenerate Certificate' : a.candidateCount < 3 ? 'Requires 3+ candidates' : 'Generate Certificate'}
+                      </button>
+                      <InfoTooltip text="A downloadable certificate confirming this assessment met fairness criteria under the Equality Act 2010 and ERA 2025." />
+                    </div>
                   </div>
                 )
               })}

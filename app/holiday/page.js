@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import { Ic } from '../../components/Icons'
+import InfoTooltip from '../../components/InfoTooltip'
 import { createClient } from '../../lib/supabase'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, F, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, GRN, GRNBG, GRNBD, cs, bs, ps } from '../../lib/constants'
 
@@ -233,9 +234,14 @@ export default function HolidayPage() {
             borderLeft: `4px solid ${TEAL}`, background: TEALLT, borderRadius: '0 8px 8px 0',
             padding: '14px 18px', marginBottom: 24,
           }}>
-            <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.55 }}>
-              Holiday pay records must be retained for a minimum of 6 years under HMRC requirements. The Fair Work Agency can investigate and fine employers who cannot produce records. All records created here are time-stamped and stored.
-            </p>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.55, flex: 1 }}>
+                Holiday pay records must be retained for a minimum of 6 years under HMRC requirements. The Fair Work Agency can investigate and fine employers who cannot produce records. All records created here are time-stamped and stored.
+              </p>
+              <span style={{ flexShrink: 0, marginTop: 2 }}>
+                <InfoTooltip text="HMRC requires holiday pay records to be kept for a minimum of 6 years. PRODICTA stores all records automatically." />
+              </span>
+            </div>
           </div>
 
           {/* New record form */}
@@ -279,7 +285,10 @@ export default function HolidayPage() {
                     onFocus={() => setFocusedField('te')} onBlur={() => setFocusedField(null)} style={inputStyle('te')} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Carry-over days</label>
+                  <label style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    Carry-over days
+                    <InfoTooltip text="Unused holiday that carries over from one holiday year to the next. Subject to your employment contract terms." />
+                  </label>
                   <input type="number" step="0.5" min="0" value={formCarryOver} onChange={e => setFormCarryOver(e.target.value)}
                     onFocus={() => setFocusedField('co')} onBlur={() => setFocusedField(null)} style={inputStyle('co')} />
                 </div>

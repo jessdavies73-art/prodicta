@@ -150,8 +150,9 @@ function PlacementHealthPanel({ data, activeFilter, onFilter, isMobile }) {
   ]
   return (
     <div style={{ marginBottom: 24 }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
         Placement Health
+        <InfoTooltip text="A live traffic light showing the health of every active placement. Green means on track. Amber means at risk. Red means critical action needed." />
       </div>
       <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
         {cards.map(c => {
@@ -1723,7 +1724,10 @@ function DashboardPageInner() {
           }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: todaysActions.length > 0 ? 14 : 0, flexWrap: 'wrap', gap: 8 }}>
               <div>
-                <h2 style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: NAVY, margin: 0 }}>Today's Actions</h2>
+                <h2 style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: NAVY, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  Today's Actions
+                  <InfoTooltip text="A prioritised list of everything that needs your attention today. URGENT actions need immediate response. TODAY actions should be handled before end of day." />
+                </h2>
                 <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: '4px 0 0' }}>
                   {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — {todaysActions.length > 0 ? 'Here is what needs your attention.' : ''}
                 </p>
@@ -2169,6 +2173,7 @@ function DashboardPageInner() {
               <span style={{ fontSize: 11, fontWeight: 700, color: TEAL, background: TEALLT, border: `1px solid ${TEAL}55`, padding: '1px 8px', borderRadius: 50 }}>
                 {engagementSequences.length}
               </span>
+              <InfoTooltip text="Tracks candidate engagement between offer and start date. Three automated pulses are sent to the candidate. Low engagement signals ghosting or counter-offer risk." />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {engagementSequences.map(seq => {
@@ -2263,6 +2268,7 @@ function DashboardPageInner() {
               <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: TX }}>
                 SSP Alerts
               </span>
+              <InfoTooltip text="Workers reported sick who need an SSP eligibility check. PRODICTA sends automatic reminders if the check is not completed within 24 hours." />
               <span style={{
                 fontSize: 11, fontWeight: 700, color: '#D97706', background: '#fffbeb',
                 border: '1px solid #fbbf24', padding: '1px 8px', borderRadius: 50,
@@ -2350,6 +2356,7 @@ function DashboardPageInner() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Ic name="award" size={14} color={TEAL} />
                 <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>Your Assessment Credits</span>
+                <InfoTooltip text="Pay-per-use Rapid Screen assessments credited to your account. Each credit allows one 5-8 minute candidate assessment at no additional charge." />
               </div>
               <a href="/#pricing" style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD, textDecoration: 'none' }}>
                 Buy more credits

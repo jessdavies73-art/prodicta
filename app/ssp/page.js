@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import Sidebar from '../../components/Sidebar'
 import { Ic } from '../../components/Icons'
+import InfoTooltip from '../../components/InfoTooltip'
 import { createClient } from '../../lib/supabase'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, F, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, GRN, GRNBG, GRNBD, cs, bs, ps } from '../../lib/constants'
 
@@ -653,15 +654,19 @@ export default function SSPPage() {
       }}>
         <div style={{ maxWidth: 700, margin: '0 auto' }}>
           {/* Sub-nav */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
             <button style={{ ...bs('primary', 'sm') }}>SSP Checker</button>
             <button onClick={() => router.push('/ssp/records')} style={{ ...bs('secondary', 'sm') }}>SSP Records</button>
-            <button onClick={() => router.push('/ssp/linked-periods')} style={{ ...bs('secondary', 'sm') }}>Linked Periods</button>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <button onClick={() => router.push('/ssp/linked-periods')} style={{ ...bs('secondary', 'sm') }}>Linked Periods</button>
+              <InfoTooltip text="Absences within 56 days of each other link together and count towards the 28-week maximum SSP entitlement." />
+            </span>
           </div>
 
           {/* Header */}
-          <h1 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: 0 }}>
+          <h1 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             SSP Eligibility Checker
+            <InfoTooltip text="Under rules effective 6 April 2026 SSP is payable from day one with no waiting period and no minimum earnings threshold." />
           </h1>
           <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: '6px 0 24px' }}>
             Check whether a worker qualifies for Statutory Sick Pay under the 2026 rules.
@@ -978,7 +983,10 @@ export default function SSPPage() {
                 }}>
                   {/* AWE field */}
                   <div style={{ marginBottom: 20 }}>
-                    <label style={labelStyle}>Average Weekly Earnings (AWE)</label>
+                    <label style={{ ...labelStyle, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      Average Weekly Earnings (AWE)
+                      <InfoTooltip text="Average Weekly Earnings calculated over the last 8 complete weeks before the sick date. SSP is the lower of £123.25 or 80% of AWE." />
+                    </label>
                     <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 8px', lineHeight: 1.5 }}>
                       Average Weekly Earnings = Total earnings in the last 8 weeks divided by 8. Include all regular pay but exclude overtime, expenses, and one-off payments.
                     </p>
