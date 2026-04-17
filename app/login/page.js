@@ -512,7 +512,7 @@ function SignUpForm() {
           id="su-promo"
           value={promoCode}
           onChange={e => setPromoCode(e.target.value.toUpperCase())}
-          placeholder="e.g. TEAM10"
+          placeholder="Enter promo code"
           autoComplete="off"
         />
       </div>

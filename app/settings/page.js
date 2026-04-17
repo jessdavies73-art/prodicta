@@ -957,7 +957,7 @@ export default function SettingsPage() {
                   onChange={e => setPromoInput(e.target.value.toUpperCase())}
                   onFocus={() => setPromoFocused(true)}
                   onBlur={() => setPromoFocused(false)}
-                  placeholder="e.g. TEAM10"
+                  placeholder="Enter promo code"
                   style={{
                     flex: '1 1 220px',
                     padding: '10px 12px',
