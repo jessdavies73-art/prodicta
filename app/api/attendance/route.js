@@ -109,6 +109,16 @@ export async function POST(request) {
     const reliabilityScore = calculateReliabilityScore(allRecords || [])
     const attendanceRisk = reliabilityScore >= 80 ? 'low' : reliabilityScore >= 60 ? 'monitor' : 'high'
 
+    // Fetch the current review row once so we know the previous score for
+    // the one-shot email gate AND whether placement_health was already 'red'.
+    const { data: prev } = await admin
+      .from('assignment_reviews')
+      .select('reliability_score, placement_health')
+      .eq('candidate_id', candidate_id)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    const prevScore = prev?.reliability_score ?? 100
+
     // Build update payload for assignment_reviews
     const reviewUpdate = {
       reliability_score: reliabilityScore,
@@ -119,14 +129,7 @@ export async function POST(request) {
       reviewUpdate.placement_health = 'red'
     } else if (reliabilityScore < 80) {
       // Set to amber only if not already red
-      const { data: currentReview } = await admin
-        .from('assignment_reviews')
-        .select('placement_health')
-        .eq('candidate_id', candidate_id)
-        .eq('user_id', user.id)
-        .maybeSingle()
-
-      if (currentReview?.placement_health !== 'red') {
+      if (prev?.placement_health !== 'red') {
         reviewUpdate.placement_health = 'amber'
       }
     }
@@ -137,8 +140,8 @@ export async function POST(request) {
       .eq('candidate_id', candidate_id)
       .eq('user_id', user.id)
 
-    // Send email alert if reliability drops below 80
-    if (reliabilityScore < 80 && user.email) {
+    // Send email alert only the first time reliability drops below 80.
+    if (prevScore >= 80 && reliabilityScore < 80 && user.email) {
       try {
         const presentCount = (allRecords || []).filter(r => r.status === 'present').length
         const lateCount = (allRecords || []).filter(r => r.status === 'late').length
