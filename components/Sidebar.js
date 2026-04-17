@@ -11,30 +11,27 @@ const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
 function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
-function buildGroups(accountType) {
-  const placement = [
-    { key: 'compare', label: 'Compare', icon: 'sliders', href: '/compare' },
-    { key: 'archive', label: 'Archive', icon: 'archive', href: '/archive' },
+function buildGroups({ showDocuments }) {
+  const compliance = [
+    { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/ssp' },
+    { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/holiday' },
+    { key: 'edi',     label: 'EDI',     icon: 'shield',   href: '/edi' },
   ]
-  if (accountType === 'agency') {
-    placement.push({ key: 'placements', label: 'Active Placements', icon: 'users', href: '/outcomes?filter=active' })
-  }
-  if (accountType === 'employer' || accountType === 'agency') {
-    placement.push({ key: 'outcomes', label: 'Outcomes', icon: 'award', href: '/outcomes' })
+  if (showDocuments) {
+    compliance.push({ key: 'documents', label: 'Documents', icon: 'file', href: '/documents' })
   }
 
   return [
     { label: 'Main', items: [
-      { key: 'dashboard',  label: 'Dashboard',      icon: 'grid',  href: '/dashboard' },
-      { key: 'assessment', label: 'New assessment', icon: 'plus',  href: '/assessment/new' },
+      { key: 'dashboard',  label: 'Dashboard',      icon: 'grid', href: '/dashboard' },
+      { key: 'assessment', label: 'New assessment', icon: 'plus', href: '/assessment/new' },
     ]},
-    { label: 'Placement', items: placement },
-    { label: 'Compliance', items: [
-      { key: 'ssp',       label: 'SSP',       icon: 'shield',   href: '/ssp' },
-      { key: 'holiday',   label: 'Holiday',   icon: 'calendar', href: '/holiday' },
-      { key: 'edi',       label: 'EDI',       icon: 'shield',   href: '/edi' },
-      { key: 'documents', label: 'Documents', icon: 'file',     href: '/documents' },
+    { label: 'Placement', items: [
+      { key: 'compare',  label: 'Compare',  icon: 'sliders', href: '/compare' },
+      { key: 'archive',  label: 'Archive',  icon: 'archive', href: '/archive' },
+      { key: 'outcomes', label: 'Outcomes', icon: 'award',   href: '/outcomes' },
     ]},
+    { label: 'Compliance', items: compliance },
   ]
 }
 
@@ -52,18 +49,37 @@ export default function Sidebar({ active, companyName }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [hoveredKey, setHoveredKey] = useState(null)
   const [logoutHover, setLogoutHover] = useState(false)
-  const [accountType, setAccountType] = useState(null)
+  const [showDocuments, setShowDocuments] = useState(false)
 
   useEffect(() => { setMobileOpen(false) }, [active])
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (user) {
-        const { data: prof } = await supabase.from('users').select('account_type').eq('id', user.id).maybeSingle()
-        if (prof?.account_type) setAccountType(prof.account_type)
+    let cancelled = false
+    async function detectTempWork() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || cancelled) return
+
+      const { data: prof } = await supabase.from('users')
+        .select('default_employment_type')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      const defaultType = prof?.default_employment_type
+      if (defaultType === 'temporary' || defaultType === 'both') {
+        if (!cancelled) setShowDocuments(true)
+        return
       }
-    })
+
+      const { count } = await supabase.from('assessments')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('employment_type', 'temporary')
+
+      if (!cancelled) setShowDocuments((count || 0) > 0)
+    }
+    detectTempWork()
+    return () => { cancelled = true }
   }, [])
 
   async function handleLogout() {
@@ -77,7 +93,7 @@ export default function Sidebar({ active, companyName }) {
     setMobileOpen(false)
   }
 
-  const groups = buildGroups(accountType)
+  const groups = buildGroups({ showDocuments })
 
   function NavButton({ itemKey, label, icon, href }) {
     const isActive = active === itemKey
@@ -164,7 +180,7 @@ export default function Sidebar({ active, companyName }) {
         )}
       </div>
 
-      {/* Scrollable nav: groups with category labels */}
+      {/* Scrollable nav: grouped categories */}
       <nav
         className="prodicta-sidebar-nav"
         style={{
@@ -205,8 +221,11 @@ export default function Sidebar({ active, companyName }) {
         ))}
       </nav>
 
-      {/* Pinned bottom: Account group (Settings + company + Sign Out) */}
+      {/* Pinned bottom: Account group — Settings + company + Sign Out.
+          marginTop: 'auto' keeps this block pinned to the bottom of the flex column
+          so Sign Out is always visible regardless of nav overflow. */}
       <div style={{
+        marginTop: 'auto',
         padding: '10px 12px 18px',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         display: 'flex',

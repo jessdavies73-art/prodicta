@@ -1,5 +1,5 @@
 'use client'
-import { useState, useSyncExternalStore } from 'react'
+import { useState, useEffect, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ic } from './Icons'
 import ProdictaLogo from './ProdictaLogo'
@@ -51,23 +51,29 @@ export function DemoBanner() {
 }
 
 // ── Demo Sidebar ──────────────────────────────────────────────────────────────
-const DEMO_GROUPS = [
-  { label: 'Main', items: [
-    { key: 'dashboard',  label: 'Dashboard',      icon: 'grid', href: '/demo' },
-    { key: 'assessment', label: 'New assessment', icon: 'plus', restricted: true },
-  ]},
-  { label: 'Placement', items: [
-    { key: 'compare',  label: 'Compare',  icon: 'sliders', href: '/demo/compare' },
-    { key: 'archive',  label: 'Archive',  icon: 'archive', href: '/demo/archive' },
-    { key: 'outcomes', label: 'Outcomes', icon: 'award',   restricted: true },
-  ]},
-  { label: 'Compliance', items: [
-    { key: 'ssp',       label: 'SSP',       icon: 'shield',   href: '/ssp' },
-    { key: 'holiday',   label: 'Holiday',   icon: 'calendar', href: '/holiday' },
-    { key: 'edi',       label: 'EDI',       icon: 'shield',   href: '/demo/edi' },
-    { key: 'documents', label: 'Documents', icon: 'file',     href: '/documents' },
-  ]},
-]
+function buildDemoGroups({ showDocuments }) {
+  const compliance = [
+    { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/ssp' },
+    { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/holiday' },
+    { key: 'edi',     label: 'EDI',     icon: 'shield',   href: '/demo/edi' },
+  ]
+  if (showDocuments) {
+    compliance.push({ key: 'documents', label: 'Documents', icon: 'file', href: '/documents' })
+  }
+
+  return [
+    { label: 'Main', items: [
+      { key: 'dashboard',  label: 'Dashboard',      icon: 'grid', href: '/demo' },
+      { key: 'assessment', label: 'New assessment', icon: 'plus', restricted: true },
+    ]},
+    { label: 'Placement', items: [
+      { key: 'compare',  label: 'Compare',  icon: 'sliders', href: '/demo/compare' },
+      { key: 'archive',  label: 'Archive',  icon: 'archive', href: '/demo/archive' },
+      { key: 'outcomes', label: 'Outcomes', icon: 'award',   restricted: true },
+    ]},
+    { label: 'Compliance', items: compliance },
+  ]
+}
 
 const DEMO_SCROLLBAR_CSS = `
 .prodicta-demo-sidebar-nav::-webkit-scrollbar { width: 6px; }
@@ -82,6 +88,36 @@ export function DemoSidebar({ active }) {
   const isMobile = useIsMobile()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [signupModal, setSignupModal] = useState(false)
+
+  // Gate: show Documents unless the demo is explicitly set to permanent-only.
+  // Reads the same localStorage keys that the demo dashboard uses so the
+  // sidebar tracks the user's demo toggle without a prop.
+  const [showDocuments, setShowDocuments] = useState(true)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const applyGate = () => {
+      const demoType = (() => {
+        try { return localStorage.getItem('prodicta_demo_account_type') } catch { return null }
+      })()
+      const demoEmploymentType = (() => {
+        try { return localStorage.getItem('prodicta_demo_employment_type') } catch { return null }
+      })()
+      const show =
+        demoType === 'temporary' ||
+        demoEmploymentType === 'temporary' ||
+        demoEmploymentType === 'both' ||
+        demoEmploymentType == null // default (nothing set) → show
+      setShowDocuments(show)
+    }
+    applyGate()
+    const onStorage = (e) => {
+      if (!e.key || e.key === 'prodicta_demo_employment_type' || e.key === 'prodicta_demo_account_type') {
+        applyGate()
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   function handleNavClick(href) {
     router.push(href)
@@ -166,26 +202,30 @@ export function DemoSidebar({ active }) {
           gap: 14,
         }}
       >
-        {DEMO_GROUPS.map(group => (
-          <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <div style={{
-              fontFamily: F,
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.32)',
-              padding: '2px 12px 6px',
-            }}>
-              {group.label}
+        {buildDemoGroups({ showDocuments }).map(group => (
+          group.items.length > 0 && (
+            <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{
+                fontFamily: F,
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'rgba(255,255,255,0.32)',
+                padding: '2px 12px 6px',
+              }}>
+                {group.label}
+              </div>
+              {group.items.map(renderNavItem)}
             </div>
-            {group.items.map(renderNavItem)}
-          </div>
+          )
         ))}
       </nav>
 
-      {/* Pinned bottom: Account group */}
+      {/* Pinned bottom: Account group — marginTop: 'auto' keeps Sign Out
+          visible at the bottom of the flex column regardless of overflow. */}
       <div style={{
+        marginTop: 'auto',
         padding: '10px 12px 18px',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         display: 'flex', flexDirection: 'column', gap: 4,
