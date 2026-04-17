@@ -3845,7 +3845,7 @@ export default function CandidateReportPage({ params }) {
                 {/* ══════════════════════════════════════════════════
                     TEAM FIT
                 ══════════════════════════════════════════════════ */}
-                {results.team_fit_score != null && results.team_fit_data && (
+                {profile?.account_type === 'employer' && results.team_fit_score != null && results.team_fit_data && (
                   <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }} topColor={TEAL}>
                     <SectionHeading tooltip="How this candidate will work with your existing team based on the team profile you built. Analyses conflict compatibility, pace alignment, decision-making fit, and identifies friction risks.">

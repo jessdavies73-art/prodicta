@@ -638,7 +638,7 @@ function DashboardPageInner() {
 
         const { data: cands, error: candsErr } = await supabase
           .from('candidates')
-          .select('*, assessments!inner(role_title, id, employment_type), results(overall_score, risk_level, percentile, pressure_fit_score)')
+          .select('*, assessments!inner(role_title, id, employment_type, created_at), results(overall_score, risk_level, percentile, pressure_fit_score)')
           .eq('user_id', user.id)
           .neq('status', 'archived')
           .order('invited_at', { ascending: false })
@@ -1033,6 +1033,19 @@ function DashboardPageInner() {
           return sum + ms / 60000
         }, 0) / timedCandidates.length
       )
+    : null
+
+  // Speed to offer: avg days from assessment created_at to candidate completed_at
+  const offerTimedCandidates = completed.filter(c => c.assessments?.created_at && c.completed_at)
+  const speedToOfferDays = offerTimedCandidates.length
+    ? (offerTimedCandidates.reduce((sum, c) => {
+        const ms = new Date(c.completed_at) - new Date(c.assessments.created_at)
+        return sum + ms / 86400000
+      }, 0) / offerTimedCandidates.length)
+    : null
+  const BENCHMARK_DAYS = 18.4
+  const speedToOfferPctFaster = speedToOfferDays != null && speedToOfferDays > 0
+    ? Math.max(0, Math.round((1 - speedToOfferDays / BENCHMARK_DAYS) * 100))
     : null
 
   function fmtInsight(mins) {
@@ -2602,13 +2615,64 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Prediction Accuracy ── */}
+        {/* ── Speed to Offer + Prediction Accuracy (side by side) ── */}
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 20 }}>
+
+        {/* Speed to Offer */}
+        <div style={{
+          ...cs,
+          flex: '1 1 280px',
+          padding: '20px 24px',
+          borderTop: `3px solid ${TEAL}`,
+          margin: 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <Ic name="clock" size={14} color={TEAL} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Speed to offer
+            </span>
+          </div>
+          {speedToOfferDays != null ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 12.5, color: TX2, marginBottom: 4 }}>With PRODICTA</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: TEAL }}>
+                    {speedToOfferDays.toFixed(1)}
+                  </span>
+                  <span style={{ fontSize: 12, color: TX3 }}>days avg from assessment to offer</span>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: TX2, marginBottom: 4 }}>Traditional process</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: TX3 }}>
+                    {BENCHMARK_DAYS.toFixed(1)}
+                  </span>
+                  <span style={{ fontSize: 12, color: TX3 }}>days avg industry benchmark</span>
+                </div>
+              </div>
+              {speedToOfferPctFaster != null && speedToOfferPctFaster > 0 && (
+                <div style={{ fontSize: 11.5, color: TEALD, fontWeight: 700 }}>
+                  {speedToOfferPctFaster}% faster time to offer
+                </div>
+              )}
+            </div>
+          ) : (
+            <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.6 }}>
+              Complete assessments to see your average time from assessment to offer. Once candidates finish their first assessments this metric compares against the 18.4 day industry benchmark.
+            </p>
+          )}
+        </div>
+
+        {/* Prediction Accuracy */}
         {accuracyData && (
           <div style={{
             ...cs,
-            marginBottom: 20,
+            flex: '1 1 280px',
             padding: '20px 24px',
             borderTop: `3px solid ${TEAL}`,
+            margin: 0,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <Ic name="shield" size={14} color={TEAL} />
@@ -2638,8 +2702,9 @@ function DashboardPageInner() {
 
         {!accuracyData && candidateOutcomes.length < 3 && (
           <div style={{
-            ...cs, marginBottom: 20, padding: '20px 24px',
+            ...cs, padding: '20px 24px',
             borderTop: `3px solid ${BD}`,
+            flex: '1 1 280px', margin: 0,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               <Ic name="shield" size={14} color={TX3} />
@@ -2655,6 +2720,8 @@ function DashboardPageInner() {
             </a>
           </div>
         )}
+
+        </div>{/* end flex row: Speed to Offer + Prediction Accuracy */}
 
         {/* ── Pending check-ins ── */}
         {pendingCheckins.length > 0 && (
