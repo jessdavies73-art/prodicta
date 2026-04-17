@@ -486,7 +486,7 @@ export default function LandingPage() {
           minHeight: 72,
         }}>
           {heroPersona === 'agency'
-            ? 'Whether you place permanent hires or temps, PRODICTA gives you evidence not guesswork. Screen candidates with real work simulations. Predict who will pass probation or succeed on assignment. Track every active placement in real time. Manage SSP, holiday pay, and Fair Work Agency compliance automatically. When something goes wrong surface a replacement in seconds. The only platform that covers the full journey from first assessment to final day.'
+            ? 'Whether you place permanent hires or temps, PRODICTA gives you evidence not guesswork. Real work simulations. Placement health in real time. SSP and compliance handled automatically. When something goes wrong you know at week one not month four.'
             : 'Whether you are hiring permanently or using temps, PRODICTA puts every candidate through real work scenarios built from the role itself. Predict who will pass probation or succeed on assignment. Generate ERA 2025 compliance documentation automatically. Track every hire through probation with early warning alerts. Manage SSP, holiday pay, and Fair Work Agency compliance. From first assessment to end of probation \u2014 fully covered.'}
         </p>
 
