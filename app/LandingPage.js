@@ -465,19 +465,17 @@ export default function LandingPage() {
           fontSize: 'clamp(36px, 5.5vw, 66px)', letterSpacing: '-2px', lineHeight: 1.05,
           maxWidth: 820, marginBottom: 24,
         }}>
-          Hire right.<br />
-          <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>Keep them there.</span>
+          We tell you if a placement will fail<br />
+          <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>before you make it.</span>
         </h1>
 
         {/* Subheadline */}
         <p style={{
-          fontFamily: F, fontSize: 'clamp(16px, 1.8vw, 20px)', fontWeight: 400,
-          color: 'rgba(255,255,255,0.6)', lineHeight: 1.75,
+          fontFamily: F, fontSize: 'clamp(18px, 2.2vw, 28px)', fontWeight: 600,
+          color: '#fff', lineHeight: 1.4,
           maxWidth: 660, marginBottom: 32, position: 'relative', zIndex: 1,
         }}>
-          {heroPersona === 'agency'
-            ? 'Place faster. Protect every placement.'
-            : 'Hire with evidence. Protect every decision.'}
+          And we stop it failing after you do.
         </p>
 
         {/* Toggle subtext */}

@@ -438,8 +438,8 @@ function DemoDashboardInner() {
           }}>
             <p style={{ fontFamily: F, fontSize: 16, fontWeight: 500, fontStyle: 'italic', color: 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.5 }}>
               {isAgency
-                ? 'You are the consultant who sees it coming. Not the one who gets the call.'
-                : 'You are the employer who knew from day one you made the right hire. Not the one hoping you did.'}
+                ? 'We told you this placement could fail. Now you can stop it.'
+                : 'You knew before you hired them. That is the difference.'}
             </p>
             <button onClick={e => { e.currentTarget.parentElement.style.display = 'none'; try { localStorage.setItem(isAgency ? 'prodicta_demo_motto_dismissed' : 'prodicta_demo_employer_motto_dismissed', '1') } catch {} }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}>
               <Ic name="x" size={16} color="rgba(255,255,255,0.35)" />
