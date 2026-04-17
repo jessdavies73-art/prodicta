@@ -1547,6 +1547,7 @@ function DemoCandidateInner({ params }) {
                 </div>
                 {/* Placement Survival Score */}
                 {(() => {
+                  try {
                   const survival = calculateSurvivalScore({
                     overallScore: score,
                     hiringConfidence: results.confidence_level === 'High' ? { score: 80 } : results.confidence_level === 'Medium' ? { score: 60 } : results.confidence_level === 'Low' ? { score: 40 } : null,
@@ -1580,6 +1581,10 @@ function DemoCandidateInner({ params }) {
                       )}
                     </div>
                   )
+                  } catch (e) {
+                    console.error('Survival score error:', e)
+                    return null
+                  }
                 })()}
               </div>
               {/* White content (non-rapid only) */}

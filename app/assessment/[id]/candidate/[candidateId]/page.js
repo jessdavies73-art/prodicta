@@ -2248,6 +2248,7 @@ export default function CandidateReportPage({ params }) {
                     </div>
                     {/* Placement Survival Score */}
                     {(() => {
+                      try {
                       const survival = calculateSurvivalScore({
                         overallScore: score,
                         hiringConfidence: results.hiring_confidence,
@@ -2283,6 +2284,10 @@ export default function CandidateReportPage({ params }) {
                           )}
                         </div>
                       )
+                      } catch (e) {
+                        console.error('Survival score error:', e)
+                        return null
+                      }
                     })()}
                   </div>
                   {/* White content */}
