@@ -2822,9 +2822,6 @@ function DemoCandidateInner({ params }) {
                       </div>
                     </div>
                   </div>
-                  <a href="/demo/workspace" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD, textDecoration: 'none' }}>
-                    Try the workspace demo
-                  </a>
                 </div>
               </ScrollReveal>
             )}
