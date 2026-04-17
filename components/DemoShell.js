@@ -51,18 +51,31 @@ export function DemoBanner() {
 }
 
 // ── Demo Sidebar ──────────────────────────────────────────────────────────────
-const NAV = [
-  { key: 'dashboard',    label: 'Dashboard',      icon: 'grid',     href: '/demo' },
-  { key: 'assessment',   label: 'New assessment',  icon: 'plus',     restricted: true },
-  { key: 'compare',      label: 'Compare',         icon: 'sliders',  href: '/demo/compare' },
-  { key: 'ssp',          label: 'SSP',             icon: 'shield',   href: '/ssp' },
-  { key: 'holiday',      label: 'Holiday',         icon: 'calendar', href: '/holiday' },
-  { key: 'edi',          label: 'EDI',              icon: 'shield',   href: '/demo/edi' },
-  { key: 'documents',    label: 'Documents',       icon: 'file',     href: '/documents' },
-  { key: 'archive',      label: 'Archive',         icon: 'archive',  href: '/demo/archive' },
-  { key: 'settings',     label: 'Settings',        icon: 'settings', href: '/demo/settings' },
-  { key: 'outcomes',     label: 'Outcomes',        icon: 'award',    restricted: true },
+const DEMO_GROUPS = [
+  { label: 'Main', items: [
+    { key: 'dashboard',  label: 'Dashboard',      icon: 'grid', href: '/demo' },
+    { key: 'assessment', label: 'New assessment', icon: 'plus', restricted: true },
+  ]},
+  { label: 'Placement', items: [
+    { key: 'compare',  label: 'Compare',  icon: 'sliders', href: '/demo/compare' },
+    { key: 'archive',  label: 'Archive',  icon: 'archive', href: '/demo/archive' },
+    { key: 'outcomes', label: 'Outcomes', icon: 'award',   restricted: true },
+  ]},
+  { label: 'Compliance', items: [
+    { key: 'ssp',       label: 'SSP',       icon: 'shield',   href: '/ssp' },
+    { key: 'holiday',   label: 'Holiday',   icon: 'calendar', href: '/holiday' },
+    { key: 'edi',       label: 'EDI',       icon: 'shield',   href: '/demo/edi' },
+    { key: 'documents', label: 'Documents', icon: 'file',     href: '/documents' },
+  ]},
 ]
+
+const DEMO_SCROLLBAR_CSS = `
+.prodicta-demo-sidebar-nav::-webkit-scrollbar { width: 6px; }
+.prodicta-demo-sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.prodicta-demo-sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+.prodicta-demo-sidebar-nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
+.prodicta-demo-sidebar-nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent; }
+`
 
 export function DemoSidebar({ active }) {
   const router = useRouter()
@@ -75,9 +88,60 @@ export function DemoSidebar({ active }) {
     setMobileOpen(false)
   }
 
+  function renderNavItem({ key, label, icon, href, restricted }) {
+    const isActive = active === key
+    if (restricted) {
+      return (
+        <button
+          key={key}
+          onClick={() => setSignupModal(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 11,
+            width: '100%', padding: '10px 12px',
+            borderRadius: 8, border: 'none', borderLeft: '3px solid transparent',
+            cursor: 'pointer', fontFamily: F, fontSize: 13.5, fontWeight: 500,
+            textAlign: 'left', background: 'transparent',
+            color: 'rgba(255,255,255,0.3)', transition: 'background 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+        >
+          <Ic name={icon} size={17} color="rgba(255,255,255,0.18)" />
+          {label}
+        </button>
+      )
+    }
+    return (
+      <button
+        key={key}
+        onClick={() => handleNavClick(href)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 11,
+          width: '100%', padding: '10px 12px',
+          paddingLeft: isActive ? 9 : 12,
+          borderRadius: 8,
+          borderLeft: isActive ? `3px solid ${TEAL}` : '3px solid transparent',
+          border: 'none',
+          cursor: 'pointer', fontFamily: F, fontSize: 13.5,
+          fontWeight: isActive ? 700 : 500, textAlign: 'left',
+          background: isActive ? 'rgba(0,191,165,0.12)' : 'transparent',
+          color: isActive ? TEAL : 'rgba(255,255,255,0.6)',
+          transition: 'background 0.15s, color 0.15s',
+        }}
+        onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#fff' } }}
+        onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' } }}
+      >
+        <Ic name={icon} size={17} color={isActive ? TEAL : 'rgba(255,255,255,0.5)'} />
+        {label}
+      </button>
+    )
+  }
+
   const sidebarContent = (
     <>
-      <div style={{ padding: '28px 24px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <style>{DEMO_SCROLLBAR_CSS}</style>
+
+      <div style={{ padding: '28px 24px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <ProdictaLogo textColor="#ffffff" size={32} />
         {isMobile && (
           <button
@@ -89,70 +153,71 @@ export function DemoSidebar({ active }) {
         )}
       </div>
 
-      <nav style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {NAV.map(({ key, label, icon, href, restricted }) => {
-          const isActive = active === key
-          if (restricted) {
-            return (
-              <button
-                key={key}
-                onClick={() => setSignupModal(true)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 11,
-                  width: '100%', padding: '10px 12px',
-                  borderRadius: 8, border: 'none', borderLeft: '3px solid transparent',
-                  cursor: 'pointer', fontFamily: F, fontSize: 13.5, fontWeight: 500,
-                  textAlign: 'left', background: 'transparent',
-                  color: 'rgba(255,255,255,0.3)', transition: 'background 0.15s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-              >
-                <Ic name={icon} size={17} color="rgba(255,255,255,0.18)" />
-                {label}
-              </button>
-            )
-          }
-          return (
-            <button
-              key={key}
-              onClick={() => handleNavClick(href)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 11,
-                width: '100%', padding: '10px 12px',
-                paddingLeft: isActive ? 9 : 12,
-                borderRadius: 8,
-                borderLeft: isActive ? `3px solid ${TEAL}` : '3px solid transparent',
-                border: 'none',
-                cursor: 'pointer', fontFamily: F, fontSize: 13.5,
-                fontWeight: isActive ? 700 : 500, textAlign: 'left',
-                background: isActive ? 'rgba(0,191,165,0.12)' : 'transparent',
-                color: isActive ? TEAL : 'rgba(255,255,255,0.6)',
-                transition: 'background 0.15s, color 0.15s',
-              }}
-              onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#fff' } }}
-              onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' } }}
-            >
-              <Ic name={icon} size={17} color={isActive ? TEAL : 'rgba(255,255,255,0.5)'} />
-              {label}
-            </button>
-          )
-        })}
+      {/* Scrollable nav: grouped items */}
+      <nav
+        className="prodicta-demo-sidebar-nav"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+          padding: '14px 12px 10px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+        }}
+      >
+        {DEMO_GROUPS.map(group => (
+          <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{
+              fontFamily: F,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.32)',
+              padding: '2px 12px 6px',
+            }}>
+              {group.label}
+            </div>
+            {group.items.map(renderNavItem)}
+          </div>
+        ))}
       </nav>
 
-      {/* Bottom: company badge + sign out — pinned */}
-      <div style={{ marginTop: 'auto', padding: '14px 12px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
-        <div style={{ padding: '8px 12px', borderRadius: 8, background: `${TEAL}18`, border: `1px solid ${TEAL}30`, display: 'flex', alignItems: 'center', gap: 9 }}>
+      {/* Pinned bottom: Account group */}
+      <div style={{
+        padding: '10px 12px 18px',
+        borderTop: '1px solid rgba(255,255,255,0.07)',
+        display: 'flex', flexDirection: 'column', gap: 4,
+        flexShrink: 0,
+      }}>
+        <div style={{
+          fontFamily: F,
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: 'rgba(255,255,255,0.32)',
+          padding: '6px 12px 6px',
+        }}>
+          Account
+        </div>
+
+        {renderNavItem({ key: 'settings', label: 'Settings', icon: 'settings', href: '/demo/settings' })}
+
+        <div style={{ padding: '8px 12px', marginTop: 6, borderRadius: 8, background: `${TEAL}18`, border: `1px solid ${TEAL}30`, display: 'flex', alignItems: 'center', gap: 9 }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${TEAL}, #009688)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: NAVY, flexShrink: 0 }}>D</div>
           <span style={{ fontSize: 12.5, fontWeight: 700, color: TEAL }}>Demo Account</span>
         </div>
+
         <button
           onClick={() => router.push('/login')}
-          style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 12px', borderRadius: 8, border: `1px solid ${TEAL}40`, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, textAlign: 'left', background: `${TEAL}10`, color: TEAL }}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', marginTop: 4, padding: '9px 12px', borderRadius: 8, border: `1px solid ${TEAL}40`, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, textAlign: 'left', background: `${TEAL}10`, color: TEAL }}
         >
           <Ic name="award" size={16} color={TEAL} />
           Sign up
         </button>
+
         <button
           onClick={() => router.push('/login')}
           style={{
@@ -211,12 +276,11 @@ export function DemoSidebar({ active }) {
         {/* Slide-out drawer */}
         <aside style={{
           position: 'fixed', top: 0, left: 0, bottom: 0,
-          width: 260, background: NAVY,
+          width: 260, height: '100vh', background: NAVY,
           zIndex: 130, fontFamily: F,
           transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 0.25s ease',
           display: 'flex', flexDirection: 'column',
-          overflowY: 'auto',
         }}>
           {sidebarContent}
         </aside>
@@ -226,7 +290,7 @@ export function DemoSidebar({ active }) {
 
   return (
     <aside style={{
-      width: 220, minHeight: '100vh', background: NAVY,
+      width: 220, height: '100vh', background: NAVY,
       display: 'flex', flexDirection: 'column',
       position: 'fixed', top: 0, left: 0, bottom: 0,
       zIndex: 100, fontFamily: F,

@@ -11,17 +11,40 @@ const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
 function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
-const NAV_ITEMS = [
-  { key: 'dashboard',    label: 'Dashboard',      icon: 'grid',     href: '/dashboard' },
-  { key: 'assessment',   label: 'New assessment', icon: 'plus',     href: '/assessment/new' },
-  { key: 'compare',      label: 'Compare',        icon: 'sliders',  href: '/compare' },
-  { key: 'ssp',          label: 'SSP',            icon: 'shield',   href: '/ssp' },
-  { key: 'holiday',      label: 'Holiday',        icon: 'calendar', href: '/holiday' },
-  { key: 'edi',           label: 'EDI',             icon: 'shield',   href: '/edi' },
-  { key: 'documents',    label: 'Documents',      icon: 'file',     href: '/documents' },
-  { key: 'archive',      label: 'Archive',        icon: 'archive',  href: '/archive' },
-  { key: 'settings',     label: 'Settings',       icon: 'settings', href: '/settings' },
-]
+function buildGroups(accountType) {
+  const placement = [
+    { key: 'compare', label: 'Compare', icon: 'sliders', href: '/compare' },
+    { key: 'archive', label: 'Archive', icon: 'archive', href: '/archive' },
+  ]
+  if (accountType === 'agency') {
+    placement.push({ key: 'placements', label: 'Active Placements', icon: 'users', href: '/outcomes?filter=active' })
+  }
+  if (accountType === 'employer' || accountType === 'agency') {
+    placement.push({ key: 'outcomes', label: 'Outcomes', icon: 'award', href: '/outcomes' })
+  }
+
+  return [
+    { label: 'Main', items: [
+      { key: 'dashboard',  label: 'Dashboard',      icon: 'grid',  href: '/dashboard' },
+      { key: 'assessment', label: 'New assessment', icon: 'plus',  href: '/assessment/new' },
+    ]},
+    { label: 'Placement', items: placement },
+    { label: 'Compliance', items: [
+      { key: 'ssp',       label: 'SSP',       icon: 'shield',   href: '/ssp' },
+      { key: 'holiday',   label: 'Holiday',   icon: 'calendar', href: '/holiday' },
+      { key: 'edi',       label: 'EDI',       icon: 'shield',   href: '/edi' },
+      { key: 'documents', label: 'Documents', icon: 'file',     href: '/documents' },
+    ]},
+  ]
+}
+
+const SCROLLBAR_CSS = `
+.prodicta-sidebar-nav::-webkit-scrollbar { width: 6px; }
+.prodicta-sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.prodicta-sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+.prodicta-sidebar-nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
+.prodicta-sidebar-nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent; }
+`
 
 export default function Sidebar({ active, companyName }) {
   const router = useRouter()
@@ -31,7 +54,6 @@ export default function Sidebar({ active, companyName }) {
   const [logoutHover, setLogoutHover] = useState(false)
   const [accountType, setAccountType] = useState(null)
 
-  // Close mobile sidebar on route change
   useEffect(() => { setMobileOpen(false) }, [active])
 
   useEffect(() => {
@@ -55,8 +77,73 @@ export default function Sidebar({ active, companyName }) {
     setMobileOpen(false)
   }
 
+  const groups = buildGroups(accountType)
+
+  function NavButton({ itemKey, label, icon, href }) {
+    const isActive = active === itemKey
+    const isHovered = hoveredKey === itemKey
+    return (
+      <button
+        onClick={() => handleNavClick(href)}
+        onMouseEnter={() => setHoveredKey(itemKey)}
+        onMouseLeave={() => setHoveredKey(null)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 11,
+          width: '100%',
+          padding: '10px 12px',
+          paddingLeft: isActive ? 9 : 12,
+          borderRadius: 8,
+          border: 'none',
+          borderLeft: isActive ? `3px solid ${TEAL}` : '3px solid transparent',
+          cursor: 'pointer',
+          fontFamily: F,
+          fontSize: 13.5,
+          fontWeight: isActive ? 700 : 500,
+          textAlign: 'left',
+          transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+          background: isActive
+            ? 'rgba(0,191,165,0.12)'
+            : isHovered
+            ? 'rgba(255,255,255,0.06)'
+            : 'transparent',
+          color: isActive ? TEAL : isHovered ? '#fff' : 'rgba(255,255,255,0.6)',
+          boxShadow: isActive ? 'inset 0 0 16px rgba(0,191,165,0.08)' : 'none',
+        }}
+      >
+        <Ic
+          name={icon}
+          size={17}
+          color={isActive ? TEAL : isHovered ? '#fff' : 'rgba(255,255,255,0.5)'}
+        />
+        {label}
+        {itemKey === 'assessment' && (
+          <span style={{
+            marginLeft: 'auto',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 18,
+            height: 18,
+            borderRadius: 5,
+            background: TEAL,
+            color: NAVY,
+            fontSize: 10,
+            fontWeight: 800,
+            lineHeight: 1,
+          }}>
+            +
+          </span>
+        )}
+      </button>
+    )
+  }
+
   const sidebarContent = (
     <>
+      <style>{SCROLLBAR_CSS}</style>
+
       {/* Logo */}
       <div style={{
         padding: '28px 24px 24px',
@@ -64,6 +151,7 @@ export default function Sidebar({ active, companyName }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        flexShrink: 0,
       }}>
         <ProdictaLogo textColor="#ffffff" size={32} />
         {isMobile && (
@@ -76,94 +164,74 @@ export default function Sidebar({ active, companyName }) {
         )}
       </div>
 
-      {/* Nav */}
-      <nav style={{
-        flex: 1,
-        padding: '16px 12px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-        overflowY: 'auto',
-      }}>
-        {[
-          ...NAV_ITEMS,
-          ...(accountType === 'agency' ? [{ key: 'placements', label: 'Active Placements', icon: 'users', href: '/outcomes?filter=active' }] : []),
-          ...(accountType === 'employer' || accountType === 'agency' ? [{ key: 'outcomes', label: 'Outcomes', icon: 'award', href: '/outcomes' }] : []),
-        ].map(({ key, label, icon, href }) => {
-          const isActive = active === key
-          const isHovered = hoveredKey === key
-          return (
-            <button
-              key={key}
-              onClick={() => handleNavClick(href)}
-              onMouseEnter={() => setHoveredKey(key)}
-              onMouseLeave={() => setHoveredKey(null)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 11,
-                width: '100%',
-                padding: '10px 12px',
-                paddingLeft: isActive ? 9 : 12,
-                borderRadius: 8,
-                border: 'none',
-                borderLeft: isActive ? `3px solid ${TEAL}` : '3px solid transparent',
-                cursor: 'pointer',
+      {/* Scrollable nav: groups with category labels */}
+      <nav
+        className="prodicta-sidebar-nav"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+          padding: '14px 12px 10px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+        }}
+      >
+        {groups.map(group => (
+          group.items.length > 0 && (
+            <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{
                 fontFamily: F,
-                fontSize: 13.5,
-                fontWeight: isActive ? 700 : 500,
-                textAlign: 'left',
-                transition: 'background 0.15s, color 0.15s, border-color 0.15s',
-                background: isActive
-                  ? 'rgba(0,191,165,0.12)'
-                  : isHovered
-                  ? 'rgba(255,255,255,0.06)'
-                  : 'transparent',
-                color: isActive ? TEAL : isHovered ? '#fff' : 'rgba(255,255,255,0.6)',
-                boxShadow: isActive ? 'inset 0 0 16px rgba(0,191,165,0.08)' : 'none',
-              }}
-            >
-              <Ic
-                name={icon}
-                size={17}
-                color={isActive ? TEAL : isHovered ? '#fff' : 'rgba(255,255,255,0.5)'}
-              />
-              {label}
-              {key === 'assessment' && (
-                <span style={{
-                  marginLeft: 'auto',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 18,
-                  height: 18,
-                  borderRadius: 5,
-                  background: TEAL,
-                  color: NAVY,
-                  fontSize: 10,
-                  fontWeight: 800,
-                  lineHeight: 1,
-                }}>
-                  +
-                </span>
-              )}
-            </button>
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'rgba(255,255,255,0.32)',
+                padding: '2px 12px 6px',
+              }}>
+                {group.label}
+              </div>
+              {group.items.map(item => (
+                <NavButton
+                  key={item.key}
+                  itemKey={item.key}
+                  label={item.label}
+                  icon={item.icon}
+                  href={item.href}
+                />
+              ))}
+            </div>
           )
-        })}
+        ))}
       </nav>
 
-      {/* Bottom: company + sign out — pinned */}
+      {/* Pinned bottom: Account group (Settings + company + Sign Out) */}
       <div style={{
-        padding: '14px 12px 20px',
+        padding: '10px 12px 18px',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         display: 'flex',
         flexDirection: 'column',
-        gap: 6,
+        gap: 4,
         flexShrink: 0,
       }}>
+        <div style={{
+          fontFamily: F,
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: 'rgba(255,255,255,0.32)',
+          padding: '6px 12px 6px',
+        }}>
+          Account
+        </div>
+
+        <NavButton itemKey="settings" label="Settings" icon="settings" href="/settings" />
+
         {companyName && (
           <div style={{
             padding: '8px 12px',
+            marginTop: 6,
             borderRadius: 8,
             background: 'rgba(255,255,255,0.05)',
             display: 'flex',
@@ -208,6 +276,7 @@ export default function Sidebar({ active, companyName }) {
             gap: 10,
             width: '100%',
             padding: '9px 12px',
+            marginTop: 4,
             borderRadius: 8,
             border: 'none',
             cursor: 'pointer',
@@ -231,7 +300,6 @@ export default function Sidebar({ active, companyName }) {
   if (isMobile) {
     return (
       <>
-        {/* Top bar with hamburger */}
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 110,
           height: 56, background: NAVY,
@@ -252,7 +320,6 @@ export default function Sidebar({ active, companyName }) {
           </button>
         </div>
 
-        {/* Overlay */}
         {mobileOpen && (
           <div
             onClick={() => setMobileOpen(false)}
@@ -264,15 +331,13 @@ export default function Sidebar({ active, companyName }) {
           />
         )}
 
-        {/* Slide-out drawer */}
         <aside style={{
           position: 'fixed', top: 0, left: 0, bottom: 0,
-          width: 260, background: NAVY,
+          width: 260, height: '100vh', background: NAVY,
           zIndex: 130, fontFamily: F,
           transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 0.25s ease',
           display: 'flex', flexDirection: 'column',
-          overflowY: 'auto',
         }}>
           {sidebarContent}
         </aside>
@@ -280,11 +345,11 @@ export default function Sidebar({ active, companyName }) {
     )
   }
 
-  // ── Desktop: fixed sidebar ──
+  // ── Desktop: fixed full-height sidebar with scrollable body ──
   return (
     <aside style={{
       width: 220,
-      minHeight: '100vh',
+      height: '100vh',
       background: NAVY,
       display: 'flex',
       flexDirection: 'column',
