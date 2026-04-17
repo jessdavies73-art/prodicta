@@ -1267,6 +1267,19 @@ function DemoCandidateInner({ params }) {
                   {isTemp ? 'Open Assignment Tracker' : 'Open Probation Co-pilot'}
                   <InfoTooltip text={isTemp ? 'Track this worker through their assignment period with structured check-ins.' : 'Track this candidate through their probation period with structured check-ins and guidance.'} />
                 </button>
+                <button
+                  onClick={() => setSignupPrompt(true)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer',
+                    fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '9px 16px',
+                    width: '100%',
+                  }}
+                >
+                  <Ic name="clipboard" size={15} color={TEAL} />
+                  {isTemp ? 'Generate Assignment Review' : 'Generate Probation Review'}
+                  <InfoTooltip text={isTemp ? 'Produce a printable assignment review document capturing check-ins, watch-out tracking, and manager notes.' : 'Produce a printable probation review document capturing predictions checked, watch-out tracking, and manager notes.'} />
+                </button>
                 </>
                 )}
 
