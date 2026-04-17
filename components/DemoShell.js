@@ -58,7 +58,7 @@ function buildDemoGroups({ showDocuments }) {
     { key: 'edi',     label: 'EDI',     icon: 'shield',   href: '/demo/edi' },
   ]
   if (showDocuments) {
-    compliance.push({ key: 'documents', label: 'Documents', icon: 'file', href: '/documents' })
+    compliance.push({ key: 'documents', label: 'Documents', icon: 'file', href: '/demo/documents' })
   }
 
   return [

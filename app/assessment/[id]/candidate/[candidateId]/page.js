@@ -1869,7 +1869,7 @@ export default function CandidateReportPage({ params }) {
                     {profile?.account_type === 'employer' && (
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Onboarding</div>
                     )}
-                    {results?.coaching_plan && profile?.account_type === 'employer' && (
+                    {results?.coaching_plan && profile?.account_type === 'employer' && candidate?.assessments?.employment_type !== 'temporary' && (
                       <button
                         onClick={() => {
                           const el = document.getElementById('coaching-plan')
@@ -4956,7 +4956,7 @@ export default function CandidateReportPage({ params }) {
                 {/* ══════════════════════════════════════════════════
                     ASSIGNMENT SUCCESS PLAN (employer + temporary)
                 ══════════════════════════════════════════════════ */}
-                {results?.coaching_plan && profile?.account_type === 'employer' && candidate?.assessments?.employment_type === 'temporary' && (
+                {results?.coaching_plan && profile?.account_type === 'employer' && candidate?.assessments?.employment_type !== 'temporary' && (
                   <ScrollReveal id="coaching-plan" delay={60}>
                     <Card style={{ marginBottom: 20 }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>

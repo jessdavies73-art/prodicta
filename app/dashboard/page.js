@@ -2447,46 +2447,8 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Secondary stats row ── */}
+        {/* ── Secondary stats row (Cost saved — Speed to Offer moved to its own card above) ── */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
-          {/* Time to insight */}
-          <div style={{
-            flex: 1, minWidth: 200,
-            background: CARD, border: `1px solid ${BD}`, borderTop: `3px solid ${TEALD}`,
-            borderRadius: 12, padding: '18px 22px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-              <Ic name="clock" size={13} color={TEALD} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Average time to insight
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap', marginBottom: 8 }}>
-              <div>
-                <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: TEALD, lineHeight: 1 }}>
-                  {avgMinutesToInsight !== null ? fmtInsight(avgMinutesToInsight) : '-'}
-                </div>
-                <div style={{ fontSize: 10.5, color: TEALD, fontFamily: F, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 3 }}>
-                  PRODICTA
-                </div>
-              </div>
-              <div style={{ fontSize: 14, color: TX3, fontFamily: F, fontWeight: 600 }}>vs</div>
-              <div>
-                <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 700, color: TX3, lineHeight: 1 }}>
-                  3 to 4 weeks
-                </div>
-                <div style={{ fontSize: 10.5, color: TX3, fontFamily: F, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 3 }}>
-                  Traditional process
-                </div>
-              </div>
-            </div>
-            <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>
-              {timedCandidates.length > 0
-                ? `From JD to hiring decision, across ${timedCandidates.length} candidate${timedCandidates.length !== 1 ? 's' : ''}`
-                : 'From JD to hiring decision'}
-            </div>
-          </div>
-
           {/* Cost saved */}
           <div style={{
             flex: 2, minWidth: 280,
