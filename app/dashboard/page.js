@@ -2339,8 +2339,8 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Assessment Credits (pay-per-assessment users) ── */}
-        {assessmentCredits.length > 0 && !profile?.plan && (
+        {/* ── Assessment Credits (pay-per-assessment users + promo-granted Rapid Screens) ── */}
+        {assessmentCredits.length > 0 && (!profile?.plan || assessmentCredits.some(c => c.credit_type === 'rapid-screen' && (c.credits_remaining || 0) > 0)) && (
           <div style={{
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
             borderTop: `3px solid ${TEAL}`, padding: '20px 24px', marginBottom: 20,
@@ -2356,6 +2356,7 @@ function DashboardPageInner() {
             </div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               {[
+                { type: 'rapid-screen', label: 'Rapid Screen' },
                 { type: 'speed-fit', label: 'Speed-Fit' },
                 { type: 'depth-fit', label: 'Depth-Fit' },
                 { type: 'strategy-fit', label: 'Strategy-Fit' },

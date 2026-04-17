@@ -168,6 +168,13 @@ export default function SettingsPage() {
   // Credits (pay-per-assessment)
   const [assessmentCredits, setAssessmentCredits] = useState([])
 
+  // Promo codes
+  const [promoInput, setPromoInput] = useState('')
+  const [promoRedemptions, setPromoRedemptions] = useState([])
+  const [promoToast, setPromoToast] = useState(null)
+  const [promoSubmitting, setPromoSubmitting] = useState(false)
+  const [promoFocused, setPromoFocused] = useState(false)
+
   // Weightings tab (employer only)
   const [weights, setWeights] = useState(DEFAULT_WEIGHTS)
   const [savingWeights, setSavingWeights] = useState(false)
@@ -236,6 +243,13 @@ export default function SettingsPage() {
           .select('credit_type, credits_remaining, credits_purchased, last_purchased_at')
           .eq('user_id', user.id)
         if (credits && credits.length > 0) setAssessmentCredits(credits)
+
+        // Load promo redemption history
+        const { data: redemptions } = await supabase.from('promo_redemptions')
+          .select('promo_code, redeemed_at')
+          .eq('user_id', user.id)
+          .order('redeemed_at', { ascending: false })
+        if (redemptions) setPromoRedemptions(redemptions)
       } catch (err) {
         setError(err.message)
       } finally {
@@ -280,6 +294,48 @@ export default function SettingsPage() {
       setWeightsToast({ type: 'error', message: err.message })
     } finally {
       setSavingWeights(false)
+    }
+  }
+
+  async function handleRedeemPromo() {
+    if (!promoInput.trim()) {
+      setPromoToast({ type: 'error', message: 'Please enter a promo code.' })
+      return
+    }
+    setPromoSubmitting(true)
+    setPromoToast(null)
+    try {
+      const res = await fetch('/api/promo/redeem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoInput.trim() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        setPromoToast({ type: 'error', message: data.message || 'Could not apply promo code.' })
+        return
+      }
+      setPromoToast({ type: 'success', message: data.message })
+      setPromoInput('')
+      // Refresh redemptions and credits
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: redemptions } = await supabase.from('promo_redemptions')
+          .select('promo_code, redeemed_at')
+          .eq('user_id', user.id)
+          .order('redeemed_at', { ascending: false })
+        if (redemptions) setPromoRedemptions(redemptions)
+        const { data: credits } = await supabase.from('assessment_credits')
+          .select('credit_type, credits_remaining, credits_purchased, last_purchased_at')
+          .eq('user_id', user.id)
+        if (credits) setAssessmentCredits(credits)
+      }
+      setTimeout(() => setPromoToast(null), 4500)
+    } catch (err) {
+      setPromoToast({ type: 'error', message: 'Could not apply promo code. Please try again.' })
+    } finally {
+      setPromoSubmitting(false)
     }
   }
 
@@ -888,12 +944,85 @@ export default function SettingsPage() {
             )}
             </>)}
 
+            {/* ── Promo code ── */}
+            <div style={{ ...cs, marginBottom: 16 }}>
+              <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX }}>Promo code</h2>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 14px', lineHeight: 1.6 }}>
+                Have a code from our team? Enter it below to unlock free Rapid Screens or other rewards.
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: promoToast ? 12 : 0 }}>
+                <input
+                  type="text"
+                  value={promoInput}
+                  onChange={e => setPromoInput(e.target.value.toUpperCase())}
+                  onFocus={() => setPromoFocused(true)}
+                  onBlur={() => setPromoFocused(false)}
+                  placeholder="e.g. TEAM10"
+                  style={{
+                    flex: '1 1 220px',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: `1.5px solid ${promoFocused ? TEAL : BD}`,
+                    background: CARD,
+                    fontFamily: F,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    letterSpacing: '0.04em',
+                    color: TX,
+                    outline: 'none',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleRedeemPromo}
+                  disabled={promoSubmitting}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: TEAL,
+                    color: NAVY,
+                    fontFamily: F,
+                    fontSize: 13.5,
+                    fontWeight: 700,
+                    cursor: promoSubmitting ? 'default' : 'pointer',
+                    opacity: promoSubmitting ? 0.7 : 1,
+                  }}
+                >
+                  {promoSubmitting ? 'Applying...' : 'Apply'}
+                </button>
+              </div>
+              {promoToast && (
+                <div style={{ marginTop: 12 }}>
+                  <Toast message={promoToast.message} type={promoToast.type} />
+                </div>
+              )}
+              {promoRedemptions.length > 0 && (
+                <div style={{ marginTop: 18, paddingTop: 16, borderTop: `1px solid ${BD}` }}>
+                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+                    Redemption history
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {promoRedemptions.map((r, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: BG, border: `1px solid ${BD}`, borderRadius: 8 }}>
+                        <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: NAVY, letterSpacing: '0.04em' }}>{r.promo_code}</span>
+                        <span style={{ fontFamily: F, fontSize: 12, color: TX3 }}>
+                          {r.redeemed_at ? new Date(r.redeemed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* ── Assessment Credits (pay-per-assessment) ── */}
             {hasCredits && (
               <div style={{ ...cs, marginBottom: 16 }}>
                 <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: TX }}>Assessment Credits</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                   {[
+                    { type: 'rapid-screen', label: 'Rapid Screen' },
                     { type: 'speed-fit', label: 'Speed-Fit' },
                     { type: 'depth-fit', label: 'Depth-Fit' },
                     { type: 'strategy-fit', label: 'Strategy-Fit' },

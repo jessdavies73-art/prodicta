@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { getStripeClient, PLANS } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase-server'
+import { redeemPromoCode } from '@/lib/promo-redeem'
 
 // Called after a successful 3D Secure authentication to complete account creation.
 // Verifies with Stripe that the subscription's payment intent actually succeeded
 // before creating any user records.
 export async function POST(request) {
   try {
-    const { subscriptionId, email, password, companyName, accountType, plan } = await request.json()
+    const { subscriptionId, email, password, companyName, accountType, plan, promoCode } = await request.json()
 
     if (!subscriptionId || !email || !password || !companyName || !accountType || !plan) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
@@ -104,7 +105,17 @@ export async function POST(request) {
       stripe_subscription_id: subscription.id,
     })
 
-    return NextResponse.json({ success: true })
+    let promoMessage = null
+    if (promoCode) {
+      try {
+        const result = await redeemPromoCode({ adminClient, userId, code: promoCode })
+        if (result.ok) promoMessage = result.message
+      } catch (promoErr) {
+        console.error('[confirm-subscription] promo redeem error (non-fatal):', promoErr)
+      }
+    }
+
+    return NextResponse.json({ success: true, promoMessage })
   } catch (err) {
     console.error('confirm-subscription error:', err)
     return NextResponse.json(

@@ -237,6 +237,8 @@ function SignUpForm() {
   const [accountType, setAccountType] = useState('employer')
   const [plan,        setPlan]        = useState('professional')
   const [postcode,    setPostcode]    = useState('')
+  const [promoCode,   setPromoCode]   = useState('')
+  const [promoMessage,setPromoMessage]= useState('')
   const [cardFocused, setCardFocused] = useState(false)
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
@@ -289,6 +291,7 @@ function SignUpForm() {
           accountType,
           plan,
           paymentMethodId: paymentMethod.id,
+          promoCode:       promoCode.trim() || null,
         }),
       })
       const data = await res.json()
@@ -326,6 +329,7 @@ function SignUpForm() {
             companyName:    company.trim(),
             accountType,
             plan,
+            promoCode:      promoCode.trim() || null,
           }),
         })
         const confirmData = await confirmRes.json()
@@ -336,10 +340,12 @@ function SignUpForm() {
           return
         }
 
+        if (confirmData.promoMessage) setPromoMessage(confirmData.promoMessage)
         setDone(true)
         return
       }
 
+      if (data.promoMessage) setPromoMessage(data.promoMessage)
       // Payment succeeded without SCA
       setDone(true)
     } catch (err) {
@@ -370,6 +376,11 @@ function SignUpForm() {
           <strong style={{ color: '#fff' }}>{email}</strong>.
           Click it to activate your account, then sign in.
         </p>
+        {promoMessage && (
+          <p style={{ fontSize: 13, color: TEAL, margin: '14px 0 0', lineHeight: 1.6, fontWeight: 600 }}>
+            {promoMessage}
+          </p>
+        )}
       </div>
     )
   }
@@ -494,6 +505,15 @@ function SignUpForm() {
           onChange={e => setPostcode(e.target.value)}
           placeholder="SW1A 1AA"
           autoComplete="postal-code"
+        />
+
+        <Field
+          label="Promo code (optional)"
+          id="su-promo"
+          value={promoCode}
+          onChange={e => setPromoCode(e.target.value.toUpperCase())}
+          placeholder="e.g. TEAM10"
+          autoComplete="off"
         />
       </div>
 

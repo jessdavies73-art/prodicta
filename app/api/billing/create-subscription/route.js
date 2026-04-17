@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { getStripeClient, PLANS, getOrCreatePriceId } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase-server'
+import { redeemPromoCode } from '@/lib/promo-redeem'
 
 async function createSupabaseUser({ adminClient, email, password, companyName, accountType, plan, customerId, subscriptionId }) {
   // Use anon client signUp so Supabase automatically sends the confirmation email.
@@ -48,6 +49,8 @@ async function createSupabaseUser({ adminClient, email, password, companyName, a
     stripe_customer_id: customerId,
     stripe_subscription_id: subscriptionId,
   })
+
+  return userId
 }
 
 export async function POST(request) {
@@ -60,7 +63,7 @@ export async function POST(request) {
   try {
     currentStep = 'parse-body'
     const body = await request.json()
-    const { email, password, companyName, accountType, plan, paymentMethodId } = body
+    const { email, password, companyName, accountType, plan, paymentMethodId, promoCode } = body
 
     if (!email || !password || !companyName || !accountType || !plan || !paymentMethodId) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
@@ -158,8 +161,9 @@ export async function POST(request) {
     currentStep = 'step5-supabase-user'
     console.log('[billing] Step 5: Creating Supabase user')
     const adminClient = createServiceClient()
+    let newUserId = null
     try {
-      await createSupabaseUser({
+      newUserId = await createSupabaseUser({
         adminClient,
         email, password, companyName, accountType, plan,
         customerId: customer.id,
@@ -181,7 +185,17 @@ export async function POST(request) {
       throw createError
     }
 
-    return NextResponse.json({ success: true })
+    let promoMessage = null
+    if (promoCode && newUserId) {
+      try {
+        const result = await redeemPromoCode({ adminClient, userId: newUserId, code: promoCode })
+        if (result.ok) promoMessage = result.message
+      } catch (promoErr) {
+        console.error('[billing] promo redeem error (non-fatal):', promoErr)
+      }
+    }
+
+    return NextResponse.json({ success: true, promoMessage })
   } catch (err) {
     console.log('[billing] FULL ERROR:', err.message, err.type, err.code, err.decline_code);
     console.log('[billing] FAILED AT:', err.stack)
