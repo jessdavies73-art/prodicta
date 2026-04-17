@@ -1339,16 +1339,6 @@ function DemoCandidateInner({ params }) {
                 )}
 
                 {/* WORKSPACE (Strategy-Fit only) */}
-                {candidate?.assessments?.assessment_mode === 'advanced' && (
-                <>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Workspace</div>
-                <a href="/demo/workspace" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', textDecoration: 'none', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}>
-                  <Ic name="grid" size={14} color={TEALD} />
-                  View Day 1 Simulation
-                  <InfoTooltip text="See how this candidate performed in the virtual Day 1 workspace — emails, tasks, messages and calendar." />
-                </a>
-                </>
-                )}
               </div>
               )}
               </div>

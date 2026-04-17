@@ -2075,28 +2075,6 @@ export default function CandidateReportPage({ params }) {
                       </button>
                     )}
 
-                    {/* WORKSPACE */}
-                    {results && candidate?.assessments?.assessment_mode === 'advanced' && (
-                    <>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Workspace</div>
-                    <a
-                      href={`/assessment/${params.id}/candidate/${params.candidateId}/day-1-simulation`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
-                        fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
-                        textDecoration: 'none',
-                      }}
-                    >
-                      <Ic name="monitor" size={15} color={TEALD} />
-                      View Day 1 Simulation
-                      <InfoTooltip text="See what this candidate's first day would look like based on their assessment responses. Strategy-Fit only." />
-                    </a>
-                    </>
-                    )}
-
                     {/* CANDIDATE */}
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Candidate</div>
                     {results && (
