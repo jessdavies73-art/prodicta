@@ -927,6 +927,7 @@ function DashboardPageInner() {
 
   const tempCandidates = candidates.filter(c => c.assessments?.employment_type === 'temporary' && c.status === 'completed')
   const hasTemps = tempCandidates.length > 0
+  const hasTemporaryCandidates = candidates.some(c => c.assessments?.employment_type === 'temporary')
   const completedCandidates = candidates.filter(c => c.status === 'completed')
   const qaSearchPool = (qaModal === 'attendance' || qaModal === 'replace') ? tempCandidates : completedCandidates
   const qaFilteredCandidates = qaSearch.length >= 2
@@ -1800,7 +1801,7 @@ function DashboardPageInner() {
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Quick Actions</div>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 12 }}>
-              {(hasTemps ? [
+              {(hasTemporaryCandidates ? [
                 { key: 'sickness', icon: 'alert', label: 'Report Sickness', desc: 'Create SSP alert', color: AMB, bg: AMBBG },
                 { key: 'attendance', icon: 'clock', label: 'Log Attendance', desc: 'Daily attendance', color: GRN, bg: GRNBG },
                 { key: 'replace', icon: 'users', label: 'Replace Worker', desc: 'Find a replacement', color: RED, bg: REDBG },
@@ -2049,8 +2050,8 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* Assignment alerts banner (agency only) */}
-        {isAgencyAccount && assignmentAlerts.length > 0 && (
+        {/* Assignment alerts banner (agency + temp only) */}
+        {isAgencyAccount && hasTemporaryCandidates && assignmentAlerts.length > 0 && (
           <div style={{
             background: 'linear-gradient(135deg, #fef2f2, #fff5f5)', border: `1.5px solid #fecaca`,
             borderLeft: `4px solid #B91C1C`, borderRadius: '0 12px 12px 0',
@@ -2154,8 +2155,8 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Pre-Start Engagement panel (agency, active pulse sequences) ── */}
-        {isAgencyAccount && engagementSequences.length > 0 && (
+        {/* ── Pre-Start Engagement panel (agency + temp, active pulse sequences) ── */}
+        {isAgencyAccount && hasTemporaryCandidates && engagementSequences.length > 0 && (
           <div style={{
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
             borderTop: `3px solid ${TEAL}`, padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
@@ -2252,7 +2253,7 @@ function DashboardPageInner() {
         )}
 
         {/* ── SSP Alerts panel (agency + temporary only) ── */}
-        {isAgencyAccount && sspAlerts.filter(a => a.employment_type === 'temporary').length > 0 && (
+        {isAgencyAccount && hasTemporaryCandidates && sspAlerts.filter(a => a.employment_type === 'temporary').length > 0 && (
           <div style={{
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
             borderTop: '3px solid #D97706', padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,

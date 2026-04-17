@@ -246,6 +246,7 @@ function DemoDashboardInner() {
   })
   const isAgency = demoType === 'agency'
   const [demoEmploymentType, setDemoEmploymentType] = useState('both')
+  const demoHasTempWork = demoEmploymentType === 'temporary' || demoEmploymentType === 'both'
   const [search, setSearch] = useState('')
   const [hoveredRow, setHoveredRow] = useState(null)
   const [searchFocused, setSearchFocused] = useState(false)
@@ -510,12 +511,11 @@ function DemoDashboardInner() {
 
         {/* ── Quick Actions (agency only) ── */}
         {isAgency && (() => {
-          const demoHasTemps = activeCandidates.some(c => c.assessments?.employment_type === 'temporary')
           return (
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Quick Actions</div>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 12 }}>
-              {(demoHasTemps ? [
+              {(demoHasTempWork ? [
                 { icon: 'alert', label: 'Report Sickness', desc: 'Create SSP alert', color: AMB, bg: AMBBG },
                 { icon: 'clock', label: 'Log Attendance', desc: 'Daily attendance', color: GRN, bg: GRNBG },
                 { icon: 'users', label: 'Replace Worker', desc: 'Find a replacement', color: RED, bg: REDBG },
@@ -1046,6 +1046,7 @@ function DemoDashboardInner() {
             </div>
 
             {/* Pre-Start Engagement panel (agency + temporary, demo) */}
+            {demoHasTempWork && (
             <div style={{
               background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
               borderTop: `3px solid ${TEAL}`, padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
@@ -1098,8 +1099,10 @@ function DemoDashboardInner() {
                 </button>
               </div>
             </div>
+            )}
 
             {/* SSP Alerts panel (agency + temporary) */}
+            {demoHasTempWork && (
             <div style={{
               background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
               borderTop: '3px solid #D97706', padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
@@ -1130,6 +1133,7 @@ function DemoDashboardInner() {
                 </div>
               </div>
             </div>
+            )}
 
           </>
         )}
@@ -1611,7 +1615,8 @@ function DemoDashboardInner() {
           </div>
         </div>
 
-        {/* SSP Module Demo */}
+        {/* SSP Module Demo (agency + temp only) */}
+        {isAgency && demoHasTempWork && (
         <div style={{
           background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
           padding: '20px 24px', marginTop: 20,
@@ -1638,6 +1643,7 @@ function DemoDashboardInner() {
             <button onClick={() => router.push('/ssp/linked-periods')} style={{ ...bs('secondary', 'sm') }}>Linked Periods</button>
           </div>
         </div>
+        )}
 
         {/* Holiday Pay Tracker Demo */}
         <div style={{
