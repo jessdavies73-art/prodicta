@@ -1056,8 +1056,8 @@ export default function SettingsPage() {
               )}
             </div>
 
-            {/* ── Assessment Credits (pay-per-assessment) ── */}
-            {hasCredits && (
+            {/* ── Assessment Credits (pay-per-assessment, not PAYG — PAYG has its own card above) ── */}
+            {hasCredits && !isPayg && (
               <div style={{ ...cs, marginBottom: 16 }}>
                 <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: TX }}>Assessment Credits</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
@@ -1113,8 +1113,8 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* ── No subscription and no credits: prompt to start ── */}
-            {!hasActiveSubscription && !hasCredits && (
+            {/* ── No subscription and no credits: prompt to start (not PAYG — PAYG has its own card) ── */}
+            {!hasActiveSubscription && !hasCredits && !isPayg && (
               <div style={{ ...cs }}>
                 <h2 style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: TX }}>Choose a billing option</h2>
                 <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
