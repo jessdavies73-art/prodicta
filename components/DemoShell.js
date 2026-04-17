@@ -75,14 +75,6 @@ function buildDemoGroups({ showDocuments }) {
   ]
 }
 
-const DEMO_SCROLLBAR_CSS = `
-.prodicta-demo-sidebar-nav::-webkit-scrollbar { width: 6px; }
-.prodicta-demo-sidebar-nav::-webkit-scrollbar-track { background: transparent; }
-.prodicta-demo-sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
-.prodicta-demo-sidebar-nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
-.prodicta-demo-sidebar-nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent; }
-`
-
 export function DemoSidebar({ active }) {
   const router = useRouter()
   const isMobile = useIsMobile()
@@ -133,9 +125,9 @@ export function DemoSidebar({ active }) {
           onClick={() => setSignupModal(true)}
           style={{
             display: 'flex', alignItems: 'center', gap: 11,
-            width: '100%', padding: '10px 12px',
+            width: '100%', padding: '8px 12px',
             borderRadius: 8, border: 'none', borderLeft: '3px solid transparent',
-            cursor: 'pointer', fontFamily: F, fontSize: 13.5, fontWeight: 500,
+            cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 500,
             textAlign: 'left', background: 'transparent',
             color: 'rgba(255,255,255,0.3)', transition: 'background 0.15s',
           }}
@@ -153,12 +145,12 @@ export function DemoSidebar({ active }) {
         onClick={() => handleNavClick(href)}
         style={{
           display: 'flex', alignItems: 'center', gap: 11,
-          width: '100%', padding: '10px 12px',
+          width: '100%', padding: '8px 12px',
           paddingLeft: isActive ? 9 : 12,
           borderRadius: 8,
           borderLeft: isActive ? `3px solid ${TEAL}` : '3px solid transparent',
           border: 'none',
-          cursor: 'pointer', fontFamily: F, fontSize: 13.5,
+          cursor: 'pointer', fontFamily: F, fontSize: 13,
           fontWeight: isActive ? 700 : 500, textAlign: 'left',
           background: isActive ? 'rgba(0,191,165,0.12)' : 'transparent',
           color: isActive ? TEAL : 'rgba(255,255,255,0.6)',
@@ -175,9 +167,7 @@ export function DemoSidebar({ active }) {
 
   const sidebarContent = (
     <>
-      <style>{DEMO_SCROLLBAR_CSS}</style>
-
-      <div style={{ padding: '28px 24px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+      <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <ProdictaLogo textColor="#ffffff" size={32} />
         {isMobile && (
           <button
@@ -189,22 +179,19 @@ export function DemoSidebar({ active }) {
         )}
       </div>
 
-      {/* Scrollable nav: grouped items */}
+      {/* Compact nav: grouped items, sized to fit without scrolling */}
       <nav
         className="prodicta-demo-sidebar-nav"
         style={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: 'auto',
-          padding: '14px 12px 10px',
+          padding: '10px 12px 8px',
           display: 'flex',
           flexDirection: 'column',
-          gap: 14,
+          gap: 10,
         }}
       >
         {buildDemoGroups({ showDocuments }).map(group => (
           group.items.length > 0 && (
-            <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <div style={{
                 fontFamily: F,
                 fontSize: 10,
@@ -212,7 +199,7 @@ export function DemoSidebar({ active }) {
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
                 color: 'rgba(255,255,255,0.32)',
-                padding: '2px 12px 6px',
+                padding: '0 12px 4px',
               }}>
                 {group.label}
               </div>
@@ -222,13 +209,13 @@ export function DemoSidebar({ active }) {
         ))}
       </nav>
 
-      {/* Pinned bottom: Account group — marginTop: 'auto' keeps Sign Out
-          visible at the bottom of the flex column regardless of overflow. */}
+      {/* Pinned bottom: Account — Settings + Sign Out only, no Demo Account badge.
+          marginTop: 'auto' keeps Sign Out at the bottom of the flex column. */}
       <div style={{
         marginTop: 'auto',
-        padding: '10px 12px 18px',
+        padding: '8px 12px 14px',
         borderTop: '1px solid rgba(255,255,255,0.07)',
-        display: 'flex', flexDirection: 'column', gap: 4,
+        display: 'flex', flexDirection: 'column', gap: 1,
         flexShrink: 0,
       }}>
         <div style={{
@@ -238,30 +225,17 @@ export function DemoSidebar({ active }) {
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
           color: 'rgba(255,255,255,0.32)',
-          padding: '6px 12px 6px',
+          padding: '4px 12px 4px',
         }}>
           Account
         </div>
 
         {renderNavItem({ key: 'settings', label: 'Settings', icon: 'settings', href: '/demo/settings' })}
 
-        <div style={{ padding: '8px 12px', marginTop: 6, borderRadius: 8, background: `${TEAL}18`, border: `1px solid ${TEAL}30`, display: 'flex', alignItems: 'center', gap: 9 }}>
-          <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${TEAL}, #009688)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: NAVY, flexShrink: 0 }}>D</div>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: TEAL }}>Demo Account</span>
-        </div>
-
-        <button
-          onClick={() => router.push('/login')}
-          style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', marginTop: 4, padding: '9px 12px', borderRadius: 8, border: `1px solid ${TEAL}40`, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 700, textAlign: 'left', background: `${TEAL}10`, color: TEAL }}
-        >
-          <Ic name="award" size={16} color={TEAL} />
-          Sign up
-        </button>
-
         <button
           onClick={() => router.push('/login')}
           style={{
-            display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 12px',
+            display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 12px',
             borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 500,
             textAlign: 'left', background: 'transparent', color: 'rgba(255,255,255,0.4)',
             transition: 'background 0.15s, color 0.15s',

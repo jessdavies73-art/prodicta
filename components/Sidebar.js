@@ -1,7 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, useSyncExternalStore } from 'react'
-import { NAVY, TEAL, TEALD, TX2, TX3, F } from '../lib/constants'
+import { NAVY, TEAL, F } from '../lib/constants'
 import { Ic } from './Icons'
 import { createClient } from '../lib/supabase'
 import ProdictaLogo from './ProdictaLogo'
@@ -34,14 +34,6 @@ function buildGroups({ showDocuments }) {
     { label: 'Compliance', items: compliance },
   ]
 }
-
-const SCROLLBAR_CSS = `
-.prodicta-sidebar-nav::-webkit-scrollbar { width: 6px; }
-.prodicta-sidebar-nav::-webkit-scrollbar-track { background: transparent; }
-.prodicta-sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
-.prodicta-sidebar-nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
-.prodicta-sidebar-nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent; }
-`
 
 export default function Sidebar({ active, companyName }) {
   const router = useRouter()
@@ -108,14 +100,14 @@ export default function Sidebar({ active, companyName }) {
           alignItems: 'center',
           gap: 11,
           width: '100%',
-          padding: '10px 12px',
+          padding: '8px 12px',
           paddingLeft: isActive ? 9 : 12,
           borderRadius: 8,
           border: 'none',
           borderLeft: isActive ? `3px solid ${TEAL}` : '3px solid transparent',
           cursor: 'pointer',
           fontFamily: F,
-          fontSize: 13.5,
+          fontSize: 13,
           fontWeight: isActive ? 700 : 500,
           textAlign: 'left',
           transition: 'background 0.15s, color 0.15s, border-color 0.15s',
@@ -158,11 +150,9 @@ export default function Sidebar({ active, companyName }) {
 
   const sidebarContent = (
     <>
-      <style>{SCROLLBAR_CSS}</style>
-
       {/* Logo */}
       <div style={{
-        padding: '28px 24px 24px',
+        padding: '20px 20px 16px',
         borderBottom: '1px solid rgba(255,255,255,0.07)',
         display: 'flex',
         alignItems: 'center',
@@ -180,22 +170,19 @@ export default function Sidebar({ active, companyName }) {
         )}
       </div>
 
-      {/* Scrollable nav: grouped categories */}
+      {/* Compact nav: groups sized to fit without scrolling */}
       <nav
         className="prodicta-sidebar-nav"
         style={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: 'auto',
-          padding: '14px 12px 10px',
+          padding: '10px 12px 8px',
           display: 'flex',
           flexDirection: 'column',
-          gap: 14,
+          gap: 10,
         }}
       >
         {groups.map(group => (
           group.items.length > 0 && (
-            <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <div style={{
                 fontFamily: F,
                 fontSize: 10,
@@ -203,7 +190,7 @@ export default function Sidebar({ active, companyName }) {
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
                 color: 'rgba(255,255,255,0.32)',
-                padding: '2px 12px 6px',
+                padding: '0 12px 4px',
               }}>
                 {group.label}
               </div>
@@ -221,16 +208,15 @@ export default function Sidebar({ active, companyName }) {
         ))}
       </nav>
 
-      {/* Pinned bottom: Account group — Settings + company + Sign Out.
-          marginTop: 'auto' keeps this block pinned to the bottom of the flex column
-          so Sign Out is always visible regardless of nav overflow. */}
+      {/* Pinned bottom: Account group — Settings + Sign Out only, no user display.
+          marginTop: 'auto' keeps this block pinned to the bottom of the flex column. */}
       <div style={{
         marginTop: 'auto',
-        padding: '10px 12px 18px',
+        padding: '8px 12px 14px',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         display: 'flex',
         flexDirection: 'column',
-        gap: 4,
+        gap: 1,
         flexShrink: 0,
       }}>
         <div style={{
@@ -240,50 +226,12 @@ export default function Sidebar({ active, companyName }) {
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
           color: 'rgba(255,255,255,0.32)',
-          padding: '6px 12px 6px',
+          padding: '4px 12px 4px',
         }}>
           Account
         </div>
 
         <NavButton itemKey="settings" label="Settings" icon="settings" href="/settings" />
-
-        {companyName && (
-          <div style={{
-            padding: '8px 12px',
-            marginTop: 6,
-            borderRadius: 8,
-            background: 'rgba(255,255,255,0.05)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 9,
-          }}>
-            <div style={{
-              width: 26,
-              height: 26,
-              borderRadius: 7,
-              background: `linear-gradient(135deg, ${TEAL}, ${TEALD})`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 11,
-              fontWeight: 800,
-              color: NAVY,
-              flexShrink: 0,
-            }}>
-              {companyName.slice(0, 1).toUpperCase()}
-            </div>
-            <span style={{
-              fontSize: 12.5,
-              fontWeight: 600,
-              color: 'rgba(255,255,255,0.75)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}>
-              {companyName}
-            </span>
-          </div>
-        )}
 
         <button
           onClick={handleLogout}
@@ -294,8 +242,7 @@ export default function Sidebar({ active, companyName }) {
             alignItems: 'center',
             gap: 10,
             width: '100%',
-            padding: '9px 12px',
-            marginTop: 4,
+            padding: '8px 12px',
             borderRadius: 8,
             border: 'none',
             cursor: 'pointer',
