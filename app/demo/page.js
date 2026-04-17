@@ -245,7 +245,21 @@ function DemoDashboardInner() {
     return searchParams.get('type') === 'employer' ? 'employer' : 'agency'
   })
   const isAgency = demoType === 'agency'
-  const [demoEmploymentType, setDemoEmploymentType] = useState('both')
+  const [demoEmploymentType, setDemoEmploymentTypeState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('prodicta_demo_employment_type')
+        if (saved === 'temporary' || saved === 'permanent' || saved === 'both') return saved
+      } catch {}
+    }
+    return 'both'
+  })
+  const setDemoEmploymentType = (value) => {
+    setDemoEmploymentTypeState(value)
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem('prodicta_demo_employment_type', value) } catch {}
+    }
+  }
   const demoHasTempWork = demoEmploymentType === 'temporary' || demoEmploymentType === 'both'
   const [search, setSearch] = useState('')
   const [hoveredRow, setHoveredRow] = useState(null)

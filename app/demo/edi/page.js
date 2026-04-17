@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useSyncExternalStore } from 'react'
+import { useState, useEffect, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ic } from '@/components/Icons'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
@@ -18,29 +18,23 @@ function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
 const BUCKETS = ['0-49', '50-64', '65-74', '75-84', '85-100']
 
-const DEMO_ASSESSMENTS = [
-  {
-    id: 'demo-assess-1',
-    role_title: 'Customer Success Manager',
-    candidateCount: 8,
-    scores: [82, 74, 68, 71, 56, 78, 65, 88],
-    certGenerated: true,
-  },
-  {
-    id: 'demo-assess-2',
-    role_title: 'Sales Executive',
-    candidateCount: 6,
-    scores: [91, 67, 73, 58, 84, 70],
-    certGenerated: true,
-  },
-  {
-    id: 'demo-assess-3',
-    role_title: 'Operations Coordinator',
-    candidateCount: 5,
-    scores: [62, 77, 69, 81, 74],
-    certGenerated: false,
-  },
-]
+// Sample assessment shown in detail — scores designed so all 3 adverse
+// impact checks pass (range >= 20, min >= 30, no bucket > 60% of candidates).
+const SAMPLE_ASSESSMENT = {
+  id: 'demo-edi-marketing',
+  role_title: 'Marketing Manager',
+  candidateCount: 5,
+  scores: [88, 80, 74, 66, 62],
+  certGenerated: true,
+}
+
+// Aggregate overview stats shown at top of the page.
+const OVERVIEW = {
+  assessments: 3,
+  candidates: 11,
+  averageScore: 74,
+  passRate: 82,
+}
 
 function bucketise(scores) {
   const b = { '0-49': 0, '50-64': 0, '65-74': 0, '75-84': 0, '85-100': 0 }
@@ -195,23 +189,30 @@ export default function DemoEdiPage() {
   const [modal, setModal] = useState(false)
   const [generating, setGenerating] = useState(null)
 
-  const allScores = DEMO_ASSESSMENTS.flatMap(a => a.scores)
-  const totalAssessed = allScores.length
-  const avgScore = Math.round(allScores.reduce((a, b) => a + b, 0) / totalAssessed)
-  const passRate = Math.round((allScores.filter(s => s >= 65).length / totalAssessed) * 100)
-  const overallBuckets = bucketise(allScores)
+  const [demoEmploymentType, setDemoEmploymentType] = useState(null)
 
-  async function handleGenerate(assessment) {
-    setGenerating(assessment.id)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try { setDemoEmploymentType(localStorage.getItem('prodicta_demo_employment_type')) } catch {}
+  }, [])
+
+  const a = SAMPLE_ASSESSMENT
+  const buckets = bucketise(a.scores)
+  const avg = Math.round(a.scores.reduce((x, y) => x + y, 0) / a.scores.length)
+  const shape = distributionShape(buckets, a.scores.length)
+  const checks = adverseChecks(a.scores)
+
+  async function handleGenerate() {
+    setGenerating(a.id)
     try {
-      await generateDemoCertificate(assessment)
+      await generateDemoCertificate(a)
     } finally {
       setGenerating(null)
     }
   }
 
   return (
-    <DemoLayout active="edi">
+    <DemoLayout active="edi" demoEmploymentType={demoEmploymentType}>
       {modal && <SignUpModal onClose={() => setModal(false)} />}
       <main className="main-content" style={{
         marginLeft: isMobile ? 0 : 220,
@@ -239,10 +240,10 @@ export default function DemoEdiPage() {
           {/* Overview Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
             {[
-              { label: 'Assessments Run', value: DEMO_ASSESSMENTS.length },
-              { label: 'Total Candidates', value: totalAssessed },
-              { label: 'Average Score', value: avgScore },
-              { label: 'Pass Rate (65+)', value: `${passRate}%` },
+              { label: 'Assessments Run', value: OVERVIEW.assessments },
+              { label: 'Total Candidates', value: OVERVIEW.candidates },
+              { label: 'Average Score', value: OVERVIEW.averageScore },
+              { label: 'Pass Rate (65+)', value: `${OVERVIEW.passRate}%` },
             ].map((s, i) => (
               <div key={i} style={{ ...cs, textAlign: 'center', padding: '18px 14px' }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>{s.label}</div>
@@ -251,137 +252,125 @@ export default function DemoEdiPage() {
             ))}
           </div>
 
-          {/* Score Distribution */}
+          {/* Sample Assessment: Marketing Manager */}
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: TX, margin: '0 0 14px' }}>Sample Assessment</h2>
           <div style={{ ...cs, marginBottom: 24 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: TX, margin: '0 0 14px' }}>Overall Score Distribution</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: TX, margin: 0 }}>{a.role_title}</h3>
+                  <span title="Bias-Free Certificate generated" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 50, background: GRNBG, border: `1px solid ${GRNBD}` }}>
+                    <Ic name="shield" size={11} color={GRN} />
+                    <span style={{ fontSize: 9, fontWeight: 800, color: GRN }}>Certified</span>
+                  </span>
+                </div>
+                <div style={{ fontSize: 11.5, color: TX3, marginTop: 2 }}>{a.candidateCount} candidates assessed. Average: {avg}</div>
+              </div>
+              <span style={{
+                display: 'inline-block', padding: '3px 12px', borderRadius: 50,
+                fontSize: 10, fontWeight: 800, fontFamily: F,
+                background: shape.ok ? GRNBG : AMBBG,
+                color: shape.ok ? GRN : AMB,
+                border: `1px solid ${shape.ok ? GRNBD : AMBBD}`,
+              }}>
+                {shape.label}
+              </span>
+            </div>
+
+            {/* Score bars */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 16 }}>
               {BUCKETS.map(bucket => {
-                const count = overallBuckets[bucket]
-                const pct = Math.round((count / totalAssessed) * 100)
+                const count = buckets[bucket]
+                const pct = Math.round((count / a.scores.length) * 100)
                 return (
-                  <div key={bucket} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX2, width: 50, flexShrink: 0 }}>{bucket}</span>
-                    <div style={{ flex: 1, background: BG, borderRadius: 4, height: 20, overflow: 'hidden' }}>
-                      <div style={{ width: `${Math.max(2, pct)}%`, height: '100%', background: TEAL, borderRadius: 4, transition: 'width 0.4s ease' }} />
+                  <div key={bucket} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: TX3, width: 44, flexShrink: 0 }}>{bucket}</span>
+                    <div style={{ flex: 1, background: BG, borderRadius: 3, height: 16, overflow: 'hidden' }}>
+                      <div style={{
+                        width: `${Math.max(2, pct)}%`, height: '100%', borderRadius: 3,
+                        background: TEAL, transition: 'width 0.4s ease',
+                      }} />
                     </div>
-                    <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, width: 60, textAlign: 'right', flexShrink: 0 }}>{count} ({pct}%)</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: TX3, width: 52, textAlign: 'right', flexShrink: 0 }}>
+                      {count} ({pct}%)
+                    </span>
                   </div>
                 )
               })}
             </div>
-          </div>
 
-          {/* Assessment Breakdown */}
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: TX, margin: '0 0 14px' }}>Assessment Breakdown</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
-            {DEMO_ASSESSMENTS.map(a => {
-              const buckets = bucketise(a.scores)
-              const avg = Math.round(a.scores.reduce((x, y) => x + y, 0) / a.scores.length)
-              const shape = distributionShape(buckets, a.scores.length)
-              const checks = adverseChecks(a.scores)
-              const anyReview = checks.some(c => !c.pass)
-
-              return (
-                <div key={a.id} style={{ ...cs }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <h3 style={{ fontSize: 14, fontWeight: 700, color: TX, margin: 0 }}>{a.role_title}</h3>
-                        {a.certGenerated && (
-                          <span title="Bias-Free Certificate generated" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 50, background: GRNBG, border: `1px solid ${GRNBD}` }}>
-                            <Ic name="shield" size={11} color={GRN} />
-                            <span style={{ fontSize: 9, fontWeight: 800, color: GRN }}>Certified</span>
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 11.5, color: TX3, marginTop: 2 }}>{a.candidateCount} candidate{a.candidateCount !== 1 ? 's' : ''} assessed — Average: {avg}</div>
-                    </div>
+            {/* Adverse impact checks */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Adverse Impact Checks</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {checks.map((ck, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{
-                      display: 'inline-block', padding: '3px 12px', borderRadius: 50,
-                      fontSize: 10, fontWeight: 800, fontFamily: F,
-                      background: shape.ok ? GRNBG : AMBBG,
-                      color: shape.ok ? GRN : AMB,
-                      border: `1px solid ${shape.ok ? GRNBD : AMBBD}`,
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                      background: ck.pass ? GRNBG : AMBBG,
                     }}>
-                      {shape.label}
+                      <Ic name={ck.pass ? 'check' : 'alert'} size={12} color={ck.pass ? GRN : AMB} />
+                    </span>
+                    <span style={{ fontSize: 12, color: TX2 }}>{ck.label}</span>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: ck.pass ? GRN : AMB, marginLeft: 'auto', flexShrink: 0 }}>
+                      {ck.pass ? 'PASS' : 'REVIEW'}
                     </span>
                   </div>
+                ))}
+              </div>
+            </div>
 
-                  {/* Score bars */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
-                    {BUCKETS.map(bucket => {
-                      const count = buckets[bucket]
-                      const pct = Math.round((count / a.scores.length) * 100)
-                      const flagged = pct > 60
-                      return (
-                        <div key={bucket} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: TX3, width: 44, flexShrink: 0 }}>{bucket}</span>
-                          <div style={{ flex: 1, background: BG, borderRadius: 3, height: 16, overflow: 'hidden' }}>
-                            <div style={{
-                              width: `${Math.max(2, pct)}%`, height: '100%', borderRadius: 3,
-                              background: flagged ? AMB : TEAL,
-                              transition: 'width 0.4s ease',
-                            }} />
-                          </div>
-                          <span style={{ fontSize: 10, fontWeight: 700, color: flagged ? AMB : TX3, width: 52, textAlign: 'right', flexShrink: 0 }}>
-                            {count} ({pct}%)
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Adverse impact checks */}
-                  {checks.length > 0 && (
-                    <div style={{ marginBottom: 14 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Adverse Impact Checks</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        {checks.map((ck, i) => (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{
-                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                              width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                              background: ck.pass ? GRNBG : AMBBG,
-                            }}>
-                              <Ic name={ck.pass ? 'check' : 'alert'} size={12} color={ck.pass ? GRN : AMB} />
-                            </span>
-                            <span style={{ fontSize: 12, color: TX2 }}>{ck.label}</span>
-                            <span style={{ fontSize: 10, fontWeight: 800, color: ck.pass ? GRN : AMB, marginLeft: 'auto', flexShrink: 0 }}>
-                              {ck.pass ? 'PASS' : 'REVIEW'}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {anyReview && (
-                    <div style={{ background: AMBBG, borderLeft: `4px solid ${AMB}`, borderRadius: '0 8px 8px 0', padding: '10px 14px', marginBottom: 14 }}>
-                      <p style={{ fontSize: 12, color: TX2, margin: 0, lineHeight: 1.55 }}>
-                        Consider reviewing this assessment with an employment law specialist before using scores as the primary hiring filter.
-                      </p>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => handleGenerate(a)}
-                    disabled={generating === a.id}
-                    style={{
-                      padding: '8px 18px', borderRadius: 8, border: 'none',
-                      background: generating === a.id ? BD : TEAL,
-                      color: generating === a.id ? TX3 : NAVY,
-                      fontFamily: F, fontSize: 12.5, fontWeight: 700,
-                      cursor: generating === a.id ? 'not-allowed' : 'pointer',
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                    }}
-                  >
-                    <Ic name="shield" size={14} color={generating === a.id ? TX3 : NAVY} />
-                    {generating === a.id ? 'Generating...' : a.certGenerated ? 'Regenerate Certificate' : 'Generate Certificate'}
-                  </button>
-                </div>
-              )
-            })}
+            <button
+              onClick={handleGenerate}
+              disabled={generating === a.id}
+              style={{
+                padding: '10px 20px', borderRadius: 8, border: 'none',
+                background: generating === a.id ? BD : TEAL,
+                color: generating === a.id ? TX3 : NAVY,
+                fontFamily: F, fontSize: 13, fontWeight: 800,
+                cursor: generating === a.id ? 'not-allowed' : 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              <Ic name="shield" size={14} color={generating === a.id ? TX3 : NAVY} />
+              {generating === a.id ? 'Generating...' : 'Download Bias-Free Certificate'}
+            </button>
           </div>
+
+          {/* Signup prompt card */}
+          <div style={{
+            background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+            borderTop: `3px solid ${TEAL}`,
+            padding: isMobile ? '22px 20px' : '26px 28px',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: TEALLT, border: `1px solid ${TEAL}44`,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 14,
+            }}>
+              <Ic name="shield" size={22} color={TEALD} />
+            </div>
+            <h2 style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: NAVY, margin: '0 0 8px', letterSpacing: '-0.2px' }}>
+              This is a preview
+            </h2>
+            <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 18px', lineHeight: 1.6, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>
+              Sign up to monitor assessment fairness across all your candidates.
+            </p>
+            <button
+              onClick={() => router.push('/login')}
+              style={{
+                padding: '11px 26px', borderRadius: 9, border: 'none',
+                background: TEAL, color: NAVY,
+                fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer',
+              }}
+            >
+              Get Started
+            </button>
+          </div>
+
         </div>
       </main>
     </DemoLayout>

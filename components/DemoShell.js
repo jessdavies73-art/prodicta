@@ -53,8 +53,8 @@ export function DemoBanner() {
 // ── Demo Sidebar ──────────────────────────────────────────────────────────────
 function buildDemoGroups({ showDocuments }) {
   const compliance = [
-    { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/ssp' },
-    { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/holiday' },
+    { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/demo/ssp' },
+    { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/demo/holiday' },
     { key: 'edi',     label: 'EDI',     icon: 'shield',   href: '/demo/edi' },
   ]
   if (showDocuments) {
