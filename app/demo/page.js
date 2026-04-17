@@ -1017,7 +1017,8 @@ function DemoDashboardInner() {
               </div>
             </div>
 
-            {/* Pre-Start Risk panel */}
+            {/* Pre-Start Risk panel (agency + temporary only) */}
+            {demoHasTempWork && (
             <div style={{
               background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
               borderTop: '3px solid #D97706', padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
@@ -1044,6 +1045,7 @@ function DemoDashboardInner() {
                 </button>
               </div>
             </div>
+            )}
 
             {/* Pre-Start Engagement panel (agency + temporary, demo) */}
             {demoHasTempWork && (
