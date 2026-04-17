@@ -735,9 +735,14 @@ function LoginPageInner() {
         </p>
       </div>
 
-      <p style={{ marginTop: 28, fontSize: 12, color: 'rgba(255,255,255,0.3)', fontFamily: "'Outfit', system-ui, sans-serif", textAlign: 'center' }}>
-        &copy; {new Date().getFullYear()} Prodicta. All rights reserved.
-      </p>
+      <div style={{ marginTop: 28, textAlign: 'center', fontFamily: "'Outfit', system-ui, sans-serif" }}>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+          &copy; 2026 PRODICTA. All rights reserved.
+        </p>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)', margin: '4px 0 0' }}>
+          Powered by AIAURA Group Ltd
+        </p>
+      </div>
     </div>
   )
 }

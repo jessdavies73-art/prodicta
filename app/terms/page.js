@@ -199,6 +199,15 @@ export default function TermsPage() {
             <a href={`mailto:${EMAIL}`} style={{ color: TEAL, textDecoration: 'none' }}>{EMAIL}</a>
           </p>
         </div>
+
+        <div style={{ marginTop: 36, textAlign: 'center' }}>
+          <p style={{ fontFamily: F, fontSize: 12.5, color: '#6b7280', margin: 0 }}>
+            © 2026 PRODICTA. All rights reserved.
+          </p>
+          <p style={{ fontFamily: F, fontSize: 11, color: '#94a1b3', margin: '4px 0 0' }}>
+            Powered by AIAURA Group Ltd
+          </p>
+        </div>
       </div>
     </div>
   )

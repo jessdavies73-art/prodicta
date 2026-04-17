@@ -2138,12 +2138,12 @@ export default function LandingPage() {
 
           <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', marginBottom: 24 }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-            <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.28)' }}>
-              AIAURA Group Ltd trading as PRODICTA · Registered in England and Wales
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+              © 2026 PRODICTA. All rights reserved.
             </p>
-            <p style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.28)' }}>
-              © {new Date().getFullYear()} PRODICTA. All rights reserved.
+            <p style={{ fontFamily: F, fontSize: 11, color: 'rgba(255,255,255,0.28)', margin: '4px 0 0' }}>
+              Powered by AIAURA Group Ltd
             </p>
           </div>
         </div>

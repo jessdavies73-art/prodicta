@@ -288,17 +288,20 @@ function ConfirmationHandler() {
         )}
       </div>
 
-      <p style={{
+      <div style={{
         marginTop: 28,
-        fontSize: 12,
-        color: 'rgba(255,255,255,0.28)',
         fontFamily: "'Outfit', system-ui, sans-serif",
         textAlign: 'center',
         position: 'relative',
         zIndex: 1,
       }}>
-        &copy; {new Date().getFullYear()} Prodicta. All rights reserved.
-      </p>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+          &copy; 2026 PRODICTA. All rights reserved.
+        </p>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)', margin: '4px 0 0' }}>
+          Powered by AIAURA Group Ltd
+        </p>
+      </div>
     </div>
   )
 }

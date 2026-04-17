@@ -464,9 +464,14 @@ export default function RoadmapPage() {
           <Link href="/" style={{ textDecoration: 'none' }}>
             <ProdictaLogo size={28} textColor="#ffffff" />
           </Link>
-          <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.28)' }}>
-            &copy; {new Date().getFullYear()} PRODICTA. All rights reserved.
-          </p>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+              &copy; 2026 PRODICTA. All rights reserved.
+            </p>
+            <p style={{ fontFamily: F, fontSize: 11, color: 'rgba(255,255,255,0.28)', margin: '4px 0 0' }}>
+              Powered by AIAURA Group Ltd
+            </p>
+          </div>
         </div>
       </footer>
     </div>
