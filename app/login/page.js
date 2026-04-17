@@ -53,9 +53,6 @@ const PAYG_ASSESSMENT_TYPES = [
   },
 ]
 
-const PAYG_MIN_QTY = 5
-const PAYG_MAX_QTY = 100
-const PAYG_DEFAULT_QTY = 10
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
@@ -274,7 +271,6 @@ function SignUpForm() {
   const [planPath,    setPlanPath]    = useState('monthly') // 'monthly' | 'payg'
   const [paygMode,    setPaygMode]    = useState('bundle')  // 'bundle' | 'free'
   const [selectedType, setSelectedType] = useState(null) // credit_type id
-  const [selectedQuantity, setSelectedQuantity] = useState(PAYG_DEFAULT_QTY)
   const [plan,        setPlan]        = useState('professional')
   const [postcode,    setPostcode]    = useState('')
   const [promoCode,   setPromoCode]   = useState('')
@@ -318,14 +314,11 @@ function SignUpForm() {
       return
     }
 
-    // Pay-as-you-go — assessment credit purchase with user-chosen quantity.
+    // Pay-as-you-go — single assessment credit purchase.
     if (planPath === 'payg' && paygMode === 'bundle') {
       if (!selectedType) { setError('Please choose an assessment type.'); return }
-      const qty = parseInt(selectedQuantity, 10)
-      if (!Number.isFinite(qty) || qty < PAYG_MIN_QTY || qty > PAYG_MAX_QTY) {
-        setError(`Quantity must be between ${PAYG_MIN_QTY} and ${PAYG_MAX_QTY}.`); return
-      }
       if (!stripe || !elements) { setError('Payment form is loading. Please wait a moment.'); return }
+      const qty = 1
 
       setLoading(true)
       try {
@@ -659,9 +652,6 @@ function SignUpForm() {
 
         {planPath === 'payg' && paygMode === 'bundle' && (() => {
           const sel = PAYG_ASSESSMENT_TYPES.find(t => t.id === selectedType)
-          const qty = parseInt(selectedQuantity, 10)
-          const qtyValid = Number.isFinite(qty) && qty >= PAYG_MIN_QTY && qty <= PAYG_MAX_QTY
-          const total = sel && qtyValid ? sel.unitPrice * qty : 0
           return (
             <div>
               <label style={styles.label}>Choose an assessment type</label>
@@ -690,7 +680,7 @@ function SignUpForm() {
                           {t.label}
                         </span>
                         <span style={{ fontSize: 13, fontWeight: 700, color: active ? TEAL : '#fff' }}>
-                          £{t.unitPrice} per assessment
+                          £{t.unitPrice}
                         </span>
                       </div>
                       <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)', marginBottom: 2 }}>
@@ -714,51 +704,11 @@ function SignUpForm() {
                 <div style={{
                   marginTop: 14, padding: '12px 14px', borderRadius: 10,
                   background: 'rgba(0,191,165,0.08)', border: '1px solid rgba(0,191,165,0.3)',
+                  fontFamily: "'Outfit', system-ui, sans-serif",
+                  fontSize: 13.5, color: '#fff',
                 }}>
-                  <label style={{
-                    display: 'block',
-                    fontFamily: "'Outfit', system-ui, sans-serif",
-                    fontSize: 11, fontWeight: 700, color: TEAL,
-                    textTransform: 'uppercase', letterSpacing: '0.06em',
-                    marginBottom: 6,
-                  }}>
-                    How many assessments do you want to buy?
-                  </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <input
-                      type="number"
-                      min={PAYG_MIN_QTY}
-                      max={PAYG_MAX_QTY}
-                      step={1}
-                      value={selectedQuantity}
-                      onChange={e => setSelectedQuantity(e.target.value)}
-                      style={{
-                        width: 110, padding: '9px 12px',
-                        borderRadius: 8, border: '1.5px solid rgba(255,255,255,0.2)',
-                        background: 'rgba(255,255,255,0.08)',
-                        color: '#fff', fontFamily: "'Outfit', system-ui, sans-serif",
-                        fontSize: 15, fontWeight: 700, outline: 'none',
-                      }}
-                    />
-                    <span style={{
-                      fontFamily: "'Outfit', system-ui, sans-serif",
-                      fontSize: 13, color: 'rgba(255,255,255,0.65)',
-                    }}>
-                      {qtyValid
-                        ? `${qty} x £${sel.unitPrice} = £${total}`
-                        : `Between ${PAYG_MIN_QTY} and ${PAYG_MAX_QTY}`}
-                    </span>
-                  </div>
-                  {qtyValid && (
-                    <div style={{
-                      marginTop: 10,
-                      fontFamily: "'Outfit', system-ui, sans-serif",
-                      fontSize: 13.5, color: '#fff',
-                    }}>
-                      <strong style={{ color: TEAL }}>Total: £{total}</strong>
-                      {' '}for {qty} {sel.label}{qty === 1 ? '' : 's'}
-                    </div>
-                  )}
+                  <strong style={{ color: TEAL }}>Total: £{sel.unitPrice}</strong>
+                  {' '}for 1 {sel.label} credit
                 </div>
               )}
 
@@ -861,16 +811,7 @@ function SignUpForm() {
 
       <button
         type="submit"
-        disabled={(() => {
-          if (loading) return true
-          if (planPath === 'monthly') return !stripe
-          if (planPath === 'payg' && paygMode === 'bundle') {
-            if (!stripe || !selectedType) return true
-            const q = parseInt(selectedQuantity, 10)
-            return !Number.isFinite(q) || q < PAYG_MIN_QTY || q > PAYG_MAX_QTY
-          }
-          return false
-        })()}
+        disabled={loading || (planPath === 'monthly' && !stripe) || (planPath === 'payg' && paygMode === 'bundle' && (!stripe || !selectedType))}
         style={styles.btn(loading)}
       >
         {(() => {
@@ -878,9 +819,7 @@ function SignUpForm() {
           if (planPath === 'payg' && paygMode === 'bundle') {
             const sel = PAYG_ASSESSMENT_TYPES.find(t => t.id === selectedType)
             if (!sel) return 'Choose an assessment type above'
-            const q = parseInt(selectedQuantity, 10)
-            if (!Number.isFinite(q) || q < PAYG_MIN_QTY || q > PAYG_MAX_QTY) return 'Set a quantity above'
-            return `Create account and pay £${sel.unitPrice * q}`
+            return `Create account and pay £${sel.unitPrice}`
           }
           if (planPath === 'payg') return 'Create account'
           return `Create account and pay ${planPrice}`

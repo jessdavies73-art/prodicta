@@ -5,7 +5,7 @@ import { createServiceClient } from '@/lib/supabase-server'
 import { redeemPromoCode } from '@/lib/promo-redeem'
 
 const SELECTABLE_TYPES = ['rapid-screen', 'speed-fit', 'depth-fit', 'strategy-fit']
-const MIN_QTY = 5
+const MIN_QTY = 1
 const MAX_QTY = 100
 
 // Runs after the client completes 3D Secure / SCA authentication on a payg

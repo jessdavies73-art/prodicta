@@ -7,7 +7,7 @@ import { redeemPromoCode } from '@/lib/promo-redeem'
 // Eligible credit types for signup-time PAYG purchase. Immersive is an add-on
 // only, not something you'd buy as your first line.
 const SELECTABLE_TYPES = ['rapid-screen', 'speed-fit', 'depth-fit', 'strategy-fit']
-const MIN_QTY = 5
+const MIN_QTY = 1
 const MAX_QTY = 100
 
 function labelFor(credit_type) {
