@@ -483,7 +483,8 @@ export default function SettingsPage() {
   const usagePct   = isUnlimited ? 0 : Math.min(100, Math.round((monthlyCount / planLimit) * 100))
   const atLimit    = !isUnlimited && monthlyCount >= planLimit
   const monthLabel = new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
-  const hasActiveSubscription = profile?.subscription_status === 'active'
+  const isPayg = profile?.plan_type === 'payg' || profile?.plan === 'payg'
+  const hasActiveSubscription = profile?.subscription_status === 'active' && !isPayg
   const hasCredits = assessmentCredits.length > 0
   const payAsYouGoOnly = !hasActiveSubscription && hasCredits
 
@@ -943,6 +944,45 @@ export default function SettingsPage() {
               </div>
             )}
             </>)}
+
+            {/* ── Pay As You Go billing card (payg accounts only) ── */}
+            {isPayg && (
+              <div style={{
+                background: TEALLT, border: `1px solid ${BD}`, borderRadius: 12,
+                padding: 24, marginBottom: 20,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+                  <div>
+                    <div style={{ fontFamily: F, fontWeight: 700, fontSize: 18, color: NAVY }}>Pay As You Go</div>
+                    <div style={{ fontFamily: F, color: TX2, fontSize: 14, marginTop: 4 }}>Pay per assessment. No monthly fee. Credits do not expire.</div>
+                  </div>
+                  <span style={{ background: TEAL, color: '#fff', borderRadius: 20, padding: '4px 14px', fontSize: 13, fontWeight: 600, fontFamily: F }}>Active</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
+                  {['rapid-screen', 'speed-fit', 'depth-fit', 'strategy-fit'].map(type => {
+                    const credit = assessmentCredits.find(c => c.credit_type === type)
+                    const labels = { 'rapid-screen': 'Rapid Screen', 'speed-fit': 'Speed-Fit', 'depth-fit': 'Depth-Fit', 'strategy-fit': 'Strategy-Fit' }
+                    const remaining = credit?.credits_remaining || 0
+                    return (
+                      <div key={type} style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 8, padding: 16, textAlign: 'center' }}>
+                        <div style={{ fontFamily: FM, fontWeight: 800, fontSize: 24, color: remaining > 0 ? TEAL : TX3 }}>{remaining}</div>
+                        <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 4 }}>{labels[type]}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <button
+                  onClick={() => router.push('/billing/credits')}
+                  style={{
+                    background: TEAL, color: NAVY, border: 'none', borderRadius: 8,
+                    padding: '10px 24px', fontWeight: 700, cursor: 'pointer',
+                    fontSize: 14, fontFamily: F,
+                  }}
+                >
+                  Buy more credits
+                </button>
+              </div>
+            )}
 
             {/* ── Promo code ── */}
             <div style={{ ...cs, marginBottom: 16 }}>
