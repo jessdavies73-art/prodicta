@@ -21,6 +21,15 @@ const PLAN_OPTIONS = [
   { value: 'unlimited',    label: 'Unlimited',       price: '£159/month' },
 ]
 
+// Must match server catalogue at /api/billing/create-payg-with-bundle/route.js
+const PAYG_BUNDLES = [
+  { id: 'rapid-10', group: 'Rapid Screen', label: '10 Rapid Screens', price: 60,  baseline: 60,  popular: true },
+  { id: 'rapid-25', group: 'Rapid Screen', label: '25 Rapid Screens', price: 140, baseline: 150 },
+  { id: 'rapid-50', group: 'Rapid Screen', label: '50 Rapid Screens', price: 275, baseline: 300 },
+  { id: 'speed-10', group: 'Speed-Fit',    label: '10 Speed-Fits',     price: 170, baseline: 180 },
+  { id: 'depth-10', group: 'Depth-Fit',    label: '10 Depth-Fits',     price: 330, baseline: 350 },
+]
+
 const CARD_ELEMENT_OPTIONS = {
   style: {
     base: {
@@ -236,6 +245,8 @@ function SignUpForm() {
   const [password,    setPassword]    = useState('')
   const [accountType, setAccountType] = useState('employer')
   const [planPath,    setPlanPath]    = useState('monthly') // 'monthly' | 'payg'
+  const [paygMode,    setPaygMode]    = useState('bundle')  // 'bundle' | 'free'
+  const [selectedBundle, setSelectedBundle] = useState(null) // bundle id key
   const [plan,        setPlan]        = useState('professional')
   const [postcode,    setPostcode]    = useState('')
   const [promoCode,   setPromoCode]   = useState('')
@@ -253,8 +264,8 @@ function SignUpForm() {
     if (!email.trim())       { setError('Please enter your email address.'); return }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
 
-    // Pay-as-you-go branch: no Stripe subscription, no card at signup.
-    if (planPath === 'payg') {
+    // Pay-as-you-go — free account path (no bundle, no card).
+    if (planPath === 'payg' && paygMode === 'free') {
       setLoading(true)
       try {
         const res = await fetch('/api/billing/create-payg-account', {
@@ -270,6 +281,81 @@ function SignUpForm() {
         })
         const data = await res.json()
         if (data.error) { setError(data.error); setLoading(false); return }
+        if (data.promoMessage) setPromoMessage(data.promoMessage)
+        setDone(true)
+      } catch (err) {
+        setError(err?.message || 'An unexpected error occurred. Please try again.')
+        setLoading(false)
+      }
+      return
+    }
+
+    // Pay-as-you-go — bundle purchase path.
+    if (planPath === 'payg' && paygMode === 'bundle') {
+      if (!selectedBundle) { setError('Please select a credit bundle.'); return }
+      if (!stripe || !elements) { setError('Payment form is loading. Please wait a moment.'); return }
+
+      setLoading(true)
+      try {
+        const cardElement = elements.getElement(CardElement)
+        const { error: pmErr, paymentMethod } = await stripe.createPaymentMethod({
+          type: 'card',
+          card: cardElement,
+          billing_details: {
+            email: email.trim(),
+            name: company.trim(),
+          },
+        })
+        if (pmErr) { setError(pmErr.message || 'Card details invalid.'); setLoading(false); return }
+
+        const res = await fetch('/api/billing/create-payg-with-bundle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email:          email.trim(),
+            password,
+            companyName:    company.trim(),
+            accountType,
+            promoCode:      promoCode.trim() || null,
+            paymentMethodId: paymentMethod.id,
+            bundle_id:      selectedBundle,
+          }),
+        })
+        const data = await res.json()
+        if (data.error) { setError(data.error); setLoading(false); return }
+
+        if (data.requiresAction) {
+          const { error: confirmErr, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret)
+          if (confirmErr) {
+            setError(confirmErr.message || 'Card authentication failed. Please try again.')
+            setLoading(false)
+            return
+          }
+          if (paymentIntent?.status !== 'succeeded') {
+            setError('Card authentication was not completed. Please try again.')
+            setLoading(false)
+            return
+          }
+          const confirmRes = await fetch('/api/billing/confirm-payg-bundle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentIntentId: data.paymentIntentId,
+              email:           email.trim(),
+              password,
+              companyName:     company.trim(),
+              accountType,
+              promoCode:       promoCode.trim() || null,
+              bundle_id:       selectedBundle,
+            }),
+          })
+          const confirmData = await confirmRes.json()
+          if (confirmData.error) { setError(confirmData.error); setLoading(false); return }
+          if (confirmData.promoMessage) setPromoMessage(confirmData.promoMessage)
+          setDone(true)
+          return
+        }
+
         if (data.promoMessage) setPromoMessage(data.promoMessage)
         setDone(true)
       } catch (err) {
@@ -419,8 +505,10 @@ function SignUpForm() {
     <form onSubmit={handleSubmit} noValidate>
       <h1 style={styles.heading}>Create your account</h1>
       <p style={styles.subheading}>
-        {planPath === 'payg'
-          ? 'No monthly fee. Buy credits after signup.'
+        {planPath === 'payg' && paygMode === 'bundle'
+          ? 'One-off payment. Credits do not expire.'
+          : planPath === 'payg'
+          ? 'No monthly fee. Buy credits later or redeem a promo code.'
           : 'Payment taken now. Cancel any time.'}
       </p>
 
@@ -535,30 +623,133 @@ function SignUpForm() {
           </div>
         )}
 
-        {planPath === 'payg' && (
+        {planPath === 'payg' && paygMode === 'bundle' && (
+          <div>
+            <label style={styles.label}>Choose a credit bundle</label>
+            {['Rapid Screen', 'Speed-Fit', 'Depth-Fit'].map(group => {
+              const bundles = PAYG_BUNDLES.filter(b => b.group === group)
+              if (bundles.length === 0) return null
+              return (
+                <div key={group} style={{ marginBottom: 12 }}>
+                  <div style={{
+                    fontFamily: "'Outfit', system-ui, sans-serif",
+                    fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+                    textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)',
+                    marginBottom: 6,
+                  }}>
+                    {group}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: bundles.length > 1 ? 'repeat(auto-fit, minmax(160px, 1fr))' : '1fr', gap: 8 }}>
+                    {bundles.map(b => {
+                      const active = selectedBundle === b.id
+                      const saving = b.baseline - b.price
+                      return (
+                        <button
+                          key={b.id}
+                          type="button"
+                          onClick={() => setSelectedBundle(b.id)}
+                          style={{
+                            padding: '11px 12px',
+                            borderRadius: 8,
+                            border: `1.5px solid ${active ? TEAL : 'rgba(255,255,255,0.18)'}`,
+                            background: active ? 'rgba(0,191,165,0.18)' : 'rgba(255,255,255,0.06)',
+                            color: active ? TEAL : 'rgba(255,255,255,0.7)',
+                            fontFamily: "'Outfit', system-ui, sans-serif",
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.15s',
+                            position: 'relative',
+                          }}
+                        >
+                          {b.popular && (
+                            <span style={{
+                              position: 'absolute', top: -7, right: 10,
+                              fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
+                              background: TEAL, color: NAVY,
+                              padding: '2px 7px', borderRadius: 50, textTransform: 'uppercase',
+                            }}>
+                              Most popular
+                            </span>
+                          )}
+                          <div style={{ fontSize: 13, fontWeight: active ? 700 : 600 }}>{b.label}</div>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 3 }}>
+                            <span style={{ fontSize: 14, fontWeight: 800, color: active ? TEAL : '#fff' }}>£{b.price}</span>
+                            {saving > 0 && (
+                              <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.45)', textDecoration: 'line-through' }}>£{b.baseline}</span>
+                            )}
+                            {saving > 0 && (
+                              <span style={{ fontSize: 10, fontWeight: 700, color: TEAL, marginLeft: 'auto' }}>
+                                save £{saving}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+
+            <button
+              type="button"
+              onClick={() => { setPaygMode('free'); setSelectedBundle(null) }}
+              style={{
+                display: 'inline-block', marginTop: 6,
+                background: 'none', border: 'none', padding: 0,
+                fontFamily: "'Outfit', system-ui, sans-serif",
+                fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)',
+                textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer',
+              }}
+            >
+              Start with free credits instead
+            </button>
+
+            {selectedBundle && (() => {
+              const b = PAYG_BUNDLES.find(x => x.id === selectedBundle)
+              return (
+                <div style={{
+                  marginTop: 14, padding: '11px 14px', borderRadius: 8,
+                  background: 'rgba(0,191,165,0.12)', border: '1px solid rgba(0,191,165,0.4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 10, flexWrap: 'wrap',
+                }}>
+                  <span style={{
+                    fontFamily: "'Outfit', system-ui, sans-serif",
+                    fontSize: 13, fontWeight: 600, color: '#fff',
+                  }}>
+                    You have selected: <strong style={{ color: TEAL }}>{b.label} — £{b.price}</strong>
+                  </span>
+                </div>
+              )
+            })()}
+          </div>
+        )}
+
+        {planPath === 'payg' && paygMode === 'free' && (
           <div style={{
             padding: '14px 16px', borderRadius: 10,
             background: 'rgba(0,191,165,0.08)', border: '1px solid rgba(0,191,165,0.25)',
             fontFamily: "'Outfit', system-ui, sans-serif",
           }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-              Pay per assessment
+              Free account
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}>
-              {[
-                { label: 'Rapid Screen', price: '£6 per candidate', time: '5-8 minutes' },
-                { label: 'Speed-Fit',    price: '£18 per candidate', time: '15 minutes' },
-                { label: 'Depth-Fit',    price: '£35 per candidate', time: '25 minutes' },
-              ].map(p => (
-                <div key={p.label} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, fontSize: 12.5 }}>
-                  <span style={{ color: '#fff', fontWeight: 600 }}>{p.label} <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 400 }}>({p.time})</span></span>
-                  <span style={{ color: TEAL, fontWeight: 700 }}>{p.price}</span>
-                </div>
-              ))}
-            </div>
-            <p style={{ margin: 0, fontSize: 11.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
-              Buy assessment credits in bundles after signup. No monthly commitment. Credits do not expire.
+            <p style={{ margin: '0 0 10px', fontSize: 12.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.55 }}>
+              Create an account with no payment. Buy assessment credits later from the Billing page, or redeem a promo code below for free credits.
             </p>
+            <button
+              type="button"
+              onClick={() => setPaygMode('bundle')}
+              style={{
+                background: 'none', border: 'none', padding: 0,
+                fontFamily: "'Outfit', system-ui, sans-serif",
+                fontSize: 12, fontWeight: 600, color: TEAL,
+                textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer',
+              }}
+            >
+              Back to credit bundles
+            </button>
           </div>
         )}
 
@@ -581,28 +772,28 @@ function SignUpForm() {
           autoComplete="new-password"
         />
 
-        {planPath === 'monthly' && (
-          <>
-            <div>
-              <label style={styles.label}>Card details</label>
-              <div style={styles.cardInput(cardFocused)}>
-                <CardElement
-                  options={CARD_ELEMENT_OPTIONS}
-                  onFocus={() => setCardFocused(true)}
-                  onBlur={() => setCardFocused(false)}
-                />
-              </div>
+        {(planPath === 'monthly' || (planPath === 'payg' && paygMode === 'bundle' && selectedBundle)) && (
+          <div>
+            <label style={styles.label}>Card details</label>
+            <div style={styles.cardInput(cardFocused)}>
+              <CardElement
+                options={CARD_ELEMENT_OPTIONS}
+                onFocus={() => setCardFocused(true)}
+                onBlur={() => setCardFocused(false)}
+              />
             </div>
+          </div>
+        )}
 
-            <Field
-              label="Postcode"
-              id="su-postcode"
-              value={postcode}
-              onChange={e => setPostcode(e.target.value)}
-              placeholder="SW1A 1AA"
-              autoComplete="postal-code"
-            />
-          </>
+        {planPath === 'monthly' && (
+          <Field
+            label="Postcode"
+            id="su-postcode"
+            value={postcode}
+            onChange={e => setPostcode(e.target.value)}
+            placeholder="SW1A 1AA"
+            autoComplete="postal-code"
+          />
         )}
 
         <Field
@@ -617,11 +808,15 @@ function SignUpForm() {
 
       <button
         type="submit"
-        disabled={loading || (planPath === 'monthly' && !stripe)}
+        disabled={loading || (planPath === 'monthly' && !stripe) || (planPath === 'payg' && paygMode === 'bundle' && (!stripe || !selectedBundle))}
         style={styles.btn(loading)}
       >
         {loading
           ? 'Processing...'
+          : planPath === 'payg' && paygMode === 'bundle'
+          ? (selectedBundle
+              ? `Create account and pay £${PAYG_BUNDLES.find(b => b.id === selectedBundle)?.price}`
+              : 'Select a credit bundle above')
           : planPath === 'payg'
           ? 'Create account'
           : `Create account and pay ${planPrice}`}
