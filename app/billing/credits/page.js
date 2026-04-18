@@ -27,11 +27,11 @@ const PAYG_TYPES = [
   },
   {
     type: 'depth-fit', label: 'Depth-Fit', unit: 35,
-    description: 'A 25 minute deep assessment with 2 work scenarios and a full narrative report, detailed competency breakdown, Monday Morning Reality, counter-offer resilience score, and tailored coaching notes.',
+    description: 'A 25 minute deep assessment with 3 work scenarios and a full narrative report, detailed competency breakdown, Monday Morning Reality, counter-offer resilience score, and tailored coaching notes.',
   },
   {
     type: 'strategy-fit', label: 'Strategy-Fit', unit: 65,
-    description: 'A 45 minute leadership assessment with 2 work scenarios, a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.',
+    description: 'A 45 minute leadership assessment with 4 work scenarios, a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.',
   },
 ]
 

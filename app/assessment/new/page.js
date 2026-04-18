@@ -1438,14 +1438,14 @@ export default function NewAssessmentPage() {
               {
                 value: 'standard',
                 title: 'Depth-Fit',
-                subtitle: '25 minutes, 2 scenarios',
-                description: 'Deep read on mid-level and senior hires. Two work scenarios plus a full narrative report, detailed competency breakdown, Monday Morning Reality, counter-offer resilience score, and tailored coaching notes.',
+                subtitle: '25 minutes, 3 scenarios',
+                description: 'Deep read on mid-level and senior hires. Three work scenarios plus a full narrative report, detailed competency breakdown, Monday Morning Reality, counter-offer resilience score, and tailored coaching notes.',
               },
               {
                 value: 'advanced',
                 title: 'Strategy-Fit',
-                subtitle: '45 minutes, 2 scenarios + workspace simulation',
-                description: 'Leadership assessment. Two work scenarios plus a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.',
+                subtitle: '45 minutes, 4 scenarios + workspace simulation',
+                description: 'Leadership assessment. Four work scenarios plus a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.',
               },
             ].map(opt => {
               const selected = mode === opt.value

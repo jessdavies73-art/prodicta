@@ -1143,13 +1143,13 @@ export default function LandingPage() {
                   },
                   {
                     name: 'Depth-Fit', price: '£35',
-                    time: '25 minutes · 2 scenarios',
-                    desc: 'A 25 minute deep assessment with 2 work scenarios and a full narrative report, detailed competency breakdown, Monday Morning Reality, counter-offer resilience score, and tailored coaching notes.',
+                    time: '25 minutes · 3 scenarios',
+                    desc: 'A 25 minute deep assessment with 3 work scenarios and a full narrative report, detailed competency breakdown, Monday Morning Reality, counter-offer resilience score, and tailored coaching notes.',
                   },
                   {
                     name: 'Strategy-Fit', price: '£65',
-                    time: '45 minutes · 2 scenarios + Workspace',
-                    desc: 'A 45 minute leadership assessment with 2 work scenarios, a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.',
+                    time: '45 minutes · 4 scenarios + Workspace',
+                    desc: 'A 45 minute leadership assessment with 4 work scenarios, a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.',
                   },
                 ].map((p, i) => (
                   <Reveal key={p.name} delay={i * 80}>
@@ -1821,7 +1821,7 @@ export default function LandingPage() {
                 },
                 {
                   q: 'How long does an assessment take?',
-                  a: 'It depends on the role. Rapid Screen is a 5-8 minute single-scenario signal for high-volume screening. Speed-Fit assessments take 15 minutes with 2 scenarios, recommended for most roles. Depth-Fit assessments take 25 minutes with 2 scenarios and a full narrative report. Strategy-Fit assessments take 45 minutes with 2 scenarios plus a Day 1 workspace simulation, best for senior or high stakes hires. PRODICTA recommends the right level based on the role but you can choose. Reports are available within minutes of the candidate finishing.',
+                  a: 'It depends on the role. Rapid Screen is a 5-8 minute single-scenario signal for high-volume screening. Speed-Fit assessments take 15 minutes with 2 scenarios, recommended for most roles. Depth-Fit assessments take 25 minutes with 3 scenarios and a full narrative report. Strategy-Fit assessments take 45 minutes with 4 scenarios plus a Day 1 workspace simulation, best for senior or high stakes hires. PRODICTA recommends the right level based on the role but you can choose. Reports are available within minutes of the candidate finishing.',
                 },
                 {
                   q: 'What roles does PRODICTA work for?',
