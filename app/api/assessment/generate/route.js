@@ -630,6 +630,13 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
       .eq('id', user.id)
       .maybeSingle()
 
+    console.log('[generate] credit check starting', {
+      userId: user.id,
+      mode,
+      planKey: (userProfile?.plan || 'starter').toLowerCase(),
+      activeSub: userProfile?.subscription_status === 'active',
+    })
+
     const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
     const activeSub = userProfile?.subscription_status === 'active'
     const planKey = (userProfile?.plan || 'starter').toLowerCase()
