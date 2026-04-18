@@ -14,6 +14,7 @@ const TX     = '#0f172a'
 const TX2    = '#5e6b7f'
 const TX3    = '#94a1b3'
 const AMB    = '#F59E0B'
+const REDBG  = '#FEF2F2'
 const F      = "'Outfit', system-ui, sans-serif"
 const FM     = "'IBM Plex Mono', monospace"
 
