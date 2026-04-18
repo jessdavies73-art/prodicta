@@ -95,7 +95,7 @@ export async function GET(request, { params }) {
       const prompt = `You are a career development coach. A candidate completed an assessment for a "${candidate.assessments?.role_title || 'professional'}" role. Their two lowest-scored areas are: ${lowestSkills.join(', ')}. Their strengths: ${strengthsText}. For each development area, give a positive title, specific advice, and 2 actions. UK English, no emoji, no em dashes. JSON: {"development_areas": [{"area": "string", "advice": "string", "actions": ["string"]}]}`
 
       const msg = await client.messages.create({
-        model: 'claude-haiku-4-20250414',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 800,
         messages: [{ role: 'user', content: prompt }],
       })
