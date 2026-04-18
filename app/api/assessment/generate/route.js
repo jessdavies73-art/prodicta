@@ -7,6 +7,10 @@ import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-
 export const maxDuration = 120
 
 export async function POST(request) {
+  // Tracks PAYG credit state so the outer catch can refund if a failure happens
+  // after deduction. null means no deduction yet / not applicable.
+  let creditRefundCtx = null
+  let adminForRefund = null
   try {
     const body = await request.json()
     const { role_title, job_description, skill_weights, save_as_template, template_name, context_answers, assessment_mode } = body
@@ -577,7 +581,9 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         return NextResponse.json({ error: 'limit_reached', message: `Monthly assessment limit reached (${planLimit}). Upgrade your plan or purchase individual credits.` }, { status: 403 })
       }
     } else if (!activeSub) {
-      // Pay-per-assessment: check credits
+      // Pay-per-assessment: verify credit balance but do NOT deduct yet.
+      // Deduction happens after the assessment is safely saved (see below),
+      // and the outer catch refunds if anything fails after deduction.
       const { data: credit } = await adminClient
         .from('assessment_credits')
         .select('credits_remaining')
@@ -589,10 +595,14 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         return NextResponse.json({ error: 'no_credits', message: 'No credits remaining. Purchase more at prodicta.co.uk/pricing' }, { status: 403 })
       }
 
-      // Deduct one credit
-      await adminClient.from('assessment_credits').update({
-        credits_remaining: credit.credits_remaining - 1,
-      }).eq('user_id', user.id).eq('credit_type', creditType)
+      // Stash what we need to deduct / refund later.
+      creditRefundCtx = {
+        userId: user.id,
+        creditType,
+        preDeductionBalance: credit.credits_remaining,
+        deducted: false,
+      }
+      adminForRefund = adminClient
     }
 
     // Save assessment to Supabase
@@ -622,6 +632,22 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
       .single()
 
     if (error) throw error
+
+    // Assessment is persisted — now it is safe to deduct the PAYG credit.
+    // If the calendar / inbox generations below fail, they are non-blocking
+    // and the assessment itself is still usable, so the deduction stays.
+    // If anything truly fatal happens after this point, the outer catch will
+    // refund via creditRefundCtx.
+    if (creditRefundCtx && !creditRefundCtx.deducted) {
+      const { error: deductError } = await adminClient.from('assessment_credits').update({
+        credits_remaining: creditRefundCtx.preDeductionBalance - 1,
+      }).eq('user_id', creditRefundCtx.userId).eq('credit_type', creditRefundCtx.creditType)
+      if (deductError) {
+        console.error('[generate] credit deduction failed after assessment insert', deductError)
+      } else {
+        creditRefundCtx.deducted = true
+      }
+    }
 
     // -- ALTER TABLE assessments ADD COLUMN calendar_events JSONB;
     // Generate calendar events for Day One Planning (async, non-blocking)
@@ -710,6 +736,29 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
     return NextResponse.json({ id: assessment.id, scenarios })
   } catch (err) {
     console.error('Generate error:', err)
+
+    // Refund PAYG credit if we already decremented. Uses the pre-deduction
+    // balance so a concurrent successful purchase from another tab isn't
+    // accidentally overwritten downward. The risk of a concurrent *send* in
+    // the same tab is low because the UI disables the button during send.
+    //
+    // Manual restore needed if this failed silently earlier — e.g.:
+    //   UPDATE assessment_credits SET credits_remaining = 1
+    //   WHERE user_id = 'd802808d-afb1-4766-838b-7db310a281ad'
+    //     AND credit_type = 'rapid-screen';
+    if (creditRefundCtx?.deducted && adminForRefund) {
+      const { error: refundError } = await adminForRefund
+        .from('assessment_credits')
+        .update({ credits_remaining: creditRefundCtx.preDeductionBalance })
+        .eq('user_id', creditRefundCtx.userId)
+        .eq('credit_type', creditRefundCtx.creditType)
+      if (refundError) {
+        console.error('[generate] credit refund failed', refundError)
+      } else {
+        console.log('[generate] credit refunded', { userId: creditRefundCtx.userId, creditType: creditRefundCtx.creditType, balance: creditRefundCtx.preDeductionBalance })
+      }
+    }
+
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
