@@ -67,11 +67,9 @@ export async function POST(request) {
     const employment_type = body.employment_type || 'permanent'
     // Normalise mode: 'rapid' (1 scenario + prioritisation), 'quick' (2 scenarios), 'standard' (3 scenarios), 'advanced' (4 scenarios).
     const rawMode = (assessment_mode || 'standard').toLowerCase()
-    const mode = ['rapid', 'quick', 'standard', 'advanced'].includes(rawMode) ? rawMode : 'standard'
-    const isRapid    = mode === 'rapid'
-    const isQuick    = mode === 'quick'
-    const isStandard = mode === 'standard'
-    const isAdvanced = mode === 'advanced'
+    let mode = ['rapid', 'quick', 'standard', 'advanced'].includes(rawMode) ? rawMode : 'standard'
+    // isRapid/isQuick/isStandard/isAdvanced declared below, after the credit
+    // check has had a chance to re-map `mode` (PAYG rapid-screen fallback).
 
     // Auth check
     const supabase = createServerSupabaseClient()
@@ -79,6 +77,104 @@ export async function POST(request) {
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
     console.log('[generate] route hit', { mode, userId: user.id })
+
+    // ── Plan / credit check ──────────────────────────────────────────────────
+    const adminClient = createServiceClient()
+
+    const { data: userProfile } = await adminClient
+      .from('users')
+      .select('plan, subscription_status')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    console.log('[generate] credit check starting', {
+      userId: user.id,
+      mode,
+      planKey: (userProfile?.plan || 'starter').toLowerCase(),
+      activeSub: userProfile?.subscription_status === 'active',
+    })
+
+    const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
+    const activeSub = userProfile?.subscription_status === 'active'
+    const planKey = (userProfile?.plan || 'starter').toLowerCase()
+    const planLimit = PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter
+
+    // Map mode to credit type
+    const creditTypeMap = {
+      rapid: 'rapid-screen',
+      quick: 'speed-fit',
+      standard: 'depth-fit',
+      advanced: 'strategy-fit',
+    }
+    const creditType = creditTypeMap[mode]
+    if (!creditType) {
+      return NextResponse.json({ error: 'bad_mode', message: `Unknown assessment mode: ${mode}` }, { status: 400 })
+    }
+
+    if (activeSub && planLimit !== null) {
+      // Check monthly usage against plan limit
+      const now = new Date()
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+      const { count } = await adminClient.from('assessments')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', startOfMonth)
+      if ((count || 0) >= planLimit) {
+        return NextResponse.json({ error: 'limit_reached', message: `Monthly assessment limit reached (${planLimit}). Upgrade your plan or purchase individual credits.` }, { status: 403 })
+      }
+    } else if (!activeSub) {
+      // Pay-per-assessment: verify credit balance but do NOT deduct yet.
+      // Deduction happens after the assessment is safely saved (see below),
+      // and the outer catch refunds if anything fails after deduction.
+      const { data: credit, error: creditErr } = await adminClient
+        .from('assessment_credits')
+        .select('credits_remaining')
+        .eq('user_id', user.id)
+        .eq('credit_type', creditType)
+        .maybeSingle()
+
+      console.log('[generate] credit check', {
+        userId: user.id,
+        mode,
+        creditType,
+        activeSub,
+        planKey,
+        planLimit,
+        creditResult: credit,
+        creditError: creditErr,
+        usingAdminClient: true,
+      })
+
+      if (!credit || credit.credits_remaining <= 0) {
+        console.warn('[generate] no_credits trigger', { reason: credit ? 'balance<=0' : 'no row', creditErr })
+        return NextResponse.json({ error: 'no_credits', message: 'No credits remaining. Purchase more at prodicta.co.uk/pricing' }, { status: 403 })
+      }
+
+      // Stash what we need to deduct / refund later.
+      creditRefundCtx = {
+        userId: user.id,
+        creditType,
+        preDeductionBalance: credit.credits_remaining,
+        deducted: false,
+      }
+      adminForRefund = adminClient
+    }
+
+    // FIX 2: If the PAYG user is about to spend a rapid-screen credit,
+    // make sure the rest of the pipeline (prompt selection + max_tokens)
+    // runs in rapid mode too. Under the current creditTypeMap this is a
+    // defensive no-op, but it protects against future fallback logic
+    // where a downgrade to rapid-screen is chosen server-side.
+    if (!activeSub && creditType === 'rapid-screen') {
+      mode = 'rapid'
+    }
+
+    // Re-derive mode flags now that `mode` is locked in for the rest of
+    // the handler. These feed the prompt selector and the token budget.
+    const isRapid    = mode === 'rapid'
+    const isQuick    = mode === 'quick'
+    const isStandard = mode === 'standard'
+    const isAdvanced = mode === 'advanced'
 
     // ── Unsuitable role detection ───────────────────────────────────────────────
     // Block roles that are primarily physical, repetitive, or short-term temporary
@@ -620,88 +716,6 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
     else if (has('operations manager', 'operations director', 'logistics', 'supply chain', 'warehouse', 'fulfilment', 'dispatch')) detected_role_type = 'operations'
     else if (has('director', 'head of', 'chief', 'managing director', 'general manager')) detected_role_type = 'management'
     else if (has('office manager', 'office', 'admin', 'administrator', 'receptionist', 'secretary', 'personal assistant', ' pa ', 'executive assistant')) detected_role_type = 'office'
-
-    // ── Plan / credit check ──────────────────────────────────────────────────
-    const adminClient = createServiceClient()
-
-    const { data: userProfile } = await adminClient
-      .from('users')
-      .select('plan, subscription_status')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    console.log('[generate] credit check starting', {
-      userId: user.id,
-      mode,
-      planKey: (userProfile?.plan || 'starter').toLowerCase(),
-      activeSub: userProfile?.subscription_status === 'active',
-    })
-
-    const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
-    const activeSub = userProfile?.subscription_status === 'active'
-    const planKey = (userProfile?.plan || 'starter').toLowerCase()
-    const planLimit = PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter
-
-    // Map mode to credit type
-    const creditTypeMap = {
-      rapid: 'rapid-screen',
-      quick: 'speed-fit',
-      standard: 'depth-fit',
-      advanced: 'strategy-fit',
-    }
-    const creditType = creditTypeMap[mode]
-    if (!creditType) {
-      return NextResponse.json({ error: 'bad_mode', message: `Unknown assessment mode: ${mode}` }, { status: 400 })
-    }
-
-    if (activeSub && planLimit !== null) {
-      // Check monthly usage against plan limit
-      const now = new Date()
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-      const { count } = await adminClient.from('assessments')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .gte('created_at', startOfMonth)
-      if ((count || 0) >= planLimit) {
-        return NextResponse.json({ error: 'limit_reached', message: `Monthly assessment limit reached (${planLimit}). Upgrade your plan or purchase individual credits.` }, { status: 403 })
-      }
-    } else if (!activeSub) {
-      // Pay-per-assessment: verify credit balance but do NOT deduct yet.
-      // Deduction happens after the assessment is safely saved (see below),
-      // and the outer catch refunds if anything fails after deduction.
-      const { data: credit, error: creditErr } = await adminClient
-        .from('assessment_credits')
-        .select('credits_remaining')
-        .eq('user_id', user.id)
-        .eq('credit_type', creditType)
-        .maybeSingle()
-
-      console.log('[generate] credit check', {
-        userId: user.id,
-        mode,
-        creditType,
-        activeSub,
-        planKey,
-        planLimit,
-        creditResult: credit,
-        creditError: creditErr,
-        usingAdminClient: true,
-      })
-
-      if (!credit || credit.credits_remaining <= 0) {
-        console.warn('[generate] no_credits trigger', { reason: credit ? 'balance<=0' : 'no row', creditErr })
-        return NextResponse.json({ error: 'no_credits', message: 'No credits remaining. Purchase more at prodicta.co.uk/pricing' }, { status: 403 })
-      }
-
-      // Stash what we need to deduct / refund later.
-      creditRefundCtx = {
-        userId: user.id,
-        creditType,
-        preDeductionBalance: credit.credits_remaining,
-        deducted: false,
-      }
-      adminForRefund = adminClient
-    }
 
     // Save assessment to Supabase
 
