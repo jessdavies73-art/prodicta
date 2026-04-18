@@ -1547,6 +1547,31 @@ export default function CandidateReportPage({ params }) {
         {!loading && !error && candidate && (
           <>
 
+            {/* Outcome logging reminder — shown above the report when no
+                outcome has been recorded for this candidate yet. */}
+            {!existingOutcome && (
+              <div style={{
+                background: TEALLT, border: `1.5px solid ${TEAL}55`, borderLeft: `4px solid ${TEAL}`,
+                borderRadius: '0 12px 12px 0', padding: '14px 18px', marginBottom: 16,
+                display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+              }}>
+                <div style={{ flex: 1, minWidth: 220, fontFamily: F, fontSize: 13.5, color: NAVY, lineHeight: 1.55 }}>
+                  <strong style={{ fontWeight: 800 }}>Have you made a hiring decision?</strong> Log the outcome to track your prediction accuracy.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOutcomeModal(true)}
+                  style={{
+                    fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY,
+                    background: TEAL, border: 'none',
+                    padding: '8px 16px', borderRadius: 8, cursor: 'pointer',
+                  }}
+                >
+                  Log outcome
+                </button>
+              </div>
+            )}
+
             {/* ══════════════════════════════════════════════════
                 CANDIDATE HEADER — three-column layout
             ══════════════════════════════════════════════════ */}

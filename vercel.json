@@ -17,6 +17,10 @@
       "schedule": "0 9 * * *"
     },
     {
+      "path": "/api/cron/outcome-log-reminders",
+      "schedule": "0 9 * * 1"
+    },
+    {
       "path": "/api/cron/engagement-pulses",
       "schedule": "0 8 * * *"
     }

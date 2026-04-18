@@ -598,6 +598,11 @@ function DashboardPageInner() {
   const [showInstallBanner, setShowInstallBanner] = useState(false)
   const [mobileBannerDismissed, setMobileBannerDismissed] = useState(() => typeof window !== 'undefined' && localStorage.getItem('prodicta_mobile_banner_dismissed'))
   const [proofBannerDismissed, setProofBannerDismissed] = useState(() => typeof window !== 'undefined' && !!localStorage.getItem('prodicta_banner_dismissed'))
+  const [outcomeReminderSnoozed, setOutcomeReminderSnoozed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const until = parseInt(localStorage.getItem('prodicta_outcome_reminder_snoozed_until') || '0', 10)
+    return Number.isFinite(until) && until > Date.now()
+  })
 
   // Quick actions modals
   const [qaModal, setQaModal] = useState(null) // 'sickness' | 'attendance' | 'replace' | 'client-update' | null
@@ -1844,6 +1849,63 @@ function DashboardPageInner() {
             fillPercent={completed.length > 0 ? Math.round((recommendedCount / completed.length) * 100) : 0}
           />
         </div>
+
+        {/* ── Outcome logging reminder (shown to anyone with completed */}
+        {/*    candidates that have no outcome logged; snoozable 7 days) ── */}
+        {!outcomeReminderSnoozed && (() => {
+          const missing = candidates.filter(c => c.status === 'completed' && !outcomesById[c.id])
+          if (missing.length === 0) return null
+          const first = missing[0]
+          const firstLink = first?.assessments?.id ? `/assessment/${first.assessments.id}/candidate/${first.id}` : null
+          return (
+            <div style={{
+              background: TEALLT, border: `1.5px solid ${TEAL}55`, borderLeft: `4px solid ${TEAL}`,
+              borderRadius: '0 12px 12px 0', padding: '16px 20px', marginBottom: 16,
+              display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap',
+            }}>
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY, marginBottom: 4 }}>
+                  Log your hiring outcomes
+                </div>
+                <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.55 }}>
+                  You have <strong style={{ color: NAVY }}>{missing.length}</strong> completed assessment{missing.length === 1 ? '' : 's'} with no outcome recorded. Logging outcomes unlocks Prediction Accuracy tracking and helps PRODICTA get smarter.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => { if (firstLink) router.push(firstLink) }}
+                  disabled={!firstLink}
+                  style={{
+                    fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY,
+                    background: TEAL, border: 'none',
+                    padding: '9px 16px', borderRadius: 8,
+                    cursor: firstLink ? 'pointer' : 'not-allowed', opacity: firstLink ? 1 : 0.5,
+                  }}
+                >
+                  Log outcomes
+                </button>
+                <button
+                  type="button"
+                  aria-label="Snooze for 7 days"
+                  onClick={() => {
+                    const snoozeUntil = Date.now() + 7 * 24 * 60 * 60 * 1000
+                    try { localStorage.setItem('prodicta_outcome_reminder_snoozed_until', String(snoozeUntil)) } catch {}
+                    setOutcomeReminderSnoozed(true)
+                  }}
+                  style={{
+                    background: 'transparent', border: 'none', color: TX3,
+                    cursor: 'pointer', padding: 6, lineHeight: 0,
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── Today's Actions (agency only) ── */}
         {isAgencyAccount && (
