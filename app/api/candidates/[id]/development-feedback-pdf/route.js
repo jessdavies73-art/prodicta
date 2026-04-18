@@ -3,6 +3,8 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import Anthropic from '@anthropic-ai/sdk'
 
+export const maxDuration = 120
+
 function safe(text) {
   if (!text) return ''
   return String(text)
@@ -102,11 +104,11 @@ export async function GET(request, { params }) {
       const strengthsText = strengths.map(s => `${s.text}: ${s.detail || s.evidence || ''}`).join('\n')
       const prompt = `Career development coach. Candidate assessment for "${candidate.assessments?.role_title || 'professional'}" role. Development areas: ${lowestSkills.join(', ')}. Strengths: ${strengthsText}. For each of 3 development areas: positive title, advice, and 2 concrete actions the candidate can take independently. UK English, no emoji, no em dashes. JSON: {"development_areas": [{"area":"string","advice":"string","actions":["string"]}]}`
 
-      const msg = await client.messages.create({
+      const msg = await client.messages.stream({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }],
-      })
+      }).finalMessage()
       const text = msg.content[0]?.text || ''
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (jsonMatch) {

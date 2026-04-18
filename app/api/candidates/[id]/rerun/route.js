@@ -3,6 +3,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { Resend } from 'resend'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 
+export const maxDuration = 120
+
 function stripDashes(value) {
   if (typeof value === 'string') return value.replace(/\s*[\u2014\u2013]\s*/g, ', ')
   if (Array.isArray(value)) return value.map(stripDashes)
@@ -46,7 +48,7 @@ export async function POST(request, { params }) {
       .map(s => s.title).filter(Boolean).join(' | ')
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const message = await client.messages.create({
+    const message = await client.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 1200,
       messages: [{
@@ -75,7 +77,7 @@ Return ONLY a JSON object, no preamble, no markdown:
 
 Write in UK English. Never use em dash or en dash characters. Use commas or full stops.`
       }]
-    })
+    }).finalMessage()
 
     const raw = message.content[0]?.text?.trim() || ''
     const jsonStr = raw.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()

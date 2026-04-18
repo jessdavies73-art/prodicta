@@ -1,18 +1,66 @@
 import { NextResponse } from 'next/server'
+import { waitUntil } from '@vercel/functions'
+import { Resend } from 'resend'
 import { createServiceClient } from '@/lib/supabase-server'
 import { scoreCandidate } from '@/lib/score-candidate'
 
 export const maxDuration = 300
+
+// Kick off scoring in the background so the candidate's browser can redirect
+// to the polling page immediately. On success, mark the candidate complete and
+// send a completion email so they have a record even if the browser gave up.
+async function scoreAndNotify(candidateId, adminClient) {
+  try {
+    await scoreCandidate(candidateId)
+  } catch (scoringErr) {
+    console.error('[submit] scoreCandidate failed', candidateId, scoringErr?.message)
+    await adminClient
+      .from('candidates')
+      .update({ status: 'scoring_failed' })
+      .eq('id', candidateId)
+      .catch(() => {})
+    return
+  }
+
+  // Email the candidate so they always get a trail of the submission, even if
+  // they left the browser or hit the 3-minute polling cap.
+  if (!process.env.RESEND_API_KEY) return
+  try {
+    const { data: candidate } = await adminClient
+      .from('candidates')
+      .select('name, email')
+      .eq('id', candidateId)
+      .single()
+    if (!candidate?.email) return
+
+    const firstName = (candidate.name || '').split(' ')[0] || 'there'
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    await resend.emails.send({
+      from: 'Prodicta <hello@prodicta.co.uk>',
+      to: candidate.email,
+      subject: 'Your PRODICTA assessment is complete',
+      html: `<!DOCTYPE html><html><body style="margin:0;padding:24px;background:#f7f9fb;font-family:'Outfit',system-ui,sans-serif;color:#0f2137;">
+        <div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e9f0;border-radius:14px;padding:32px;">
+          <h1 style="margin:0 0 16px;font-size:20px;font-weight:800;color:#0f2137;">Assessment received</h1>
+          <p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#5e6b7f;">Hi ${firstName},</p>
+          <p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#5e6b7f;">Thank you for completing your assessment. Your results have been shared with the hiring team.</p>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#5e6b7f;">Best of luck with the next stage.</p>
+        </div>
+      </body></html>`,
+    })
+  } catch (emailErr) {
+    console.error('[submit] completion email failed', candidateId, emailErr?.message)
+  }
+}
 
 export async function POST(request, { params }) {
   try {
     const { responses } = await request.json()
     const adminClient = createServiceClient()
 
-    // Look up candidate by unique_link
     const { data: candidate, error: candError } = await adminClient
       .from('candidates')
-      .select('id, status, name, user_id, assessment_id')
+      .select('id, status, name, email, user_id, assessment_id')
       .eq('unique_link', params.token)
       .single()
 
@@ -24,7 +72,6 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Already completed' }, { status: 400 })
     }
 
-    // Insert all responses
     const { error: respError } = await adminClient
       .from('responses')
       .insert(
@@ -40,14 +87,6 @@ export async function POST(request, { params }) {
 
     if (respError) throw respError
 
-    // Store audio recording URLs on results if any exist
-    // -- ALTER TABLE responses ADD COLUMN audio_url TEXT;
-    // -- ALTER TABLE responses ADD COLUMN input_mode TEXT DEFAULT 'type';
-    // -- ALTER TABLE results ADD COLUMN spoken_delivery_score INTEGER;
-    // -- ALTER TABLE results ADD COLUMN spoken_delivery_narrative TEXT;
-    // -- ALTER TABLE results ADD COLUMN audio_recording_urls JSONB;
-
-    // Mark candidate as completed
     const { error: updateError } = await adminClient
       .from('candidates')
       .update({ status: 'completed', completed_at: new Date().toISOString() })
@@ -55,7 +94,7 @@ export async function POST(request, { params }) {
 
     if (updateError) throw updateError
 
-    // Notification: candidate completed
+    // In-app notification for the hiring team — cheap, keep inline.
     try {
       await adminClient.from('notifications').insert({
         user_id: candidate.user_id,
@@ -67,21 +106,14 @@ export async function POST(request, { params }) {
       })
     } catch {}
 
-    // Await scoring , wrap separately so a scoring failure doesn't lose the submission
-    try {
-      await scoreCandidate(candidate.id)
-    } catch (scoringErr) {
-      console.error('[submit] scoreCandidate failed for candidate', candidate.id, scoringErr?.message, scoringErr?.stack)
-      await adminClient
-        .from('candidates')
-        .update({ status: 'scoring_failed' })
-        .eq('id', candidate.id)
-      return NextResponse.json({ success: true, scoring_error: scoringErr.message })
-    }
+    // Hand off scoring to Vercel's waitUntil so the function keeps running
+    // after the response is returned. The browser is free to redirect to
+    // the status poller immediately.
+    waitUntil(scoreAndNotify(candidate.id, adminClient))
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, candidate_id: candidate.id })
   } catch (err) {
-    console.error('Submit error:', err)
+    console.error('[submit] error', err.message)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

@@ -3,6 +3,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
 
+export const maxDuration = 120
+
 function getResend() { return new Resend(process.env.RESEND_API_KEY) }
 
 export async function POST(request, { params }) {
@@ -50,7 +52,7 @@ export async function POST(request, { params }) {
       }
 
       const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-      const msg = await client.messages.create({
+      const msg = await client.messages.stream({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 600,
         messages: [{
@@ -83,7 +85,7 @@ Return JSON only. UK English. No emoji. No em dashes.
   "urgency": "immediate" | "this_week" | "monitor"
 }`
         }],
-      })
+      }).finalMessage()
 
       const text = msg.content[0]?.text || ''
       const jsonMatch = text.match(/\{[\s\S]*\}/)
@@ -149,7 +151,7 @@ Return JSON only. UK English. No emoji. No em dashes.
     /* ─── Action: generate intervention plan ─── */
     if (body.action === 'intervene') {
       const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-      const msg = await client.messages.create({
+      const msg = await client.messages.stream({
         model: 'claude-sonnet-4-6',
         max_tokens: 1500,
         messages: [{
@@ -175,7 +177,7 @@ Return JSON only. UK English. No emoji. No em dashes.
   "recommendation_reason": "1-2 sentences explaining the recommendation"
 }`
         }],
-      })
+      }).finalMessage()
 
       const text = msg.content[0]?.text || ''
       const jsonMatch = text.match(/\{[\s\S]*\}/)

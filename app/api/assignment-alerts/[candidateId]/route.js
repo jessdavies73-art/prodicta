@@ -3,6 +3,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
 
+export const maxDuration = 120
+
 function getResend() { return new Resend(process.env.RESEND_API_KEY) }
 
 export async function POST(request, { params }) {
@@ -84,7 +86,7 @@ export async function POST(request, { params }) {
       const watchoutsText = (results.watchouts || []).map(w => typeof w === 'object' ? (w.watchout || w.title || '') : w).join('; ')
       const strengthsText = (results.strengths || []).map(s => typeof s === 'object' ? (s.strength || s.title || '') : s).join('; ')
 
-      const msg = await client.messages.create({
+      const msg = await client.messages.stream({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 800,
         messages: [{
@@ -121,7 +123,7 @@ Return JSON only. UK English. No emoji. No em dashes.
   "risk_summary": "1 sentence on whether this assignment is likely to end early"
 }`
         }],
-      })
+      }).finalMessage()
 
       const text = msg.content[0]?.text || ''
       const jsonMatch = text.match(/\{[\s\S]*\}/)

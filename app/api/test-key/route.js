@@ -14,11 +14,11 @@ export async function GET() {
 
   try {
     const anthropic = new Anthropic({ apiKey })
-    const message = await anthropic.messages.create({
+    const message = await anthropic.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 16,
       messages: [{ role: 'user', content: 'Say hello.' }],
-    })
+    }).finalMessage()
     const text = message.content[0]?.text
     console.log('[test-key] Success:', text)
     return NextResponse.json({ ok: true, response: text, key_prefix: apiKey.slice(0, 16) })

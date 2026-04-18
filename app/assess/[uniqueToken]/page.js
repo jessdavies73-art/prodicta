@@ -987,7 +987,7 @@ function SavedPage({ candidateName, onContinue }) {
             Your responses have been saved
           </h2>
           <p style={{ fontFamily: F, color: TX2, fontSize: 14, margin: '0 0 28px', lineHeight: 1.7 }}>
-            Scoring is taking longer than expected. Your responses have been saved and will be scored shortly. You do not need to wait or resubmit.
+            You will receive an email when your report is ready. You can safely close this page.
           </p>
           <button
             onClick={onContinue}
@@ -1993,32 +1993,56 @@ export default function AssessPage({ params }) {
 
   async function doSubmit(responses) {
     setUiState('submitting')
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => {
-      controller.abort()
-      setUiState('saved')
-    }, 120000)
+    // 1) Submit responses. Server kicks off scoring in the background via
+    //    waitUntil and returns quickly, so this request itself is fast.
     try {
       const res = await fetch(`/api/assess/${uniqueToken}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ responses }),
-        signal: controller.signal,
       })
-      clearTimeout(timeoutId)
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         setErrorMessage(data.error || 'Submission failed. Please try again.')
         setUiState('error')
         return
       }
-      setUiState('rating')
-    } catch (err) {
-      clearTimeout(timeoutId)
-      if (err.name === 'AbortError') return // timeout already set uiState to 'saved'
+    } catch {
       setErrorMessage('Submission failed. Please check your connection and try again.')
       setUiState('error')
+      return
     }
+
+    // 2) Poll /status every 5s for up to 3 minutes. When the results row
+    //    appears, advance to the rating stage. On scoring_failed show error.
+    //    Otherwise fall back to the saved page with a done button.
+    const POLL_INTERVAL_MS = 5000
+    const POLL_MAX_MS = 3 * 60 * 1000
+    const started = Date.now()
+
+    const poll = async () => {
+      if (Date.now() - started >= POLL_MAX_MS) {
+        setUiState('saved')
+        return
+      }
+      try {
+        const res = await fetch(`/api/assess/${uniqueToken}/status`, { cache: 'no-store' })
+        const data = await res.json().catch(() => ({}))
+        if (data.error === 'scoring_failed') {
+          setErrorMessage('We could not score your assessment automatically. Your responses are saved and the hiring team has been notified.')
+          setUiState('error')
+          return
+        }
+        if (data.complete) {
+          setUiState('rating')
+          return
+        }
+      } catch {
+        // Network blip — fall through to retry on next tick.
+      }
+      setTimeout(poll, POLL_INTERVAL_MS)
+    }
+    setTimeout(poll, POLL_INTERVAL_MS)
   }
 
   if (uiState === 'loading') {
@@ -2116,7 +2140,7 @@ export default function AssessPage({ params }) {
     )
   }
   if (uiState === 'submitting') return <SubmittingPage candidateName={candidate?.name} />
-  if (uiState === 'saved') return <SavedPage candidateName={candidate?.name} onContinue={() => setUiState('rating')} />
+  if (uiState === 'saved') return <SavedPage candidateName={candidate?.name} onContinue={() => setUiState('complete')} />
   if (uiState === 'rating') return (
     <RatingPage
       candidateName={candidate?.name}

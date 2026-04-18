@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 
+export const maxDuration = 120
+
 // -- ALTER TABLE results ADD COLUMN day_planning_score INTEGER;
 // -- ALTER TABLE results ADD COLUMN day_planning_narrative TEXT;
 // -- ALTER TABLE results ADD COLUMN calendar_data JSONB;
@@ -32,7 +34,7 @@ export async function POST(request, { params }) {
     const unscheduled = (calendar_layout.scheduled_tasks || []).filter(t => !t.scheduled_time).map(t => t.title).join(', ')
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const msg = await client.messages.create({
+    const msg = await client.messages.stream({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 600,
       messages: [{
@@ -57,7 +59,7 @@ Return JSON only. UK English. No emoji.
   "watch_out": "string or null (only if poor planning detected)"
 }`
       }],
-    })
+    }).finalMessage()
 
     const text = msg.content[0]?.text || ''
     const jsonMatch = text.match(/\{[\s\S]*\}/)

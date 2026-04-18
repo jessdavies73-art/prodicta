@@ -3,6 +3,8 @@ import { Resend } from 'resend'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import Anthropic from '@anthropic-ai/sdk'
 
+export const maxDuration = 120
+
 export async function POST(request, { params }) {
   try {
     const supabase = createServerSupabaseClient()
@@ -101,11 +103,11 @@ JSON format:
   ]
 }`
 
-      const msg = await client.messages.create({
+      const msg = await client.messages.stream({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1200,
         messages: [{ role: 'user', content: prompt }],
-      })
+      }).finalMessage()
       const text = msg.content[0]?.text || ''
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (jsonMatch) {

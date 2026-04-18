@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 
+export const maxDuration = 120
+
 // -- ALTER TABLE results ADD COLUMN IF NOT EXISTS team_fit_score INTEGER;
 // -- ALTER TABLE results ADD COLUMN IF NOT EXISTS team_fit_narrative TEXT;
 // -- ALTER TABLE results ADD COLUMN IF NOT EXISTS team_fit_data JSONB;
@@ -45,7 +47,7 @@ export async function POST(request, { params }) {
     const candidateSummary = `Score: ${result.overall_score}, Pressure-Fit: ${result.pressure_fit_score}, Type: ${result.candidate_type || 'N/A'}. Strengths: ${(result.strengths || []).slice(0, 3).map(s => s.text || s.strength || s.title).join(', ')}. Watch-outs: ${(result.watchouts || []).slice(0, 2).map(w => w.watchout || w.title || w.text).join(', ')}.`
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const msg = await client.messages.create({
+    const msg = await client.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 1200,
       messages: [{
@@ -71,7 +73,7 @@ Return JSON only. UK English. No emoji. No em dashes.
   "member_fit_scores": [{"name": "string", "score": 0-100, "note": "one sentence"}]
 }`
       }],
-    })
+    }).finalMessage()
 
     const text = msg.content[0]?.text || ''
     const jsonMatch = text.match(/\{[\s\S]*\}/)

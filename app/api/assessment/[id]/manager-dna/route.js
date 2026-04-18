@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 
+export const maxDuration = 120
+
 /* ── GET: load existing manager DNA for this assessment ── */
 export async function GET(request, { params }) {
   try {
@@ -52,7 +54,7 @@ export async function POST(request, { params }) {
     /* ─── Action: generate scenarios ─── */
     if (body.action === 'generate') {
       const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-      const msg = await client.messages.create({
+      const msg = await client.messages.stream({
         model: 'claude-sonnet-4-6',
         max_tokens: 1200,
         messages: [{
@@ -86,7 +88,7 @@ Return JSON only:
   ]
 }`
         }],
-      })
+      }).finalMessage()
 
       const text = msg.content[0]?.text || ''
       const jsonMatch = text.match(/\{[\s\S]*\}/)
@@ -109,7 +111,7 @@ Return JSON only:
         `Scenario ${i + 1} (${scenarios[i].type}):\nContext: ${scenarios[i].context}\nTask: ${scenarios[i].task}\nManager's response:\n${r.response_text}\nTime taken: ${r.time_taken_seconds}s`
       )).join('\n\n')
 
-      const msg = await client.messages.create({
+      const msg = await client.messages.stream({
         model: 'claude-sonnet-4-6',
         max_tokens: 1500,
         messages: [{
@@ -138,7 +140,7 @@ Return JSON only. UK English. No emoji. No em dashes.
   "summary": "string (3-4 sentences describing this manager's DNA)"
 }`
         }],
-      })
+      }).finalMessage()
 
       const text = msg.content[0]?.text || ''
       const jsonMatch = text.match(/\{[\s\S]*\}/)

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 
+export const maxDuration = 120
+
 // Walk any value and replace em/en dashes with commas in every string
 function stripDashes(value) {
   if (typeof value === 'string') return value.replace(/\s*[\u2014\u2013]\s*/g, ', ')
@@ -118,11 +120,11 @@ Return ONLY valid JSON. No preamble, no markdown.
 FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in the output. Use commas, full stops, or rewrite the sentence instead.`
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const message = await client.messages.create({
+    const message = await client.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       messages: [{ role: 'user', content: prompt }]
-    })
+    }).finalMessage()
 
     const raw = message.content[0].text.trim()
     const jsonStr = raw.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()

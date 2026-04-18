@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServiceClient } from '@/lib/supabase-server'
 
+export const maxDuration = 120
+
 function stripDashes(value) {
   if (typeof value === 'string') return value.replace(/\s*[\u2014\u2013]\s*/g, ', ')
   if (Array.isArray(value)) return value.map(stripDashes)
@@ -38,7 +40,7 @@ export async function POST(request, { params }) {
     if (ad.status === 'completed') return NextResponse.json({ error: 'already_completed' }, { status: 409 })
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const message = await client.messages.create({
+    const message = await client.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 700,
       messages: [{
@@ -65,7 +67,7 @@ Return ONLY a JSON object, no preamble, no markdown:
 
 Never use em dash or en dash characters.`
       }]
-    })
+    }).finalMessage()
 
     const raw = message.content[0]?.text?.trim() || ''
     const jsonStr = raw.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()

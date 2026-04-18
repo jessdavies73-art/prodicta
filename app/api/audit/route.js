@@ -3,6 +3,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { Resend } from 'resend'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 
+export const maxDuration = 120
+
 // Strip em/en dashes from any string in a value
 function stripDashes(value) {
   if (typeof value === 'string') return value.replace(/\s*[\u2014\u2013]\s*/g, ', ')
@@ -16,7 +18,7 @@ function stripDashes(value) {
 }
 
 async function generateRiskReport(client, jobDescription) {
-  const message = await client.messages.create({
+  const message = await client.messages.stream({
     model: 'claude-sonnet-4-6',
     max_tokens: 900,
     messages: [{
@@ -45,7 +47,7 @@ There must be exactly 3 risks. Severity must be one of: High, Medium, Low. Write
 
 FORMATTING RULE: Never use em dash or en dash characters. Use commas, full stops, or rewrite the sentence instead.`
     }]
-  })
+  }).finalMessage()
   const content = message.content[0].text.trim()
   const jsonStr = content.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()
   return stripDashes(JSON.parse(jsonStr))

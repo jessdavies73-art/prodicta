@@ -43,15 +43,12 @@ export async function GET(request, { params }) {
           ? JSON.parse(assessment.workspace_content)
           : assessment.workspace_content
       } catch {
-        console.log('[workspace-content] cached content parse error, regenerating', { assessmentId: params.id })
+        // Fall through and regenerate below.
       }
       if (cached && (cached.emails || cached.tasks)) {
-        console.log('[workspace-content] cache hit', { assessmentId: params.id })
         return NextResponse.json(cached)
       }
-      if (cached) {
-        console.log('[workspace-content] cached content malformed, regenerating', { assessmentId: params.id, keys: Object.keys(cached) })
-      }
+      // Cache present but malformed — fall through to regenerate.
     }
 
     const prompt = `Generate realistic Day 1 morning workspace content for a "${assessment.role_title}" role (${assessment.role_level || 'LEADERSHIP'} level). This simulates the candidate's first morning inbox, messages, and tasks.
@@ -88,9 +85,6 @@ Return JSON only. UK English. No emoji. No em dashes.
 
 Make all content specific to the role. For senior/leadership roles use board-level language and strategic content. Each email should require a thoughtful response.`
 
-    console.log('[workspace-content] prompt length', prompt.length)
-    const claudeStart = Date.now()
-
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     // Stream to keep the outbound connection active while Haiku generates;
     // finalMessage() aggregates the deltas into the same Message shape.
@@ -101,14 +95,6 @@ Make all content specific to the role. For senior/leadership roles use board-lev
     }).finalMessage()
 
     const text = msg.content[0]?.text || ''
-    console.log('[workspace-content] claude response', {
-      elapsed_ms: Date.now() - claudeStart,
-      stop_reason: msg.stop_reason,
-      content_length: text.length,
-      first_100_chars: text.substring(0, 100),
-      input_tokens: msg.usage?.input_tokens,
-      output_tokens: msg.usage?.output_tokens,
-    })
 
     // Strip markdown code fences Claude sometimes wraps around JSON, then
     // match the first balanced {…} block in the cleaned text.

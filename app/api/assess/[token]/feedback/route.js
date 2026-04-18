@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase-server'
 import Anthropic from '@anthropic-ai/sdk'
 
+export const maxDuration = 120
+
 export async function GET(request, { params }) {
   try {
     const adminClient = createServiceClient()
@@ -90,11 +92,11 @@ Respond in JSON format:
   "strength_details": ["string", "string", "string"]
 }`
 
-      const msg = await client.messages.create({
+      const msg = await client.messages.stream({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
         messages: [{ role: 'user', content: prompt }],
-      })
+      }).finalMessage()
 
       const text = msg.content[0]?.text || ''
       const jsonMatch = text.match(/\{[\s\S]*\}/)

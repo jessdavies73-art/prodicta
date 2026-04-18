@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 
+export const maxDuration = 120
+
 // Fallback questions if Claude is unavailable or returns nothing valid
 const AGENCY_FALLBACK = [
   { id: 'q0', text: 'What actually matters most to your client in this role?', type: 'multi-select',
@@ -110,11 +112,11 @@ Allowed type values: "multi-select", "single-select", "text". Nothing else.`
 
     let questions = null
     try {
-      const message = await client.messages.create({
+      const message = await client.messages.stream({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 700,
         messages: [{ role: 'user', content: prompt }],
-      })
+      }).finalMessage()
       const raw = message.content[0]?.text?.trim() || ''
       const jsonStr = raw.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()
       const first = jsonStr.indexOf('{'), last = jsonStr.lastIndexOf('}')

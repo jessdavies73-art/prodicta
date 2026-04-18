@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 
+export const maxDuration = 120
+
 export async function POST(req) {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -46,11 +48,11 @@ If no issues are found, return: { "flags": [] }
 Only flag genuine issues. Do not flag things that are fine. Be helpful, not nitpicky.`
 
   try {
-    const message = await client.messages.create({
+    const message = await client.messages.stream({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1200,
       messages: [{ role: 'user', content: prompt }],
-    })
+    }).finalMessage()
 
     const raw = message.content[0]?.text?.trim() || ''
     const jsonStr = raw.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()

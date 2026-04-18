@@ -76,7 +76,6 @@ export async function POST(request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-    console.log('[generate] route hit', { mode, userId: user.id })
 
     // ── Plan / credit check ──────────────────────────────────────────────────
     const adminClient = createServiceClient()
@@ -87,12 +86,6 @@ export async function POST(request) {
       .eq('id', user.id)
       .maybeSingle()
 
-    console.log('[generate] credit check starting', {
-      userId: user.id,
-      mode,
-      planKey: (userProfile?.plan || 'starter').toLowerCase(),
-      activeSub: userProfile?.subscription_status === 'active',
-    })
 
     const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null, payg: null }
     const planKey = (userProfile?.plan || 'starter').toLowerCase()
@@ -152,18 +145,6 @@ export async function POST(request) {
             .eq('credit_type', 'rapid-screen')
             .maybeSingle()
 
-      console.log('[generate] credit check', {
-        userId: user.id,
-        mode,
-        creditType,
-        activeSub,
-        planKey,
-        planLimit,
-        creditResult: credit,
-        rapidCreditResult: rapidCredit,
-        creditError: creditErr,
-        usingAdminClient: true,
-      })
 
       const requestedHasBalance = credit && credit.credits_remaining > 0
       const rapidHasBalance = rapidCredit && rapidCredit.credits_remaining > 0
@@ -173,7 +154,6 @@ export async function POST(request) {
 
       if (!requestedHasBalance && rapidHasBalance) {
         // Downgrade: spend a rapid-screen credit and run in rapid mode.
-        console.log('[generate] rapid-screen fallback', { from: creditType, to: 'rapid-screen', rapidBalance: rapidCredit.credits_remaining })
         mode = 'rapid'
         creditType = 'rapid-screen'
         chargedCreditType = 'rapid-screen'
@@ -709,13 +689,6 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
 
     const scenarioModel = 'claude-sonnet-4-6'
     const scenarioMaxTokens = MAX_TOKENS_BY_MODE[mode] ?? 3000
-    console.log('[generate] calling Claude API', {
-      model: scenarioModel,
-      prompt_length: finalPrompt.length,
-      max_tokens: scenarioMaxTokens,
-      streaming: true,
-    })
-    const claudeStart = Date.now()
     // Stream the response so the server-to-Anthropic connection stays active
     // for the full generation. 90s per-call cap so a single stuck call can't
     // eat the whole function budget; the outer catch refunds PAYG credit.
@@ -725,14 +698,6 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
       messages: [{ role: 'user', content: finalPrompt }],
     })
     const message = await raceWithTimeout(stream.finalMessage(), 90000, 'scenario generation')
-    console.log('[generate] Claude API returned', {
-      model: scenarioModel,
-      elapsed_ms: Date.now() - claudeStart,
-      response_length: message.content?.[0]?.text?.length,
-      stop_reason: message.stop_reason,
-      input_tokens: message.usage?.input_tokens,
-      output_tokens: message.usage?.output_tokens,
-    })
 
     const content = message.content[0].text.trim()
     const jsonStr = content.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()
@@ -909,7 +874,6 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
       if (refundError) {
         console.error('[generate] credit refund failed', refundError)
       } else {
-        console.log('[generate] credit refunded', { userId: creditRefundCtx.userId, creditType: creditRefundCtx.creditType, balance: creditRefundCtx.preDeductionBalance })
       }
     }
 
