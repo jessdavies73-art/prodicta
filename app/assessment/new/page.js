@@ -183,6 +183,7 @@ export default function NewAssessmentPage() {
   const [templateName, setTemplateName] = useState('')
   const [templateLoaded, setTemplateLoaded] = useState(false)
   const confirmationRef = useRef(null)
+  const prevAnalysedRef = useRef(false)
 
   // Inline candidate details — collapsed one-step flow
   const [firstName, setFirstName] = useState('')
@@ -269,7 +270,7 @@ export default function NewAssessmentPage() {
 
   // Debounced auto-analyse trigger when JD changes
   useEffect(() => {
-    if (jd.length < 50 || roleTitle.trim().length === 0) {
+    if (jd.length < 50 || roleTitle.trim().length < 3) {
       setAnalysed(false)
       return
     }
@@ -280,6 +281,12 @@ export default function NewAssessmentPage() {
     }, 1500)
     return () => { if (analyseTimerRef.current) clearTimeout(analyseTimerRef.current) }
   }, [jd, roleTitle])
+
+  // Smooth scroll to the confirmation card the first time it appears.
+  useEffect(() => {
+    if (analysed && !prevAnalysedRef.current) scrollToConfirmation()
+    prevAnalysedRef.current = analysed
+  }, [analysed])
 
   useEffect(() => {
     const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
@@ -649,6 +656,19 @@ export default function NewAssessmentPage() {
           </h1>
         </div>
 
+        {employmentType && employmentTypeDefaulted && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            fontFamily: F, fontSize: 12, color: '#94a1b3',
+            background: '#f8fafc', border: '1px solid #e4e9f0',
+            borderRadius: 999, padding: '4px 12px',
+            marginBottom: 20,
+          }}>
+            Defaulting to {employmentType === 'permanent' ? 'Permanent Hire' : 'Temporary Placement'} based on your settings.{' '}
+            <a href="/settings" style={{ color: '#00BFA5', fontWeight: 600, textDecoration: 'none' }}>Change</a>
+          </div>
+        )}
+
         {/* Employment type selection */}
         {!employmentType && (
           <div style={{
@@ -753,13 +773,6 @@ export default function NewAssessmentPage() {
             </button>
           </div>
         )}
-        {employmentType && employmentTypeDefaulted && (
-          <div style={{ fontFamily: F, fontSize: 12, color: '#94a1b3', marginTop: -14, marginBottom: 16 }}>
-            Defaulting to {employmentType === 'permanent' ? 'Permanent Hire' : 'Temporary Placement'} based on your settings.{' '}
-            <a href="/settings" style={{ color: '#00BFA5', fontWeight: 600, textDecoration: 'none' }}>Change in Settings</a>
-          </div>
-        )}
-
         {/* Templates dropdown */}
         {employmentType !== 'permanent' && templates.length > 0 && (
           <div style={{
@@ -909,285 +922,6 @@ export default function NewAssessmentPage() {
           </p>
         </div>}
 
-        {/* ══════════════════════════════════════════════════
-            CONFIRMATION SCREEN (shown when analysed)
-        ══════════════════════════════════════════════════ */}
-        {employmentType && analysed && !loading && (
-          <>
-            <div ref={confirmationRef} style={{
-              background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
-              padding: isMobile ? '28px 20px' : '36px 36px', marginBottom: 24,
-              boxShadow: '0 2px 12px rgba(15,33,55,0.06)',
-              scrollMarginTop: 20,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#e0f2f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Ic name="check" size={18} color="#009688" />
-                </div>
-                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#0f2137', fontFamily: F }}>
-                  {detectedLevel === 'OPERATIONAL' ? 'Ready to screen.' : detectedLevel === 'LEADERSHIP' ? 'Strategy-Fit assessment prepared.' : 'We have set this up for you.'}
-                </h2>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 28 }}>
-                {/* Mode + time — always shown */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, fontFamily: F }}>Mode</div>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: '#009688', fontFamily: F }}>
-                      {mode === 'rapid' ? 'Rapid Screen' : mode === 'quick' ? 'Speed-Fit' : mode === 'advanced' ? 'Strategy-Fit' : 'Depth-Fit'}
-                    </span>
-                    <span style={{ fontSize: 12, color: '#94a1b3', marginLeft: 10, fontFamily: F }}>
-                      {mode === 'rapid' ? '5-8 minutes' : mode === 'quick' ? '15 minutes' : mode === 'advanced' ? '45 minutes' : '25 minutes'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Role row — hidden for operational (keep it minimal) */}
-                {detectedLevel !== 'OPERATIONAL' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, fontFamily: F }}>Role</div>
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: '#0f2137', fontFamily: F }}>{roleTitle}</span>
-                      <span style={{ fontSize: 12, color: '#94a1b3', marginLeft: 10, fontFamily: F }}>
-                        {detectedLevel === 'LEADERSHIP' ? 'Leadership' : 'Mid-level'}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Focus row — hidden for operational */}
-                {detectedLevel !== 'OPERATIONAL' && autoFocus.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, paddingTop: 2, fontFamily: F }}>Focus</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      {autoFocus.map((f, i) => (
-                        <span key={i} style={{
-                          fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
-                          background: '#e0f2f0', color: '#009688', fontFamily: F,
-                        }}>
-                          {f}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Inline candidate details — collapsed one-step flow */}
-              {sentResult ? (
-                <div style={{
-                  padding: '20px 22px', borderRadius: 12,
-                  background: '#e0f2f0', border: '1px solid #80DFD2',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                    <div style={{
-                      width: 28, height: 28, borderRadius: '50%',
-                      background: '#00BFA5',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                    }}>
-                      <Ic name="check" size={16} color="#fff" />
-                    </div>
-                    <div style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: '#0f2137' }}>
-                      Assessment sent to {sentResult.name} at {sentResult.email}.
-                    </div>
-                  </div>
-                  <p style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', margin: '0 0 16px', lineHeight: 1.55 }}>
-                    They will receive an email from PRODICTA with a unique link to start the assessment.
-                  </p>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      onClick={handleSendAnother}
-                      style={{
-                        padding: '11px 20px', borderRadius: 10, border: 'none',
-                        background: '#00BFA5', color: '#0f2137',
-                        fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer',
-                      }}
-                    >
-                      Send another
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/assessment/${sentResult.assessmentId}`)}
-                      style={{
-                        padding: '11px 20px', borderRadius: 10, border: '1.5px solid #0f2137',
-                        background: 'transparent', color: '#0f2137',
-                        fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                      }}
-                    >
-                      View assessment
-                    </button>
-                  </div>
-                </div>
-              ) : loading ? (
-                <GeneratingLoader />
-              ) : (
-                <>
-                  {/* Candidate details */}
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                    <div>
-                      <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-                        First name
-                      </label>
-                      <input
-                        type="text"
-                        value={firstName}
-                        onChange={e => setFirstName(e.target.value)}
-                        placeholder="Jane"
-                        style={{
-                          width: '100%', padding: '11px 14px', borderRadius: 8,
-                          border: '1.5px solid #e4e9f0', fontFamily: F, fontSize: 14,
-                          color: '#0f2137', outline: 'none', boxSizing: 'border-box',
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-                        Last name
-                      </label>
-                      <input
-                        type="text"
-                        value={lastName}
-                        onChange={e => setLastName(e.target.value)}
-                        placeholder="Smith"
-                        style={{
-                          width: '100%', padding: '11px 14px', borderRadius: 8,
-                          border: '1.5px solid #e4e9f0', fontFamily: F, fontSize: 14,
-                          color: '#0f2137', outline: 'none', boxSizing: 'border-box',
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-                      Candidate email
-                    </label>
-                    <input
-                      type="email"
-                      value={candidateEmail}
-                      onChange={e => setCandidateEmail(e.target.value)}
-                      placeholder="jane@example.com"
-                      style={{
-                        width: '100%', padding: '11px 14px', borderRadius: 8,
-                        border: '1.5px solid #e4e9f0', fontFamily: F, fontSize: 14,
-                        color: '#0f2137', outline: 'none', boxSizing: 'border-box',
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 18 }}>
-                    <div>
-                      <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-                        Role title
-                      </label>
-                      <input
-                        type="text"
-                        value={roleTitle}
-                        onChange={e => setRoleTitle(e.target.value)}
-                        style={{
-                          width: '100%', padding: '11px 14px', borderRadius: 8,
-                          border: '1.5px solid #e4e9f0', fontFamily: F, fontSize: 14,
-                          color: '#0f2137', outline: 'none', boxSizing: 'border-box',
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-                        Employment type
-                      </label>
-                      <div style={{ display: 'flex', gap: 6, border: '1.5px solid #e4e9f0', borderRadius: 8, padding: 3, background: '#f8fafc' }}>
-                        {[
-                          { key: 'permanent', label: 'Permanent' },
-                          { key: 'temporary', label: 'Temporary' },
-                        ].map(opt => {
-                          const active = employmentType === opt.key
-                          return (
-                            <button
-                              key={opt.key}
-                              type="button"
-                              onClick={() => setEmploymentType(opt.key)}
-                              style={{
-                                flex: 1, padding: '7px 10px', borderRadius: 6, border: 'none',
-                                background: active ? '#fff' : 'transparent',
-                                color: active ? '#0f2137' : '#94a1b3',
-                                fontFamily: F, fontSize: 13, fontWeight: active ? 700 : 600,
-                                cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
-                                boxShadow: active ? '0 1px 3px rgba(15,33,55,0.08)' : 'none',
-                              }}
-                            >
-                              {opt.label}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {(error || sendError) && (
-                    <div style={{
-                      marginBottom: 16, padding: '12px 16px', borderRadius: 8,
-                      background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: 14
-                    }}>
-                      {sendError || error}
-                    </div>
-                  )}
-
-                  <button
-                    onClick={handleSendAssessment}
-                    disabled={!canGenerate || sendingInvite}
-                    style={{
-                      width: '100%', padding: '16px 0', borderRadius: 12, border: 'none',
-                      background: (canGenerate && !sendingInvite) ? '#00BFA5' : '#e4e9f0',
-                      color: (canGenerate && !sendingInvite) ? '#fff' : '#94a1b3',
-                      fontSize: 17, fontWeight: 800, fontFamily: F,
-                      cursor: (canGenerate && !sendingInvite) ? 'pointer' : 'not-allowed',
-                      transition: 'background 0.15s',
-                      boxShadow: (canGenerate && !sendingInvite) ? '0 4px 16px rgba(0,191,165,0.25)' : 'none',
-                    }}
-                  >
-                    {sendingInvite ? 'Sending…' : 'Send Assessment'}
-                  </button>
-
-                  <div style={{ textAlign: 'center', marginTop: 14 }}>
-                    <button
-                      type="button"
-                      onClick={handleSetupOnly}
-                      disabled={!canGenerate}
-                      style={{
-                        background: 'none', border: 'none', padding: '4px 8px',
-                        fontFamily: F, fontSize: 13, fontWeight: 600,
-                        color: canGenerate ? '#5e6b7f' : '#cbd2d9',
-                        cursor: canGenerate ? 'pointer' : 'not-allowed',
-                        textDecoration: 'underline', textUnderlineOffset: 3,
-                      }}
-                    >
-                      Want to invite multiple candidates? Set up the assessment first.
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Adjust if needed toggle */}
-            <button
-              type="button"
-              onClick={() => setShowAdjust(v => !v)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20,
-                background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
-                fontFamily: F, fontSize: 13.5, fontWeight: 600, color: '#94a1b3',
-              }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: showAdjust ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-              {showAdjust ? 'Hide options' : 'Adjust if needed'}
-            </button>
-          </>
-        )}
-
         {/* Analysing indicator */}
         {employmentType && analysing && !analysed && jd.length >= 50 && (
           <div style={{
@@ -1206,9 +940,9 @@ export default function NewAssessmentPage() {
         )}
 
         {/* ══════════════════════════════════════════════════
-            MAIN FORM (hidden when analysed, unless Adjust is open)
+            MAIN FORM (always visible once employment type is set)
         ══════════════════════════════════════════════════ */}
-        {employmentType && (!analysed || showAdjust) && (
+        {employmentType && (
         <>
 
         {/* Card 1: Role details */}
@@ -1735,6 +1469,301 @@ export default function NewAssessmentPage() {
 
         </>
         )}
+
+        {/* ══════════════════════════════════════════════════
+            CONFIRMATION SCREEN (shown when analysed)
+        ══════════════════════════════════════════════════ */}
+        {employmentType && analysed && !loading && (
+          <>
+            <div ref={confirmationRef} style={{
+              background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
+              padding: isMobile ? '28px 20px' : '36px 36px', marginBottom: 24,
+              boxShadow: '0 2px 12px rgba(15,33,55,0.06)',
+              scrollMarginTop: 20,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#e0f2f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Ic name="check" size={18} color="#009688" />
+                </div>
+                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#0f2137', fontFamily: F }}>
+                  {detectedLevel === 'OPERATIONAL' ? 'Ready to screen.' : detectedLevel === 'LEADERSHIP' ? 'Strategy-Fit assessment prepared.' : 'We have set this up for you.'}
+                </h2>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 28 }}>
+                {/* Mode + time — always shown */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, fontFamily: F }}>Mode</div>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#009688', fontFamily: F }}>
+                      {mode === 'rapid' ? 'Rapid Screen' : mode === 'quick' ? 'Speed-Fit' : mode === 'advanced' ? 'Strategy-Fit' : 'Depth-Fit'}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#94a1b3', marginLeft: 10, fontFamily: F }}>
+                      {mode === 'rapid' ? '5-8 minutes' : mode === 'quick' ? '15 minutes' : mode === 'advanced' ? '45 minutes' : '25 minutes'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Role row — hidden for operational (keep it minimal) */}
+                {detectedLevel !== 'OPERATIONAL' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, fontFamily: F }}>Role</div>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: '#0f2137', fontFamily: F }}>{roleTitle}</span>
+                      <span style={{ fontSize: 12, color: '#94a1b3', marginLeft: 10, fontFamily: F }}>
+                        {detectedLevel === 'LEADERSHIP' ? 'Leadership' : 'Mid-level'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Focus row — hidden for operational */}
+                {detectedLevel !== 'OPERATIONAL' && autoFocus.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, paddingTop: 2, fontFamily: F }}>Focus</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {autoFocus.map((f, i) => (
+                        <span key={i} style={{
+                          fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
+                          background: '#e0f2f0', color: '#009688', fontFamily: F,
+                        }}>
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {!sentResult && !loading && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 12, flexWrap: 'wrap', marginBottom: 20,
+                  padding: '10px 14px', borderRadius: 10,
+                  background: '#f8fafc', border: '1px solid #e4e9f0',
+                }}>
+                  <span style={{ fontFamily: F, fontSize: 12.5, color: '#5e6b7f' }}>
+                    Looks good? Add candidate details below — or keep editing your job description and this will refresh automatically.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const el = document.getElementById('candidate-details')
+                      el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      el?.querySelector('input')?.focus()
+                    }}
+                    style={{
+                      fontFamily: F, fontSize: 12.5, fontWeight: 700, color: '#0f2137',
+                      background: '#00BFA5', border: 'none',
+                      padding: '6px 14px', borderRadius: 7, cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                  >
+                    Looks good
+                  </button>
+                </div>
+              )}
+
+              {/* Inline candidate details — collapsed one-step flow */}
+              <div id="candidate-details" />
+              {sentResult ? (
+                <div style={{
+                  padding: '20px 22px', borderRadius: 12,
+                  background: '#e0f2f0', border: '1px solid #80DFD2',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%',
+                      background: '#00BFA5',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <Ic name="check" size={16} color="#fff" />
+                    </div>
+                    <div style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: '#0f2137' }}>
+                      Assessment sent to {sentResult.name} at {sentResult.email}.
+                    </div>
+                  </div>
+                  <p style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', margin: '0 0 16px', lineHeight: 1.55 }}>
+                    They will receive an email from PRODICTA with a unique link to start the assessment.
+                  </p>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={handleSendAnother}
+                      style={{
+                        padding: '11px 20px', borderRadius: 10, border: 'none',
+                        background: '#00BFA5', color: '#0f2137',
+                        fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                      }}
+                    >
+                      Send another
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/assessment/${sentResult.assessmentId}`)}
+                      style={{
+                        padding: '11px 20px', borderRadius: 10, border: '1.5px solid #0f2137',
+                        background: 'transparent', color: '#0f2137',
+                        fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      View assessment
+                    </button>
+                  </div>
+                </div>
+              ) : loading ? (
+                <GeneratingLoader />
+              ) : (
+                <>
+                  {/* Candidate details */}
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                    <div>
+                      <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                        First name
+                      </label>
+                      <input
+                        type="text"
+                        value={firstName}
+                        onChange={e => setFirstName(e.target.value)}
+                        placeholder="Jane"
+                        style={{
+                          width: '100%', padding: '11px 14px', borderRadius: 8,
+                          border: '1.5px solid #e4e9f0', fontFamily: F, fontSize: 14,
+                          color: '#0f2137', outline: 'none', boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                        Last name
+                      </label>
+                      <input
+                        type="text"
+                        value={lastName}
+                        onChange={e => setLastName(e.target.value)}
+                        placeholder="Smith"
+                        style={{
+                          width: '100%', padding: '11px 14px', borderRadius: 8,
+                          border: '1.5px solid #e4e9f0', fontFamily: F, fontSize: 14,
+                          color: '#0f2137', outline: 'none', boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                      Candidate email
+                    </label>
+                    <input
+                      type="email"
+                      value={candidateEmail}
+                      onChange={e => setCandidateEmail(e.target.value)}
+                      placeholder="jane@example.com"
+                      style={{
+                        width: '100%', padding: '11px 14px', borderRadius: 8,
+                        border: '1.5px solid #e4e9f0', fontFamily: F, fontSize: 14,
+                        color: '#0f2137', outline: 'none', boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 18 }}>
+                    <div>
+                      <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                        Role title
+                      </label>
+                      <input
+                        type="text"
+                        value={roleTitle}
+                        onChange={e => setRoleTitle(e.target.value)}
+                        style={{
+                          width: '100%', padding: '11px 14px', borderRadius: 8,
+                          border: '1.5px solid #e4e9f0', fontFamily: F, fontSize: 14,
+                          color: '#0f2137', outline: 'none', boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                        Employment type
+                      </label>
+                      <div style={{ display: 'flex', gap: 6, border: '1.5px solid #e4e9f0', borderRadius: 8, padding: 3, background: '#f8fafc' }}>
+                        {[
+                          { key: 'permanent', label: 'Permanent' },
+                          { key: 'temporary', label: 'Temporary' },
+                        ].map(opt => {
+                          const active = employmentType === opt.key
+                          return (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              onClick={() => setEmploymentType(opt.key)}
+                              style={{
+                                flex: 1, padding: '7px 10px', borderRadius: 6, border: 'none',
+                                background: active ? '#fff' : 'transparent',
+                                color: active ? '#0f2137' : '#94a1b3',
+                                fontFamily: F, fontSize: 13, fontWeight: active ? 700 : 600,
+                                cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
+                                boxShadow: active ? '0 1px 3px rgba(15,33,55,0.08)' : 'none',
+                              }}
+                            >
+                              {opt.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {(error || sendError) && (
+                    <div style={{
+                      marginBottom: 16, padding: '12px 16px', borderRadius: 8,
+                      background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: 14
+                    }}>
+                      {sendError || error}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleSendAssessment}
+                    disabled={!canGenerate || sendingInvite}
+                    style={{
+                      width: '100%', padding: '16px 0', borderRadius: 12, border: 'none',
+                      background: (canGenerate && !sendingInvite) ? '#00BFA5' : '#e4e9f0',
+                      color: (canGenerate && !sendingInvite) ? '#fff' : '#94a1b3',
+                      fontSize: 17, fontWeight: 800, fontFamily: F,
+                      cursor: (canGenerate && !sendingInvite) ? 'pointer' : 'not-allowed',
+                      transition: 'background 0.15s',
+                      boxShadow: (canGenerate && !sendingInvite) ? '0 4px 16px rgba(0,191,165,0.25)' : 'none',
+                    }}
+                  >
+                    {sendingInvite ? 'Sending…' : 'Send Assessment'}
+                  </button>
+
+                  <div style={{ textAlign: 'center', marginTop: 14 }}>
+                    <button
+                      type="button"
+                      onClick={handleSetupOnly}
+                      disabled={!canGenerate}
+                      style={{
+                        background: 'none', border: 'none', padding: '4px 8px',
+                        fontFamily: F, fontSize: 13, fontWeight: 600,
+                        color: canGenerate ? '#5e6b7f' : '#cbd2d9',
+                        cursor: canGenerate ? 'pointer' : 'not-allowed',
+                        textDecoration: 'underline', textUnderlineOffset: 3,
+                      }}
+                    >
+                      Want to invite multiple candidates? Set up the assessment first.
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+          </>
+        )}
+
       </main>
     </div>
   )
