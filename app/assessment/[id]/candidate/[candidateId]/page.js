@@ -1075,7 +1075,7 @@ export default function CandidateReportPage({ params }) {
           supabase.from('results').select('*').eq('candidate_id', params.candidateId).maybeSingle(),
           supabase.from('benchmarks').select('*').eq('user_id', u.id),
           supabase.from('responses').select('scenario_index, time_taken_seconds, response_text').eq('candidate_id', params.candidateId).order('scenario_index'),
-          supabase.from('users').select('company_name, account_type, report_sections').eq('id', u.id).maybeSingle(),
+          supabase.from('users').select('company_name, account_type, report_sections, plan, plan_type, subscription_status').eq('id', u.id).maybeSingle(),
         ])
 
         if (cErr) throw cErr
