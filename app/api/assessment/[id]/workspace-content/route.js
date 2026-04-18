@@ -31,9 +31,27 @@ export async function GET(request, { params }) {
       .single()
 
     if (!assessment) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+    // Cache hit — but validate. A prior generation may have stored malformed
+    // data (truncated Claude output, corrupted row, or a plain-string JSONB
+    // rather than an object). If the stored value can't be read as an object
+    // with at least one expected shape key, fall through and regenerate.
     if (assessment.workspace_content) {
-      console.log('[workspace-content] cache hit, returning stored content', { assessmentId: params.id })
-      return NextResponse.json(assessment.workspace_content)
+      let cached = null
+      try {
+        cached = typeof assessment.workspace_content === 'string'
+          ? JSON.parse(assessment.workspace_content)
+          : assessment.workspace_content
+      } catch {
+        console.log('[workspace-content] cached content parse error, regenerating', { assessmentId: params.id })
+      }
+      if (cached && (cached.emails || cached.tasks)) {
+        console.log('[workspace-content] cache hit', { assessmentId: params.id })
+        return NextResponse.json(cached)
+      }
+      if (cached) {
+        console.log('[workspace-content] cached content malformed, regenerating', { assessmentId: params.id, keys: Object.keys(cached) })
+      }
     }
 
     const prompt = `Generate realistic Day 1 morning workspace content for a "${assessment.role_title}" role (${assessment.role_level || 'LEADERSHIP'} level). This simulates the candidate's first morning inbox, messages, and tasks.
