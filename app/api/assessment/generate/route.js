@@ -662,14 +662,27 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
       // Pay-per-assessment: verify credit balance but do NOT deduct yet.
       // Deduction happens after the assessment is safely saved (see below),
       // and the outer catch refunds if anything fails after deduction.
-      const { data: credit } = await adminClient
+      const { data: credit, error: creditErr } = await adminClient
         .from('assessment_credits')
         .select('credits_remaining')
         .eq('user_id', user.id)
         .eq('credit_type', creditType)
         .maybeSingle()
 
+      console.log('[generate] credit check', {
+        userId: user.id,
+        mode,
+        creditType,
+        activeSub,
+        planKey,
+        planLimit,
+        creditResult: credit,
+        creditError: creditErr,
+        usingAdminClient: true,
+      })
+
       if (!credit || credit.credits_remaining <= 0) {
+        console.warn('[generate] no_credits trigger', { reason: credit ? 'balance<=0' : 'no row', creditErr })
         return NextResponse.json({ error: 'no_credits', message: 'No credits remaining. Purchase more at prodicta.co.uk/pricing' }, { status: 403 })
       }
 
