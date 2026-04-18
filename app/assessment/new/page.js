@@ -475,17 +475,32 @@ export default function NewAssessmentPage() {
 
   const resetEqual = () => setWeights({ Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 })
 
+  // fetch with a hard timeout so a hung request can't buffer indefinitely.
+  async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      return await fetch(url, { ...options, signal: controller.signal })
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+
   // Creates the assessment if we don't yet have one. Returns the assessment id
   // (or null on failure). Sets `error` on failure so callers can bail out.
   const ensureAssessment = async () => {
-    if (createdAssessmentId) return createdAssessmentId
+    if (createdAssessmentId) {
+      console.log('[send] ensureAssessment reusing existing id', createdAssessmentId)
+      return createdAssessmentId
+    }
     setError('')
     try {
       const contextQs = smartQuestions && smartQuestions.length > 0
         ? smartQuestions
         : (accountType === 'agency' ? AGENCY_QUESTIONS : EMPLOYER_QUESTIONS)
       const serialized = serializeContextAnswers(contextQs, contextAnswers)
-      const res = await fetch('/api/assessment/generate', {
+      console.log('[send] calling /api/assessment/generate', { role_title: roleTitle, jd_len: jd.length, mode, employment_type: employmentType })
+      const res = await fetchWithTimeout('/api/assessment/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -499,7 +514,9 @@ export default function NewAssessmentPage() {
           employment_type: employmentType || undefined,
         })
       })
+      console.log('[send] /api/assessment/generate status', res.status)
       const data = await res.json()
+      console.log('[send] /api/assessment/generate body', data)
       if (!data.id) {
         if (data.error === 'unsuitable_role') setError(data.message || 'This role type may not be suitable for scenario-based assessment.')
         else setError(data.error || 'Failed to generate')
@@ -526,14 +543,20 @@ export default function NewAssessmentPage() {
       }
       setCreatedAssessmentId(data.id)
       return data.id
-    } catch {
-      setError('Something went wrong. Please try again.')
+    } catch (err) {
+      console.error('[send] ensureAssessment error', err)
+      if (err?.name === 'AbortError') {
+        setError('Generating the assessment took too long (30s timeout). Please try again.')
+      } else {
+        setError('Something went wrong. Please try again.')
+      }
       return null
     }
   }
 
   // One-step: create assessment (if needed) + send invite to the named candidate.
   const handleSendAssessment = async () => {
+    console.log('[send] starting')
     setSendError('')
     const fn = firstName.trim()
     const ln = lastName.trim()
@@ -544,23 +567,33 @@ export default function NewAssessmentPage() {
     setSendingInvite(true)
     try {
       const assessmentId = await ensureAssessment()
+      console.log('[send] ensureAssessment result', assessmentId)
       if (!assessmentId) return
       const name = `${fn} ${ln}`.trim()
-      const res = await fetch('/api/candidates/invite', {
+      const invitePayload = { assessment_id: assessmentId, candidates: [{ name, email: em }] }
+      console.log('[send] invite payload', invitePayload)
+      const res = await fetchWithTimeout('/api/candidates/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assessment_id: assessmentId, candidates: [{ name, email: em }] }),
+        body: JSON.stringify(invitePayload),
       })
       const data = await res.json()
+      console.log('[send] invite response', res.status, data)
       const first = Array.isArray(data?.results) ? data.results[0] : null
       if (!res.ok || !first?.success) {
         setSendError(first?.error || data?.error || 'Something went wrong. Please try again.')
         return
       }
       setSentResult({ assessmentId, firstName: fn, lastName: ln, name, email: em })
-    } catch {
-      setSendError('Something went wrong. Please try again.')
+    } catch (err) {
+      console.error('[send] handleSendAssessment error', err)
+      if (err?.name === 'AbortError') {
+        setSendError('Sending the invite took too long (30s timeout). Please try again.')
+      } else {
+        setSendError('Something went wrong. Please try again.')
+      }
     } finally {
+      console.log('[send] finishing, clearing sendingInvite')
       setSendingInvite(false)
     }
   }
