@@ -597,6 +597,7 @@ function DashboardPageInner() {
   const [installPrompt, setInstallPrompt] = useState(null)
   const [showInstallBanner, setShowInstallBanner] = useState(false)
   const [mobileBannerDismissed, setMobileBannerDismissed] = useState(() => typeof window !== 'undefined' && localStorage.getItem('prodicta_mobile_banner_dismissed'))
+  const [proofBannerDismissed, setProofBannerDismissed] = useState(() => typeof window !== 'undefined' && !!localStorage.getItem('prodicta_banner_dismissed'))
 
   // Quick actions modals
   const [qaModal, setQaModal] = useState(null) // 'sickness' | 'attendance' | 'replace' | 'client-update' | null
@@ -1775,6 +1776,39 @@ function DashboardPageInner() {
           </div>
         </div>
 
+        {/* ── Proof statement banner (dismissable, shown to all accounts) ── */}
+        {!proofBannerDismissed && (
+          <div style={{
+            background: NAVY, borderRadius: 14, padding: '18px 22px', marginBottom: 18,
+            display: 'flex', alignItems: 'flex-start', gap: 14,
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TEAL, letterSpacing: '-0.1px', marginBottom: 4 }}>
+                You knew before you hired them. That is the difference.
+              </div>
+              <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>
+                Every PRODICTA assessment is documented. Every recommendation is tracked. Every outcome is recorded.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                try { localStorage.setItem('prodicta_banner_dismissed', '1') } catch {}
+                setProofBannerDismissed(true)
+              }}
+              aria-label="Dismiss"
+              style={{
+                background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.55)',
+                cursor: 'pointer', padding: 4, flexShrink: 0, lineHeight: 0,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         {/* ── Stats row ── */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
           <StatCard
@@ -2943,7 +2977,14 @@ function DashboardPageInner() {
                 </span>
               </div>
               <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 14px', lineHeight: 1.55 }}>
-                Candidates whose probation is showing warning signs. Review the report for details.
+                Candidates whose probation is showing warning signs. Review the report for details.{' '}
+                <a
+                  href="/settings"
+                  onClick={e => { e.preventDefault(); router.push('/settings') }}
+                  style={{ color: TEALD, fontWeight: 600, textDecoration: 'none' }}
+                >
+                  Configure thresholds in Settings
+                </a>
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {flagged.map(c => {
