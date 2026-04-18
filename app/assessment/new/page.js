@@ -541,13 +541,10 @@ export default function NewAssessmentPage() {
     if (!fn || !ln) { setSendError('Please enter the candidate\u2019s first and last name.'); return }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { setSendError('Please enter a valid email address.'); return }
 
-    setLoading(true)
-    const assessmentId = await ensureAssessment()
-    if (!assessmentId) { setLoading(false); return }
-
-    setLoading(false)
     setSendingInvite(true)
     try {
+      const assessmentId = await ensureAssessment()
+      if (!assessmentId) return
       const name = `${fn} ${ln}`.trim()
       const res = await fetch('/api/candidates/invite', {
         method: 'POST',
@@ -557,12 +554,12 @@ export default function NewAssessmentPage() {
       const data = await res.json()
       const first = Array.isArray(data?.results) ? data.results[0] : null
       if (!res.ok || !first?.success) {
-        setSendError(first?.error || data?.error || 'Failed to send the invite. Please try again.')
+        setSendError(first?.error || data?.error || 'Something went wrong. Please try again.')
         return
       }
-      setSentResult({ assessmentId, name, email: em })
+      setSentResult({ assessmentId, firstName: fn, lastName: ln, name, email: em })
     } catch {
-      setSendError('Something went wrong sending the invite. Please try again.')
+      setSendError('Something went wrong. Please try again.')
     } finally {
       setSendingInvite(false)
     }
@@ -585,6 +582,13 @@ export default function NewAssessmentPage() {
     setCandidateEmail('')
     setSentResult(null)
     setSendError('')
+    if (typeof window !== 'undefined') {
+      requestAnimationFrame(() => {
+        const el = document.getElementById('candidate-details')
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        el?.parentElement?.querySelector('input')?.focus()
+      })
+    }
   }
 
 
@@ -1566,52 +1570,7 @@ export default function NewAssessmentPage() {
 
               {/* Inline candidate details — collapsed one-step flow */}
               <div id="candidate-details" />
-              {sentResult ? (
-                <div style={{
-                  padding: '20px 22px', borderRadius: 12,
-                  background: '#e0f2f0', border: '1px solid #80DFD2',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                    <div style={{
-                      width: 28, height: 28, borderRadius: '50%',
-                      background: '#00BFA5',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                    }}>
-                      <Ic name="check" size={16} color="#fff" />
-                    </div>
-                    <div style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: '#0f2137' }}>
-                      Assessment sent to {sentResult.name} at {sentResult.email}.
-                    </div>
-                  </div>
-                  <p style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', margin: '0 0 16px', lineHeight: 1.55 }}>
-                    They will receive an email from PRODICTA with a unique link to start the assessment.
-                  </p>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      onClick={handleSendAnother}
-                      style={{
-                        padding: '11px 20px', borderRadius: 10, border: 'none',
-                        background: '#00BFA5', color: '#0f2137',
-                        fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer',
-                      }}
-                    >
-                      Send another
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/assessment/${sentResult.assessmentId}`)}
-                      style={{
-                        padding: '11px 20px', borderRadius: 10, border: '1.5px solid #0f2137',
-                        background: 'transparent', color: '#0f2137',
-                        fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                      }}
-                    >
-                      View assessment
-                    </button>
-                  </div>
-                </div>
-              ) : loading ? (
+              {loading ? (
                 <GeneratingLoader />
               ) : (
                 <>
@@ -1736,8 +1695,18 @@ export default function NewAssessmentPage() {
                       cursor: (canGenerate && !sendingInvite) ? 'pointer' : 'not-allowed',
                       transition: 'background 0.15s',
                       boxShadow: (canGenerate && !sendingInvite) ? '0 4px 16px rgba(0,191,165,0.25)' : 'none',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                     }}
                   >
+                    {sendingInvite && (
+                      <span style={{
+                        width: 16, height: 16,
+                        border: '2px solid rgba(255,255,255,0.4)',
+                        borderTopColor: '#fff',
+                        borderRadius: '50%',
+                        animation: 'spin 0.8s linear infinite',
+                      }} />
+                    )}
                     {sendingInvite ? 'Sending…' : 'Send Assessment'}
                   </button>
 
@@ -1757,6 +1726,58 @@ export default function NewAssessmentPage() {
                       Want to invite multiple candidates? Set up the assessment first.
                     </button>
                   </div>
+
+                  {sentResult && (
+                    <div style={{
+                      marginTop: 24, padding: '28px 24px', borderRadius: 14,
+                      background: '#e0f2f0', border: '1px solid #80DFD2', textAlign: 'center',
+                    }}>
+                      <div style={{
+                        width: 56, height: 56, borderRadius: '50%',
+                        background: '#00BFA5',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        margin: '0 auto 16px',
+                      }}>
+                        <Ic name="check" size={30} color="#fff" />
+                      </div>
+                      <h3 style={{
+                        fontFamily: F, fontSize: 20, fontWeight: 800, color: '#0f2137',
+                        margin: '0 0 8px',
+                      }}>
+                        Assessment sent
+                      </h3>
+                      <p style={{
+                        fontFamily: F, fontSize: 14, color: '#5e6b7f',
+                        margin: '0 0 20px', lineHeight: 1.55,
+                      }}>
+                        Your assessment has been sent to {sentResult.firstName} at {sentResult.email}. They will receive a link to complete it.
+                      </p>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={handleSendAnother}
+                          style={{
+                            padding: '11px 22px', borderRadius: 10, border: 'none',
+                            background: '#00BFA5', color: '#0f2137',
+                            fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                          }}
+                        >
+                          Send another
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/assessment/${sentResult.assessmentId}`)}
+                          style={{
+                            padding: '11px 22px', borderRadius: 10, border: '1.5px solid #0f2137',
+                            background: 'transparent', color: '#0f2137',
+                            fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                          }}
+                        >
+                          View scenarios
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
