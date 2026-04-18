@@ -491,7 +491,6 @@ export default function NewAssessmentPage() {
   // (or null on failure). Sets `error` on failure so callers can bail out.
   const ensureAssessment = async () => {
     if (createdAssessmentId) {
-      console.log('[send] ensureAssessment reusing existing id', createdAssessmentId)
       return createdAssessmentId
     }
     setError('')
@@ -500,7 +499,6 @@ export default function NewAssessmentPage() {
         ? smartQuestions
         : (accountType === 'agency' ? AGENCY_QUESTIONS : EMPLOYER_QUESTIONS)
       const serialized = serializeContextAnswers(contextQs, contextAnswers)
-      console.log('[send] calling /api/assessment/generate', { role_title: roleTitle, jd_len: jd.length, mode, employment_type: employmentType })
       const res = await fetchWithTimeout('/api/assessment/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -515,9 +513,7 @@ export default function NewAssessmentPage() {
           employment_type: employmentType || undefined,
         })
       })
-      console.log('[send] /api/assessment/generate status', res.status)
       const data = await res.json()
-      console.log('[send] /api/assessment/generate body', data)
       if (!data.id) {
         if (data.error === 'unsuitable_role') setError(data.message || 'This role type may not be suitable for scenario-based assessment.')
         else setError(data.error || 'Failed to generate')
@@ -545,7 +541,6 @@ export default function NewAssessmentPage() {
       setCreatedAssessmentId(data.id)
       return data.id
     } catch (err) {
-      console.error('[send] ensureAssessment error', err)
       if (err?.name === 'AbortError') {
         setError('Generating the assessment took too long (over 2 minutes). Please try again.')
       } else {
@@ -557,7 +552,6 @@ export default function NewAssessmentPage() {
 
   // One-step: create assessment (if needed) + send invite to the named candidate.
   const handleSendAssessment = async () => {
-    console.log('[send] starting')
     setSendError('')
     const fn = firstName.trim()
     const ln = lastName.trim()
@@ -568,18 +562,15 @@ export default function NewAssessmentPage() {
     setSendingInvite(true)
     try {
       const assessmentId = await ensureAssessment()
-      console.log('[send] ensureAssessment result', assessmentId)
       if (!assessmentId) return
       const name = `${fn} ${ln}`.trim()
       const invitePayload = { assessment_id: assessmentId, candidates: [{ name, email: em }] }
-      console.log('[send] invite payload', invitePayload)
       const res = await fetchWithTimeout('/api/candidates/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(invitePayload),
       })
       const data = await res.json()
-      console.log('[send] invite response', res.status, data)
       const first = Array.isArray(data?.results) ? data.results[0] : null
       if (!res.ok || !first?.success) {
         setSendError(first?.error || data?.error || 'Something went wrong. Please try again.')
@@ -587,14 +578,12 @@ export default function NewAssessmentPage() {
       }
       setSentResult({ assessmentId, firstName: fn, lastName: ln, name, email: em })
     } catch (err) {
-      console.error('[send] handleSendAssessment error', err)
       if (err?.name === 'AbortError') {
         setSendError('Sending the invite took too long (over 2 minutes). Please try again.')
       } else {
         setSendError('Something went wrong. Please try again.')
       }
     } finally {
-      console.log('[send] finishing, clearing sendingInvite')
       setSendingInvite(false)
     }
   }
@@ -1761,61 +1750,69 @@ export default function NewAssessmentPage() {
                     </button>
                   </div>
 
-                  {sentResult && sentResult.assessmentId && (
-                    <div style={{
-                      marginTop: 24, padding: '28px 24px', borderRadius: 14,
-                      background: '#e0f2f0', border: '1px solid #80DFD2', textAlign: 'center',
-                    }}>
+                  {(() => {
+                    const assessmentId = sentResult?.assessmentId || null
+                    const successFirstName = sentResult?.firstName || ''
+                    const successEmail = sentResult?.email || ''
+                    if (!sentResult || !assessmentId) return null
+                    return (
                       <div style={{
-                        width: 56, height: 56, borderRadius: '50%',
-                        background: '#00BFA5',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        margin: '0 auto 16px',
+                        marginTop: 24, padding: '28px 24px', borderRadius: 14,
+                        background: '#e0f2f0', border: '1px solid #80DFD2', textAlign: 'center',
                       }}>
-                        <Ic name="check" size={30} color="#fff" />
+                        <div style={{
+                          width: 56, height: 56, borderRadius: '50%',
+                          background: '#00BFA5',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          margin: '0 auto 16px',
+                        }}>
+                          <Ic name="check" size={30} color="#fff" />
+                        </div>
+                        <h3 style={{
+                          fontFamily: F, fontSize: 20, fontWeight: 800, color: '#0f2137',
+                          margin: '0 0 8px',
+                        }}>
+                          Assessment sent
+                        </h3>
+                        <p style={{
+                          fontFamily: F, fontSize: 14, color: '#5e6b7f',
+                          margin: '0 0 20px', lineHeight: 1.55,
+                        }}>
+                          Your assessment has been sent to {successFirstName} at {successEmail}. They will receive a link to complete it.
+                        </p>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={handleSendAnother}
+                            style={{
+                              padding: '11px 22px', borderRadius: 10, border: 'none',
+                              background: '#00BFA5', color: '#0f2137',
+                              fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                            }}
+                          >
+                            Send another
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (assessmentId && router?.push) {
+                                router.push(`/assessment/${assessmentId}`)
+                              } else if (assessmentId) {
+                                window.location.href = `/assessment/${assessmentId}`
+                              }
+                            }}
+                            style={{
+                              padding: '11px 22px', borderRadius: 10, border: '1.5px solid #0f2137',
+                              background: 'transparent', color: '#0f2137',
+                              fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                            }}
+                          >
+                            View scenarios
+                          </button>
+                        </div>
                       </div>
-                      <h3 style={{
-                        fontFamily: F, fontSize: 20, fontWeight: 800, color: '#0f2137',
-                        margin: '0 0 8px',
-                      }}>
-                        Assessment sent
-                      </h3>
-                      <p style={{
-                        fontFamily: F, fontSize: 14, color: '#5e6b7f',
-                        margin: '0 0 20px', lineHeight: 1.55,
-                      }}>
-                        Your assessment has been sent to {sentResult.firstName} at {sentResult.email}. They will receive a link to complete it.
-                      </p>
-                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-                        <button
-                          type="button"
-                          onClick={handleSendAnother}
-                          style={{
-                            padding: '11px 22px', borderRadius: 10, border: 'none',
-                            background: '#00BFA5', color: '#0f2137',
-                            fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer',
-                          }}
-                        >
-                          Send another
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!sentResult?.assessmentId) return
-                            if (router?.push) router.push(`/assessment/${sentResult.assessmentId}`)
-                            else window.location.assign(`/assessment/${sentResult.assessmentId}`)
-                          }}
-                          style={{
-                            padding: '11px 22px', borderRadius: 10, border: '1.5px solid #0f2137',
-                            background: 'transparent', color: '#0f2137',
-                            fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                          }}
-                        >
-                          View scenarios
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                    )
+                  })()}
                 </>
               )}
             </div>
