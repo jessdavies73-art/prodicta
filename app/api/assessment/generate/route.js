@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 
+// Scenario generation calls the Anthropic API which can take 30-60s for
+// Strategy-Fit (4 scenarios). Allow up to 120s before Vercel kills the function.
+export const maxDuration = 120
+
 export async function POST(request) {
   try {
     const body = await request.json()

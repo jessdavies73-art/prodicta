@@ -476,7 +476,8 @@ export default function NewAssessmentPage() {
   const resetEqual = () => setWeights({ Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 })
 
   // fetch with a hard timeout so a hung request can't buffer indefinitely.
-  async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
+  // 120s matches the Anthropic-backed generate route's maxDuration.
+  async function fetchWithTimeout(url, options = {}, timeoutMs = 120000) {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
     try {
@@ -546,7 +547,7 @@ export default function NewAssessmentPage() {
     } catch (err) {
       console.error('[send] ensureAssessment error', err)
       if (err?.name === 'AbortError') {
-        setError('Generating the assessment took too long (30s timeout). Please try again.')
+        setError('Generating the assessment took too long (over 2 minutes). Please try again.')
       } else {
         setError('Something went wrong. Please try again.')
       }
@@ -588,7 +589,7 @@ export default function NewAssessmentPage() {
     } catch (err) {
       console.error('[send] handleSendAssessment error', err)
       if (err?.name === 'AbortError') {
-        setSendError('Sending the invite took too long (30s timeout). Please try again.')
+        setSendError('Sending the invite took too long (over 2 minutes). Please try again.')
       } else {
         setSendError('Something went wrong. Please try again.')
       }
