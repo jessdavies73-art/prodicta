@@ -170,6 +170,8 @@ export default function SettingsPage() {
   const [paygTab, setPaygTab] = useState('credits') // 'credits' | 'subscription'
   const [buyQty, setBuyQty] = useState({}) // { [credit_type]: number }
   const [buyingType, setBuyingType] = useState(null)
+  const [switchConfirm, setSwitchConfirm] = useState(null) // { plan, price, key }
+  const [switchSubmitting, setSwitchSubmitting] = useState(false)
 
   // Promo codes
   const [promoInput, setPromoInput] = useState('')
@@ -261,6 +263,29 @@ export default function SettingsPage() {
     }
     load()
   }, [router])
+
+  async function handleConfirmSwitch() {
+    if (!switchConfirm) return
+    setSwitchSubmitting(true)
+    try {
+      const res = await fetch('/api/billing/switch-to-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: switchConfirm.key }),
+      })
+      const body = await res.json()
+      if (body?.url) {
+        window.location.href = body.url
+        return
+      }
+      throw new Error(body?.error || 'Could not start checkout.')
+    } catch (err) {
+      setPromoToast({ type: 'error', message: err.message || 'Could not start checkout. Please try again.' })
+      setTimeout(() => setPromoToast(null), 4500)
+      setSwitchSubmitting(false)
+      setSwitchConfirm(null)
+    }
+  }
 
   async function handleBuyCredits(credit_type) {
     const quantity = Math.max(1, parseInt(buyQty[credit_type], 10) || 1)
@@ -977,10 +1002,10 @@ export default function SettingsPage() {
                 { type: 'strategy-fit', label: 'Strategy-Fit', unit: 65 },
               ]
               const PLANS = [
-                { plan: 'Starter',         price: '£49/mo',  limit: '10 assessments per month' },
-                { plan: 'Professional',    price: '£120/mo', limit: '30 assessments per month' },
-                { plan: 'Unlimited',       price: '£159/mo', limit: 'Unlimited assessments' },
-                { plan: 'Founding Member', price: '£79/mo',  limit: 'Unlimited for 3 months, then 20/month' },
+                { key: 'starter',      plan: 'Starter',         price: '£49/mo',  priceNum: 49,  limit: '10 assessments per month' },
+                { key: 'professional', plan: 'Professional',    price: '£120/mo', priceNum: 120, limit: '30 assessments per month' },
+                { key: 'unlimited',    plan: 'Unlimited',       price: '£159/mo', priceNum: 159, limit: 'Unlimited assessments' },
+                { key: 'founding',     plan: 'Founding Member', price: '£79/mo',  priceNum: 79,  limit: 'Unlimited for 3 months, then 20/month' },
               ]
               return (
                 <div style={{ ...cs, marginBottom: 16 }}>
@@ -1080,7 +1105,7 @@ export default function SettingsPage() {
                     <div>
                       <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX }}>Switch to a monthly subscription</h2>
                       <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
-                        Get a bundle of assessments each month. Cancel any time.
+                        Get a bundle of assessments each month.
                       </p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {PLANS.map(p => (
@@ -1094,16 +1119,16 @@ export default function SettingsPage() {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                               <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY }}>{p.price}</span>
-                              <a
-                                href={`mailto:hello@prodicta.co.uk?subject=Switch to ${p.plan} subscription`}
+                              <button
+                                onClick={() => setSwitchConfirm(p)}
                                 style={{
                                   fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY,
-                                  background: TEAL, textDecoration: 'none',
-                                  padding: '7px 16px', borderRadius: 7,
+                                  background: TEAL, border: 'none',
+                                  padding: '7px 16px', borderRadius: 7, cursor: 'pointer',
                                 }}
                               >
                                 Switch
-                              </a>
+                              </button>
                             </div>
                           </div>
                         ))}
@@ -1654,6 +1679,57 @@ export default function SettingsPage() {
         )}
 
       </main>
+
+      {switchConfirm && (
+        <div
+          onClick={() => !switchSubmitting && setSwitchConfirm(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1500,
+            background: 'rgba(15,33,55,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: CARD, borderRadius: 14, padding: '28px 28px 24px',
+              maxWidth: 440, width: '100%', boxShadow: '0 24px 72px rgba(0,0,0,0.25)',
+            }}
+          >
+            <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: NAVY, margin: '0 0 10px' }}>
+              Switch to {switchConfirm.plan} at £{switchConfirm.priceNum}/month?
+            </h3>
+            <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 22px', lineHeight: 1.6 }}>
+              Your Pay As You Go credits will remain available.
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setSwitchConfirm(null)}
+                disabled={switchSubmitting}
+                style={{
+                  fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX2,
+                  background: 'transparent', border: `1.5px solid ${BD}`,
+                  padding: '9px 18px', borderRadius: 8, cursor: switchSubmitting ? 'default' : 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmSwitch}
+                disabled={switchSubmitting}
+                style={{
+                  fontFamily: F, fontSize: 13.5, fontWeight: 800, color: NAVY,
+                  background: TEAL, border: 'none',
+                  padding: '9px 20px', borderRadius: 8,
+                  cursor: switchSubmitting ? 'default' : 'pointer', opacity: switchSubmitting ? 0.7 : 1,
+                }}
+              >
+                {switchSubmitting ? 'Redirecting…' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

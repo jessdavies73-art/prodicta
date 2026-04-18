@@ -160,7 +160,7 @@ function BillingTab({ onUpgrade }) {
         <div>
           <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX, fontFamily: F }}>Switch to a monthly subscription</h2>
           <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
-            Get a bundle of assessments each month. Cancel any time.
+            Get a bundle of assessments each month.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {PLANS.map(p => (
