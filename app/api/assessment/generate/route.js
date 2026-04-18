@@ -28,6 +28,8 @@ export async function POST(request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
+    console.log('[generate] route hit', { mode, userId: user.id })
+
     // ── Unsuitable role detection ───────────────────────────────────────────────
     // Block roles that are primarily physical, repetitive, or short-term temporary
     // before we burn any tokens. Friendly message returned to the UI.
@@ -514,10 +516,21 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
       `${sectorGuidanceBlock}${seniorityGuidanceBlock}\nFORMATTING RULE: Never use em dash`
     )
 
+    const scenarioModel = 'claude-sonnet-4-6'
+    console.log('[generate] calling Claude API', { model: scenarioModel, prompt_length: finalPrompt.length })
+    const claudeStart = Date.now()
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: scenarioModel,
       max_tokens: 4096,
       messages: [{ role: 'user', content: finalPrompt }]
+    })
+    console.log('[generate] Claude API returned', {
+      model: scenarioModel,
+      elapsed_ms: Date.now() - claudeStart,
+      response_length: message.content?.[0]?.text?.length,
+      stop_reason: message.stop_reason,
+      input_tokens: message.usage?.input_tokens,
+      output_tokens: message.usage?.output_tokens,
     })
 
     const content = message.content[0].text.trim()
