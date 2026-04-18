@@ -201,6 +201,8 @@ export default function NewAssessmentPage() {
   // Context questions
   const [contextAnswers, setContextAnswers] = useState({})
   const [accountType, setAccountType] = useState('employer')
+  const [isPaygUser, setIsPaygUser] = useState(false)
+  const [userCredits, setUserCredits] = useState([]) // [{ credit_type, credits_remaining }]
   const [smartQuestions, setSmartQuestions] = useState(null) // null = not yet loaded
   const [smartLoading, setSmartLoading] = useState(false)
   const smartCacheRef = useRef({ key: '', questions: null })
@@ -323,10 +325,13 @@ export default function NewAssessmentPage() {
         const { data: credits } = await supabase.from('assessment_credits')
           .select('credit_type, credits_remaining')
           .eq('user_id', user.id)
-        const totalCredits = (credits || []).reduce((sum, c) => sum + (c.credits_remaining || 0), 0)
+        const rows = credits || []
+        setUserCredits(rows)
+        const totalCredits = rows.reduce((sum, c) => sum + (c.credits_remaining || 0), 0)
         if (totalCredits <= 0) setAtLimit(true)
         setLimitInfo({ used: 0, limit: totalCredits, isCredits: true })
       }
+      setIsPaygUser(isPaygUser)
 
       // Load saved templates (from assessments)
       const { data: tmpl } = await supabase
@@ -1410,6 +1415,90 @@ export default function NewAssessmentPage() {
             })}
           </div>
         </div>
+
+        {/* PAYG upgrade prompt — shown when the auto-detected / selected mode
+            maps to a credit the user doesn't hold. Subscription users are
+            unaffected — they skip this entirely. */}
+        {isPaygUser && (() => {
+          const CREDIT_PRICES = { 'rapid-screen': 6, 'speed-fit': 18, 'depth-fit': 35, 'strategy-fit': 65 }
+          const MODE_TO_CREDIT = { rapid: 'rapid-screen', quick: 'speed-fit', standard: 'depth-fit', advanced: 'strategy-fit' }
+          const LABELS = { 'rapid-screen': 'Rapid Screen', 'speed-fit': 'Speed-Fit', 'depth-fit': 'Depth-Fit', 'strategy-fit': 'Strategy-Fit' }
+
+          const suggestedCreditType = MODE_TO_CREDIT[mode]
+          if (!suggestedCreditType) return null
+
+          // Pick the user's "primary" credit type: highest balance, tie-break by
+          // highest unit price. Then compare its price against the suggested one.
+          const withBalance = userCredits.filter(c => (c.credits_remaining || 0) > 0)
+          if (withBalance.length === 0) return null
+          withBalance.sort((a, b) => {
+            const balDiff = (b.credits_remaining || 0) - (a.credits_remaining || 0)
+            if (balDiff !== 0) return balDiff
+            return (CREDIT_PRICES[b.credit_type] || 0) - (CREDIT_PRICES[a.credit_type] || 0)
+          })
+          const currentCreditType = withBalance[0].credit_type
+          if (currentCreditType === suggestedCreditType) return null
+
+          const suggestedPrice = CREDIT_PRICES[suggestedCreditType] || 0
+          const currentPrice = CREDIT_PRICES[currentCreditType] || 0
+          const difference = suggestedPrice - currentPrice
+          // Only prompt to upgrade when the suggestion is more expensive. If the
+          // user happens to hold pricier credits than the suggestion, stay silent
+          // — they're already covered.
+          if (difference <= 0) return null
+
+          const shortName = (creditType) => {
+            const t = LABELS[creditType] || creditType
+            // Shorten "Rapid Screen" → "Rapid" when used inline for brevity.
+            return t === 'Rapid Screen' ? 'Rapid' : t
+          }
+
+          const upgradeHref = `/billing/credits?type=${suggestedCreditType}&upgrade_from=${currentCreditType}&diff=${difference}`
+
+          return (
+            <div style={{
+              background: '#fffef5', border: '1.5px solid #fde68a', borderLeft: '4px solid #F59E0B',
+              borderRadius: 12, padding: '18px 22px', marginBottom: 20,
+            }}>
+              <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: '#92400e', marginBottom: 6, letterSpacing: '0.02em' }}>
+                Recommended: {LABELS[suggestedCreditType]}
+              </div>
+              <p style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', margin: '0 0 4px', lineHeight: 1.6 }}>
+                Based on your job description we recommend {LABELS[suggestedCreditType]} (£{suggestedPrice}). You currently have {LABELS[currentCreditType]} credits (£{currentPrice} each).
+              </p>
+              <p style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', margin: '0 0 14px', lineHeight: 1.6 }}>
+                To get the full {LABELS[suggestedCreditType]} report, pay the £{difference} difference.
+              </p>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <a
+                  href={upgradeHref}
+                  onClick={e => { e.preventDefault(); router.push(upgradeHref) }}
+                  style={{
+                    fontFamily: F, fontSize: 13, fontWeight: 800, color: '#0f2137',
+                    background: '#00BFA5', border: 'none',
+                    padding: '10px 18px', borderRadius: 8, textDecoration: 'none',
+                  }}
+                >
+                  Upgrade to {LABELS[suggestedCreditType]} — pay £{difference}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const modeForCurrent = Object.entries(MODE_TO_CREDIT).find(([, v]) => v === currentCreditType)?.[0]
+                    if (modeForCurrent) { setMode(modeForCurrent); setModeOverridden(true) }
+                  }}
+                  style={{
+                    fontFamily: F, fontSize: 13, fontWeight: 700, color: '#0f2137',
+                    background: 'transparent', border: '1.5px solid #0f2137',
+                    padding: '10px 18px', borderRadius: 8, cursor: 'pointer',
+                  }}
+                >
+                  Continue with {shortName(currentCreditType)}
+                </button>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Brief Health Check */}
         {jd.length >= 50 && roleTitle.trim().length > 0 && (

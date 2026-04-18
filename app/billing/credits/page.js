@@ -85,6 +85,8 @@ function CreditsPageInner() {
 
   const purchaseState = searchParams?.get('purchase')
   const preselectType = searchParams?.get('type')
+  const upgradeFrom = searchParams?.get('upgrade_from')
+  const upgradeDiff = parseInt(searchParams?.get('diff'), 10)
 
   useEffect(() => {
     async function load() {
@@ -202,6 +204,21 @@ function CreditsPageInner() {
                 : 'Add one-off credits to supplement your monthly allowance. Credits never expire.'}
             </p>
           </div>
+
+          {upgradeFrom && preselectType && Number.isFinite(upgradeDiff) && upgradeDiff > 0 && (() => {
+            const CREDIT_LABELS_LOCAL = { 'rapid-screen': 'Rapid Screen', 'speed-fit': 'Speed-Fit', 'depth-fit': 'Depth-Fit', 'strategy-fit': 'Strategy-Fit' }
+            const fromLabel = CREDIT_LABELS_LOCAL[upgradeFrom] || upgradeFrom
+            const toLabel = CREDIT_LABELS_LOCAL[preselectType] || preselectType
+            return (
+              <div style={{
+                background: '#fffef5', border: '1.5px solid #fde68a', borderLeft: '4px solid #F59E0B',
+                borderRadius: 10, padding: '12px 18px', marginBottom: 20,
+                fontFamily: F, fontSize: 13, color: '#92400e', lineHeight: 1.55,
+              }}>
+                Upgrading from {fromLabel} — pay £{upgradeDiff} for {toLabel}.
+              </div>
+            )
+          })()}
 
           {purchaseState === 'success' && (
             <div style={{
