@@ -583,6 +583,7 @@ function DashboardPageInner() {
   const [selectedCandidates, setSelectedCandidates] = useState(new Set())
   const [assessmentCredits, setAssessmentCredits] = useState([])
   const [redlineCandidates, setRedlineCandidates] = useState(new Set())
+  const [copilotStatus, setCopilotStatus] = useState({}) // { [candidate_id]: 'Critical' | 'At Risk' }
   const [assignmentAlerts, setAssignmentAlerts] = useState([])
   const [attendanceByCandidate, setAttendanceByCandidate] = useState({})
   const [shareByCandidate, setShareByCandidate] = useState({})
@@ -726,8 +727,14 @@ function DashboardPageInner() {
             // Override outcomes counter
             const overrides = (outcomesWithResults || []).filter(r => r.override_warning === true)
             const overrideFailed = overrides.filter(r => ['failed_probation', 'left_probation', 'dismissed', 'left_early'].includes((r.outcome || '').toLowerCase()))
-            if (overrides.length > 0) {
-              setOverrideStats({ total: overrides.length, failed: overrideFailed.length })
+            const totalDecisions = (outcomesWithResults || []).length
+            if (totalDecisions > 0) {
+              setOverrideStats({
+                total: overrides.length,
+                failed: overrideFailed.length,
+                totalDecisions,
+                followed: totalDecisions - overrides.length,
+              })
             }
             const judged = []
             let pending = 0
@@ -808,6 +815,9 @@ function DashboardPageInner() {
             .eq('user_id', user.id)
             .in('overall_status', ['Critical', 'At Risk'])
           if (copilotRows && copilotRows.length > 0) {
+            const byId = {}
+            for (const r of copilotRows) byId[r.candidate_id] = r.overall_status
+            setCopilotStatus(byId)
             setRedlineCandidates(new Set(copilotRows.filter(r => r.overall_status === 'Critical').map(r => r.candidate_id)))
           }
         } catch {}
@@ -2817,9 +2827,192 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Probation Tracker (employer only, hidden for pure-temp accounts) ── */}
-        {profile?.account_type === 'employer' && !defaultIsTemp && (
+        {/* ── Probation Tracker (all employer accounts, including PAYG) ── */}
+        {profile?.account_type === 'employer' && (
           <ProbationTracker hires={probationHires} router={router} />
+        )}
+
+        {/* ── Probation Co-pilot (employer only — live status on current hires) ── */}
+        {profile?.account_type === 'employer' && probationHires.length > 0 && (
+          <div style={{ ...cs, marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <Ic name="shield" size={14} color={TEAL} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Probation co-pilot
+              </span>
+            </div>
+            <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 14px', lineHeight: 1.55 }}>
+              Live status on your current probation hires.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {probationHires.slice(0, 8).map(h => {
+                const cand = h.candidates
+                if (!cand) return null
+                const roleTitle = cand?.assessments?.role_title || '—'
+                const probMonths = h.probation_months || 6
+                const placement = h.placement_date || h.outcome_date || h.created_at
+                const endDate = placement ? new Date(new Date(placement).getTime() + probMonths * 30 * 24 * 60 * 60 * 1000) : null
+                const daysLeft = endDate ? Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24)) : null
+                const copStatus = copilotStatus[cand.id]
+                let status, color, bg, border
+                if (copStatus === 'Critical')      { status = 'At Risk';   color = RED;   bg = REDBG; border = REDBD }
+                else if (copStatus === 'At Risk')  { status = 'Monitor';   color = AMB;   bg = AMBBG; border = AMBBD }
+                else if (daysLeft !== null && daysLeft < 0) { status = 'Overdue'; color = RED; bg = REDBG; border = REDBD }
+                else                               { status = 'On Track';  color = GRN;   bg = GRNBG; border = GRNBD }
+                return (
+                  <div key={h.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 14px', background: BG, border: `1px solid ${BD}`, borderRadius: 8,
+                    gap: 12, flexWrap: 'wrap',
+                  }}>
+                    <div style={{ minWidth: 180, flex: 1 }}>
+                      <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX }}>{cand.name}</div>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX3 }}>{roleTitle}{endDate ? ` · review by ${endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}{daysLeft !== null && daysLeft >= 0 ? ` · ${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining` : ''}</div>
+                    </div>
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 50,
+                      background: bg, color, border: `1px solid ${border}`, fontFamily: F,
+                    }}>
+                      {status}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Probation Review Generator (employer only) ── */}
+        {profile?.account_type === 'employer' && probationHires.length > 0 && (
+          <div style={{ ...cs, marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <Ic name="file" size={14} color={NAVY} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Probation review generator
+              </span>
+            </div>
+            <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 14px', lineHeight: 1.55 }}>
+              Generate a structured probation review document for any current hire.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {probationHires.slice(0, 6).map(h => {
+                const cand = h.candidates
+                if (!cand) return null
+                const roleTitle = cand?.assessments?.role_title || '—'
+                const assessmentId = cand?.assessment_id
+                return (
+                  <div key={h.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 14px', background: BG, border: `1px solid ${BD}`, borderRadius: 8,
+                    gap: 12, flexWrap: 'wrap',
+                  }}>
+                    <div style={{ minWidth: 180, flex: 1 }}>
+                      <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX }}>{cand.name}</div>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX3 }}>{roleTitle}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { if (assessmentId) router.push(`/assessment/${assessmentId}/candidate/${cand.id}`) }}
+                      disabled={!assessmentId}
+                      style={{
+                        fontFamily: F, fontSize: 12.5, fontWeight: 700, color: NAVY,
+                        background: TEAL, border: 'none', padding: '7px 14px', borderRadius: 7,
+                        cursor: assessmentId ? 'pointer' : 'not-allowed', opacity: assessmentId ? 1 : 0.5,
+                      }}
+                    >
+                      Generate probation review
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Red Flag Alerts (employer only) ── */}
+        {profile?.account_type === 'employer' && (() => {
+          const flaggedIds = new Set([...redlineCandidates, ...Object.keys(copilotStatus)])
+          const flagged = candidates.filter(c => flaggedIds.has(c.id)).slice(0, 8)
+          if (flagged.length === 0) return null
+          return (
+            <div style={{ ...cs, marginBottom: 20, borderTop: `3px solid ${RED}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <Ic name="alert" size={14} color={RED} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Red flag alerts
+                </span>
+              </div>
+              <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 14px', lineHeight: 1.55 }}>
+                Candidates whose probation is showing warning signs. Review the report for details.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {flagged.map(c => {
+                  const status = copilotStatus[c.id] || (redlineCandidates.has(c.id) ? 'Critical' : 'At Risk')
+                  const isCritical = status === 'Critical'
+                  return (
+                    <div key={c.id} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 14px', background: isCritical ? REDBG : AMBBG,
+                      border: `1px solid ${isCritical ? REDBD : AMBBD}`, borderRadius: 8,
+                      gap: 12, flexWrap: 'wrap',
+                    }}>
+                      <div style={{ minWidth: 180, flex: 1 }}>
+                        <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX }}>{c.name}</div>
+                        <div style={{ fontFamily: F, fontSize: 12, color: TX3 }}>
+                          Flagged {status === 'Critical' ? 'Critical' : 'At Risk'} by Probation Co-pilot
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { if (c.assessments?.id) router.push(`/assessment/${c.assessments.id}/candidate/${c.id}`) }}
+                        style={{
+                          fontFamily: F, fontSize: 12.5, fontWeight: 700, color: '#fff',
+                          background: isCritical ? RED : AMB, border: 'none', padding: '7px 14px', borderRadius: 7,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        View report
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* ── Decision Overrides stats (employer only) ── */}
+        {profile?.account_type === 'employer' && overrideStats && overrideStats.totalDecisions > 0 && (
+          <div style={{ ...cs, marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <Ic name="target" size={14} color={NAVY} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Decision overrides
+              </span>
+            </div>
+            <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 14px', lineHeight: 1.55 }}>
+              How your hiring decisions compare with PRODICTA recommendations.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+              {[
+                { label: 'Total decisions',        value: overrideStats.totalDecisions, color: NAVY },
+                { label: 'Followed recommendations', value: overrideStats.followed,      color: GRN },
+                { label: 'Overridden',             value: overrideStats.total,          color: overrideStats.total > 0 ? RED : TX3 },
+                {
+                  label: 'Overrides that failed',
+                  value: overrideStats.total > 0 ? `${overrideStats.failed}/${overrideStats.total}` : '—',
+                  color: overrideStats.failed > 0 ? RED : TX3,
+                },
+              ].map(stat => (
+                <div key={stat.label} style={{
+                  background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '12px 14px',
+                }}>
+                  <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: stat.color, lineHeight: 1 }}>{stat.value}</div>
+                  <div style={{ fontFamily: F, fontSize: 11, fontWeight: 600, color: TX3, marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* ── ERA 2025 Risk Calculator / Placement Risk + Cost of Vacancy ── */}
