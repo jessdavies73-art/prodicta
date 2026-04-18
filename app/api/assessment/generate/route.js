@@ -6,6 +6,13 @@ import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-
 // Strategy-Fit (4 scenarios). Allow up to 120s before Vercel kills the function.
 export const maxDuration = 120
 
+// Response headers signalling the client/intermediaries may hold the socket
+// open for the full streaming duration.
+const keepAliveHeaders = {
+  'Connection': 'keep-alive',
+  'Keep-Alive': 'timeout=120',
+}
+
 export async function POST(request) {
   // Tracks PAYG credit state so the outer catch can refund if a failure happens
   // after deduction. null means no deduction yet / not applicable.
@@ -511,19 +518,34 @@ Write in UK English throughout. No Americanisms. No generic scenarios. No abstra
 
 FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in the output. Use commas, full stops, or rewrite the sentence instead.`
 
-    const finalPrompt = prompt.replace(
-      'FORMATTING RULE: Never use em dash',
-      `${sectorGuidanceBlock}${seniorityGuidanceBlock}\nFORMATTING RULE: Never use em dash`
-    )
+    // Rapid Screen only needs a single scenario + a prioritisation test, so
+    // skip the heavy sector / seniority guidance blocks and cap output tokens.
+    // Other modes still get the full guidance injected before FORMATTING RULE.
+    const finalPrompt = isRapid
+      ? prompt
+      : prompt.replace(
+          'FORMATTING RULE: Never use em dash',
+          `${sectorGuidanceBlock}${seniorityGuidanceBlock}\nFORMATTING RULE: Never use em dash`
+        )
 
     const scenarioModel = 'claude-sonnet-4-6'
-    console.log('[generate] calling Claude API', { model: scenarioModel, prompt_length: finalPrompt.length })
-    const claudeStart = Date.now()
-    const message = await client.messages.create({
+    const scenarioMaxTokens = isRapid ? 600 : 4096
+    console.log('[generate] calling Claude API', {
       model: scenarioModel,
-      max_tokens: 4096,
-      messages: [{ role: 'user', content: finalPrompt }]
+      prompt_length: finalPrompt.length,
+      max_tokens: scenarioMaxTokens,
+      streaming: true,
     })
+    const claudeStart = Date.now()
+    // Stream the response so the server-to-Anthropic connection stays active
+    // for the full generation; Vercel won't see an idle socket and close it.
+    // finalMessage() aggregates the deltas into the same shape as messages.create.
+    const stream = await client.messages.stream({
+      model: scenarioModel,
+      max_tokens: scenarioMaxTokens,
+      messages: [{ role: 'user', content: finalPrompt }],
+    })
+    const message = await stream.finalMessage()
     console.log('[generate] Claude API returned', {
       model: scenarioModel,
       elapsed_ms: Date.now() - claudeStart,
@@ -746,7 +768,7 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
       }
     }
 
-    return NextResponse.json({ id: assessment.id, scenarios })
+    return NextResponse.json({ id: assessment.id, scenarios }, { headers: keepAliveHeaders })
   } catch (err) {
     console.error('Generate error:', err)
 
