@@ -3,6 +3,19 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createServiceClient } from '@/lib/supabase-server'
 
 // -- ALTER TABLE assessments ADD COLUMN IF NOT EXISTS workspace_content JSONB;
+//
+// IMPORTANT — response shape contract:
+//   { emails: [...], messages: [...], tasks: [...],
+//     calendar_gaps: [...], fixed_meetings: [...],
+//     surprise_message: {...} }
+//
+// These exact field names are read by app/assess/[uniqueToken]/page.js
+// (WorkspacePage, ~L1530). Do NOT rename to `inbox_items` or
+// `calendar_events` — those names are used elsewhere in the codebase for
+// unrelated data (scenario inbox overload, calendar-simulation stage) and
+// renaming here would silently break the Strategy-Fit workspace stage.
+// Auth is intentionally absent: candidates are anonymous (identified by
+// unique_link on the assess page), so this endpoint accepts any assessment id.
 
 // Haiku can occasionally stretch to 20-30s; give headroom so an intermittent
 // slow call doesn't kill the function and leave the candidate stuck.
