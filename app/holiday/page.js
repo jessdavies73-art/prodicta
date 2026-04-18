@@ -342,7 +342,7 @@ export default function HolidayPage() {
                       {r.worker_name}
                     </div>
                     <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, marginBottom: 10 }}>
-                      {r.employment_type === 'permanent' ? 'Permanent' : 'Temporary'} | {fmtDate(r.holiday_year_start)} — {fmtDate(r.holiday_year_end)}
+ {r.employment_type === 'permanent' ? 'Permanent' : 'Temporary'} | {fmtDate(r.holiday_year_start)}, {fmtDate(r.holiday_year_end)}
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                       <span style={{ fontFamily: F, fontSize: 12, color: TX2 }}>{r.days_taken || 0} of {totalAvailable} days used</span>
@@ -368,7 +368,7 @@ export default function HolidayPage() {
               <div style={{ ...cs, marginBottom: 24 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
                   <h2 style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: TX, margin: 0 }}>
-                    {selectedRecord.worker_name} — Holiday Detail
+ {selectedRecord.worker_name}, Holiday Detail
                   </h2>
                   {!showNewEntry && (
                     <button onClick={() => setShowNewEntry(true)} style={{ ...bs('primary', 'sm') }}>

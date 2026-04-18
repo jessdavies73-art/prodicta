@@ -332,7 +332,7 @@ export default function DocumentsPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, padding: '8px 14px', background: TEALLT, borderRadius: 8, border: `1px solid ${TEAL}40` }}>
                     <Ic name="check" size={14} color={TEALD} />
                     <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD }}>
-                      {selectedCandidate.name} selected — fields pre-filled from their profile.
+ {selectedCandidate.name} selected, fields pre-filled from their profile.
                     </span>
                     <button onClick={() => { setSelectedCandidate(null); setCandidateSearch('') }}
                       style={{ marginLeft: 'auto', fontFamily: F, fontSize: 11, fontWeight: 600, color: TX3, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>

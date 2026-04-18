@@ -83,7 +83,7 @@ export function DemoSidebar({ active, demoEmploymentType }) {
 
   // Documents visibility is driven by the toggle on the demo dashboard.
   // When demoEmploymentType is not passed (other demo pages that don't own the
-  // toggle), default to showing Documents — the demo default is 'both'.
+ // toggle), default to showing Documents, the demo default is 'both'.
   const showDocuments =
     demoEmploymentType == null ||
     demoEmploymentType === 'temporary' ||
@@ -187,7 +187,7 @@ export function DemoSidebar({ active, demoEmploymentType }) {
         ))}
       </nav>
 
-      {/* Pinned bottom: Account — Settings + Sign Out only, no Demo Account badge.
+ {/* Pinned bottom: Account, Settings + Sign Out only, no Demo Account badge.
           marginTop: 'auto' keeps Sign Out at the bottom of the flex column. */}
       <div style={{
         marginTop: 'auto',

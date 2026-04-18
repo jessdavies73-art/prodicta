@@ -269,7 +269,7 @@ export async function POST(request, { params }) {
     await resend.emails.send({
       from: 'PRODICTA <reports@prodicta.co.uk>',
       to: email,
-      subject: `Candidate Brief: ${candidate?.name || 'Candidate'} — ${candidate?.assessments?.role_title || 'Role'}`,
+ subject: `Candidate Brief: ${candidate?.name || 'Candidate'}, ${candidate?.assessments?.role_title || 'Role'}`,
       html: `<div style="font-family:'Outfit',system-ui,sans-serif;max-width:500px;margin:0 auto;padding:32px 0">
         <div style="background:#0f2137;padding:20px 28px;border-radius:12px 12px 0 0">
           <span style="color:#00BFA5;font-size:20px;font-weight:800">PRODICTA</span>

@@ -8,7 +8,7 @@ function pulseEmailHtml({ pulseId, workerName, clientCompany, startDate, pulseNu
   const fmtDate = new Date(startDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   const bodies = {
     1: `Are you all set for your start at ${clientCompany}? Any questions about the role before you begin?`,
-    2: `Just checking in — still excited about starting on ${fmtDate}? Is there anything you need from us before then?`,
+ 2: `Just checking in, still excited about starting on ${fmtDate}? Is there anything you need from us before then?`,
     3: `Big day tomorrow! You are starting at ${clientCompany}. Is everything confirmed and ready to go?`,
   }
   const bodyText = bodies[pulseNumber] || bodies[1]
@@ -35,7 +35,7 @@ function pulseEmailHtml({ pulseId, workerName, clientCompany, startDate, pulseNu
   <p style="font-size:12px;color:#94a1b3;line-height:1.5;margin:0">This is an automated engagement check from PRODICTA. If you have any issues, please contact your recruitment consultant directly.</p>
 </div>
 <div style="background:#0F2137;border-radius:0 0 12px 12px;padding:20px 28px;text-align:center">
-  <p style="font-size:11px;color:rgba(255,255,255,0.5);margin:0;line-height:1.5">Powered by PRODICTA — Predictive Hiring Intelligence<br>prodicta.co.uk</p>
+ <p style="font-size:11px;color:rgba(255,255,255,0.5);margin:0;line-height:1.5">Powered by PRODICTA, Predictive Hiring Intelligence<br>prodicta.co.uk</p>
 </div>
 </div>
 <img src="${trackUrl}" width="1" height="1" style="display:none" alt="" />
@@ -209,7 +209,7 @@ export async function GET(request) {
           await resend.emails.send({
             from: 'Prodicta <alerts@prodicta.co.uk>',
             to: userRow.email,
-            subject: `Ghosting Risk Alert — ${latestPulse.worker_name} starts ${fmtDate}`,
+ subject: `Ghosting Risk Alert, ${latestPulse.worker_name} starts ${fmtDate}`,
             html: buildCronAlertEmail({
               workerName: latestPulse.worker_name,
               clientCompany: review?.client_company || '',
@@ -287,7 +287,7 @@ function buildCronAlertEmail({ workerName, clientCompany, startDate, risk, pulse
   <ul style="margin:0;padding-left:20px;font-size:13px;color:#4a5568;line-height:1.8">${actions}</ul>
 </div>
 <div style="background:#0F2137;border-radius:0 0 12px 12px;padding:20px 28px;text-align:center">
-  <p style="font-size:11px;color:rgba(255,255,255,0.5);margin:0">Powered by PRODICTA — Predictive Hiring Intelligence</p>
+ <p style="font-size:11px;color:rgba(255,255,255,0.5);margin:0">Powered by PRODICTA, Predictive Hiring Intelligence</p>
 </div>
 </div></body></html>`
 }

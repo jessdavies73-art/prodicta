@@ -42,7 +42,7 @@ export async function POST(request) {
     await resend.emails.send({
       from: 'Prodicta <alerts@prodicta.co.uk>',
       to: user.email,
-      subject: `SSP Check Required — ${worker_name}`,
+ subject: `SSP Check Required, ${worker_name}`,
       html: `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>

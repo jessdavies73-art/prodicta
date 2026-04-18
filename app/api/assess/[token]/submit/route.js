@@ -94,7 +94,7 @@ export async function POST(request, { params }) {
 
     if (updateError) throw updateError
 
-    // In-app notification for the hiring team — cheap, keep inline.
+ // In-app notification for the hiring team, cheap, keep inline.
     try {
       await adminClient.from('notifications').insert({
         user_id: candidate.user_id,

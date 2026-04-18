@@ -621,7 +621,7 @@ export default function LandingPage() {
           {[
             { to: null, display: 'From £49', label: 'Per month' },
             { to: 4,   suffix: '',  label: 'Scenario types' },
-            { to: null, display: '15–45 min', label: 'Assessment time' },
+ { to: null, display: '15-45 min', label: 'Assessment time' },
             { to: null, display: 'UK-built', label: 'For ERA 2025 compliance' },
           ].map((item) => (
             <div key={item.label} style={{ textAlign: 'center', minWidth: 90 }}>
@@ -672,7 +672,7 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
-          PROBLEM — The cost of getting hiring wrong
+ PROBLEM, The cost of getting hiring wrong
       ════════════════════════════════════════════════════════════════════ */}
       <section style={{ background: '#f8f9fb', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
@@ -759,7 +759,7 @@ export default function LandingPage() {
           <Reveal delay={100}>
             <div className="cv-vs-prodicta" style={{ display: 'grid', gridTemplateColumns: '1fr 48px 1fr', gap: '0 16px', alignItems: 'center' }}>
 
-              {/* LEFT — Traditional CV */}
+ {/* LEFT, Traditional CV */}
               <div style={{
                 background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: 16, padding: '32px 28px', opacity: 0.6,
@@ -789,14 +789,14 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* CENTRE — Arrow */}
+ {/* CENTRE, Arrow */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
               </div>
 
-              {/* RIGHT — PRODICTA assessment */}
+ {/* RIGHT, PRODICTA assessment */}
               <div style={{
                 background: 'rgba(0,191,165,0.06)', border: `1.5px solid ${TEAL}55`,
                 borderRadius: 16, padding: '32px 28px',
@@ -810,12 +810,12 @@ export default function LandingPage() {
                   <div style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: '#fff' }}>PRODICTA assessment</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-                  {/* Card 1 — jade */}
+ {/* Card 1, jade */}
                   <div style={{ borderLeft: `3px solid ${TEAL}`, background: 'rgba(0,191,165,0.08)', borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
                     <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>Communication scored 88</div>
                     <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>but avoids difficult conversations under pressure</div>
                   </div>
-                  {/* Card 2 — amber watch-out */}
+ {/* Card 2, amber watch-out */}
                   <div style={{ borderLeft: '3px solid #E8B84B', background: 'rgba(232,184,75,0.08)', borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
                       <span style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: '#E8B84B', background: 'rgba(232,184,75,0.18)', border: '1px solid rgba(232,184,75,0.4)', borderRadius: 4, padding: '1px 7px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Watch-out · High</span>
@@ -823,14 +823,14 @@ export default function LandingPage() {
                     <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>Delegation reluctance: scored 52</div>
                     <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>Relies on doing everything personally rather than distributing work</div>
                   </div>
-                  {/* Card 3 — red risk */}
+ {/* Card 3, red risk */}
                   <div style={{ borderLeft: '3px solid #EF4444', background: 'rgba(239,68,68,0.08)', borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
                       <span style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: '#EF4444', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 4, padding: '1px 7px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>If ignored</span>
                     </div>
                     <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff' }}>Missed deadlines within 60 days</div>
                   </div>
-                  {/* Card 4 — jade probability */}
+ {/* Card 4, jade probability */}
                   <div style={{ borderLeft: `3px solid ${TEAL}`, background: 'rgba(0,191,165,0.08)', borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
                     <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>72% chance of passing probation</div>
                     <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>Likely to pass with structured onboarding plan</div>
@@ -1125,7 +1125,7 @@ export default function LandingPage() {
                   textAlign: 'center', fontFamily: F, fontSize: 14, color: '#5e6b7f',
                   maxWidth: 680, margin: '0 auto 32px', lineHeight: 1.6,
                 }}>
-                  The higher the assessment level the more detailed the report. Rapid Screen gives a quick signal — Speed-Fit and above give the full picture.
+ The higher the assessment level the more detailed the report. Rapid Screen gives a quick signal, Speed-Fit and above give the full picture.
                 </p>
               </Reveal>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, alignItems: 'start', marginBottom: 20 }}>
@@ -1307,12 +1307,12 @@ export default function LandingPage() {
                 headline: 'Place faster. Protect every placement.',
                 sub: 'One platform for permanent and temporary placements. From first assessment to final day.',
                 points: [
-                  'Real work simulations — Every candidate assessed on the actual situations they will face in the role. Perm or temp. Not a personality test.',
-                  'Day 1 Highlight Reel — Send clients a 60-second video of how the candidate performed. No other agency offers that.',
-                  'Placement Health Score — Live traffic light dashboard for every active placement. Amber alert before the client calls. Never be the one who did not see it coming.',
-                  'ERA 2025 and Fair Work Agency ready — Compliance documentation generated automatically for every perm hire and every temp placement.',
-                  'Full SSP Management — Eligibility checker, payment calculator, compliance pack. 2026 rules built in. Nothing falls through the cracks.',
-                  'Works on your phone — Log attendance, report sickness, check placements on the go. Installs as an app on any phone or desktop.',
+ 'Real work simulations, Every candidate assessed on the actual situations they will face in the role. Perm or temp. Not a personality test.',
+ 'Day 1 Highlight Reel, Send clients a 60-second video of how the candidate performed. No other agency offers that.',
+ 'Placement Health Score, Live traffic light dashboard for every active placement. Amber alert before the client calls. Never be the one who did not see it coming.',
+ 'ERA 2025 and Fair Work Agency ready, Compliance documentation generated automatically for every perm hire and every temp placement.',
+ 'Full SSP Management, Eligibility checker, payment calculator, compliance pack. 2026 rules built in. Nothing falls through the cracks.',
+ 'Works on your phone, Log attendance, report sickness, check placements on the go. Installs as an app on any phone or desktop.',
                 ],
                 more: 'And so much more. Rapid Screen at \u00A36, Replacement Trigger, Attendance Risk Signal, Client Visibility Layer, Document Templates, Holiday Pay Tracker, Assignment Review Tracker, and more.',
                 bg: NAVY,
@@ -1323,12 +1323,12 @@ export default function LandingPage() {
                 headline: 'Hire with evidence. Protect every decision.',
                 sub: 'Most hiring decisions are based on opinion. PRODICTA gives you proof.',
                 points: [
-                  'Real work simulations — Built from the role itself. Not a personality test. See exactly how candidates perform under real pressure before you commit.',
-                  'ERA 2025 protected — Every hiring decision documented automatically. Legally defensible from day one with no qualifying period.',
-                  'Probation early warning — Detects when a hire is deviating from predictions at week three. Not month four when it is too late.',
-                  'SSP and holiday compliance — 2026 SSP rules built in. Holiday pay records kept for 6 years automatically. Fair Work Agency ready.',
-                  'Document templates — Probation letters, family leave acknowledgements, SSP forms. Pre-filled from the candidate profile. Built to current legislation.',
-                  'Perm and temp — One platform whether you hire permanently or use temporary workers. Same evidence. Same protection.',
+ 'Real work simulations, Built from the role itself. Not a personality test. See exactly how candidates perform under real pressure before you commit.',
+ 'ERA 2025 protected, Every hiring decision documented automatically. Legally defensible from day one with no qualifying period.',
+ 'Probation early warning, Detects when a hire is deviating from predictions at week three. Not month four when it is too late.',
+ 'SSP and holiday compliance, 2026 SSP rules built in. Holiday pay records kept for 6 years automatically. Fair Work Agency ready.',
+ 'Document templates, Probation letters, family leave acknowledgements, SSP forms. Pre-filled from the candidate profile. Built to current legislation.',
+ 'Perm and temp, One platform whether you hire permanently or use temporary workers. Same evidence. Same protection.',
                 ],
                 more: 'And so much more. Manager DNA Assessment, Team Dynamics, Probation Co-pilot, Outcome Tracking, Candidate Development Portal, Rejected Candidate Development Plan, and more.',
                 bg: '#f0fdf8',
@@ -1355,7 +1355,7 @@ export default function LandingPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {col.points.map(p => {
                       const dash = p.indexOf(' \u2014 ')
-                      const emIdx = p.indexOf(' — ')
+ const emIdx = p.indexOf(', ')
                       const splitAt = dash > -1 ? dash : emIdx
                       const title = splitAt > -1 ? p.slice(0, splitAt) : p
                       const desc = splitAt > -1 ? p.slice(splitAt + 3) : ''
@@ -1392,7 +1392,7 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
-          FEATURES — 2×3 grid
+ FEATURES, 2×3 grid
       ════════════════════════════════════════════════════════════════════ */}
       <section style={{ background: 'linear-gradient(180deg, #0f2137 0%, #1a3a5c 100%)', padding: '72px 24px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)', width: 800, height: 800, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}0a 0%, transparent 65%)`, pointerEvents: 'none' }} />

@@ -61,10 +61,10 @@ export async function POST(request, { params }) {
           role: 'user',
           content: `You are building a Manager DNA profile assessment. The hiring manager oversees a "${assessment.role_title}" role.
 
-Generate exactly 2 management scenarios that reveal the manager's decision-making style, delegation approach, and conflict handling. These are NOT candidate scenarios — they are for the hiring manager themselves.
+Generate exactly 2 management scenarios that reveal the manager's decision-making style, delegation approach, and conflict handling. These are NOT candidate scenarios, they are for the hiring manager themselves.
 
-Scenario 1: DELEGATION & PRIORITISATION — A situation where the manager must delegate tasks and handle competing priorities within their team.
-Scenario 2: TEAM CONFLICT & PERFORMANCE — A situation involving underperformance or interpersonal conflict the manager must resolve.
+Scenario 1: DELEGATION & PRIORITISATION, A situation where the manager must delegate tasks and handle competing priorities within their team.
+Scenario 2: TEAM CONFLICT & PERFORMANCE, A situation involving underperformance or interpersonal conflict the manager must resolve.
 
 Each scenario should be specific to the "${assessment.role_title}" team context. 150-200 words each. UK English. No emoji. No em dashes.
 

@@ -47,7 +47,7 @@ function classifyHealth({ copilot, score, outcome }) {
     return { health_status: 'AMBER', health_score, health_reason: reason }
   }
 
-  // Healthy — base on assessment score where co-pilot data is sparse
+ // Healthy, base on assessment score where co-pilot data is sparse
   const baseScore = score != null ? Math.max(70, Math.min(100, score)) : 85
   const reason = copilot
     ? 'Co-pilot check-ins on track. Performing as predicted.'
@@ -61,7 +61,7 @@ function daysBetween(a, b) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// GET — calculate health for every active placement
+// GET, calculate health for every active placement
 // ────────────────────────────────────────────────────────────────────────────
 
 export async function GET(request) {
@@ -165,7 +165,7 @@ export async function GET(request) {
           })
           .eq('id', o.id)
       } catch {
-        // Columns may not exist in some environments — ignore
+ // Columns may not exist in some environments, ignore
       }
 
       placements.push({

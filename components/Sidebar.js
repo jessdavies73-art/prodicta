@@ -63,7 +63,7 @@ export default function Sidebar({ active, companyName }) {
         return
       }
 
-      // Hide for 'permanent', 'ask', 'both', or unset — unless the account has
+ // Hide for 'permanent', 'ask', 'both', or unset, unless the account has
       // at least one assessment with employment_type === 'temporary'.
       const { count } = await supabase.from('assessments')
         .select('id', { count: 'exact', head: true })
@@ -210,7 +210,7 @@ export default function Sidebar({ active, companyName }) {
         ))}
       </nav>
 
-      {/* Pinned bottom: Account group — Settings + Sign Out only, no user display.
+ {/* Pinned bottom: Account group, Settings + Sign Out only, no user display.
           marginTop: 'auto' keeps this block pinned to the bottom of the flex column. */}
       <div style={{
         marginTop: 'auto',

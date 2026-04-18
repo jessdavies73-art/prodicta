@@ -81,7 +81,7 @@ export async function GET(request) {
     const userRow = userRowById.get(userId)
     if (!userRow?.email) { skipped.push({ userId, reason: 'no-email' }); continue }
 
-    // Throttle — skip if we reminded within the last 30 days.
+ // Throttle, skip if we reminded within the last 30 days.
     if (userRow.last_outcome_log_reminder_sent && userRow.last_outcome_log_reminder_sent > throttleCutoff) {
       skipped.push({ userId, reason: 'throttled' })
       continue
@@ -117,7 +117,7 @@ export async function GET(request) {
 </div>
 </body></html>`,
       })
-      // Throttle marker — best effort. Failure here only means we may remind
+ // Throttle marker, best effort. Failure here only means we may remind
       // again next week; safer than skipping the email.
       try {
         await admin.from('users').update({ last_outcome_log_reminder_sent: now.toISOString() }).eq('id', userId)

@@ -12,7 +12,7 @@ export async function GET(request) {
 
   const client = createServiceClient()
 
-  // Tracking pixel — mark email as opened
+ // Tracking pixel, mark email as opened
   if (track === '1') {
     await client
       .from('engagement_pulses')
@@ -30,7 +30,7 @@ export async function GET(request) {
     })
   }
 
-  // Pulse response — update record
+ // Pulse response, update record
   if (response && ['confirmed', 'question', 'concern'].includes(response)) {
     const { data: pulse } = await client
       .from('engagement_pulses')
@@ -98,8 +98,8 @@ export async function GET(request) {
           from: 'Prodicta <alerts@prodicta.co.uk>',
           to: pulse.users.email,
           subject: isUrgent
-            ? `Ghosting Risk Alert — ${pulse.worker_name} starts ${fmtDate}`
-            : `Engagement Update — ${pulse.worker_name} has a question`,
+ ? `Ghosting Risk Alert, ${pulse.worker_name} starts ${fmtDate}`
+ : `Engagement Update, ${pulse.worker_name} has a question`,
           html: buildAlertEmail({
             workerName: pulse.worker_name,
             clientCompany: pulse.client_company || '',
@@ -128,7 +128,7 @@ export async function GET(request) {
 
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Response Received — PRODICTA</title></head>
+<title>Response Received, PRODICTA</title></head>
 <body style="margin:0;padding:0;background:#f7f9fb;font-family:'Outfit',Helvetica,Arial,sans-serif">
 <div style="max-width:480px;margin:0 auto;padding:60px 20px;text-align:center">
 <div style="margin-bottom:24px">
@@ -222,7 +222,7 @@ function buildAlertEmail({ workerName, clientCompany, startDate, pulseNumber, re
   <ul style="margin:0;padding-left:20px;font-size:13px;color:#4a5568;line-height:1.8">${actions}</ul>
 </div>
 <div style="background:#0F2137;border-radius:0 0 12px 12px;padding:20px 28px;text-align:center">
-  <p style="font-size:11px;color:rgba(255,255,255,0.5);margin:0">Powered by PRODICTA — Predictive Hiring Intelligence</p>
+ <p style="font-size:11px;color:rgba(255,255,255,0.5);margin:0">Powered by PRODICTA, Predictive Hiring Intelligence</p>
 </div>
 </div></body></html>`
 }

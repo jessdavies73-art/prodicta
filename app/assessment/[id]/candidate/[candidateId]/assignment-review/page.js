@@ -508,7 +508,7 @@ export default function AssignmentReviewPage({ params }) {
               <h1 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: 0 }}>Assignment Review Tracker</h1>
               {candidate && (
                 <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '4px 0 0' }}>
-                  {candidate.name} — {candidate.assessments?.role_title || 'Worker'}
+ {candidate.name}, {candidate.assessments?.role_title || 'Worker'}
                 </p>
               )}
             </div>
@@ -571,7 +571,7 @@ export default function AssignmentReviewPage({ params }) {
                 </div>
               </div>
 
-              {/* Pre-Start Check — show when start date is in the future or within 7 days */}
+ {/* Pre-Start Check, show when start date is in the future or within 7 days */}
               {record?.assignment_start_date && (() => {
                 const startDate = new Date(record.assignment_start_date + 'T00:00:00')
                 const today = new Date(); today.setHours(0, 0, 0, 0)
@@ -1215,7 +1215,7 @@ export default function AssignmentReviewPage({ params }) {
                 </div>
               )}
 
-              {/* Assignment summary — shown when all reviews done */}
+ {/* Assignment summary, shown when all reviews done */}
               {allDone && (
                 <div style={{ ...cs, marginBottom: 20, borderTop: `3px solid ${TEAL}` }}>
                   <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: NAVY, margin: '0 0 14px' }}>Assignment Performance Summary</h2>
@@ -1379,7 +1379,7 @@ export default function AssignmentReviewPage({ params }) {
                                 <div style={{ flex: 1, minWidth: 140 }}>
                                   <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{rc.name}</div>
                                   <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 2 }}>
-                                    {rc.assessments?.role_title || 'Role'} — Assessed {fmtDate(rc.completed_at)}
+ {rc.assessments?.role_title || 'Role'}, Assessed {fmtDate(rc.completed_at)}
                                   </div>
                                   <span style={{
                                     display: 'inline-block', marginTop: 4,
@@ -1399,7 +1399,7 @@ export default function AssignmentReviewPage({ params }) {
                                     View Report
                                   </button>
                                   <a
-                                    href={`mailto:${rc.email || ''}?subject=${encodeURIComponent(`${candidate?.assessments?.role_title || 'Role'} — Replacement Opportunity`)}&body=${encodeURIComponent(`Hi ${rc.name},\n\nWe have a ${candidate?.assessments?.role_title || 'role'} opportunity available${record?.client_company ? ' at ' + record.client_company : ''}. Based on your previous assessment you are a strong match for this role.\n\nPlease let me know if you are interested and available.\n\nBest regards,\n${profile?.company_name || ''}`)}`}
+ href={`mailto:${rc.email || ''}?subject=${encodeURIComponent(`${candidate?.assessments?.role_title || 'Role'}, Replacement Opportunity`)}&body=${encodeURIComponent(`Hi ${rc.name},\n\nWe have a ${candidate?.assessments?.role_title || 'role'} opportunity available${record?.client_company ? ' at ' + record.client_company : ''}. Based on your previous assessment you are a strong match for this role.\n\nPlease let me know if you are interested and available.\n\nBest regards,\n${profile?.company_name || ''}`)}`}
                                     style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, border: 'none', background: TEAL, fontFamily: F, fontSize: 12, fontWeight: 700, color: NAVY, cursor: 'pointer', textDecoration: 'none' }}
                                   >
                                     Contact
@@ -1433,7 +1433,7 @@ export default function AssignmentReviewPage({ params }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Ic name="check" size={16} color={GRN} />
                     <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>
-                      Replacement triggered{record?.replacement_reason ? ` — ${record.replacement_reason}` : ''}
+ Replacement triggered{record?.replacement_reason ? `, ${record.replacement_reason}` : ''}
                     </span>
                   </div>
                   {record?.replacement_triggered_at && (

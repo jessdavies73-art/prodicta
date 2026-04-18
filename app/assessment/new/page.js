@@ -189,7 +189,7 @@ export default function NewAssessmentPage() {
   const mountedRef = useRef(true)
   const [modeConfirmed, setModeConfirmed] = useState(false)
 
-  // Inline candidate details — collapsed one-step flow
+ // Inline candidate details, collapsed one-step flow
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [candidateEmail, setCandidateEmail] = useState('')
@@ -281,7 +281,7 @@ export default function NewAssessmentPage() {
   useEffect(() => {
     mountedRef.current = true
     // Invalidate any server-component cache Next.js might be holding for this
-    // segment. One-shot on mount — no dependency so it can't fire in a loop.
+ // segment. One-shot on mount, no dependency so it can't fire in a loop.
     try { router.refresh() } catch {}
     return () => { mountedRef.current = false }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -300,8 +300,8 @@ export default function NewAssessmentPage() {
     return () => { if (analyseTimerRef.current) clearTimeout(analyseTimerRef.current) }
   }, [jd, roleTitle])
 
-  // When analysis first completes, scroll to the mode selector — NOT past it
-  // to the confirmation card — so the user can review / change depth before
+ // When analysis first completes, scroll to the mode selector, NOT past it
+ // to the confirmation card, so the user can review / change depth before
   // the candidate details form reveals. If the user explicitly clicks "Looks
   // good" to confirm the depth, scrollToConfirmation handles that jump.
   useEffect(() => {
@@ -349,7 +349,7 @@ export default function NewAssessmentPage() {
         if (used >= planLimit) setAtLimit(true)
       } else if (!isActiveSub) {
         // PAYG / pay-per-assessment branch. Load credits but do NOT gate the
-        // page behind atLimit — a zero-credit PAYG user should still see the
+ // page behind atLimit, a zero-credit PAYG user should still see the
         // mode selector so the per-mode click intercept can open the
         // UpgradeAssessmentModal (with from:null) and let them buy a credit
         // for the mode they actually want.
@@ -970,7 +970,7 @@ export default function NewAssessmentPage() {
                     {modeLabel}
                   </span>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#009688', marginTop: 8 }}>
-                    {isSelected ? 'Selected — see details below' : 'Use template'}
+ {isSelected ? 'Selected, see details below' : 'Use template'}
                   </div>
                 </button>
               )
@@ -1233,7 +1233,7 @@ export default function NewAssessmentPage() {
           })()}
         </div>
 
-        {/* Card 2: Skill weights — hidden until the JD has real substance so
+ {/* Card 2: Skill weights, hidden until the JD has real substance so
             the card doesn't flash in empty on first paint. */}
         {words >= 50 && (
         <div style={{
@@ -1468,12 +1468,12 @@ export default function NewAssessmentPage() {
                     if (isPaygUser && targetCreditType) {
                       const withBalance = (userCredits || []).filter(c => (c.credits_remaining || 0) > 0)
                       if (withBalance.length === 0) {
-                        // Zero credits at all — offer a straight purchase of
+ // Zero credits at all, offer a straight purchase of
                         // one credit of the clicked tier (no upgrade, no diff).
                         setUpgradeModal({ from: null, to: targetCreditType })
                         return
                       }
-                      // Highest tier the user already holds — if it's >=
+ // Highest tier the user already holds, if it's >=
                       // target, no upgrade needed. Otherwise open modal.
                       const heldTiers = withBalance.map(c => TIER_ORDER.indexOf(c.credit_type)).filter(i => i >= 0)
                       const topHeldIdx = Math.max(...heldTiers)
@@ -1598,7 +1598,7 @@ export default function NewAssessmentPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 28 }}>
-                {/* Mode + time — always shown */}
+ {/* Mode + time, always shown */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, fontFamily: F }}>Mode</div>
                   <div style={{ flex: 1 }}>
@@ -1611,7 +1611,7 @@ export default function NewAssessmentPage() {
                   </div>
                 </div>
 
-                {/* Role row — hidden for operational (keep it minimal) */}
+ {/* Role row, hidden for operational (keep it minimal) */}
                 {detectedLevel !== 'OPERATIONAL' && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, fontFamily: F }}>Role</div>
@@ -1624,7 +1624,7 @@ export default function NewAssessmentPage() {
                   </div>
                 )}
 
-                {/* Focus row — hidden for operational */}
+ {/* Focus row, hidden for operational */}
                 {detectedLevel !== 'OPERATIONAL' && autoFocus.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 18px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e4e9f0' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', width: 50, flexShrink: 0, paddingTop: 2, fontFamily: F }}>Focus</div>
@@ -1650,7 +1650,7 @@ export default function NewAssessmentPage() {
                   background: '#f8fafc', border: '1px solid #e4e9f0',
                 }}>
                   <span style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', lineHeight: 1.55 }}>
-                    Review the <strong style={{ color: '#0f2137' }}>Assessment depth</strong> above. Change it if you want — otherwise confirm to continue to candidate details.
+ Review the <strong style={{ color: '#0f2137' }}>Assessment depth</strong> above. Change it if you want, otherwise confirm to continue to candidate details.
                   </span>
                   <button
                     type="button"
@@ -1676,7 +1676,7 @@ export default function NewAssessmentPage() {
                 </div>
               )}
 
-              {/* Inline candidate details — only after the user has confirmed
+ {/* Inline candidate details, only after the user has confirmed
                   the assessment depth. Hidden until then. */}
               <div id="candidate-details" />
               {!sentResult && !loading && !modeConfirmed ? null : loading ? (

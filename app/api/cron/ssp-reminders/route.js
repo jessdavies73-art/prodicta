@@ -46,7 +46,7 @@ export async function GET(request) {
       await resend.emails.send({
         from: 'Prodicta <reminders@prodicta.co.uk>',
         to: email,
-        subject: `Reminder: SSP Check Still Required — ${alert.worker_name}`,
+ subject: `Reminder: SSP Check Still Required, ${alert.worker_name}`,
         html: `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>

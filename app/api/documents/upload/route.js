@@ -51,7 +51,7 @@ export async function POST(request) {
       await adminClient.from('candidate_documents').delete().eq('id', existing.id)
     }
 
-    // Upload new file — organised by assessment_id/candidate_id/
+ // Upload new file, organised by assessment_id/candidate_id/
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
     const ext = file.name.split('.').pop() || 'pdf'

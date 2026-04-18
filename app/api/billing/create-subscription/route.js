@@ -125,7 +125,7 @@ export async function POST(request) {
       console.log('[billing] Confirmed, new status:', paymentIntent.status)
     }
 
-    // SCA / 3D Secure required — return the client secret so the browser can
+ // SCA / 3D Secure required, return the client secret so the browser can
     // open the authentication popup via stripe.confirmCardPayment.
     // Account creation is deferred to /api/billing/confirm-subscription.
     if (paymentIntent?.status === 'requires_action') {
@@ -157,7 +157,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Payment could not be completed. Please try again.' }, { status: 402 })
     }
 
-    // Payment succeeded without SCA — create Supabase user immediately
+ // Payment succeeded without SCA, create Supabase user immediately
     currentStep = 'step5-supabase-user'
     console.log('[billing] Step 5: Creating Supabase user')
     const adminClient = createServiceClient()

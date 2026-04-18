@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 
-// GET /api/documents/[id] — returns a signed download URL (60 min expiry)
+// GET /api/documents/[id], returns a signed download URL (60 min expiry)
 export async function GET(request, { params }) {
   try {
     const supabase = createServerSupabaseClient()
@@ -33,7 +33,7 @@ export async function GET(request, { params }) {
   }
 }
 
-// DELETE /api/documents/[id] — deletes document from storage and DB
+// DELETE /api/documents/[id], deletes document from storage and DB
 export async function DELETE(request, { params }) {
   try {
     const supabase = createServerSupabaseClient()

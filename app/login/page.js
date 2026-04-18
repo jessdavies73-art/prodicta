@@ -287,7 +287,7 @@ function SignUpForm() {
     if (!email.trim())       { setError('Please enter your email address.'); return }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
 
-    // Pay-as-you-go — single assessment credit purchase.
+ // Pay-as-you-go, single assessment credit purchase.
     if (planPath === 'payg') {
       if (!selectedType) { setError('Please choose an assessment type.'); return }
       if (!stripe || !elements) { setError('Payment form is loading. Please wait a moment.'); return }
@@ -452,7 +452,7 @@ function SignUpForm() {
           return
         }
 
-        // Step 3: Authentication passed — complete account creation on the server
+ // Step 3: Authentication passed, complete account creation on the server
         const confirmRes  = await fetch('/api/billing/confirm-subscription', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -779,7 +779,7 @@ function SignUpForm() {
   )
 }
 
-// ── Inner page (uses useRouter — must be inside <Elements> wrapper) ────────
+// ── Inner page (uses useRouter, must be inside <Elements> wrapper) ────────
 
 function LoginPageInner() {
   const router = useRouter()

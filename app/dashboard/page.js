@@ -15,7 +15,7 @@ import {
 import OnboardingWizard from '@/components/OnboardingWizard'
 import ProdictaLogo from '@/components/ProdictaLogo'
 
-/* Inline mobile detection — no external hook dependency */
+/* Inline mobile detection, no external hook dependency */
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
 const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
@@ -1920,7 +1920,7 @@ function DashboardPageInner() {
                   <InfoTooltip text="A prioritised list of everything that needs your attention today. URGENT actions need immediate response. TODAY actions should be handled before end of day." />
                 </h2>
                 <p style={{ fontFamily: F, fontSize: 12, color: TX3, margin: '4px 0 0' }}>
-                  {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — {todaysActions.length > 0 ? 'Here is what needs your attention.' : ''}
+ {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}, {todaysActions.length > 0 ? 'Here is what needs your attention.' : ''}
                 </p>
               </div>
               {todaysActions.length > 0 && (
@@ -2481,7 +2481,7 @@ function DashboardPageInner() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{a.worker_name}</div>
                       <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>
-                        {[a.role_title, a.client_company].filter(Boolean).join(' — ')}
+ {[a.role_title, a.client_company].filter(Boolean).join(', ')}
                       </div>
                       <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 2 }}>
                         Reported sick {new Date(a.reported_sick_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
@@ -2574,7 +2574,7 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Secondary stats row (Cost saved — Speed to Offer moved to its own card above) ── */}
+ {/* ── Secondary stats row (Cost saved, Speed to Offer moved to its own card above) ── */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
           {/* Cost saved */}
           <div style={{
@@ -2928,7 +2928,7 @@ function DashboardPageInner() {
           <ProbationTracker hires={probationHires} router={router} />
         )}
 
-        {/* ── Probation Co-pilot (employer only — live status on current hires) ── */}
+ {/* ── Probation Co-pilot (employer only, live status on current hires) ── */}
         {profile?.account_type === 'employer' && probationHires.length > 0 && (
           <div style={{ ...cs, marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -2944,7 +2944,7 @@ function DashboardPageInner() {
               {probationHires.slice(0, 8).map(h => {
                 const cand = h.candidates
                 if (!cand) return null
-                const roleTitle = cand?.assessments?.role_title || '—'
+ const roleTitle = cand?.assessments?.role_title || ','
                 const probMonths = h.probation_months || 6
                 const placement = h.placement_date || h.outcome_date || h.created_at
                 const endDate = placement ? new Date(new Date(placement).getTime() + probMonths * 30 * 24 * 60 * 60 * 1000) : null
@@ -2994,7 +2994,7 @@ function DashboardPageInner() {
               {probationHires.slice(0, 6).map(h => {
                 const cand = h.candidates
                 if (!cand) return null
-                const roleTitle = cand?.assessments?.role_title || '—'
+ const roleTitle = cand?.assessments?.role_title || ','
                 const assessmentId = cand?.assessment_id
                 return (
                   <div key={h.id} style={{
@@ -3103,7 +3103,7 @@ function DashboardPageInner() {
                 { label: 'Overridden',             value: overrideStats.total,          color: overrideStats.total > 0 ? RED : TX3 },
                 {
                   label: 'Overrides that failed',
-                  value: overrideStats.total > 0 ? `${overrideStats.failed}/${overrideStats.total}` : '—',
+ value: overrideStats.total > 0 ? `${overrideStats.failed}/${overrideStats.total}` : ',',
                   color: overrideStats.failed > 0 ? RED : TX3,
                 },
               ].map(stat => (

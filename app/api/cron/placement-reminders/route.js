@@ -58,7 +58,7 @@ export async function GET(request) {
 
         // Week 2 reminder (days 14-20)
         if (elapsed >= 14 && elapsed < 21 && !sent.week2) {
-          const subject = `Rebate check-in: ${candName} at ${client} — ${o.rebate_weeks - 2} weeks remaining`
+ const subject = `Rebate check-in: ${candName} at ${client}, ${o.rebate_weeks - 2} weeks remaining`
           await sendReminderEmail(resend, user.email, subject, buildRebateEmail({
             appUrl, candName, client, role, weeksLeft: o.rebate_weeks - 2, rebateWeeks: o.rebate_weeks,
             message: `Week 2 of the rebate period has passed. You have <strong>${o.rebate_weeks - 2} weeks</strong> remaining. Now is a good time to check in on how ${candName} is settling in at ${client}.`,
@@ -72,7 +72,7 @@ export async function GET(request) {
 
         // Week 4 reminder (days 28-34)
         if (elapsed >= 28 && elapsed < 35 && !sent.week4) {
-          const subject = `Rebate check-in: ${candName} at ${client} — ${o.rebate_weeks - 4} weeks remaining`
+ const subject = `Rebate check-in: ${candName} at ${client}, ${o.rebate_weeks - 4} weeks remaining`
           await sendReminderEmail(resend, user.email, subject, buildRebateEmail({
             appUrl, candName, client, role, weeksLeft: o.rebate_weeks - 4, rebateWeeks: o.rebate_weeks,
             message: `Week 4 has passed. You are now past the halfway point of the rebate window. Review any flagged concerns from ${candName}'s Prodicta assessment and ensure they are being addressed.`,
@@ -99,7 +99,7 @@ export async function GET(request) {
           notifsSent.push({ type: 'rebate_final', candidate: candName })
         }
 
-        // Rebate ended — prompt to log final outcome (day >= totalDays, within 7 days after)
+ // Rebate ended, prompt to log final outcome (day >= totalDays, within 7 days after)
         if (elapsed >= totalDays && elapsed < totalDays + 7 && !sent.ended) {
           const subject = `Fee secured: Rebate period for ${candName} has ended`
           await sendReminderEmail(resend, user.email, subject, buildRebateEmail({
@@ -127,7 +127,7 @@ export async function GET(request) {
               message: `${candName} is now one month into their probation. This is an ideal time for a structured check-in. Review their Prodicta assessment to see whether any flagged concerns have materialised.` }))
           await insertNotification(adminClient, o.user_id, cand?.id, cand?.assessment_id,
             `Month 1 check-in: ${candName}`,
-            `One month into probation. Review the Prodicta report — have any flagged concerns materialised?`)
+ `One month into probation. Review the Prodicta report, have any flagged concerns materialised?`)
           await adminClient.from('candidate_outcomes').update({ probation_reminder_sent: { ...sent, month1: true } }).eq('id', o.id)
           notifsSent.push({ type: 'probation_month1', candidate: candName })
         }
@@ -135,9 +135,9 @@ export async function GET(request) {
         // Month 3 (days 91-97)
         if (elapsed >= 91 && elapsed < 98 && !sent.month3) {
           await sendReminderEmail(resend, user.email,
-            `Month 3 review: ${candName} — 3 months into probation`,
+ `Month 3 review: ${candName}, 3 months into probation`,
             buildProbationEmail({ appUrl, candName, role, month: 3, probationMonths: o.probation_months,
-              message: `${candName} is now at the mid-point of probation. This is a critical review moment — especially for any watch-outs flagged in their Prodicta assessment. Document your findings now.` }))
+ message: `${candName} is now at the mid-point of probation. This is a critical review moment, especially for any watch-outs flagged in their Prodicta assessment. Document your findings now.` }))
           await insertNotification(adminClient, o.user_id, cand?.id, cand?.assessment_id,
             `Month 3 review: ${candName}`,
             `Three months into probation. Conduct a structured mid-point review and log your findings.`)
@@ -145,10 +145,10 @@ export async function GET(request) {
           notifsSent.push({ type: 'probation_month3', candidate: candName })
         }
 
-        // Month 5 — urgent ERA warning (days 152-158)
+ // Month 5, urgent ERA warning (days 152-158)
         if (elapsed >= 152 && elapsed < 159 && !sent.month5) {
           await sendReminderEmail(resend, user.email,
-            `URGENT: One month until unfair dismissal rights apply — ${candName}`,
+ `URGENT: One month until unfair dismissal rights apply, ${candName}`,
             buildProbationEmail({ appUrl, candName, role, month: 5, probationMonths: o.probation_months,
               message: `<strong style="color:#dc2626;">You have one month before ${candName} acquires unfair dismissal rights under ERA 2025.</strong> If there are unresolved performance concerns, you must act now. Review the flagged watch-outs in their Prodicta assessment and document your decision before the 6-month mark.`,
               urgent: true }))

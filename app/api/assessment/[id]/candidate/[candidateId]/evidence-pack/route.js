@@ -213,7 +213,7 @@ export async function GET(request, { params }) {
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // SECTION 1 — COVER PAGE
+ // SECTION 1, COVER PAGE
     // ──────────────────────────────────────────────────────────────────────
 
     // Header band
@@ -230,7 +230,7 @@ export async function GET(request, { params }) {
 
     // Confidential strip
     page.drawRectangle({ x: MARGIN, y: y - 24, width: CONTENT_W, height: 28, color: sectionBg, borderColor: line, borderWidth: 0.8 })
-    page.drawText('CONFIDENTIAL — FAIR DISMISSAL AUDIT TRAIL', { x: MARGIN + 14, y: y - 14, size: 10, font: helvB, color: navy })
+ page.drawText('CONFIDENTIAL, FAIR DISMISSAL AUDIT TRAIL', { x: MARGIN + 14, y: y - 14, size: 10, font: helvB, color: navy })
     y -= 50
 
     // Reference details box
@@ -278,10 +278,10 @@ export async function GET(request, { params }) {
     coverLines.forEach(ln => { page.drawText(ln, { x: MARGIN + 14, y: cny, size: 9.5, font: helv, color: black }); cny -= 12 })
 
     // ──────────────────────────────────────────────────────────────────────
-    // SECTION 2 — ASSESSMENT SUMMARY
+ // SECTION 2, ASSESSMENT SUMMARY
     // ──────────────────────────────────────────────────────────────────────
     addPage()
-    drawSectionHeading('Section 2 — Assessment Summary')
+ drawSectionHeading('Section 2, Assessment Summary')
 
     drawSubLabel('Score at time of hire')
     const score = result.overall_score ?? 0
@@ -337,10 +337,10 @@ export async function GET(request, { params }) {
     drawParagraph('A separate Equality Act 2010 and Employment Rights Act 2025 compliance certificate was issued at the point of assessment confirming the assessment was scenario-based, anonymised at the point of scoring, and free from protected-characteristic input.', { size: 9.5, color: grey })
 
     // ──────────────────────────────────────────────────────────────────────
-    // SECTION 3 — PROBATION MANAGEMENT EVIDENCE
+ // SECTION 3, PROBATION MANAGEMENT EVIDENCE
     // ──────────────────────────────────────────────────────────────────────
     addPage()
-    drawSectionHeading('Section 3 — Probation Management Evidence')
+ drawSectionHeading('Section 3, Probation Management Evidence')
 
     drawSubLabel('Co-pilot oversight summary')
     const overall = copilot?.overall_status || 'Not recorded'
@@ -401,7 +401,7 @@ export async function GET(request, { params }) {
         const text = wo ? (typeof wo === 'object' ? (wo.watchout || wo.title || wo.text || '') : wo) : `Watch-out #${idx + 1}`
         const status = watchoutStatuses[k]
         const statusLabel = status === 'red' ? 'Materialised' : status === 'amber' ? 'Early signs' : status === 'green' ? 'No issues observed' : status
-        drawBullet(`${text} — ${statusLabel}`)
+ drawBullet(`${text}, ${statusLabel}`)
       })
     }
     y -= 4
@@ -413,7 +413,7 @@ export async function GET(request, { params }) {
     } else {
       redlineAlerts.forEach((a, i) => {
         ensure(20)
-        page.drawText(`Alert ${i + 1} — ${fmtDate(a.created_at)}`, { x: MARGIN, y, size: 10.5, font: helvB, color: navy })
+ page.drawText(`Alert ${i + 1}, ${fmtDate(a.created_at)}`, { x: MARGIN, y, size: 10.5, font: helvB, color: navy })
         y -= 14
         if (a.deviating_dimension) drawKV('Dimension', a.deviating_dimension)
         if (a.reason) drawParagraph(`Detected: ${a.reason}`, { size: 9.5 })
@@ -424,10 +424,10 @@ export async function GET(request, { params }) {
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // SECTION 4 — PERFORMANCE DEVIATION ANALYSIS
+ // SECTION 4, PERFORMANCE DEVIATION ANALYSIS
     // ──────────────────────────────────────────────────────────────────────
     addPage()
-    drawSectionHeading('Section 4 — Performance Deviation Analysis')
+ drawSectionHeading('Section 4, Performance Deviation Analysis')
 
     drawParagraph('This section sets PRODICTA\'s assessment-time predictions side by side with the manager-recorded reality during probation. Where the recorded reality matches the watch-outs identified at assessment, the dismissal is supported by an objective evidentiary trail.', { size: 10 })
     y -= 4
@@ -496,10 +496,10 @@ export async function GET(request, { params }) {
     drawKV('Final outcome', outcomeLabel(outcome.outcome))
 
     // ──────────────────────────────────────────────────────────────────────
-    // SECTION 5 — COMPLIANCE STATEMENT
+ // SECTION 5, COMPLIANCE STATEMENT
     // ──────────────────────────────────────────────────────────────────────
     addPage()
-    drawSectionHeading('Section 5 — Compliance Statement')
+ drawSectionHeading('Section 5, Compliance Statement')
 
     drawParagraph('PRODICTA confirms the following in respect of the assessment that informed the hiring decision recorded in this evidence pack:', { size: 10.5 })
     y -= 4
@@ -524,10 +524,10 @@ export async function GET(request, { params }) {
     drawParagraph('This statement is generated automatically by the PRODICTA platform on the basis of platform records and configuration. The platform is a closed scoring system: it does not accept protected-characteristic inputs and does not vary its scoring based on candidate identity.', { size: 9.5, color: grey, italic: true })
 
     // ──────────────────────────────────────────────────────────────────────
-    // SECTION 6 — RECOMMENDATION FOR LEGAL USE
+ // SECTION 6, RECOMMENDATION FOR LEGAL USE
     // ──────────────────────────────────────────────────────────────────────
     addPage()
-    drawSectionHeading('Section 6 — Recommendation for Legal Use')
+ drawSectionHeading('Section 6, Recommendation for Legal Use')
 
     drawParagraph('This document provides an objective, evidence-based record of the hiring and probation management process. It demonstrates that the decision to end employment was based on documented performance concerns identified through objective assessment, not on any protected characteristic.', { size: 10.5 })
     y -= 4

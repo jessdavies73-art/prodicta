@@ -218,7 +218,7 @@ export default function LinkedPeriodsPage() {
       page.drawText('DICTA', { x: ML + bold.widthOfTextAtSize('PRO', 22), y: PH - 48, size: 22, font: bold, color: teal })
       y = PH - 100
 
-      page.drawText('SSP1 — End of SSP Notification', { x: ML, y, size: 16, font: bold, color: navy }); y -= 20
+ page.drawText('SSP1, End of SSP Notification', { x: ML, y, size: 16, font: bold, color: navy }); y -= 20
       page.drawText(`Date generated: ${fmtDate(new Date().toISOString())}`, { x: ML, y, size: 9, font: helvetica, color: grey }); y -= 30
 
       function kv(label, value) { page.drawText(safe(label), { x: ML, y, size: 9, font: bold, color: navy }); const lw = bold.widthOfTextAtSize(safe(label), 9); page.drawText(safe(value), { x: ML + lw + 6, y, size: 9, font: helvetica, color: black }); y -= 16 }
@@ -383,7 +383,7 @@ export default function LinkedPeriodsPage() {
               {/* Entitlement tracker */}
               <div style={{ ...cs, marginBottom: 24 }}>
                 <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 12px' }}>
-                  SSP Entitlement — {selectedWorker}
+ SSP Entitlement, {selectedWorker}
                 </p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <span style={{ fontFamily: F, fontSize: 13, color: TX2 }}>

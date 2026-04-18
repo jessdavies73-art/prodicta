@@ -4,14 +4,14 @@ import { createServiceClient } from '@/lib/supabase-server'
 
 // -- ALTER TABLE assessments ADD COLUMN IF NOT EXISTS workspace_content JSONB;
 //
-// IMPORTANT — response shape contract:
+// IMPORTANT, response shape contract:
 //   { emails: [...], messages: [...], tasks: [...],
 //     calendar_gaps: [...], fixed_meetings: [...],
 //     surprise_message: {...} }
 //
 // These exact field names are read by app/assess/[uniqueToken]/page.js
 // (WorkspacePage, ~L1530). Do NOT rename to `inbox_items` or
-// `calendar_events` — those names are used elsewhere in the codebase for
+// `calendar_events`, those names are used elsewhere in the codebase for
 // unrelated data (scenario inbox overload, calendar-simulation stage) and
 // renaming here would silently break the Strategy-Fit workspace stage.
 // Auth is intentionally absent: candidates are anonymous (identified by
@@ -32,7 +32,7 @@ export async function GET(request, { params }) {
 
     if (!assessment) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    // Cache hit — but validate. A prior generation may have stored malformed
+ // Cache hit, but validate. A prior generation may have stored malformed
     // data (truncated Claude output, corrupted row, or a plain-string JSONB
     // rather than an object). If the stored value can't be read as an object
     // with at least one expected shape key, fall through and regenerate.
@@ -48,7 +48,7 @@ export async function GET(request, { params }) {
       if (cached && (cached.emails || cached.tasks)) {
         return NextResponse.json(cached)
       }
-      // Cache present but malformed — fall through to regenerate.
+ // Cache present but malformed, fall through to regenerate.
     }
 
     const prompt = `Generate realistic Day 1 morning workspace content for a "${assessment.role_title}" role (${assessment.role_level || 'LEADERSHIP'} level). This simulates the candidate's first morning inbox, messages, and tasks.

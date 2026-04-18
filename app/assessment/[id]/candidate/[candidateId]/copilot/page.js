@@ -516,7 +516,7 @@ export default function ProbationCopilotPage({ params }) {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Ic name="check" size={14} color={GRN} />
-              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: GRN }}>On track — performing as predicted</span>
+ <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: GRN }}>On track, performing as predicted</span>
             </div>
           </div>
         )}
@@ -732,7 +732,7 @@ export default function ProbationCopilotPage({ params }) {
             <div style={{ marginTop: 16, background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '18px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Generated review — {reviewMilestone === 'month1' ? '1 month' : reviewMilestone === 'month3' ? '3 month' : '6 month'}
+ Generated review, {reviewMilestone === 'month1' ? '1 month' : reviewMilestone === 'month3' ? '3 month' : '6 month'}
                 </div>
                 <button
                   onClick={() => {
@@ -761,7 +761,7 @@ export default function ProbationCopilotPage({ params }) {
           )}
         </div>
 
-        {/* Evidence Pack — only when employment ended during probation */}
+ {/* Evidence Pack, only when employment ended during probation */}
         {outcome && ['failed_probation', 'dismissed', 'left_early'].includes(outcome.outcome) && (
           <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '22px 24px', marginBottom: 20 }}>
             <h2 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 800, color: NAVY }}>Probation Evidence Pack</h2>
@@ -976,7 +976,7 @@ export default function ProbationCopilotPage({ params }) {
                     </div>
                     {lr.review_conflict && (
                       <div style={{ fontFamily: F, fontSize: 11, fontWeight: 600, color: RED, marginTop: 4 }}>
-                        Review conflict flagged{lr.suggested_review_date && <> — suggested review: {fmtD(lr.suggested_review_date)}</>}
+ Review conflict flagged{lr.suggested_review_date && <>, suggested review: {fmtD(lr.suggested_review_date)}</>}
                       </div>
                     )}
                   </div>

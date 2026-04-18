@@ -35,7 +35,7 @@ export async function POST(request) {
       lineItem = {
         price_data: {
           currency: 'gbp',
-          product_data: { name: `PRODICTA — ${bundle.label}` },
+ product_data: { name: `PRODICTA, ${bundle.label}` },
           unit_amount: bundle.priceGBP * 100,
         },
         quantity: 1,
@@ -49,7 +49,7 @@ export async function POST(request) {
       lineItem = {
         price_data: {
           currency: 'gbp',
-          product_data: { name: `PRODICTA — ${qty} x ${priceInfo.label}` },
+ product_data: { name: `PRODICTA, ${qty} x ${priceInfo.label}` },
           unit_amount: priceInfo.price,
         },
         quantity: qty,

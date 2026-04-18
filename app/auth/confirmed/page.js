@@ -61,7 +61,7 @@ function Spinner() {
   )
 }
 
-// ── Inner component (uses useSearchParams — must be inside Suspense) ───────
+// ── Inner component (uses useSearchParams, must be inside Suspense) ───────
 
 function ConfirmationHandler() {
   const router      = useRouter()

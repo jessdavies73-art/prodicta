@@ -1055,7 +1055,7 @@ export default function SettingsPage() {
 
                       <h3 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 700, color: TX }}>Buy more credits</h3>
                       <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '0 0 14px', lineHeight: 1.55 }}>
-                        The higher the assessment level the more detailed the report. Rapid Screen gives a quick signal — Speed-Fit and above give the full picture.
+ The higher the assessment level the more detailed the report. Rapid Screen gives a quick signal, Speed-Fit and above give the full picture.
                       </p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {PAYG_TYPES.map(t => {
@@ -1216,7 +1216,7 @@ export default function SettingsPage() {
               )}
             </div>
 
-            {/* ── Assessment Credits (pay-per-assessment, not PAYG — PAYG has its own card above) ── */}
+ {/* ── Assessment Credits (pay-per-assessment, not PAYG, PAYG has its own card above) ── */}
             {hasCredits && !isPayg && (
               <div style={{ ...cs, marginBottom: 16 }}>
                 <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: TX }}>Assessment Credits</h2>
@@ -1273,7 +1273,7 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* ── No subscription and no credits: prompt to start (not PAYG — PAYG has its own card) ── */}
+ {/* ── No subscription and no credits: prompt to start (not PAYG, PAYG has its own card) ── */}
             {!hasActiveSubscription && !hasCredits && !isPayg && (
               <div style={{ ...cs }}>
                 <h2 style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: TX }}>Choose a billing option</h2>
@@ -1623,7 +1623,7 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Assessments tab — default employment type */}
+ {/* Assessments tab, default employment type */}
         {activeTab === 'assessments' && (
           <div style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div style={{ ...cs }}>

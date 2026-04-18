@@ -571,7 +571,7 @@ export default function AssessmentPage({ params }) {
                   </button>
                   <button
                     onClick={() => {
-                      const lines = ['AI SHORTLIST — ' + (assessment?.role_title || ''), '']
+ const lines = ['AI SHORTLIST, ' + (assessment?.role_title || ''), '']
                       ;(aiShortlistResult.shortlist || []).forEach(item => {
                         lines.push(`#${item.rank} ${item.candidate_name}`)
                         lines.push(item.justification)
@@ -582,7 +582,7 @@ export default function AssessmentPage({ params }) {
                       if ((aiShortlistResult.not_shortlisted || []).length > 0) {
                         lines.push('NOT SHORTLISTED')
                         aiShortlistResult.not_shortlisted.forEach(item => {
-                          lines.push(`${item.candidate_name} — ${item.reason}`)
+ lines.push(`${item.candidate_name}, ${item.reason}`)
                         })
                       }
                       navigator.clipboard.writeText(lines.join('\n'))

@@ -80,7 +80,7 @@ export async function POST(request) {
       const msg = signUpError.message || ''
       if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('registered')) {
         return NextResponse.json(
-          { error: 'An account with this email already exists. Your payment has been received — please contact support at hello@prodicta.co.uk to apply the credits.' },
+ { error: 'An account with this email already exists. Your payment has been received, please contact support at hello@prodicta.co.uk to apply the credits.' },
           { status: 409 }
         )
       }

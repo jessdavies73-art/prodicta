@@ -210,9 +210,9 @@ export default function SSPPage() {
       drawKV('Result: ', result?.status || 'N/A')
 
       let ruleDesc = 'N/A'
-      if (result?.badgeType === 'jade') ruleDesc = 'New 2026 rules — SSP from day one, no earnings threshold'
-      else if (result?.badgeType === 'amber') ruleDesc = 'Pre-April 2026 rules — three-day waiting period, Lower Earnings Limit applies'
-      else if (result?.badgeType === 'red') ruleDesc = 'Not eligible — worker between assignments'
+ if (result?.badgeType === 'jade') ruleDesc = 'New 2026 rules, SSP from day one, no earnings threshold'
+ else if (result?.badgeType === 'amber') ruleDesc = 'Pre-April 2026 rules, three-day waiting period, Lower Earnings Limit applies'
+ else if (result?.badgeType === 'red') ruleDesc = 'Not eligible, worker between assignments'
       drawKV('Rule applied: ', ruleDesc)
 
       if (result?.eligible) {
@@ -254,10 +254,10 @@ export default function SSPPage() {
 
       stepLabels.forEach((step, i) => {
         const s = guidanceSteps[step.key]
-        const status = s.done ? `Completed — ${fmtTimestamp(s.at)}` : 'Not completed'
+ const status = s.done ? `Completed, ${fmtTimestamp(s.at)}` : 'Not completed'
         const statusColor = s.done ? teal : grey
         checkPage(20)
-        page.drawText(`Step ${i + 1} — ${safe(step.label)}`, { x: ML, y, size: 9, font: bold, color: navy })
+ page.drawText(`Step ${i + 1}, ${safe(step.label)}`, { x: ML, y, size: 9, font: bold, color: navy })
         y -= 14
         page.drawText(safe(status), { x: ML + 12, y, size: 8.5, font: helvetica, color: statusColor })
         y -= 16
@@ -403,9 +403,9 @@ export default function SSPPage() {
       stepLabelsDoc.forEach((step, i) => {
         const s = guidanceSteps[step.key]
         a.checkPage(20)
-        a.page().drawText(`Step ${i + 1} — ${a.safe(step.label)}`, { x: a.ML, y: a.getY(), size: 9, font: a.bold, color: a.navy })
+ a.page().drawText(`Step ${i + 1}, ${a.safe(step.label)}`, { x: a.ML, y: a.getY(), size: 9, font: a.bold, color: a.navy })
         a.setY(a.getY() - 14)
-        const status = s.done ? `Completed — ${a.fmtTs(s.at)}` : 'Not completed'
+ const status = s.done ? `Completed, ${a.fmtTs(s.at)}` : 'Not completed'
         a.page().drawText(a.safe(status), { x: a.ML + 12, y: a.getY(), size: 8.5, font: a.helvetica, color: s.done ? a.teal : a.grey })
         a.setY(a.getY() - 16)
       })
@@ -432,11 +432,11 @@ export default function SSPPage() {
       await addFooters(c)
       downloadPdfBytes(await c.pdf.save(), `SSP-Calculation-${safeName}-${dateStr}.pdf`)
 
-      // ── 3. SSP1 Form — only if not eligible OR absence > 28 weeks ──
+ // ── 3. SSP1 Form, only if not eligible OR absence > 28 weeks ──
       const isNotEligible = result && !result.eligible
       const exceeds28Weeks = daysSinceSick > 196
       if (isNotEligible || exceeds28Weeks) {
-        const s = await createBrandedPdf('SSP1 — End of SSP Notification')
+ const s = await createBrandedPdf('SSP1, End of SSP Notification')
         const companyName = profile?.company_name || 'Employer'
         const reason = isNotEligible
           ? (result?.badgeType === 'red' ? 'the worker is between assignments and not currently classed as gainfully employed' : 'the absence began before 6 April 2026 and old SSP rules apply')
@@ -553,11 +553,11 @@ export default function SSPPage() {
             }).eq('id', openAlerts[0].id)
           }
         } catch (_) {
-          // Non-blocking — alert update failure should not affect the SSP check
+ // Non-blocking, alert update failure should not affect the SSP check
         }
       }
     } catch (err) {
-      // Continue even if save fails — show the result to the user
+ // Continue even if save fails, show the result to the user
     }
 
     setResult({ status, message, badgeType, eligible })
@@ -732,7 +732,7 @@ export default function SSPPage() {
                 </div>
               </div>
 
-              {/* Assignment status — only when Temporary */}
+ {/* Assignment status, only when Temporary */}
               {employmentType === 'temporary' && (
                 <div style={{ marginBottom: 20 }}>
                   <label style={labelStyle}>Assignment status</label>
@@ -1364,7 +1364,7 @@ export default function SSPPage() {
                             {isDone ? <Ic name="check" size={13} color="#fff" /> : step.number}
                           </span>
                           <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>
-                            Step {step.number} — {step.title}
+ Step {step.number}, {step.title}
                           </span>
                         </div>
 

@@ -9,7 +9,7 @@ import UpgradeAssessmentModal from '@/components/UpgradeAssessmentModal'
 import { getReskilingSuggestion } from '@/lib/reskilling'
 import { calculateSurvivalScore } from '@/lib/survival-score'
 
-/* Inline mobile detection — no external hook dependency */
+/* Inline mobile detection, no external hook dependency */
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
 const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
@@ -747,7 +747,7 @@ function RebateTimeline({ outcome, candidateName }) {
         {ended && <> &middot; <strong style={{ color: GRN }}>Rebate period complete</strong></>}
       </div>
 
-      {/* Track — padded so labels at 0% and 100% never clip */}
+ {/* Track, padded so labels at 0% and 100% never clip */}
       <div style={{ padding: '0 20px', marginBottom: 52 }}>
         <div style={{ position: 'relative' }}>
           <div style={{ height: 6, background: BD, borderRadius: 3 }} />
@@ -866,7 +866,7 @@ function ProbationTimeline({ outcome }) {
         )}
       </div>
 
-      {/* Track — padded so labels at 0 % and 100 % never clip */}
+ {/* Track, padded so labels at 0 % and 100 % never clip */}
       <div style={{ padding: '0 20px', marginBottom: 64 }}>
         <div style={{ position: 'relative' }}>
 
@@ -881,7 +881,7 @@ function ProbationTimeline({ outcome }) {
             borderRadius: 3, transition: 'width 0.4s',
           }} />
 
-          {/* Start milestone — left-aligned label */}
+ {/* Start milestone, left-aligned label */}
           <div style={{ position: 'absolute', left: 0, top: -5 }}>
             <div style={{
               width: 16, height: 16, borderRadius: '50%',
@@ -915,7 +915,7 @@ function ProbationTimeline({ outcome }) {
             )
           })}
 
-          {/* ERA 2025 danger line — right-aligned label so it never clips */}
+ {/* ERA 2025 danger line, right-aligned label so it never clips */}
           {eraShown && (
             <div style={{ position: 'absolute', left: `${eraPos}%`, top: -14, transform: 'translateX(-50%)', zIndex: 3 }}>
               <div style={{ width: 2, height: 34, background: RED, margin: '0 auto' }} />
@@ -1549,7 +1549,7 @@ export default function CandidateReportPage({ params }) {
         {!loading && !error && candidate && (
           <>
 
-            {/* Outcome logging reminder — shown above the report when no
+ {/* Outcome logging reminder, shown above the report when no
                 outcome has been recorded for this candidate yet. */}
             {!existingOutcome && (
               <div style={{
@@ -1575,12 +1575,12 @@ export default function CandidateReportPage({ params }) {
             )}
 
             {/* ══════════════════════════════════════════════════
-                CANDIDATE HEADER — three-column layout
+ CANDIDATE HEADER, three-column layout
             ══════════════════════════════════════════════════ */}
             <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
               <div className="report-header" style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 16 : 20, flexDirection: isMobile ? 'column' : 'row' }}>
 
-                {/* LEFT COLUMN — candidate info */}
+ {/* LEFT COLUMN, candidate info */}
                 <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
                     <Avatar name={candidate.name || 'Candidate'} size={52} />
@@ -1643,7 +1643,7 @@ export default function CandidateReportPage({ params }) {
                   )}
                 </div>
 
-                {/* CENTRE COLUMN — score ring (25%) */}
+ {/* CENTRE COLUMN, score ring (25%) */}
                 {results && (
                   <div style={{ flexShrink: 0, textAlign: 'center', width: isMobile ? '100%' : 160 }}>
                     <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
@@ -1693,7 +1693,7 @@ export default function CandidateReportPage({ params }) {
                   </div>
                 )}
 
-                {/* RIGHT COLUMN — actions (35%) */}
+ {/* RIGHT COLUMN, actions (35%) */}
                 <div className="no-print" style={{ flexShrink: 0, width: isMobile ? '100%' : 220 }}>
                   {/* Primary actions */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
@@ -1725,7 +1725,7 @@ export default function CandidateReportPage({ params }) {
                       >
                         <Ic name="zap" size={15} color="#fff" />
                         Highlight Reel
-                        <InfoTooltip text="A 60-second animated visual summary with a shareable link — send to clients instead of a PDF" light />
+ <InfoTooltip text="A 60-second animated visual summary with a shareable link, send to clients instead of a PDF" light />
                       </a>
                     )}
                   </div>
@@ -1748,7 +1748,7 @@ export default function CandidateReportPage({ params }) {
                     </button>
                   )}
 
-                  {/* Secondary actions — categorised */}
+ {/* Secondary actions, categorised */}
                   {moreActionsOpen && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
 
@@ -2129,7 +2129,7 @@ export default function CandidateReportPage({ params }) {
                       }}>
                         <Ic name="check" size={15} color={TEALD} />
                         {existingOutcome ? 'Update Outcome' : 'Log Outcome'}
-                        <InfoTooltip text="Record whether this candidate passed probation — builds your prediction accuracy data" />
+ <InfoTooltip text="Record whether this candidate passed probation, builds your prediction accuracy data" />
                       </button>
                     )}
                     {results && profile?.account_type === 'employer' && existingOutcome && ['rejected', 'failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
@@ -2324,7 +2324,7 @@ export default function CandidateReportPage({ params }) {
                         <div>
                           <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                             Watch-outs
-                            <InfoTooltip text="Specific areas that need monitoring or management. These are not reasons to reject — they are things to address proactively." />
+ <InfoTooltip text="Specific areas that need monitoring or management. These are not reasons to reject, they are things to address proactively." />
                           </div>
                           {(results.watchouts || []).slice(0, 2).map((w, i) => (
                             <div key={i} style={{ borderLeft: `4px solid ${AMB}`, paddingLeft: 12, marginBottom: 8 }}>
@@ -2401,7 +2401,7 @@ export default function CandidateReportPage({ params }) {
                   ))}
                 </div>
 
-                {/* Upgrade to Speed-Fit — PAYG users get the diff-price modal;
+ {/* Upgrade to Speed-Fit, PAYG users get the diff-price modal;
                     subscription users go straight to /assessment/new */}
                 <div style={{ textAlign: 'center', paddingTop: 16, borderTop: `1px solid ${BD}` }}>
                   <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 12px' }}>
@@ -2515,7 +2515,7 @@ export default function CandidateReportPage({ params }) {
                       marginBottom: 20, transition: 'background 0.15s',
                     }}
                   >
-                    {layer2Open ? 'Hide detail' : 'See why — pressure-fit, predictions and risks'}
+ {layer2Open ? 'Hide detail' : 'See why, pressure-fit, predictions and risks'}
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: layer2Open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
@@ -3684,7 +3684,7 @@ export default function CandidateReportPage({ params }) {
                 ══════════════════════════════════════════════════ */}
                 </>)}
 
-                {/* Layer 3 button — hidden for operational/rapid and high-risk */}
+ {/* Layer 3 button, hidden for operational/rapid and high-risk */}
                 {layer2Open && candidate?.assessments?.assessment_mode !== 'rapid' && candidate?.assessments?.role_level !== 'OPERATIONAL' && !(score < 55 && results.risk_level === 'High') && (
                   <button
                     onClick={() => setLayer3Open(v => !v)}
@@ -3696,7 +3696,7 @@ export default function CandidateReportPage({ params }) {
                       marginBottom: 20, transition: 'background 0.15s',
                     }}
                   >
-                    {layer3Open ? 'Hide full analysis' : (candidate?.assessments?.role_level === 'LEADERSHIP' ? 'Full strategic analysis — onboarding, compliance and everything else' : 'Full analysis — onboarding, compliance and everything else')}
+ {layer3Open ? 'Hide full analysis' : (candidate?.assessments?.role_level === 'LEADERSHIP' ? 'Full strategic analysis, onboarding, compliance and everything else' : 'Full analysis, onboarding, compliance and everything else')}
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: layer3Open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
@@ -3784,7 +3784,7 @@ export default function CandidateReportPage({ params }) {
                 })()}
 
                 {/* ══════════════════════════════════════════════════
-                    MANAGER ALIGNMENT (from Manager DNA) — employer only
+ MANAGER ALIGNMENT (from Manager DNA), employer only
                 ══════════════════════════════════════════════════ */}
                 {profile?.account_type === 'employer' && managerDna && managerDna.alignment_dimensions && (
                   <ScrollReveal delay={60}>
@@ -4621,8 +4621,8 @@ export default function CandidateReportPage({ params }) {
                   <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }} topColor={TEAL}>
                     <SectionHeading tooltip="Targeted re-skilling interventions for the first week, based on each watch-out identified in the assessment.">
-                      {profile?.account_type === 'agency' ? 'Placement Preparation — Week 1 Interventions'
-                       : candidate?.assessments?.employment_type === 'temporary' ? 'Assignment Success — Week 1 Interventions'
+ {profile?.account_type === 'agency' ? 'Placement Preparation, Week 1 Interventions'
+ : candidate?.assessments?.employment_type === 'temporary' ? 'Assignment Success, Week 1 Interventions'
                        : 'Targeted Week 1 Interventions'}
                     </SectionHeading>
                     <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-4px 0 18px', lineHeight: 1.6 }}>
@@ -5870,7 +5870,7 @@ export default function CandidateReportPage({ params }) {
             <div style={{ padding: '24px 28px 16px', borderBottom: `1px solid ${BD}` }}>
               <h2 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: NAVY, margin: '0 0 6px' }}>Re-run with New Context</h2>
               <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.55 }}>
-                Add additional context to refine the analysis. Only the scoring analysis is re-processed — candidate responses stay the same.
+ Add additional context to refine the analysis. Only the scoring analysis is re-processed, candidate responses stay the same.
               </p>
             </div>
             <div style={{ padding: '20px 28px' }}>
@@ -6205,7 +6205,7 @@ export default function CandidateReportPage({ params }) {
             </div>
           </div>
 
-          {/* Feature 5: Agency cover explainer — AI-generated */}
+ {/* Feature 5: Agency cover explainer, AI-generated */}
           {profile?.account_type === 'agency' && (
             <div style={{ marginBottom: 28, padding: '18px 20px', background: '#f8fafc', border: `1px solid ${TEAL}33`, borderLeft: `4px solid ${TEAL}`, borderRadius: '0 10px 10px 0' }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>About this report</div>

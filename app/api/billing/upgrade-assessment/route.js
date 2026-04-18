@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getStripeClient, CREDIT_PRICES } from '@/lib/stripe'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 
-// Tier order — upgrades must go up this list.
+// Tier order, upgrades must go up this list.
 const TIER_ORDER = ['rapid-screen', 'speed-fit', 'depth-fit', 'strategy-fit']
 const LABELS = { 'rapid-screen': 'Rapid Screen', 'speed-fit': 'Speed-Fit', 'depth-fit': 'Depth-Fit', 'strategy-fit': 'Strategy-Fit' }
 
@@ -41,7 +41,7 @@ export async function POST(request) {
       line_items: [{
         price_data: {
           currency: 'gbp',
-          product_data: { name: `PRODICTA — Upgrade to ${LABELS[to_type]}` },
+ product_data: { name: `PRODICTA, Upgrade to ${LABELS[to_type]}` },
           unit_amount: diffPence,
         },
         quantity: 1,

@@ -249,7 +249,7 @@ export default function EdiPage() {
                             </span>
                           )}
                         </div>
-                        <div style={{ fontSize: 11.5, color: TX3, marginTop: 2 }}>{a.candidateCount} candidate{a.candidateCount !== 1 ? 's' : ''} assessed — Average: {avg}</div>
+ <div style={{ fontSize: 11.5, color: TX3, marginTop: 2 }}>{a.candidateCount} candidate{a.candidateCount !== 1 ? 's' : ''} assessed, Average: {avg}</div>
                       </div>
                       <span style={{
                         display: 'inline-block', padding: '3px 12px', borderRadius: 50,

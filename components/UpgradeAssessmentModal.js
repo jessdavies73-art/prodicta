@@ -8,13 +8,13 @@ import { useState } from 'react'
 // Checkout URL for the diff-only charge; we redirect the browser there.
 //
 // Props:
-//   open           — boolean
-//   fromType       — 'rapid-screen' | 'speed-fit' | 'depth-fit' | 'strategy-fit'
-//   toType         — same set, must be strictly higher tier than fromType
-//   assessmentId   — optional; if passed the server upgrades the existing
+// open , boolean
+// fromType , 'rapid-screen' | 'speed-fit' | 'depth-fit' | 'strategy-fit'
+// toType , same set, must be strictly higher tier than fromType
+// assessmentId , optional; if passed the server upgrades the existing
 //                    assessment row to the new mode
-//   onClose        — called when the user clicks Cancel / Keep
-//   onConfirmed    — optional callback fired before the browser redirect
+// onClose , called when the user clicks Cancel / Keep
+// onConfirmed , optional callback fired before the browser redirect
 
 const CREDIT_PRICES = { 'rapid-screen': 6, 'speed-fit': 18, 'depth-fit': 35, 'strategy-fit': 65 }
 const LABELS = { 'rapid-screen': 'Rapid Screen', 'speed-fit': 'Speed-Fit', 'depth-fit': 'Depth-Fit', 'strategy-fit': 'Strategy-Fit' }
@@ -98,7 +98,7 @@ export default function UpgradeAssessmentModal({ open, fromType, toType, assessm
         <p style={{ fontSize: 14, color: '#0f2137', margin: '0 0 20px', lineHeight: 1.6, fontWeight: 600 }}>
           {isPurchase
             ? <>Buy <strong style={{ color: '#00BFA5' }}>1 {LABELS[toType]} credit</strong> for <strong style={{ color: '#00BFA5' }}>£{payAmount}</strong>.</>
-            : <>Pay just <strong style={{ color: '#00BFA5' }}>£{payAmount}</strong> — the difference in price.</>
+ : <>Pay just <strong style={{ color: '#00BFA5' }}>£{payAmount}</strong>, the difference in price.</>
           }
         </p>
         {error && (
@@ -136,7 +136,7 @@ export default function UpgradeAssessmentModal({ open, fromType, toType, assessm
             {submitting
               ? 'Redirecting…'
               : isPurchase
-                ? `Buy 1 ${LABELS[toType]} credit — £${payAmount}`
+ ? `Buy 1 ${LABELS[toType]} credit, £${payAmount}`
                 : `Pay £${payAmount} and upgrade`}
           </button>
         </div>

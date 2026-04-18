@@ -407,7 +407,7 @@ function ActivePage({ candidate, assessment, onSubmit }) {
 
   function startRecording() {
     // Guard against non-secure contexts / older browsers where mediaDevices
-    // is undefined or null — reading `.getUserMedia` off that crashes with a
+ // is undefined or null, reading `.getUserMedia` off that crashes with a
     // TypeError otherwise.
     if (!navigator?.mediaDevices?.getUserMedia) {
       alert('Voice recording is not supported on this browser. Please use the latest Chrome, Safari or Firefox on a secure (https) connection.')
@@ -460,7 +460,7 @@ function ActivePage({ candidate, assessment, onSubmit }) {
   const scenario = scenarios[scenarioIndex]
   const isLast = scenarioIndex === scenarios.length - 1
 
-  // Interruption trigger — 90 seconds into each scenario
+ // Interruption trigger, 90 seconds into each scenario
   useEffect(() => {
     if (!showInbox || !currentInbox?.interruption || interruptionDismissed[scenarioIndex]) return
     setInterruptionVisible(false)
@@ -773,7 +773,7 @@ function ActivePage({ candidate, assessment, onSubmit }) {
               </>
             )}
 
-            {/* Task (hidden for operational — already in chat bubble) */}
+ {/* Task (hidden for operational, already in chat bubble) */}
             <div style={{
               background: TEALLT,
               border: `1px solid ${TEAL}55`,
@@ -1232,14 +1232,14 @@ function CandidatePreviewPage({ candidateName, uniqueToken, onContinue }) {
       try {
         const res = await fetch(`/api/assess/${uniqueToken}/feedback`)
         if (res.status === 425) {
-          // Scoring not finished yet — poll
+ // Scoring not finished yet, poll
           if (pollCount < 30) {
             setTimeout(() => { if (!cancelled) setPollCount(c => c + 1) }, 3000)
           }
           return
         }
         if (res.status === 403) {
-          // Feedback disabled — skip to complete
+ // Feedback disabled, skip to complete
           onContinue()
           return
         }
@@ -1572,7 +1572,7 @@ function WorkspacePage({ assessment, candidate, onSubmit, onSkip }) {
       <div style={{ background: NAVY, padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 14, fontWeight: 800, color: TEAL }}>PRODICTA</span>
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>{assessment.role_title} — Day 1, 9:00am</span>
+ <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>{assessment.role_title}, Day 1, 9:00am</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 700, color: timeLeft < 120 ? '#dc2626' : '#fff' }}>{mins}:{String(secs).padStart(2, '0')}</span>
@@ -2066,7 +2066,7 @@ export default function AssessPage({ params }) {
           return
         }
         if (data.complete) {
-          // Single completion screen — no rating / preview steps.
+ // Single completion screen, no rating / preview steps.
           // Candidates are done; feedback collection, if ever wanted, lives
           // at /assess/[token]/feedback and is reachable from the
           // AlreadyCompletedPage next time they open the link.
@@ -2074,7 +2074,7 @@ export default function AssessPage({ params }) {
           return
         }
       } catch {
-        // Network blip — fall through to retry on next tick.
+ // Network blip, fall through to retry on next tick.
       }
       setTimeout(poll, POLL_INTERVAL_MS)
     }

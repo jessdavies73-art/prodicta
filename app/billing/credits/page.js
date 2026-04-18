@@ -215,7 +215,7 @@ function CreditsPageInner() {
                 borderRadius: 10, padding: '12px 18px', marginBottom: 20,
                 fontFamily: F, fontSize: 13, color: '#92400e', lineHeight: 1.55,
               }}>
-                Upgrading from {fromLabel} — pay just £{upgradeDiff} for 1 {toLabel} credit.
+ Upgrading from {fromLabel}, pay just £{upgradeDiff} for 1 {toLabel} credit.
               </div>
             )
           })()}
@@ -307,7 +307,7 @@ function CreditsPageInner() {
                 <div>
                   <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: TX, fontFamily: F }}>Buy more credits</h3>
                   <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '0 0 16px', lineHeight: 1.55 }}>
-                    The higher the assessment level the more detailed the report. Rapid Screen gives a quick signal — Speed-Fit and above give the full picture.
+ The higher the assessment level the more detailed the report. Rapid Screen gives a quick signal, Speed-Fit and above give the full picture.
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {PAYG_TYPES.map(t => {
@@ -393,7 +393,7 @@ function CreditsPageInner() {
               )}
             </div>
           ) : (
-            /* Subscription users — keep bundle top-ups */
+ /* Subscription users, keep bundle top-ups */
             <>
               <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: TX, margin: '0 0 12px' }}>Available bundles</h2>
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
