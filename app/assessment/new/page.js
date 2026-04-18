@@ -1319,6 +1319,68 @@ export default function NewAssessmentPage() {
           )}
         </div>
 
+        {/* PAYG upgrade prompt is now a modal (UpgradeAssessmentModal, rendered
+            at the end of this page) triggered from the mode-card onClick.
+            See handler further up. */}
+
+        {/* Brief Health Check */}
+        {jd.length >= 50 && roleTitle.trim().length > 0 && (
+          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0', padding: '24px 32px', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: briefFlags !== null ? 16 : 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#0f2137', fontFamily: F }}>Brief Health Check</span>
+              </div>
+              <button
+                onClick={handleBriefCheck}
+                disabled={briefChecking}
+                style={{
+                  padding: '7px 18px', borderRadius: 8, border: '1px solid #e4e9f0',
+                  background: briefChecking ? '#f7f9fb' : '#fff',
+                  color: briefChecking ? '#94a1b3' : '#0f2137',
+                  fontSize: 13, fontWeight: 600, fontFamily: F,
+                  cursor: briefChecking ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {briefChecking ? 'Checking...' : briefFlags !== null ? 'Re-check Brief' : 'Check Brief'}
+              </button>
+            </div>
+
+            {briefFlags !== null && briefFlags.length === 0 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '12px 16px', borderRadius: 8,
+                background: '#f0fdf4', border: '1px solid #bbf7d0',
+              }}>
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <span style={{ fontSize: 13.5, fontWeight: 600, color: '#16a34a', fontFamily: F }}>Brief looks strong. No issues found.</span>
+              </div>
+            )}
+
+            {briefFlags !== null && briefFlags.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {briefFlags.map((f, i) => (
+                  <div key={i} style={{
+                    padding: '14px 16px', borderRadius: 8,
+                    background: '#fffbeb', border: '1px solid #fde68a',
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', fontFamily: F, marginBottom: 4 }}>
+                      {f.flag}
+                    </div>
+                    <div style={{ fontSize: 13, color: '#78350f', fontFamily: F, lineHeight: 1.6 }}>
+                      {f.detail}
+                    </div>
+                  </div>
+                ))}
+                <div style={{ fontSize: 12, color: '#94a1b3', fontFamily: F, marginTop: 4 }}>
+                  You can update your job description above based on these suggestions, or continue with the original.
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Assessment Mode selection */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', fontFamily: F, marginBottom: 6 }}>
@@ -1332,27 +1394,27 @@ export default function NewAssessmentPage() {
               {
                 value: 'rapid',
                 title: 'Rapid Screen',
-                subtitle: '5-8 minutes, 1 scenario + prioritisation test',
+                subtitle: '5-8 minutes, 1 scenario',
                 badge: 'High Volume',
-                description: 'Screen large volumes of candidates fast. Perfect for operational and entry-level roles.',
+                description: 'Screen large volumes of candidates fast. A single work scenario gives a Strong Proceed / Interview Worthwhile / High Risk signal with a Placement Survival Score, top strengths, and key watch-outs.',
               },
               {
                 value: 'quick',
                 title: 'Speed-Fit',
                 subtitle: '15 minutes, 2 scenarios',
-                description: 'Best for urgent hires, high-volume roles, or when you need a fast initial screen. Tests core competence and pressure handling. Use when speed matters more than depth.',
+                description: 'Recommended for most roles. Two work scenarios plus a full scored report with strengths, watch-outs, Week 1 interventions, skills breakdown, and interview brief.',
               },
               {
                 value: 'standard',
                 title: 'Depth-Fit',
-                subtitle: '25 minutes, 3 scenarios',
-                description: 'Best for most roles. Tests core competence, pressure handling, and team fit. The right balance of depth and candidate experience. Recommended for junior and mid-level roles.',
+                subtitle: '25 minutes, 2 scenarios',
+                description: 'Deep read on mid-level and senior hires. Two work scenarios plus a full narrative report, detailed competency breakdown, Monday Morning Reality, counter-offer resilience score, and tailored coaching notes.',
               },
               {
                 value: 'advanced',
                 title: 'Strategy-Fit',
-                subtitle: '45 minutes, 4 scenarios',
-                description: 'Best for senior, leadership, or high-stakes roles. Tests competence, pressure, team fit, and long-term retention risk. The most comprehensive assessment. Recommended for senior and director-level hires.',
+                subtitle: '45 minutes, 2 scenarios + workspace simulation',
+                description: 'Leadership assessment. Two work scenarios plus a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.',
               },
             ].map(opt => {
               const selected = mode === opt.value
@@ -1441,68 +1503,6 @@ export default function NewAssessmentPage() {
             })}
           </div>
         </div>
-
-        {/* PAYG upgrade prompt is now a modal (UpgradeAssessmentModal, rendered
-            at the end of this page) triggered from the mode-card onClick.
-            See handler further up. */}
-
-        {/* Brief Health Check */}
-        {jd.length >= 50 && roleTitle.trim().length > 0 && (
-          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0', padding: '24px 32px', marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: briefFlags !== null ? 16 : 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#0f2137', fontFamily: F }}>Brief Health Check</span>
-              </div>
-              <button
-                onClick={handleBriefCheck}
-                disabled={briefChecking}
-                style={{
-                  padding: '7px 18px', borderRadius: 8, border: '1px solid #e4e9f0',
-                  background: briefChecking ? '#f7f9fb' : '#fff',
-                  color: briefChecking ? '#94a1b3' : '#0f2137',
-                  fontSize: 13, fontWeight: 600, fontFamily: F,
-                  cursor: briefChecking ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
-                {briefChecking ? 'Checking...' : briefFlags !== null ? 'Re-check Brief' : 'Check Brief'}
-              </button>
-            </div>
-
-            {briefFlags !== null && briefFlags.length === 0 && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '12px 16px', borderRadius: 8,
-                background: '#f0fdf4', border: '1px solid #bbf7d0',
-              }}>
-                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                <span style={{ fontSize: 13.5, fontWeight: 600, color: '#16a34a', fontFamily: F }}>Brief looks strong. No issues found.</span>
-              </div>
-            )}
-
-            {briefFlags !== null && briefFlags.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {briefFlags.map((f, i) => (
-                  <div key={i} style={{
-                    padding: '14px 16px', borderRadius: 8,
-                    background: '#fffbeb', border: '1px solid #fde68a',
-                  }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', fontFamily: F, marginBottom: 4 }}>
-                      {f.flag}
-                    </div>
-                    <div style={{ fontSize: 13, color: '#78350f', fontFamily: F, lineHeight: 1.6 }}>
-                      {f.detail}
-                    </div>
-                  </div>
-                ))}
-                <div style={{ fontSize: 12, color: '#94a1b3', fontFamily: F, marginTop: 4 }}>
-                  You can update your job description above based on these suggestions, or continue with the original.
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Generate button (shown in adjust mode or when not yet analysed) */}
         {!analysed && (
