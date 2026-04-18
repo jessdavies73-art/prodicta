@@ -184,7 +184,9 @@ export default function NewAssessmentPage() {
   const [templateName, setTemplateName] = useState('')
   const [templateLoaded, setTemplateLoaded] = useState(false)
   const confirmationRef = useRef(null)
+  const modeSelectorRef = useRef(null)
   const prevAnalysedRef = useRef(false)
+  const [modeConfirmed, setModeConfirmed] = useState(false)
 
   // Inline candidate details — collapsed one-step flow
   const [firstName, setFirstName] = useState('')
@@ -286,9 +288,20 @@ export default function NewAssessmentPage() {
     return () => { if (analyseTimerRef.current) clearTimeout(analyseTimerRef.current) }
   }, [jd, roleTitle])
 
-  // Smooth scroll to the confirmation card the first time it appears.
+  // When analysis first completes, scroll to the mode selector — NOT past it
+  // to the confirmation card — so the user can review / change depth before
+  // the candidate details form reveals. If the user explicitly clicks "Looks
+  // good" to confirm the depth, scrollToConfirmation handles that jump.
   useEffect(() => {
-    if (analysed && !prevAnalysedRef.current) scrollToConfirmation()
+    if (analysed && !prevAnalysedRef.current) {
+      if (typeof window !== 'undefined') {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            modeSelectorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          })
+        })
+      }
+    }
     prevAnalysedRef.current = analysed
   }, [analysed])
 
@@ -1385,7 +1398,7 @@ export default function NewAssessmentPage() {
         )}
 
         {/* Assessment Mode selection */}
-        <div style={{ marginBottom: 20 }}>
+        <div ref={modeSelectorRef} style={{ marginBottom: 20, scrollMarginTop: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', fontFamily: F, marginBottom: 6 }}>
             Assessment depth
           </div>
@@ -1456,7 +1469,7 @@ export default function NewAssessmentPage() {
                         return
                       }
                     }
-                    setMode(opt.value); setModeOverridden(true)
+                    setMode(opt.value); setModeOverridden(true); setModeConfirmed(false)
                   }}
                   style={{
                     textAlign: 'left',
@@ -1614,27 +1627,32 @@ export default function NewAssessmentPage() {
                 )}
               </div>
 
-              {!sentResult && !loading && (
+              {!sentResult && !loading && !modeConfirmed && (
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   gap: 12, flexWrap: 'wrap', marginBottom: 20,
-                  padding: '10px 14px', borderRadius: 10,
+                  padding: '12px 16px', borderRadius: 10,
                   background: '#f8fafc', border: '1px solid #e4e9f0',
                 }}>
-                  <span style={{ fontFamily: F, fontSize: 12.5, color: '#5e6b7f' }}>
-                    Looks good? Add candidate details below — or keep editing your job description and this will refresh automatically.
+                  <span style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', lineHeight: 1.55 }}>
+                    Review the <strong style={{ color: '#0f2137' }}>Assessment depth</strong> above. Change it if you want — otherwise confirm to continue to candidate details.
                   </span>
                   <button
                     type="button"
                     onClick={() => {
-                      const el = document.getElementById('candidate-details')
-                      el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                      el?.querySelector('input')?.focus()
+                      setModeConfirmed(true)
+                      if (typeof window !== 'undefined') {
+                        requestAnimationFrame(() => {
+                          const el = document.getElementById('candidate-details')
+                          el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                          el?.parentElement?.querySelector('input')?.focus()
+                        })
+                      }
                     }}
                     style={{
-                      fontFamily: F, fontSize: 12.5, fontWeight: 700, color: '#0f2137',
+                      fontFamily: F, fontSize: 13, fontWeight: 800, color: '#0f2137',
                       background: '#00BFA5', border: 'none',
-                      padding: '6px 14px', borderRadius: 7, cursor: 'pointer',
+                      padding: '8px 18px', borderRadius: 7, cursor: 'pointer',
                       flexShrink: 0,
                     }}
                   >
@@ -1643,9 +1661,10 @@ export default function NewAssessmentPage() {
                 </div>
               )}
 
-              {/* Inline candidate details — collapsed one-step flow */}
+              {/* Inline candidate details — only after the user has confirmed
+                  the assessment depth. Hidden until then. */}
               <div id="candidate-details" />
-              {loading ? (
+              {!sentResult && !loading && !modeConfirmed ? null : loading ? (
                 <GeneratingLoader />
               ) : (
                 <>
