@@ -761,7 +761,7 @@ export default function NewAssessmentPage() {
         )}
 
         {/* Templates dropdown */}
-        {employmentType && templates.length > 0 && (
+        {employmentType !== 'permanent' && templates.length > 0 && (
           <div style={{
             background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
             padding: '20px 28px', marginBottom: 20,
@@ -811,7 +811,7 @@ export default function NewAssessmentPage() {
         )}
 
         {/* Template library */}
-        {employmentType && <div style={{
+        {employmentType !== 'permanent' && <div style={{
           background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
           padding: '28px 32px', marginBottom: 24,
         }}>
