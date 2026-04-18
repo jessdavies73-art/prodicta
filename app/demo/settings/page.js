@@ -66,6 +66,10 @@ function BillingTab({ onUpgrade }) {
     { type: 'depth-fit',    label: 'Depth-Fit',    unit: 35, remaining: 0, description: 'A 25 minute deep assessment with 3 work scenarios and a full narrative report, detailed competency breakdown, Monday Morning Reality, counter-offer resilience score, and tailored coaching notes.' },
     { type: 'strategy-fit', label: 'Strategy-Fit', unit: 65, remaining: 0, description: 'A 45 minute leadership assessment with 4 work scenarios, a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.' },
   ]
+  const ADDON_TYPES = [
+    { type: 'immersive',      label: 'Immersive add-on',     unit: 25, description: 'Day 1 Workspace Simulation (realistic inbox, calendar, and prioritisation challenge) plus a 60-second Highlight Reel to share with your client in one click.' },
+    { type: 'highlight-reel', label: 'Highlight Reel only',  unit: 10, description: 'A 60-second shareable summary of how the candidate performed. For Strategy-Fit accounts, workspace is already included.' },
+  ]
   const PLANS = [
     { plan: 'Starter',         price: '£49/mo',  limit: '10 assessments per month' },
     { plan: 'Professional',    price: '£120/mo', limit: '30 assessments per month' },
@@ -119,6 +123,53 @@ function BillingTab({ onUpgrade }) {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {PAYG_TYPES.map(t => {
+              const qty = Math.max(1, parseInt(buyQty[t.type], 10) || 1)
+              const total = qty * t.unit
+              return (
+                <div key={t.type} style={{
+                  padding: '14px 16px', borderRadius: 10, border: `1.5px solid ${BD}`, background: '#fff',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
+                    <div style={{ minWidth: 160 }}>
+                      <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{t.label} · £{t.unit}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <input
+                        type="number" min={1} max={100}
+                        value={buyQty[t.type] ?? 1}
+                        onChange={e => setBuyQty(prev => ({ ...prev, [t.type]: e.target.value }))}
+                        style={{
+                          width: 70, padding: '7px 10px', borderRadius: 7,
+                          border: `1.5px solid ${BD}`, background: CARD,
+                          fontFamily: 'IBM Plex Mono, monospace', fontSize: 14, fontWeight: 700, color: TX, textAlign: 'right', outline: 'none',
+                        }}
+                      />
+                      <span style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, minWidth: 60, textAlign: 'right' }}>£{total}</span>
+                      <button
+                        onClick={onUpgrade}
+                        style={{
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY,
+                          background: TEAL, border: 'none', padding: '7px 16px', borderRadius: 7, cursor: 'pointer',
+                        }}
+                      >
+                        Buy
+                      </button>
+                    </div>
+                  </div>
+                  <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>
+                    {t.description}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+
+          <h3 style={{ margin: '22px 0 6px', fontSize: 14, fontWeight: 700, color: TX, fontFamily: F }}>Add-ons</h3>
+          <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '0 0 14px', lineHeight: 1.55 }}>
+            Optional extras for any assessment.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {ADDON_TYPES.map(t => {
               const qty = Math.max(1, parseInt(buyQty[t.type], 10) || 1)
               const total = qty * t.unit
               return (

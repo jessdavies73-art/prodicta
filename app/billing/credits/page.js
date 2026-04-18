@@ -35,6 +35,17 @@ const PAYG_TYPES = [
   },
 ]
 
+const ADDON_TYPES = [
+  {
+    type: 'immersive', label: 'Immersive add-on', unit: 25,
+    description: 'Day 1 Workspace Simulation (realistic inbox, calendar, and prioritisation challenge) plus a 60-second Highlight Reel to share with your client in one click. Add to any Rapid Screen, Speed-Fit, or Depth-Fit assessment.',
+  },
+  {
+    type: 'highlight-reel', label: 'Highlight Reel only', unit: 10,
+    description: 'A 60-second shareable summary of how the candidate performed. For Strategy-Fit accounts, the workspace simulation is already included, this is the Highlight Reel only.',
+  },
+]
+
 const PLANS = [
   { key: 'starter',      plan: 'Starter',         price: '£49/mo',  priceNum: 49,  limit: '10 assessments per month' },
   { key: 'professional', plan: 'Professional',    price: '£120/mo', priceNum: 120, limit: '30 assessments per month' },
@@ -320,6 +331,57 @@ function CreditsPageInner() {
                           padding: '16px 18px', borderRadius: 10,
                           border: `1.5px solid ${highlight ? TEAL : BD}`,
                           background: highlight ? TEALLT : '#fff',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
+                            <div style={{ minWidth: 180 }}>
+                              <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{t.label} · £{t.unit}</div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <input
+                                type="number" min={1} max={100}
+                                value={buyQty[t.type] ?? 1}
+                                onChange={e => setBuyQty(prev => ({ ...prev, [t.type]: e.target.value }))}
+                                style={{
+                                  width: 70, padding: '8px 10px', borderRadius: 7,
+                                  border: `1.5px solid ${BD}`, background: CARD,
+                                  fontFamily: FM, fontSize: 14, fontWeight: 700, color: TX, textAlign: 'right',
+                                  outline: 'none',
+                                }}
+                              />
+                              <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY, minWidth: 64, textAlign: 'right' }}>£{total}</span>
+                              <button
+                                onClick={() => handleBuyUnit(t.type)}
+                                disabled={busy || !!buyingType}
+                                style={{
+                                  fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY,
+                                  background: TEAL, border: 'none', padding: '8px 18px', borderRadius: 7,
+                                  cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1,
+                                }}
+                              >
+                                {busy ? 'Opening…' : 'Buy'}
+                              </button>
+                            </div>
+                          </div>
+                          <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>
+                            {t.description}
+                          </p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <h3 style={{ margin: '24px 0 6px', fontSize: 15, fontWeight: 700, color: TX, fontFamily: F }}>Add-ons</h3>
+                  <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '0 0 14px', lineHeight: 1.55 }}>
+                    Optional extras for any assessment.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {ADDON_TYPES.map(t => {
+                      const qty = Math.max(1, parseInt(buyQty[t.type], 10) || 1)
+                      const total = qty * t.unit
+                      const busy = buyingType === t.type
+                      return (
+                        <div key={t.type} style={{
+                          padding: '16px 18px', borderRadius: 10,
+                          border: `1.5px solid ${BD}`, background: '#fff',
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
                             <div style={{ minWidth: 180 }}>

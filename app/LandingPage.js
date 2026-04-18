@@ -1178,8 +1178,8 @@ export default function LandingPage() {
                 ))}
               </div>
               <Reveal>
-                <p style={{ textAlign: 'center', fontFamily: F, fontSize: 14, color: '#5e6b7f', lineHeight: 1.6 }}>
-                  Add <strong style={{ color: NAVY }}>Immersive</strong> (Workspace + Highlight Reel) to any assessment for <strong style={{ color: TEAL }}>£25 extra</strong>.
+                <p style={{ textAlign: 'center', fontFamily: F, fontSize: 14, color: '#5e6b7f', lineHeight: 1.6, maxWidth: 640, margin: '0 auto' }}>
+                  Add <strong style={{ color: NAVY }}>Immersive</strong> to Rapid Screen, Speed-Fit, or Depth-Fit for <strong style={{ color: TEAL }}>£25 extra</strong>, a Day 1 Workspace Simulation plus a 60-second Highlight Reel you can share with your client in one click. Strategy-Fit already includes the workspace, add the Highlight Reel only for <strong style={{ color: TEAL }}>£10 extra</strong>.
                 </p>
               </Reveal>
             </>

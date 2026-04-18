@@ -208,6 +208,8 @@ export default function NewAssessmentPage() {
   const [isPaygUser, setIsPaygUser] = useState(false)
   const [userCredits, setUserCredits] = useState([]) // [{ credit_type, credits_remaining }]
   const [upgradeModal, setUpgradeModal] = useState(null) // { from, to } | null
+  const [immersiveOn, setImmersiveOn] = useState(false)
+  const [immersiveBuying, setImmersiveBuying] = useState(false)
   const [smartQuestions, setSmartQuestions] = useState(null) // null = not yet loaded
   const [smartLoading, setSmartLoading] = useState(false)
   const smartCacheRef = useRef({ key: '', questions: null })
@@ -224,6 +226,23 @@ export default function NewAssessmentPage() {
   const [briefFlags, setBriefFlags] = useState(null) // null = not checked, [] = clean, [...] = issues
   const [briefChecking, setBriefChecking] = useState(false)
   const briefCheckedRef = useRef('')
+
+  const handleBuyAddOn = async (creditType) => {
+    setImmersiveBuying(true)
+    try {
+      const res = await fetch('/api/stripe/credit-bundle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credit_type: creditType, quantity: 1 }),
+      })
+      const body = await res.json()
+      if (body?.url) { window.location.href = body.url; return }
+      throw new Error(body?.error || 'Could not start checkout.')
+    } catch (err) {
+      setError(err?.message || 'Could not start checkout. Please try again.')
+      setImmersiveBuying(false)
+    }
+  }
 
   const handleBriefCheck = async () => {
     const key = `${roleTitle.trim()}||${jd.trim()}`
@@ -1528,8 +1547,13 @@ export default function NewAssessmentPage() {
                   <p style={{ margin: 0, fontSize: 12.5, color: '#5e6b7f', lineHeight: 1.6 }}>
                     {opt.description}
                   </p>
+                  <div style={{ marginTop: 10, fontSize: 11.5, fontWeight: 700, color: '#009688' }}>
+                    {opt.value === 'advanced'
+                      ? 'Add Highlight Reel for £10 extra'
+                      : 'Add Immersive for £25 extra, workspace simulation + highlight reel'}
+                  </div>
                   {recLabel && (
-                    <div style={{ marginTop: 10, fontSize: 11, fontWeight: 700, color: '#009688' }}>
+                    <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: '#009688' }}>
                       {recLabel}
                     </div>
                   )}
@@ -1538,6 +1562,91 @@ export default function NewAssessmentPage() {
             })}
           </div>
         </div>
+
+        {/* Immersive add-on toggle. Strategy-Fit already includes the Day 1
+            workspace simulation, so those users are offered Highlight Reel
+            only at £10. Everyone else gets the full Immersive bundle at £25. */}
+        {(() => {
+          const isStrategyFit = mode === 'advanced'
+          const addOnType = isStrategyFit ? 'highlight-reel' : 'immersive'
+          const addOnPrice = isStrategyFit ? 10 : 25
+          const heading = isStrategyFit ? 'Add Highlight Reel, £10' : 'Add Immersive, £25'
+          return (
+            <div style={{
+              background: '#fff', borderRadius: 14, border: `1.5px solid ${immersiveOn ? '#00BFA5' : '#e4e9f0'}`,
+              padding: '22px 26px', marginBottom: 24,
+              boxShadow: immersiveOn ? '0 4px 14px rgba(0,191,165,0.12)' : 'none',
+              transition: 'border-color 0.15s, box-shadow 0.15s',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 240 }}>
+                  <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, color: '#0f2137', fontFamily: F }}>
+                    {heading}
+                  </h2>
+                  {isStrategyFit ? (
+                    <p style={{ margin: '0 0 10px', fontSize: 13, color: '#5e6b7f', fontFamily: F, lineHeight: 1.6 }}>
+                      Workspace simulation is included in Strategy-Fit. Add the 60-second Highlight Reel, a shareable summary of how the candidate performed, sent as a link your client can view without logging in.
+                    </p>
+                  ) : (
+                    <p style={{ margin: '0 0 10px', fontSize: 13, color: '#5e6b7f', fontFamily: F, lineHeight: 1.6 }}>
+                      Give your candidate a Day 1 Workspace Simulation, a realistic inbox, calendar, and prioritisation challenge that reveals how they actually work under pressure. Plus a 60-second Highlight Reel you can share with your client in one click, showing exactly how the candidate performed.
+                    </p>
+                  )}
+                </div>
+                {/* Native-style toggle switch */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={immersiveOn}
+                  onClick={() => setImmersiveOn(v => !v)}
+                  style={{
+                    width: 44, height: 26, borderRadius: 999,
+                    background: immersiveOn ? '#00BFA5' : '#e4e9f0',
+                    border: 'none', position: 'relative', cursor: 'pointer',
+                    transition: 'background 0.15s', flexShrink: 0,
+                  }}
+                >
+                  <span style={{
+                    position: 'absolute', top: 3, left: immersiveOn ? 21 : 3,
+                    width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                    transition: 'left 0.15s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  }} />
+                </button>
+              </div>
+              {immersiveOn && (
+                <div style={{
+                  marginTop: 14, paddingTop: 14, borderTop: '1px solid #e4e9f0',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 12, flexWrap: 'wrap',
+                }}>
+                  <p style={{ margin: 0, fontSize: 12.5, color: '#5e6b7f', fontFamily: F, flex: 1, minWidth: 200, lineHeight: 1.55 }}>
+                    {isStrategyFit
+                      ? `Highlight Reel will be added to this assessment. You'll be charged £${addOnPrice} separately.`
+                      : `Immersive will be added to this assessment. ${isPaygUser ? 'You\'ll be charged' : 'Your account will be charged'} £${addOnPrice} separately.`}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleBuyAddOn(addOnType)}
+                    disabled={immersiveBuying}
+                    style={{
+                      fontFamily: F, fontSize: 13, fontWeight: 800, color: '#0f2137',
+                      background: '#00BFA5', border: 'none',
+                      padding: '9px 18px', borderRadius: 8,
+                      cursor: immersiveBuying ? 'default' : 'pointer',
+                      opacity: immersiveBuying ? 0.7 : 1, flexShrink: 0,
+                    }}
+                  >
+                    {immersiveBuying
+                      ? 'Redirecting…'
+                      : isPaygUser
+                        ? `Add ${isStrategyFit ? 'Highlight Reel' : 'Immersive'}, pay £${addOnPrice}`
+                        : `Add ${isStrategyFit ? 'Highlight Reel' : 'Immersive'}, £${addOnPrice} per assessment`}
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* Generate button (shown in adjust mode or when not yet analysed) */}
         {!analysed && (
