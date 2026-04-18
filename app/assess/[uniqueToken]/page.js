@@ -1,4 +1,5 @@
 'use client'
+// colour constants audit - all defined
 import { useState, useEffect, useRef } from 'react'
 import ProdictaLogo from '@/components/ProdictaLogo'
 
