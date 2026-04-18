@@ -177,33 +177,43 @@ function ErrorPage({ message, context }) {
 
 // ─── State: Already completed ─────────────────────────────────────────────────
 function AlreadyCompletedPage({ candidateName, token }) {
+  const firstName = (candidateName || '').split(' ')[0] || ''
   return (
     <>
       <NavBar candidateName={candidateName} />
       <CentredCard>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
-          <ProdictaLogo textColor={NAVY} size={36} />
-        </div>
         <Card style={{ textAlign: 'center', padding: '56px 36px' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>✅</div>
-          <h2 style={{ fontFamily: F, color: TX, fontSize: 22, fontWeight: 700, margin: '0 0 12px' }}>
-            Already Submitted
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%',
+            background: `linear-gradient(135deg, #00BFA5, #009688)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 24px',
+            boxShadow: `0 0 0 6px #E6F7F5`,
+          }}>
+            <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <h2 style={{ fontFamily: F, color: TX, fontSize: 22, fontWeight: 800, margin: '0 0 12px' }}>
+            You have already completed this assessment
           </h2>
-          <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 20px' }}>
-            You have already completed this assessment. Thank you!
+          <p style={{ fontFamily: F, color: TX2, fontSize: 15, margin: '0 0 28px', lineHeight: 1.6 }}>
+            Thank you{firstName ? `, ${firstName}` : ''}. Your results have been shared with the hiring team.
           </p>
-          {token && (
-            <a
-              href={`/assess/${token}/feedback`}
-              style={{
-                display: 'inline-block', background: '#00BFA5', color: '#fff',
-                padding: '10px 22px', borderRadius: 8, fontWeight: 700,
-                textDecoration: 'none', fontSize: 14, fontFamily: F,
-              }}
-            >
-              View your feedback
-            </a>
-          )}
+          <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <ProdictaLogo textColor={NAVY} size={28} />
+            {token && (
+              <a
+                href={`/assess/${token}/feedback`}
+                style={{
+                  fontFamily: F, fontSize: 12.5, color: '#94a1b3',
+                  textDecoration: 'underline', textUnderlineOffset: 3,
+                }}
+              >
+                Share optional feedback
+              </a>
+            )}
+          </div>
         </Card>
       </CentredCard>
     </>
@@ -1429,31 +1439,25 @@ function CandidatePreviewPage({ candidateName, uniqueToken, onContinue }) {
   )
 }
 
-function CompletePage({ candidateName, assessment }) {
+function CompletePage({ candidateName }) {
   const [textVisible, setTextVisible] = useState(false)
   useEffect(() => { const t = setTimeout(() => setTextVisible(true), 700); return () => clearTimeout(t) }, [])
-  const rl = assessment?.role_level || 'MID_LEVEL'
-  const am = (assessment?.assessment_mode || '').toLowerCase()
+  const firstName = (candidateName || '').split(' ')[0] || 'you'
 
   return (
     <>
       <style>{`
         @keyframes drawCheck { from { stroke-dashoffset: 30 } to { stroke-dashoffset: 0 } }
         @keyframes popIn { 0%{transform:scale(0.35);opacity:0} 70%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
-        @keyframes textFadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
       <NavBar candidateName={candidateName} />
       <CentredCard>
         <Card style={{ textAlign: 'center', padding: '64px 36px', position: 'relative', overflow: 'hidden' }}>
           <Confetti />
           <div style={{
-            width: 80,
-            height: 80,
-            borderRadius: '50%',
+            width: 80, height: 80, borderRadius: '50%',
             background: `linear-gradient(135deg, #00BFA5, #009688)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 28px',
             boxShadow: `0 0 0 8px #E6F7F5, 0 8px 28px rgba(0,191,165,0.35)`,
             animation: 'popIn 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards',
@@ -1469,21 +1473,10 @@ function CompletePage({ candidateName, assessment }) {
           </div>
           <div style={{ opacity: textVisible ? 1 : 0, transform: textVisible ? 'translateY(0)' : 'translateY(10px)', transition: 'opacity 0.45s ease, transform 0.45s ease' }}>
             <h2 style={{ fontFamily: F, color: TX, fontSize: 26, fontWeight: 800, margin: '0 0 12px' }}>
-              {rl === 'OPERATIONAL' || am === 'rapid'
-                ? 'Done. Your results are being prepared.'
-                : rl === 'LEADERSHIP'
-                ? 'Your Strategy-Fit assessment is complete.'
-                : 'All done. Thank you!'}
+              Thank you{candidateName ? `, ${firstName}` : ''}.
             </h2>
-            <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 8px', lineHeight: 1.6 }}>
-              {rl === 'OPERATIONAL' || am === 'rapid'
-                ? 'Your responses have been submitted.'
-                : rl === 'LEADERSHIP'
-                ? 'A detailed report is being prepared for the hiring team.'
-                : 'Your responses have been submitted successfully.'}
-            </p>
-            <p style={{ fontFamily: F, color: TX2, fontSize: 15, margin: '0 0 36px', lineHeight: 1.6 }}>
-              The hiring team will review your assessment and be in touch.
+            <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 36px', lineHeight: 1.6 }}>
+              Your assessment is complete. Your results have been shared with the hiring team.
             </p>
           </div>
           <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
@@ -2073,7 +2066,11 @@ export default function AssessPage({ params }) {
           return
         }
         if (data.complete) {
-          setUiState('rating')
+          // Single completion screen — no rating / preview steps.
+          // Candidates are done; feedback collection, if ever wanted, lives
+          // at /assess/[token]/feedback and is reachable from the
+          // AlreadyCompletedPage next time they open the link.
+          setUiState('complete')
           return
         }
       } catch {
@@ -2194,7 +2191,7 @@ export default function AssessPage({ params }) {
       onContinue={() => setUiState('complete')}
     />
   )
-  if (uiState === 'complete') return <CompletePage candidateName={candidate?.name} assessment={assessment} />
+  if (uiState === 'complete') return <CompletePage candidateName={candidate?.name} />
 
   return null
 }
