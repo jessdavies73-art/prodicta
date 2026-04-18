@@ -17,10 +17,22 @@ function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 // Per-unit prices. Must stay in sync with CREDIT_PRICES in lib/stripe.js and
 // the PAYG tab in app/settings/page.js.
 const PAYG_TYPES = [
-  { type: 'rapid-screen', label: 'Rapid Screen', unit: 6,  note: '5-8 minute assessment per candidate' },
-  { type: 'speed-fit',    label: 'Speed-Fit',    unit: 18, note: '15 minute assessment per candidate' },
-  { type: 'depth-fit',    label: 'Depth-Fit',    unit: 35, note: '25 minute assessment per candidate' },
-  { type: 'strategy-fit', label: 'Strategy-Fit', unit: 65, note: '45 minute leadership assessment' },
+  {
+    type: 'rapid-screen', label: 'Rapid Screen', unit: 6,
+    description: 'A 5-8 minute work simulation. Gives a Strong Proceed, Interview Worthwhile, or High Risk signal with a Placement Survival Score, top strengths, and key watch-outs. 1 scenario. No full narrative report.',
+  },
+  {
+    type: 'speed-fit', label: 'Speed-Fit', unit: 18,
+    description: 'A 15 minute assessment with 2 work scenarios and a full scored report including strengths, watch-outs with Week 1 interventions, skills breakdown, and interview brief. Recommended for most roles.',
+  },
+  {
+    type: 'depth-fit', label: 'Depth-Fit', unit: 35,
+    description: 'A 25 minute deep assessment with 2 work scenarios and a full narrative report, detailed competency breakdown, Monday Morning Reality, counter-offer resilience score, and tailored coaching notes.',
+  },
+  {
+    type: 'strategy-fit', label: 'Strategy-Fit', unit: 65,
+    description: 'A 45 minute leadership assessment with 2 work scenarios, a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.',
+  },
 ]
 
 const PLANS = [
@@ -276,7 +288,10 @@ function CreditsPageInner() {
 
               {paygTab === 'credits' && (
                 <div>
-                  <h3 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: TX, fontFamily: F }}>Buy more credits</h3>
+                  <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: TX, fontFamily: F }}>Buy more credits</h3>
+                  <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '0 0 16px', lineHeight: 1.55 }}>
+                    The higher the assessment level the more detailed the report. Rapid Screen gives a quick signal — Speed-Fit and above give the full picture.
+                  </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {PAYG_TYPES.map(t => {
                       const qty = Math.max(1, parseInt(buyQty[t.type], 10) || 1)
@@ -285,40 +300,43 @@ function CreditsPageInner() {
                       const highlight = preselectType === t.type
                       return (
                         <div key={t.type} style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
-                          padding: '14px 16px', borderRadius: 10,
+                          padding: '16px 18px', borderRadius: 10,
                           border: `1.5px solid ${highlight ? TEAL : BD}`,
                           background: highlight ? TEALLT : '#fff',
                         }}>
-                          <div style={{ minWidth: 180 }}>
-                            <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{t.label}</div>
-                            <div style={{ fontFamily: F, fontSize: 12.5, color: TX3 }}>£{t.unit} per assessment · {t.note}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
+                            <div style={{ minWidth: 180 }}>
+                              <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{t.label} · £{t.unit}</div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <input
+                                type="number" min={1} max={100}
+                                value={buyQty[t.type] ?? 1}
+                                onChange={e => setBuyQty(prev => ({ ...prev, [t.type]: e.target.value }))}
+                                style={{
+                                  width: 70, padding: '8px 10px', borderRadius: 7,
+                                  border: `1.5px solid ${BD}`, background: CARD,
+                                  fontFamily: FM, fontSize: 14, fontWeight: 700, color: TX, textAlign: 'right',
+                                  outline: 'none',
+                                }}
+                              />
+                              <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY, minWidth: 64, textAlign: 'right' }}>£{total}</span>
+                              <button
+                                onClick={() => handleBuyUnit(t.type)}
+                                disabled={busy || !!buyingType}
+                                style={{
+                                  fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY,
+                                  background: TEAL, border: 'none', padding: '8px 18px', borderRadius: 7,
+                                  cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1,
+                                }}
+                              >
+                                {busy ? 'Opening…' : 'Buy'}
+                              </button>
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <input
-                              type="number" min={1} max={100}
-                              value={buyQty[t.type] ?? 1}
-                              onChange={e => setBuyQty(prev => ({ ...prev, [t.type]: e.target.value }))}
-                              style={{
-                                width: 70, padding: '8px 10px', borderRadius: 7,
-                                border: `1.5px solid ${BD}`, background: CARD,
-                                fontFamily: FM, fontSize: 14, fontWeight: 700, color: TX, textAlign: 'right',
-                                outline: 'none',
-                              }}
-                            />
-                            <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY, minWidth: 64, textAlign: 'right' }}>£{total}</span>
-                            <button
-                              onClick={() => handleBuyUnit(t.type)}
-                              disabled={busy || !!buyingType}
-                              style={{
-                                fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY,
-                                background: TEAL, border: 'none', padding: '8px 18px', borderRadius: 7,
-                                cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1,
-                              }}
-                            >
-                              {busy ? 'Opening…' : 'Buy'}
-                            </button>
-                          </div>
+                          <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>
+                            {t.description}
+                          </p>
                         </div>
                       )
                     })}
