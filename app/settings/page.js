@@ -984,6 +984,47 @@ export default function SettingsPage() {
               </div>
             )}
 
+            {/* ── Switch to monthly subscription (PAYG accounts only) ── */}
+            {isPayg && (
+              <div style={{ ...cs, marginBottom: 16 }}>
+                <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX }}>Switch to a monthly subscription</h2>
+                <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+                  Switch to a monthly subscription to get a bundle of assessments each month.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[
+                    { plan: 'Starter', price: '£49/mo', limit: '10 assessments/month' },
+                    { plan: 'Professional', price: '£120/mo', limit: '30 assessments/month' },
+                    { plan: 'Unlimited', price: '£159/mo', limit: 'Unlimited assessments' },
+                  ].map(p => (
+                    <div key={p.plan} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '14px 16px', borderRadius: 10, border: `1.5px solid ${BD}`,
+                      background: '#fff',
+                    }}>
+                      <div>
+                        <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{p.plan}</div>
+                        <div style={{ fontFamily: F, fontSize: 12.5, color: TX3 }}>{p.limit}</div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY }}>{p.price}</span>
+                        <a
+                          href={`mailto:hello@prodicta.co.uk?subject=Switch to ${p.plan} subscription`}
+                          style={{
+                            fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY,
+                            background: TEAL, textDecoration: 'none',
+                            padding: '7px 16px', borderRadius: 7,
+                          }}
+                        >
+                          Switch
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* ── Promo code ── */}
             <div style={{ ...cs, marginBottom: 16 }}>
               <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX }}>Promo code</h2>

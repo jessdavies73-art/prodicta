@@ -46,39 +46,32 @@ async function createSupabaseUserAndGrantCredits({ email, password, companyName,
     },
   })
 
-  await admin.from('users').insert({
-    id: userId,
-    email: email.trim(),
-    company_name: companyName.trim(),
-    account_type: accountType,
-    plan: 'payg',
-    plan_type: 'payg',
-    onboarding_complete: true,
-    subscription_status: 'payg',
-    stripe_customer_id: customerId,
-  })
+  await admin.from('users').upsert(
+    {
+      id: userId,
+      email: email.trim(),
+      company_name: companyName.trim(),
+      account_type: accountType,
+      plan: 'payg',
+      plan_type: 'payg',
+      onboarding_complete: true,
+      subscription_status: 'payg',
+      stripe_customer_id: customerId,
+    },
+    { onConflict: 'id' }
+  )
 
-  const { data: existing } = await admin
-    .from('assessment_credits')
-    .select('credits_remaining, credits_purchased')
-    .eq('user_id', userId)
-    .eq('credit_type', credit_type)
-    .maybeSingle()
-  if (existing) {
-    await admin.from('assessment_credits').update({
-      credits_remaining: (existing.credits_remaining || 0) + quantity,
-      credits_purchased: (existing.credits_purchased || 0) + quantity,
-      last_purchased_at: new Date().toISOString(),
-    }).eq('user_id', userId).eq('credit_type', credit_type)
-  } else {
-    await admin.from('assessment_credits').insert({
+  const { error: creditError } = await admin.from('assessment_credits').upsert(
+    {
       user_id: userId,
       credit_type,
       credits_remaining: quantity,
       credits_purchased: quantity,
       last_purchased_at: new Date().toISOString(),
-    })
-  }
+    },
+    { onConflict: 'user_id,credit_type' }
+  )
+  if (creditError) console.error('[payg] credit grant failed:', creditError)
 
   let promoMessage = null
   if (promoCode) {

@@ -61,16 +61,19 @@ export async function POST(request) {
       },
     })
 
-    await adminClient.from('users').insert({
-      id: userId,
-      email: email.trim(),
-      company_name: companyName.trim(),
-      account_type: accountType,
-      plan: 'payg',
-      plan_type: 'payg',
-      onboarding_complete: true,
-      subscription_status: 'payg',
-    })
+    await adminClient.from('users').upsert(
+      {
+        id: userId,
+        email: email.trim(),
+        company_name: companyName.trim(),
+        account_type: accountType,
+        plan: 'payg',
+        plan_type: 'payg',
+        onboarding_complete: true,
+        subscription_status: 'payg',
+      },
+      { onConflict: 'id' }
+    )
 
     let promoMessage = null
     if (promoCode) {
