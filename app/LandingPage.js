@@ -548,7 +548,7 @@ export default function LandingPage() {
           }}
           onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.4)' }}
           onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.borderColor=NAVY }}>
-            Get started
+            Sign up
           </a>
         </div>
 
