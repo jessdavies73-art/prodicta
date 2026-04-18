@@ -1800,7 +1800,11 @@ export default function NewAssessmentPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => router.push(`/assessment/${sentResult.assessmentId}`)}
+                          onClick={() => {
+                            if (!sentResult?.assessmentId) return
+                            if (router?.push) router.push(`/assessment/${sentResult.assessmentId}`)
+                            else window.location.assign(`/assessment/${sentResult.assessmentId}`)
+                          }}
                           style={{
                             padding: '11px 22px', borderRadius: 10, border: '1.5px solid #0f2137',
                             background: 'transparent', color: '#0f2137',
