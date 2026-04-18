@@ -1115,17 +1115,42 @@ export default function LandingPage() {
           {pricingMode === 'payg' && (
             <>
               <Reveal>
-                <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                <div style={{ textAlign: 'center', marginBottom: 20 }}>
                   <h3 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: NAVY, margin: '0 0 8px' }}>No commitment. Pay per assessment.</h3>
                   <p style={{ fontFamily: F, fontSize: 15, color: '#5e6b7f', margin: 0 }}>Perfect for occasional hiring or trying PRODICTA before subscribing.</p>
                 </div>
               </Reveal>
+              <Reveal>
+                <p style={{
+                  textAlign: 'center', fontFamily: F, fontSize: 14, color: '#5e6b7f',
+                  maxWidth: 680, margin: '0 auto 32px', lineHeight: 1.6,
+                }}>
+                  The higher the assessment level the more detailed the report. Rapid Screen gives a quick signal — Speed-Fit and above give the full picture.
+                </p>
+              </Reveal>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, alignItems: 'start', marginBottom: 20 }}>
                 {[
-                  { name: 'Rapid Screen', price: '£6', time: '5-8 minutes, 1 scenario + prioritisation test', desc: 'For high volume screening of operational roles' },
-                  { name: 'Speed-Fit', price: '£18', time: '15 minutes, 2 scenarios', desc: 'For urgent hires and high volume roles' },
-                  { name: 'Depth-Fit', price: '£35', time: '25 minutes, 3 scenarios', desc: 'For most roles', highlight: true },
-                  { name: 'Strategy-Fit', price: '£65', time: '45 minutes, 4 scenarios + Workspace', desc: 'For senior and high stakes hires' },
+                  {
+                    name: 'Rapid Screen', price: '£6',
+                    time: '5-8 minutes · 1 scenario',
+                    desc: 'A 5-8 minute work simulation. 1 scenario. Gives a Strong Proceed, Interview Worthwhile, or High Risk signal with a Placement Survival Score, top strengths, and key watch-outs. No full narrative report.',
+                  },
+                  {
+                    name: 'Speed-Fit', price: '£18',
+                    time: '15 minutes · 2 scenarios',
+                    desc: 'A 15 minute assessment with 2 work scenarios and a full scored report including strengths, watch-outs with Week 1 interventions, skills breakdown, and interview brief. Recommended for most roles.',
+                    highlight: true,
+                  },
+                  {
+                    name: 'Depth-Fit', price: '£35',
+                    time: '25 minutes · 2 scenarios',
+                    desc: 'A 25 minute deep assessment with 2 work scenarios and a full narrative report, detailed competency breakdown, Monday Morning Reality, counter-offer resilience score, and tailored coaching notes.',
+                  },
+                  {
+                    name: 'Strategy-Fit', price: '£65',
+                    time: '45 minutes · 2 scenarios + Workspace',
+                    desc: 'A 45 minute leadership assessment with 2 work scenarios, a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.',
+                  },
                 ].map((p, i) => (
                   <Reveal key={p.name} delay={i * 80}>
                     <div style={{
@@ -1796,7 +1821,7 @@ export default function LandingPage() {
                 },
                 {
                   q: 'How long does an assessment take?',
-                  a: 'It depends on the role. Speed-Fit assessments take 15 minutes and test 2 scenarios, ideal for urgent hires or high volume roles. Depth-Fit assessments take 25 minutes with 3 scenarios, recommended for most roles. Strategy-Fit assessments take 45 minutes with 4 scenarios, best for senior or high stakes hires. PRODICTA recommends the right level based on the role but you can choose. Reports are available within minutes of the candidate finishing.',
+                  a: 'It depends on the role. Rapid Screen is a 5-8 minute single-scenario signal for high-volume screening. Speed-Fit assessments take 15 minutes with 2 scenarios, recommended for most roles. Depth-Fit assessments take 25 minutes with 2 scenarios and a full narrative report. Strategy-Fit assessments take 45 minutes with 2 scenarios plus a Day 1 workspace simulation, best for senior or high stakes hires. PRODICTA recommends the right level based on the role but you can choose. Reports are available within minutes of the candidate finishing.',
                 },
                 {
                   q: 'What roles does PRODICTA work for?',
