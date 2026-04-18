@@ -106,7 +106,7 @@ export async function POST(request) {
       standard: 'depth-fit',
       advanced: 'strategy-fit',
     }
-    const creditType = creditTypeMap[mode]
+    let creditType = creditTypeMap[mode]
     if (!creditType) {
       return NextResponse.json({ error: 'bad_mode', message: `Unknown assessment mode: ${mode}` }, { status: 400 })
     }
@@ -133,6 +133,19 @@ export async function POST(request) {
         .eq('credit_type', creditType)
         .maybeSingle()
 
+      // Fallback: if the requested credit_type has no balance, check whether
+      // the user has rapid-screen credits we can spend instead. This lets a
+      // PAYG user who only holds Rapid Screen credits still succeed even if
+      // the client sent a different assessment_mode.
+      const { data: rapidCredit } = creditType === 'rapid-screen'
+        ? { data: credit }
+        : await adminClient
+            .from('assessment_credits')
+            .select('credits_remaining')
+            .eq('user_id', user.id)
+            .eq('credit_type', 'rapid-screen')
+            .maybeSingle()
+
       console.log('[generate] credit check', {
         userId: user.id,
         mode,
@@ -141,20 +154,35 @@ export async function POST(request) {
         planKey,
         planLimit,
         creditResult: credit,
+        rapidCreditResult: rapidCredit,
         creditError: creditErr,
         usingAdminClient: true,
       })
 
-      if (!credit || credit.credits_remaining <= 0) {
+      const requestedHasBalance = credit && credit.credits_remaining > 0
+      const rapidHasBalance = rapidCredit && rapidCredit.credits_remaining > 0
+
+      let chargedCreditType = creditType
+      let chargedBalance = credit?.credits_remaining ?? 0
+
+      if (!requestedHasBalance && rapidHasBalance) {
+        // Downgrade: spend a rapid-screen credit and run in rapid mode.
+        console.log('[generate] rapid-screen fallback', { from: creditType, to: 'rapid-screen', rapidBalance: rapidCredit.credits_remaining })
+        mode = 'rapid'
+        creditType = 'rapid-screen'
+        chargedCreditType = 'rapid-screen'
+        chargedBalance = rapidCredit.credits_remaining
+      } else if (!requestedHasBalance) {
         console.warn('[generate] no_credits trigger', { reason: credit ? 'balance<=0' : 'no row', creditErr })
         return NextResponse.json({ error: 'no_credits', message: 'No credits remaining. Purchase more at prodicta.co.uk/pricing' }, { status: 403 })
       }
 
-      // Stash what we need to deduct / refund later.
+      // Stash what we need to deduct / refund later. Points at whichever
+      // credit row we actually committed to charging.
       creditRefundCtx = {
         userId: user.id,
-        creditType,
-        preDeductionBalance: credit.credits_remaining,
+        creditType: chargedCreditType,
+        preDeductionBalance: chargedBalance,
         deducted: false,
       }
       adminForRefund = adminClient
