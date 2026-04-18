@@ -550,8 +550,16 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
     const planLimit = PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter
 
     // Map mode to credit type
-    const creditTypeMap = { quick: 'speed-fit', standard: 'depth-fit', advanced: 'strategy-fit' }
-    const creditType = creditTypeMap[mode] || 'depth-fit'
+    const creditTypeMap = {
+      rapid: 'rapid-screen',
+      quick: 'speed-fit',
+      standard: 'depth-fit',
+      advanced: 'strategy-fit',
+    }
+    const creditType = creditTypeMap[mode]
+    if (!creditType) {
+      return NextResponse.json({ error: 'bad_mode', message: `Unknown assessment mode: ${mode}` }, { status: 400 })
+    }
 
     if (activeSub && planLimit !== null) {
       // Check monthly usage against plan limit
