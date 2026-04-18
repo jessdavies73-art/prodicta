@@ -96,7 +96,7 @@ Make all content specific to the role. For senior/leadership roles use board-lev
     // finalMessage() aggregates the deltas into the same Message shape.
     const msg = await client.messages.stream({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1500,
+      max_tokens: 2500,
       messages: [{ role: 'user', content: prompt }],
     }).finalMessage()
 
@@ -110,9 +110,16 @@ Make all content specific to the role. For senior/leadership roles use board-lev
       output_tokens: msg.usage?.output_tokens,
     })
 
-    const match = text.match(/\{[\s\S]*\}/)
+    // Strip markdown code fences Claude sometimes wraps around JSON, then
+    // match the first balanced {…} block in the cleaned text.
+    const cleaned = text
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/```\s*$/i, '')
+      .trim()
+    const match = cleaned.match(/\{[\s\S]*\}/)
     if (!match) {
-      console.warn('[workspace-content] no JSON block found in response', { text_preview: text.substring(0, 300) })
+      console.warn('[workspace-content] no JSON block found in response', { text_preview: text.substring(0, 300), cleaned_preview: cleaned.substring(0, 300) })
       return NextResponse.json({ error: 'Generation failed', message: 'Claude response did not contain a JSON block' }, { status: 500 })
     }
     let content
