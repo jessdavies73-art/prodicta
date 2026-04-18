@@ -167,6 +167,7 @@ export default function SettingsPage() {
   const [companySizeFocused, setCompanySizeFocused] = useState(false)
   // Credits (pay-per-assessment)
   const [assessmentCredits, setAssessmentCredits] = useState([])
+  const [creditsLoaded, setCreditsLoaded] = useState(false)
 
   // Promo codes
   const [promoInput, setPromoInput] = useState('')
@@ -244,6 +245,7 @@ export default function SettingsPage() {
           .eq('user_id', user.id)
         console.log('[credits debug] settings load', { userId: user.id, credits, creditsError })
         if (credits && credits.length > 0) setAssessmentCredits(credits)
+        setCreditsLoaded(true)
 
         // Load promo redemption history
         const { data: redemptions } = await supabase.from('promo_redemptions')
@@ -948,7 +950,7 @@ export default function SettingsPage() {
             </>)}
 
             {/* ── Pay As You Go billing card (payg accounts only) ── */}
-            {isPayg && (
+            {isPayg && creditsLoaded && (
               <div style={{
                 background: TEALLT, border: `1px solid ${BD}`, borderRadius: 12,
                 padding: 24, marginBottom: 20,
