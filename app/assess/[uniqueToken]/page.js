@@ -1917,7 +1917,9 @@ function CalendarPage({ assessment, candidate, onSubmit, onSkip }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function AssessPage({ params }) {
-  const { uniqueToken } = params
+  // Guard params in case Next.js ever hands us something unexpected. In 14.x
+  // params is a plain object, but better safe than crashing a candidate mid-flow.
+  const uniqueToken = params?.uniqueToken || null
 
   const [uiState, setUiState] = useState('loading') // loading | error | already_complete | intro | active | calendar | workspace | submitting | rating | preview | complete
   const [errorMessage, setErrorMessage] = useState('')
@@ -1927,6 +1929,11 @@ export default function AssessPage({ params }) {
   const [pendingResponses, setPendingResponses] = useState(null) // stored between active→calendar→submit
 
   useEffect(() => {
+    if (!uniqueToken) {
+      setUiState('error')
+      setErrorMessage('Assessment link is missing or invalid.')
+      return
+    }
     async function load() {
       try {
         const res = await fetch(`/api/assess/${uniqueToken}`)
@@ -1941,14 +1948,17 @@ export default function AssessPage({ params }) {
           return
         }
         const data = await res.json()
-        setCandidate(data.candidate)
-        setAssessment(data.assessment)
-        setCompanyName(data.company_name || 'The hiring team')
+        setCandidate(data?.candidate || null)
+        setAssessment(data?.assessment || null)
+        setCompanyName(data?.company_name || 'The hiring team')
 
-        if (data.candidate.status === 'completed') {
+        if (data?.candidate?.status === 'completed') {
           setUiState('already_complete')
-        } else {
+        } else if (data?.candidate) {
           setUiState('intro')
+        } else {
+          setUiState('error')
+          setErrorMessage('Assessment data is incomplete. Please contact the hiring team.')
         }
       } catch {
         setUiState('error')
@@ -2031,7 +2041,7 @@ export default function AssessPage({ params }) {
   }
 
   if (uiState === 'error') return <ErrorPage message={errorMessage} />
-  if (uiState === 'already_complete') return <AlreadyCompletedPage candidateName={candidate?.name} token={params.uniqueToken} />
+  if (uiState === 'already_complete') return <AlreadyCompletedPage candidateName={candidate?.name} token={uniqueToken} />
   if (uiState === 'intro') return (
     <IntroPage
       candidate={candidate}
