@@ -21,7 +21,7 @@ const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
 function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
-const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
+const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null, payg: null }
 
 const PURPLE = '#7C3AED'
 
@@ -577,6 +577,7 @@ function DashboardPageInner() {
   const [pendingCheckins, setPendingCheckins] = useState([])
   const [selectedCandidates, setSelectedCandidates] = useState(new Set())
   const [assessmentCredits, setAssessmentCredits] = useState([])
+  const [creditsLoaded, setCreditsLoaded] = useState(false)
   const [redlineCandidates, setRedlineCandidates] = useState(new Set())
   const [assignmentAlerts, setAssignmentAlerts] = useState([])
   const [attendanceByCandidate, setAttendanceByCandidate] = useState({})
@@ -794,6 +795,7 @@ function DashboardPageInner() {
             .eq('user_id', user.id)
           if (credits && credits.length > 0) setAssessmentCredits(credits)
         } catch {}
+        setCreditsLoaded(true)
 
         // Load redline statuses from probation_copilot
         try {
@@ -1006,8 +1008,10 @@ function DashboardPageInner() {
 
   // ── plan / usage ────────────────────────────────────────────────────────────
   const planKey = (profile?.plan || 'starter').toLowerCase()
-  const planLimit = PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter
+  const isPayg = profile?.plan_type === 'payg' || profile?.plan === 'payg'
+  const planLimit = isPayg ? null : (PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter)
   const atLimit = planLimit !== null && monthlyCount >= planLimit
+  const totalCreditsRemaining = assessmentCredits.reduce((sum, c) => sum + (c.credits_remaining || 0), 0)
 
   // ── computed stats ──────────────────────────────────────────────────────────
 
@@ -1689,6 +1693,20 @@ function DashboardPageInner() {
               }}>
                 {monthlyCount} of {planLimit} this month
                 {atLimit && ' · Limit reached'}
+              </div>
+            )}
+
+            {isPayg && creditsLoaded && (
+              <div style={{
+                fontFamily: F, fontSize: 11.5, fontWeight: 600,
+                color: totalCreditsRemaining > 0 ? TEALD : '#b91c1c',
+                background: totalCreditsRemaining > 0 ? TEALLT : '#fef2f2',
+                border: `1px solid ${totalCreditsRemaining > 0 ? `${TEAL}55` : '#fecaca'}`,
+                borderRadius: 6, padding: '4px 10px',
+                flexShrink: 0,
+              }}>
+                {totalCreditsRemaining} credit{totalCreditsRemaining === 1 ? '' : 's'} remaining
+                {totalCreditsRemaining === 0 && ' · Buy more to create'}
               </div>
             )}
           </div>
