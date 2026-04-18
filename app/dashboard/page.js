@@ -551,6 +551,11 @@ export default function DashboardPage() {
 function DashboardPageInner() {
   const router = useRouter()
   const toast = useToast()
+  // Bumping this bumps the dep array of the main data-loading effect so it
+  // re-runs. The focus / visibility listeners below bump it whenever the tab
+  // regains focus, so credit + profile updates made on another page / tab
+  // flow back in without a hard refresh.
+  const [refreshKey, setRefreshKey] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [profile, setProfile] = useState(null)
@@ -884,6 +889,24 @@ function DashboardPageInner() {
       }
     }
     load()
+  }, [router, refreshKey])
+
+  // Re-fetch when the user returns to this tab / page so they never see a
+  // stale credit balance after buying more on another page. Also calls
+  // router.refresh() to invalidate any server-component cache Next.js is
+  // holding for this segment.
+  useEffect(() => {
+    function bump() {
+      setRefreshKey(k => k + 1)
+      try { router.refresh() } catch {}
+    }
+    const onVisible = () => { if (document.visibilityState === 'visible') bump() }
+    window.addEventListener('focus', bump)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', bump)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [router])
 
   async function handleArchive(id) {

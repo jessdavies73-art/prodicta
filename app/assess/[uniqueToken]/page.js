@@ -117,7 +117,20 @@ function Card({ children, style }) {
 }
 
 // ─── State: Error ─────────────────────────────────────────────────────────────
-function ErrorPage({ message }) {
+function ErrorPage({ message, context }) {
+  const friendly = message || 'Something went wrong with your assessment.'
+  // mailto body pre-fills the error details so the team can triage it fast.
+  const mailtoBody = encodeURIComponent(
+    `Hello,\n\nI hit an error while completing a PRODICTA assessment.\n\n` +
+    `Error: ${friendly}\n` +
+    `Context: ${context || 'candidate-assessment'}\n` +
+    `Page: ${typeof window !== 'undefined' ? window.location.href : ''}\n` +
+    `Time: ${new Date().toISOString()}\n\n` +
+    `Thanks.`
+  )
+  const mailtoSubject = encodeURIComponent('PRODICTA assessment error')
+  const reportHref = `mailto:hello@prodicta.co.uk?subject=${mailtoSubject}&body=${mailtoBody}`
+
   return (
     <>
       <NavBar />
@@ -125,11 +138,37 @@ function ErrorPage({ message }) {
         <Card style={{ textAlign: 'center', padding: '56px 36px' }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}>⚠️</div>
           <h2 style={{ fontFamily: F, color: TX, fontSize: 22, fontWeight: 700, margin: '0 0 12px' }}>
-            Assessment Not Found
+            Something went wrong
           </h2>
-          <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: 0 }}>
-            {message || 'This assessment link is invalid or has expired.'}
+          <p style={{ fontFamily: F, color: TX2, fontSize: 15, margin: '0 0 24px', lineHeight: 1.6 }}>
+            {friendly}
           </p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a
+              href={reportHref}
+              style={{
+                display: 'inline-block',
+                background: 'transparent', color: NAVY,
+                fontFamily: F, fontSize: 14, fontWeight: 700,
+                border: `1.5px solid ${BD}`, borderRadius: 10,
+                padding: '11px 22px', textDecoration: 'none',
+              }}
+            >
+              Report this problem
+            </a>
+            <button
+              type="button"
+              onClick={() => { if (typeof window !== 'undefined') window.location.reload() }}
+              style={{
+                background: TEAL, color: '#fff',
+                fontFamily: F, fontSize: 14, fontWeight: 700,
+                border: 'none', borderRadius: 10,
+                padding: '11px 22px', cursor: 'pointer',
+              }}
+            >
+              Try again
+            </button>
+          </div>
         </Card>
       </CentredCard>
     </>
@@ -1525,7 +1564,7 @@ function WorkspacePage({ assessment, candidate, onSubmit, onSkip }) {
     )
   }
 
-  if (!content) return <div style={{ minHeight: '100vh', background: '#f3f5f8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: F, color: TX2 }}>Unable to load workspace.</div>
+  if (!content) return <ErrorPage message="Unable to load the workspace simulation. Your scenario responses are safe." context="workspace-content" />
 
   const emails = content.emails || []
   const messages = content.messages || []
