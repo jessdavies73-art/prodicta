@@ -289,7 +289,7 @@ export default function NewAssessmentPage() {
   }, [analysed])
 
   useEffect(() => {
-    const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
+    const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null, payg: null }
     const init = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -304,8 +304,9 @@ export default function NewAssessmentPage() {
 
       // Check monthly usage limit or credits
       const planKey = (profile?.plan || 'starter').toLowerCase()
-      const planLimit = PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter
-      const isActiveSub = profile?.subscription_status === 'active'
+      const isPaygUser = planKey === 'payg' || profile?.plan_type === 'payg'
+      const planLimit = isPaygUser ? null : (PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter)
+      const isActiveSub = profile?.subscription_status === 'active' && !isPaygUser
 
       if (isActiveSub && planLimit !== null) {
         const now = new Date()
@@ -629,25 +630,33 @@ export default function NewAssessmentPage() {
               </svg>
             </div>
             <h2 style={{ fontFamily: F, fontSize: 21, fontWeight: 800, color: '#0f2137', margin: '0 0 10px' }}>
-              Assessment limit reached
+              {limitInfo.isCredits ? 'No credits remaining' : 'Assessment limit reached'}
             </h2>
-            <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', margin: '0 0 6px', lineHeight: 1.65 }}>
-              You've used <strong>{limitInfo.used} of {limitInfo.limit}</strong> assessments this month.
-            </p>
-            <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', margin: '0 0 28px', lineHeight: 1.65 }}>
-              Upgrade your plan to continue creating assessments.
-            </p>
+            {limitInfo.isCredits ? (
+              <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', margin: '0 0 28px', lineHeight: 1.65 }}>
+                You have no assessment credits remaining. Purchase more credits to continue.
+              </p>
+            ) : (
+              <>
+                <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', margin: '0 0 6px', lineHeight: 1.65 }}>
+                  You've used <strong>{limitInfo.used} of {limitInfo.limit}</strong> assessments this month.
+                </p>
+                <p style={{ fontFamily: F, fontSize: 14, color: '#5e6b7f', margin: '0 0 28px', lineHeight: 1.65 }}>
+                  Upgrade your plan to continue creating assessments.
+                </p>
+              </>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <a
-                href="mailto:hello@prodicta.co.uk?subject=Upgrade my plan"
+              <button
+                onClick={() => router.push(limitInfo.isCredits ? '/billing/credits' : '/settings')}
                 style={{
-                  display: 'block', padding: '12px 0', borderRadius: 10,
+                  padding: '12px 0', borderRadius: 10, border: 'none',
                   background: '#00BFA5', color: '#0f2137', fontFamily: F, fontSize: 14.5, fontWeight: 800,
-                  textDecoration: 'none', textAlign: 'center',
+                  cursor: 'pointer',
                 }}
               >
-                Upgrade my plan →
-              </a>
+                {limitInfo.isCredits ? 'Buy more credits →' : 'Upgrade plan →'}
+              </button>
               <button
                 onClick={() => router.push('/dashboard')}
                 style={{ padding: '11px 0', borderRadius: 10, border: '1.5px solid #e4e9f0', background: 'transparent', color: '#5e6b7f', fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}

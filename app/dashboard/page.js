@@ -1275,16 +1275,16 @@ function DashboardPageInner() {
               ))}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <a
-                href="mailto:hello@prodicta.co.uk?subject=Upgrade my plan"
+              <button
+                onClick={() => { setShowUpgrade(false); router.push('/settings') }}
                 style={{
-                  display: 'block', width: '100%', padding: '12px 0', borderRadius: 10, border: 'none',
+                  width: '100%', padding: '12px 0', borderRadius: 10, border: 'none',
                   background: TEAL, color: NAVY, fontFamily: F, fontSize: 14.5, fontWeight: 800,
-                  cursor: 'pointer', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box',
+                  cursor: 'pointer',
                 }}
               >
-                Upgrade my plan →
-              </a>
+                Upgrade plan →
+              </button>
               <button
                 onClick={() => setShowUpgrade(false)}
                 style={{ width: '100%', padding: '11px 0', borderRadius: 10, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}

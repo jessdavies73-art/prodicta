@@ -94,10 +94,16 @@ export async function POST(request) {
       activeSub: userProfile?.subscription_status === 'active',
     })
 
-    const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null }
-    const activeSub = userProfile?.subscription_status === 'active'
+    const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null, payg: null }
     const planKey = (userProfile?.plan || 'starter').toLowerCase()
-    const planLimit = PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter
+    const isPaygUser = planKey === 'payg' || userProfile?.plan_type === 'payg'
+    // PAYG users never have a monthly limit — they are credit-gated only.
+    // For everyone else, fall back to starter's 10/month when plan is unknown.
+    const planLimit = isPaygUser ? null : (PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter)
+    // An accidental `subscription_status = 'active'` on a PAYG row would
+    // otherwise route the user through the plan-limit branch instead of
+    // the credit check; guard explicitly against that.
+    const activeSub = userProfile?.subscription_status === 'active' && !isPaygUser
 
     // Map mode to credit type
     const creditTypeMap = {

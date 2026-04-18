@@ -2380,7 +2380,17 @@ export default function CandidateReportPage({ params }) {
                     Get the full report for this candidate
                   </p>
                   <button
-                    onClick={() => router.push(`/assessment/new?role=${encodeURIComponent(candidate?.assessments?.role_title || '')}&mode=quick`)}
+                    onClick={() => {
+                      const isPaygUser = profile?.plan_type === 'payg' || profile?.plan === 'payg'
+                      if (isPaygUser) {
+                        // PAYG: Speed-Fit needs its own credit bundle. Send the
+                        // user to billing to buy Speed-Fit credits before they
+                        // can run the upgraded assessment.
+                        router.push('/billing/credits?type=speed-fit&upgrade_from=rapid')
+                      } else {
+                        router.push(`/assessment/new?role=${encodeURIComponent(candidate?.assessments?.role_title || '')}&mode=quick`)
+                      }
+                    }}
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: 8,
                       background: TEAL, color: NAVY, border: 'none', borderRadius: 10,
