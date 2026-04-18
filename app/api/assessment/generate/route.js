@@ -13,6 +13,28 @@ const keepAliveHeaders = {
   'Keep-Alive': 'timeout=120',
 }
 
+// Race a promise against a hard timeout so a single Claude call can never
+// hang the whole function past its maxDuration.
+function raceWithTimeout(promise, ms, label) {
+  let timer
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timeout after ${ms}ms`)), ms)
+  })
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+}
+
+// Map assessment mode to a sensible max output token budget. Short modes get
+// small budgets so generation returns quickly; complex modes get more room.
+const MAX_TOKENS_BY_MODE = {
+  rapid:    800,   // 1 scenario + prioritisation test
+  quick:    2000,  // 2 scenarios
+  standard: 3000,  // 3 scenarios
+  advanced: 4096,  // 4 scenarios
+}
+
+const JD_MAX_CHARS = 2000
+const CONTEXT_ANSWER_MAX_CHARS = 200
+
 export async function POST(request) {
   // Tracks PAYG credit state so the outer catch can refund if a failure happens
   // after deduction. null means no deduction yet / not applicable.
@@ -20,7 +42,28 @@ export async function POST(request) {
   let adminForRefund = null
   try {
     const body = await request.json()
-    const { role_title, job_description, skill_weights, save_as_template, template_name, context_answers, assessment_mode } = body
+    const {
+      role_title,
+      job_description: jobDescriptionRaw,
+      skill_weights,
+      save_as_template,
+      template_name,
+      context_answers: contextAnswersRaw,
+      assessment_mode,
+    } = body
+
+    // Trim oversized inputs so the prompt can't balloon past Claude/Vercel limits.
+    // The JD cap is applied before it reaches any prompt template; the downstream
+    // code keeps using the plain `job_description` / `context_answers` names.
+    const job_description = typeof jobDescriptionRaw === 'string'
+      ? jobDescriptionRaw.slice(0, JD_MAX_CHARS)
+      : ''
+    const context_answers = contextAnswersRaw && typeof contextAnswersRaw === 'object'
+      ? Object.fromEntries(Object.entries(contextAnswersRaw).map(([k, v]) => [
+          k,
+          typeof v === 'string' ? v.slice(0, CONTEXT_ANSWER_MAX_CHARS) : v,
+        ]))
+      : contextAnswersRaw
     const employment_type = body.employment_type || 'permanent'
     // Normalise mode: 'rapid' (1 scenario + prioritisation), 'quick' (2 scenarios), 'standard' (3 scenarios), 'advanced' (4 scenarios).
     const rawMode = (assessment_mode || 'standard').toLowerCase()
@@ -529,7 +572,7 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         )
 
     const scenarioModel = 'claude-sonnet-4-6'
-    const scenarioMaxTokens = isRapid ? 600 : 4096
+    const scenarioMaxTokens = MAX_TOKENS_BY_MODE[mode] ?? 3000
     console.log('[generate] calling Claude API', {
       model: scenarioModel,
       prompt_length: finalPrompt.length,
@@ -538,14 +581,14 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
     })
     const claudeStart = Date.now()
     // Stream the response so the server-to-Anthropic connection stays active
-    // for the full generation; Vercel won't see an idle socket and close it.
-    // finalMessage() aggregates the deltas into the same shape as messages.create.
-    const stream = await client.messages.stream({
+    // for the full generation. 90s per-call cap so a single stuck call can't
+    // eat the whole function budget; the outer catch refunds PAYG credit.
+    const stream = client.messages.stream({
       model: scenarioModel,
       max_tokens: scenarioMaxTokens,
       messages: [{ role: 'user', content: finalPrompt }],
     })
-    const message = await stream.finalMessage()
+    const message = await raceWithTimeout(stream.finalMessage(), 90000, 'scenario generation')
     console.log('[generate] Claude API returned', {
       model: scenarioModel,
       elapsed_ms: Date.now() - claudeStart,
@@ -687,7 +730,7 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
     // -- ALTER TABLE assessments ADD COLUMN calendar_events JSONB;
     // Generate calendar events for Day One Planning (async, non-blocking)
     try {
-      const calMsg = await client.messages.create({
+      const calStream = client.messages.stream({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 800,
         messages: [{
@@ -714,6 +757,7 @@ Return JSON only. UK English. No emoji. No em dashes.
 ${roleLevel === 'OPERATIONAL' ? 'Use simple practical events: team briefing, floor walk, safety check, stock count. Tasks: check equipment, read safety notices, shadow experienced colleague, complete induction form.' : roleLevel === 'LEADERSHIP' ? 'Use board-level events: exec team meeting, board strategy session, investor call. Tasks: review board papers, prepare stakeholder map, draft 90-day priorities, schedule direct report introductions.' : 'Use mid-level events: team standup, client call, 1-to-1 with manager. Tasks: review team briefing docs, respond to client emails, prepare agenda for planning session, update project tracker.'}`
         }],
       })
+      const calMsg = await raceWithTimeout(calStream.finalMessage(), 90000, 'calendar generation')
       const calText = calMsg.content[0]?.text || ''
       const calMatch = calText.match(/\{[\s\S]*\}/)
       if (calMatch) {
@@ -728,7 +772,7 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple practical events: team briefing, flo
     // Generate inbox overload events for Depth-Fit and Strategy-Fit (non-blocking)
     if (mode !== 'quick') {
       try {
-        const inboxMsg = await client.messages.create({
+        const inboxStream = client.messages.stream({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 1000,
           messages: [{
@@ -757,6 +801,7 @@ Return JSON only. UK English. No emoji. No em dashes.
 ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor asking about shift cover, stock delivery query, colleague needing help on the floor.' : roleLevel === 'LEADERSHIP' ? 'Use executive-level messages: board member requesting data, investor relations query, HR escalation about a senior hire.' : 'Use mid-level workplace messages: client complaint, budget approval needed, team member asking for guidance on a project.'}`
           }],
         })
+        const inboxMsg = await raceWithTimeout(inboxStream.finalMessage(), 90000, 'inbox generation')
         const inboxText = inboxMsg.content[0]?.text || ''
         const inboxMatch = inboxText.match(/\{[\s\S]*\}/)
         if (inboxMatch) {
