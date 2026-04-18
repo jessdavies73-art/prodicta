@@ -485,6 +485,7 @@ export default function SettingsPage() {
   const atLimit    = !isUnlimited && monthlyCount >= planLimit
   const monthLabel = new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
   const isPayg = profile?.plan_type === 'payg' || profile?.plan === 'payg'
+  console.log('[isPayg debug]', { isPayg, plan: profile?.plan, plan_type: profile?.plan_type })
   const hasActiveSubscription = profile?.subscription_status === 'active' && !isPayg
   const hasCredits = assessmentCredits.length > 0
   const payAsYouGoOnly = !hasActiveSubscription && hasCredits
@@ -964,7 +965,8 @@ export default function SettingsPage() {
                     const credit = assessmentCredits.find(c => c.credit_type === type)
                     console.log('[credit find]', type, credit, assessmentCredits)
                     const labels = { 'rapid-screen': 'Rapid Screen', 'speed-fit': 'Speed-Fit', 'depth-fit': 'Depth-Fit', 'strategy-fit': 'Strategy-Fit' }
-                    const remaining = credit?.credits_remaining || 0
+                    const remaining = credit?.credits_remaining ?? 0
+                    console.log('[remaining debug]', type, credit?.credits_remaining, remaining)
                     return (
                       <div key={type} style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 8, padding: 16, textAlign: 'center' }}>
                         <div style={{ fontFamily: FM, fontWeight: 800, fontSize: 24, color: remaining > 0 ? TEAL : TX3 }}>{remaining}</div>
