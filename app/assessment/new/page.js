@@ -1761,7 +1761,7 @@ export default function NewAssessmentPage() {
                     </button>
                   </div>
 
-                  {sentResult && (
+                  {sentResult && sentResult.assessmentId && (
                     <div style={{
                       marginTop: 24, padding: '28px 24px', borderRadius: 14,
                       background: '#e0f2f0', border: '1px solid #80DFD2', textAlign: 'center',
