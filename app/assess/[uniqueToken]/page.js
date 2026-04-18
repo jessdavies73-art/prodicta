@@ -355,6 +355,13 @@ function ActivePage({ candidate, assessment, onSubmit }) {
   const interruptionTimerRef = useRef(null)
 
   function startRecording() {
+    // Guard against non-secure contexts / older browsers where mediaDevices
+    // is undefined or null — reading `.getUserMedia` off that crashes with a
+    // TypeError otherwise.
+    if (!navigator?.mediaDevices?.getUserMedia) {
+      alert('Voice recording is not supported on this browser. Please use the latest Chrome, Safari or Firefox on a secure (https) connection.')
+      return
+    }
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
       audioChunksRef.current = []
       const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' })
