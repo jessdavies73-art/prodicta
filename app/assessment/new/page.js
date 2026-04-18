@@ -323,14 +323,17 @@ export default function NewAssessmentPage() {
         setLimitInfo({ used, limit: planLimit })
         if (used >= planLimit) setAtLimit(true)
       } else if (!isActiveSub) {
-        // Check pay-per-assessment credits
+        // PAYG / pay-per-assessment branch. Load credits but do NOT gate the
+        // page behind atLimit — a zero-credit PAYG user should still see the
+        // mode selector so the per-mode click intercept can open the
+        // UpgradeAssessmentModal (with from:null) and let them buy a credit
+        // for the mode they actually want.
         const { data: credits } = await supabase.from('assessment_credits')
           .select('credit_type, credits_remaining')
           .eq('user_id', user.id)
         const rows = credits || []
         setUserCredits(rows)
         const totalCredits = rows.reduce((sum, c) => sum + (c.credits_remaining || 0), 0)
-        if (totalCredits <= 0) setAtLimit(true)
         setLimitInfo({ used: 0, limit: totalCredits, isCredits: true })
       }
       setIsPaygUser(isPaygUser)
@@ -1436,17 +1439,21 @@ export default function NewAssessmentPage() {
                     const targetCreditType = MODE_TO_CREDIT[opt.value]
                     if (isPaygUser && targetCreditType) {
                       const withBalance = (userCredits || []).filter(c => (c.credits_remaining || 0) > 0)
-                      if (withBalance.length > 0) {
-                        // Highest tier the user already holds — if it's >=
-                        // target, no upgrade needed. Otherwise open modal.
-                        const heldTiers = withBalance.map(c => TIER_ORDER.indexOf(c.credit_type)).filter(i => i >= 0)
-                        const topHeldIdx = Math.max(...heldTiers)
-                        const targetIdx = TIER_ORDER.indexOf(targetCreditType)
-                        if (targetIdx > topHeldIdx) {
-                          const topHeldType = TIER_ORDER[topHeldIdx]
-                          setUpgradeModal({ from: topHeldType, to: targetCreditType })
-                          return
-                        }
+                      if (withBalance.length === 0) {
+                        // Zero credits at all — offer a straight purchase of
+                        // one credit of the clicked tier (no upgrade, no diff).
+                        setUpgradeModal({ from: null, to: targetCreditType })
+                        return
+                      }
+                      // Highest tier the user already holds — if it's >=
+                      // target, no upgrade needed. Otherwise open modal.
+                      const heldTiers = withBalance.map(c => TIER_ORDER.indexOf(c.credit_type)).filter(i => i >= 0)
+                      const topHeldIdx = Math.max(...heldTiers)
+                      const targetIdx = TIER_ORDER.indexOf(targetCreditType)
+                      if (targetIdx > topHeldIdx) {
+                        const topHeldType = TIER_ORDER[topHeldIdx]
+                        setUpgradeModal({ from: topHeldType, to: targetCreditType })
+                        return
                       }
                     }
                     setMode(opt.value); setModeOverridden(true)

@@ -28,21 +28,32 @@ export default function UpgradeAssessmentModal({ open, fromType, toType, assessm
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  if (!open || !fromType || !toType) return null
-  const fromPrice = CREDIT_PRICES[fromType] || 0
+  if (!open || !toType) return null
+  // fromType is optional. When null we render a "buy one credit outright" flow;
+  // otherwise the diff-price upgrade flow.
+  const isPurchase = !fromType
+  const fromPrice = fromType ? (CREDIT_PRICES[fromType] || 0) : 0
   const toPrice   = CREDIT_PRICES[toType]   || 0
-  const diff      = toPrice - fromPrice
-  if (diff <= 0) return null
+  const payAmount = isPurchase ? toPrice : (toPrice - fromPrice)
+  if (payAmount <= 0) return null
 
-  async function handleUpgrade() {
+  async function handleConfirm() {
     setSubmitting(true)
     setError('')
     try {
-      const res = await fetch('/api/billing/upgrade-assessment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from_type: fromType, to_type: toType, assessment_id: assessmentId || null }),
-      })
+      // Purchase: hit the generic per-unit credit route. Upgrade: hit the
+      // diff-only route that also bumps the assessment mode on webhook.
+      const res = isPurchase
+        ? await fetch('/api/stripe/credit-bundle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credit_type: toType, quantity: 1 }),
+          })
+        : await fetch('/api/billing/upgrade-assessment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from_type: fromType, to_type: toType, assessment_id: assessmentId || null }),
+          })
       const body = await res.json()
       if (body?.url) {
         if (onConfirmed) onConfirmed()
@@ -74,16 +85,21 @@ export default function UpgradeAssessmentModal({ open, fromType, toType, assessm
         }}
       >
         <h3 style={{ fontSize: 20, fontWeight: 800, color: '#0f2137', margin: '0 0 12px', letterSpacing: '-0.2px' }}>
-          Upgrade to {LABELS[toType]}
+          {isPurchase ? `Buy a ${LABELS[toType]} credit` : `Upgrade to ${LABELS[toType]}`}
         </h3>
-        <p style={{ fontSize: 13.5, color: '#5e6b7f', margin: '0 0 12px', lineHeight: 1.6 }}>
-          You currently have {LABELS[fromType]} credits (£{fromPrice} each).
-        </p>
+        {!isPurchase && (
+          <p style={{ fontSize: 13.5, color: '#5e6b7f', margin: '0 0 12px', lineHeight: 1.6 }}>
+            You currently have {LABELS[fromType]} credits (£{fromPrice} each).
+          </p>
+        )}
         <p style={{ fontSize: 13.5, color: '#5e6b7f', margin: '0 0 14px', lineHeight: 1.6 }}>
           {LABELS[toType]} gives you {DESCRIPTIONS[toType] || 'the full report at this tier.'}
         </p>
         <p style={{ fontSize: 14, color: '#0f2137', margin: '0 0 20px', lineHeight: 1.6, fontWeight: 600 }}>
-          Pay just <strong style={{ color: '#00BFA5' }}>£{diff}</strong> — the difference in price.
+          {isPurchase
+            ? <>Buy <strong style={{ color: '#00BFA5' }}>1 {LABELS[toType]} credit</strong> for <strong style={{ color: '#00BFA5' }}>£{payAmount}</strong>.</>
+            : <>Pay just <strong style={{ color: '#00BFA5' }}>£{payAmount}</strong> — the difference in price.</>
+          }
         </p>
         {error && (
           <div style={{
@@ -104,11 +120,11 @@ export default function UpgradeAssessmentModal({ open, fromType, toType, assessm
               padding: '10px 18px', borderRadius: 8, cursor: submitting ? 'default' : 'pointer',
             }}
           >
-            Keep {LABELS[fromType]}
+            {isPurchase ? 'Cancel' : `Keep ${LABELS[fromType]}`}
           </button>
           <button
             type="button"
-            onClick={handleUpgrade}
+            onClick={handleConfirm}
             disabled={submitting}
             style={{
               fontSize: 13.5, fontWeight: 800, color: '#0f2137',
@@ -117,7 +133,11 @@ export default function UpgradeAssessmentModal({ open, fromType, toType, assessm
               cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.7 : 1,
             }}
           >
-            {submitting ? 'Redirecting…' : `Pay £${diff} and upgrade`}
+            {submitting
+              ? 'Redirecting…'
+              : isPurchase
+                ? `Buy 1 ${LABELS[toType]} credit — £${payAmount}`
+                : `Pay £${payAmount} and upgrade`}
           </button>
         </div>
       </div>
