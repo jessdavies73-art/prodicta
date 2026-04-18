@@ -239,9 +239,10 @@ export default function SettingsPage() {
         setMonthlyCount(count || 0)
 
         // Load assessment credits
-        const { data: credits } = await supabase.from('assessment_credits')
+        const { data: credits, error: creditsError } = await supabase.from('assessment_credits')
           .select('credit_type, credits_remaining, credits_purchased, last_purchased_at')
           .eq('user_id', user.id)
+        console.log('[credits debug] settings load', { userId: user.id, credits, creditsError })
         if (credits && credits.length > 0) setAssessmentCredits(credits)
 
         // Load promo redemption history
@@ -961,6 +962,7 @@ export default function SettingsPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
                   {['rapid-screen', 'speed-fit', 'depth-fit', 'strategy-fit'].map(type => {
                     const credit = assessmentCredits.find(c => c.credit_type === type)
+                    console.log('[credit find]', type, credit, assessmentCredits)
                     const labels = { 'rapid-screen': 'Rapid Screen', 'speed-fit': 'Speed-Fit', 'depth-fit': 'Depth-Fit', 'strategy-fit': 'Strategy-Fit' }
                     const remaining = credit?.credits_remaining || 0
                     return (
