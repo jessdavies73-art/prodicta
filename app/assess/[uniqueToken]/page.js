@@ -1480,6 +1480,7 @@ function WorkspacePage({ assessment, candidate, onSubmit, onSkip }) {
     fetch(`/api/assessment/${assessment.id}/workspace-content`)
       .then(r => r.json())
       .then(data => { if (!data.error) setContent(data) })
+      .catch(err => { console.error('[workspace] fetch error', err); setContent(null) })
       .finally(() => setLoadingContent(false))
   }, [assessment.id])
 
@@ -2086,7 +2087,18 @@ export default function AssessPage({ params }) {
       }}
     />
   )
-  if (uiState === 'workspace') return (
+  if (uiState === 'workspace') {
+    // Defensive: the workspace stage is Strategy-Fit only. If somehow we land
+    // here without `advanced` mode (stale state, bug upstream), skip it and
+    // submit directly so the candidate doesn't get stuck on "Unable to load
+    // workspace" for an assessment that never had workspace content.
+    const isAdvanced = (assessment?.assessment_mode || '').toLowerCase() === 'advanced'
+    if (!isAdvanced) {
+      // Defer to avoid calling setState during render.
+      setTimeout(() => doSubmit(pendingResponses || []), 0)
+      return null
+    }
+    return (
     <WorkspacePage
       assessment={assessment}
       candidate={candidate}
@@ -2101,7 +2113,8 @@ export default function AssessPage({ params }) {
       }}
       onSkip={() => doSubmit(pendingResponses)}
     />
-  )
+    )
+  }
   if (uiState === 'submitting') return <SubmittingPage candidateName={candidate?.name} />
   if (uiState === 'saved') return <SavedPage candidateName={candidate?.name} onContinue={() => setUiState('rating')} />
   if (uiState === 'rating') return (

@@ -4,6 +4,10 @@ import { createServiceClient } from '@/lib/supabase-server'
 
 // -- ALTER TABLE assessments ADD COLUMN IF NOT EXISTS workspace_content JSONB;
 
+// Haiku can occasionally stretch to 20-30s; give headroom so an intermittent
+// slow call doesn't kill the function and leave the candidate stuck.
+export const maxDuration = 120
+
 export async function GET(request, { params }) {
   try {
     const admin = createServiceClient()
@@ -17,7 +21,9 @@ export async function GET(request, { params }) {
     if (assessment.workspace_content) return NextResponse.json(assessment.workspace_content)
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const msg = await client.messages.create({
+    // Stream to keep the outbound connection active while Haiku generates;
+    // finalMessage() aggregates the deltas into the same Message shape.
+    const msg = await client.messages.stream({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1500,
       messages: [{
@@ -56,7 +62,7 @@ Return JSON only. UK English. No emoji. No em dashes.
 
 Make all content specific to the role. For senior/leadership roles use board-level language and strategic content. Each email should require a thoughtful response.`
       }],
-    })
+    }).finalMessage()
 
     const text = msg.content[0]?.text || ''
     const match = text.match(/\{[\s\S]*\}/)
@@ -66,7 +72,7 @@ Make all content specific to the role. For senior/leadership roles use board-lev
     await admin.from('assessments').update({ workspace_content: content }).eq('id', params.id)
     return NextResponse.json(content)
   } catch (err) {
-    console.error('Workspace content error:', err)
+    console.error('[workspace-content] error', err.message, err.status, err.stack)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
