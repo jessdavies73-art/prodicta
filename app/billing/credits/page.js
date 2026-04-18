@@ -215,7 +215,7 @@ function CreditsPageInner() {
                 borderRadius: 10, padding: '12px 18px', marginBottom: 20,
                 fontFamily: F, fontSize: 13, color: '#92400e', lineHeight: 1.55,
               }}>
-                Upgrading from {fromLabel} — pay £{upgradeDiff} for {toLabel}.
+                Upgrading from {fromLabel} — pay just £{upgradeDiff} for 1 {toLabel} credit.
               </div>
             )
           })()}

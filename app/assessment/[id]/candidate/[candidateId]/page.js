@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
+import UpgradeAssessmentModal from '@/components/UpgradeAssessmentModal'
 import { getReskilingSuggestion } from '@/lib/reskilling'
 import { calculateSurvivalScore } from '@/lib/survival-score'
 
@@ -996,6 +997,7 @@ export default function CandidateReportPage({ params }) {
 
   // Outcome Tracking (employer only)
   const [outcomeModal, setOutcomeModal] = useState(false)
+  const [upgradeModal, setUpgradeModal] = useState(null) // { from, to, assessmentId } | null
   const [selectedOutcome, setSelectedOutcome] = useState('')
   const [confirmHireModal, setConfirmHireModal] = useState(false)
   const [overrideReason, setOverrideReason] = useState('')
@@ -2399,7 +2401,8 @@ export default function CandidateReportPage({ params }) {
                   ))}
                 </div>
 
-                {/* Upgrade to Speed-Fit */}
+                {/* Upgrade to Speed-Fit — PAYG users get the diff-price modal;
+                    subscription users go straight to /assessment/new */}
                 <div style={{ textAlign: 'center', paddingTop: 16, borderTop: `1px solid ${BD}` }}>
                   <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 12px' }}>
                     Get the full report for this candidate
@@ -2408,10 +2411,7 @@ export default function CandidateReportPage({ params }) {
                     onClick={() => {
                       const isPaygUser = profile?.plan_type === 'payg' || profile?.plan === 'payg'
                       if (isPaygUser) {
-                        // PAYG: Speed-Fit needs its own credit bundle. Send the
-                        // user to billing to buy Speed-Fit credits before they
-                        // can run the upgraded assessment.
-                        router.push('/billing/credits?type=speed-fit&upgrade_from=rapid')
+                        setUpgradeModal({ from: 'rapid-screen', to: 'speed-fit', assessmentId: candidate?.assessments?.id || candidate?.assessment_id || null })
                       } else {
                         router.push(`/assessment/new?role=${encodeURIComponent(candidate?.assessments?.role_title || '')}&mode=quick`)
                       }
@@ -5602,6 +5602,16 @@ export default function CandidateReportPage({ params }) {
       )}
 
       {/* ── LOG OUTCOME MODAL (employer only) ── */}
+      {upgradeModal && (
+        <UpgradeAssessmentModal
+          open
+          fromType={upgradeModal.from}
+          toType={upgradeModal.to}
+          assessmentId={upgradeModal.assessmentId}
+          onClose={() => setUpgradeModal(null)}
+        />
+      )}
+
       {outcomeModal && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,33,55,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
