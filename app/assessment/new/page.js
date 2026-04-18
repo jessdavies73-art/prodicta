@@ -517,6 +517,7 @@ export default function NewAssessmentPage() {
       const data = await res.json()
       if (!data.id) {
         if (data.error === 'unsuitable_role') setError(data.message || 'This role type may not be suitable for scenario-based assessment.')
+        else if (data.error === 'no_credits' || data.error === 'limit_reached') setError(data.message || 'No credits remaining.')
         else setError(data.error || 'Failed to generate')
         return null
       }

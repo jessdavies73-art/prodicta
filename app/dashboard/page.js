@@ -1726,8 +1726,8 @@ function DashboardPageInner() {
                     ))
                   )}
                   <a
-                    href="/settings#billing"
-                    onClick={e => { e.preventDefault(); router.push('/settings') }}
+                    href="/billing/credits"
+                    onClick={e => { e.preventDefault(); router.push('/billing/credits') }}
                     style={{
                       fontFamily: F, fontSize: 11.5, fontWeight: 700,
                       color: NAVY, background: TEAL, textDecoration: 'none',

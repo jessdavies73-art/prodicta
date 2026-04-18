@@ -1248,7 +1248,7 @@ export default function SettingsPage() {
                   ) : null
                 })()}
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <a href="/#pricing" style={{
+                  <a href="/billing/credits" style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     padding: '10px 20px', borderRadius: 8, border: 'none',
                     background: TEAL, color: NAVY, fontFamily: F, fontSize: 13, fontWeight: 700,

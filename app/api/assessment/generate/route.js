@@ -180,7 +180,13 @@ export async function POST(request) {
         chargedBalance = rapidCredit.credits_remaining
       } else if (!requestedHasBalance) {
         console.warn('[generate] no_credits trigger', { reason: credit ? 'balance<=0' : 'no row', creditErr })
-        return NextResponse.json({ error: 'no_credits', message: 'No credits remaining. Purchase more at prodicta.co.uk/pricing' }, { status: 403 })
+        const CREDIT_LABELS = { 'rapid-screen': 'Rapid Screen', 'speed-fit': 'Speed-Fit', 'depth-fit': 'Depth-Fit', 'strategy-fit': 'Strategy-Fit' }
+        const label = CREDIT_LABELS[creditType] || creditType
+        return NextResponse.json({
+          error: 'no_credits',
+          credit_type: creditType,
+          message: `No ${label} credits remaining. Purchase ${label} credits to continue.`,
+        }, { status: 403 })
       }
 
       // Stash what we need to deduct / refund later. Points at whichever
