@@ -58,70 +58,131 @@ function CompanyTab({ onSave }) {
 }
 
 function BillingTab({ onUpgrade }) {
-  const credits = [
-    { type: 'rapid-screen', label: 'Rapid Screen', remaining: 3 },
-    { type: 'speed-fit', label: 'Speed-Fit', remaining: 1 },
-    { type: 'depth-fit', label: 'Depth-Fit', remaining: 0 },
-    { type: 'strategy-fit', label: 'Strategy-Fit', remaining: 0 },
+  const [tab, setTab] = useState('credits')
+  const [buyQty, setBuyQty] = useState({})
+  const PAYG_TYPES = [
+    { type: 'rapid-screen', label: 'Rapid Screen', unit: 6,  remaining: 3 },
+    { type: 'speed-fit',    label: 'Speed-Fit',    unit: 18, remaining: 1 },
+    { type: 'depth-fit',    label: 'Depth-Fit',    unit: 35, remaining: 0 },
+    { type: 'strategy-fit', label: 'Strategy-Fit', unit: 65, remaining: 0 },
   ]
-  const subscriptionOptions = [
-    { plan: 'Starter', price: '£49/mo', limit: '10 assessments/month' },
-    { plan: 'Professional', price: '£120/mo', limit: '30 assessments/month' },
-    { plan: 'Unlimited', price: '£159/mo', limit: 'Unlimited assessments' },
+  const PLANS = [
+    { plan: 'Starter',         price: '£49/mo',  limit: '10 assessments per month' },
+    { plan: 'Professional',    price: '£120/mo', limit: '30 assessments per month' },
+    { plan: 'Unlimited',       price: '£159/mo', limit: 'Unlimited assessments' },
+    { plan: 'Founding Member', price: '£79/mo',  limit: 'Unlimited for 3 months, then 20/month' },
   ]
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Pay As You Go card */}
-      <div style={{ background: TEALLT, border: `1px solid ${BD}`, borderRadius: 12, padding: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-          <div>
-            <div style={{ fontFamily: F, fontWeight: 700, fontSize: 18, color: NAVY }}>Pay As You Go</div>
-            <div style={{ fontFamily: F, color: TX2, fontSize: 14, marginTop: 4 }}>Pay per assessment. No monthly fee. Credits do not expire.</div>
-          </div>
-          <span style={{ background: TEAL, color: '#fff', borderRadius: 20, padding: '4px 14px', fontSize: 13, fontWeight: 600, fontFamily: F }}>Active</span>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
-          {credits.map(c => (
-            <div key={c.type} style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 8, padding: 16, textAlign: 'center' }}>
-              <div style={{ fontFamily: FM, fontWeight: 800, fontSize: 24, color: c.remaining > 0 ? TEAL : TX3 }}>{c.remaining}</div>
-              <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 4 }}>{c.label}</div>
-            </div>
-          ))}
-        </div>
-        <button
-          onClick={onUpgrade}
-          style={{ background: TEAL, color: NAVY, border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 700, cursor: 'pointer', fontSize: 14, fontFamily: F }}
-        >
-          Buy more credits
-        </button>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {/* Tab toggle */}
+      <div style={{ display: 'flex', gap: 28, borderBottom: `1px solid ${BD}`, marginBottom: 22 }}>
+        {[
+          { key: 'credits',      label: 'Pay As You Go' },
+          { key: 'subscription', label: 'Monthly Subscription' },
+        ].map(t => {
+          const active = tab === t.key
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              style={{
+                fontFamily: F, fontSize: 14, fontWeight: active ? 700 : 500,
+                color: active ? TEALD : TX2,
+                background: 'transparent', border: 'none', padding: '10px 0',
+                borderBottom: active ? `2px solid ${TEAL}` : '2px solid transparent',
+                marginBottom: -1, cursor: 'pointer',
+              }}
+            >
+              {t.label}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Switch to monthly subscription */}
-      <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '20px 22px' }}>
-        <p style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX, fontFamily: F }}>Switch to a monthly subscription</p>
-        <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
-          Switch to a monthly subscription to get a bundle of assessments each month.
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {subscriptionOptions.map(p => (
-            <div key={p.plan} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: 10, border: `1.5px solid ${BD}`, background: '#fff' }}>
-              <div>
-                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{p.plan}</div>
-                <div style={{ fontFamily: F, fontSize: 12.5, color: TX3 }}>{p.limit}</div>
+      {tab === 'credits' && (
+        <div>
+          <h2 style={{ margin: '0 0 14px', fontSize: 16, fontWeight: 700, color: TX, fontFamily: F }}>Your Credits</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 24 }}>
+            {PAYG_TYPES.map(t => (
+              <div key={t.type} style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '18px 16px', textAlign: 'center' }}>
+                <div style={{ fontFamily: FM, fontWeight: 800, fontSize: 32, color: t.remaining > 0 ? TEAL : TX3, lineHeight: 1 }}>{t.remaining}</div>
+                <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, marginTop: 8 }}>{t.label}</div>
+                <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 2 }}>£{t.unit} each</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY }}>{p.price}</span>
-                <button
-                  onClick={onUpgrade}
-                  style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, background: TEAL, border: 'none', padding: '7px 16px', borderRadius: 7, cursor: 'pointer' }}
-                >
-                  Switch
-                </button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 700, color: TX, fontFamily: F }}>Buy more credits</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {PAYG_TYPES.map(t => {
+              const qty = Math.max(1, parseInt(buyQty[t.type], 10) || 1)
+              const total = qty * t.unit
+              return (
+                <div key={t.type} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+                  padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${BD}`, background: '#fff',
+                }}>
+                  <div style={{ minWidth: 160 }}>
+                    <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{t.label}</div>
+                    <div style={{ fontFamily: F, fontSize: 12.5, color: TX3 }}>£{t.unit} per assessment</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <input
+                      type="number" min={1} max={100}
+                      value={buyQty[t.type] ?? 1}
+                      onChange={e => setBuyQty(prev => ({ ...prev, [t.type]: e.target.value }))}
+                      style={{
+                        width: 70, padding: '7px 10px', borderRadius: 7,
+                        border: `1.5px solid ${BD}`, background: CARD,
+                        fontFamily: 'IBM Plex Mono, monospace', fontSize: 14, fontWeight: 700, color: TX, textAlign: 'right', outline: 'none',
+                      }}
+                    />
+                    <span style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, minWidth: 60, textAlign: 'right' }}>£{total}</span>
+                    <button
+                      onClick={onUpgrade}
+                      style={{
+                        fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY,
+                        background: TEAL, border: 'none', padding: '7px 16px', borderRadius: 7, cursor: 'pointer',
+                      }}
+                    >
+                      Buy
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {tab === 'subscription' && (
+        <div>
+          <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX, fontFamily: F }}>Switch to a monthly subscription</h2>
+          <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+            Get a bundle of assessments each month. Cancel any time.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {PLANS.map(p => (
+              <div key={p.plan} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: 10, border: `1.5px solid ${BD}`, background: '#fff' }}>
+                <div>
+                  <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{p.plan}</div>
+                  <div style={{ fontFamily: F, fontSize: 12.5, color: TX3 }}>{p.limit}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY }}>{p.price}</span>
+                  <button
+                    onClick={onUpgrade}
+                    style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, background: TEAL, border: 'none', padding: '7px 16px', borderRadius: 7, cursor: 'pointer' }}
+                  >
+                    Switch
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

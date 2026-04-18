@@ -577,7 +577,6 @@ function DashboardPageInner() {
   const [pendingCheckins, setPendingCheckins] = useState([])
   const [selectedCandidates, setSelectedCandidates] = useState(new Set())
   const [assessmentCredits, setAssessmentCredits] = useState([])
-  const [creditsLoaded, setCreditsLoaded] = useState(false)
   const [redlineCandidates, setRedlineCandidates] = useState(new Set())
   const [assignmentAlerts, setAssignmentAlerts] = useState([])
   const [attendanceByCandidate, setAttendanceByCandidate] = useState({})
@@ -795,7 +794,6 @@ function DashboardPageInner() {
             .eq('user_id', user.id)
           if (credits && credits.length > 0) setAssessmentCredits(credits)
         } catch {}
-        setCreditsLoaded(true)
 
         // Load redline statuses from probation_copilot
         try {
@@ -1011,7 +1009,6 @@ function DashboardPageInner() {
   const isPayg = profile?.plan_type === 'payg' || profile?.plan === 'payg'
   const planLimit = isPayg ? null : (PLAN_LIMITS[planKey] ?? PLAN_LIMITS.starter)
   const atLimit = planLimit !== null && monthlyCount >= planLimit
-  const totalCreditsRemaining = assessmentCredits.reduce((sum, c) => sum + (c.credits_remaining || 0), 0)
 
   // ── computed stats ──────────────────────────────────────────────────────────
 
@@ -1696,19 +1693,52 @@ function DashboardPageInner() {
               </div>
             )}
 
-            {isPayg && creditsLoaded && (
-              <div style={{
-                fontFamily: F, fontSize: 11.5, fontWeight: 600,
-                color: totalCreditsRemaining > 0 ? TEALD : '#b91c1c',
-                background: totalCreditsRemaining > 0 ? TEALLT : '#fef2f2',
-                border: `1px solid ${totalCreditsRemaining > 0 ? `${TEAL}55` : '#fecaca'}`,
-                borderRadius: 6, padding: '4px 10px',
-                flexShrink: 0,
-              }}>
-                {totalCreditsRemaining} credit{totalCreditsRemaining === 1 ? '' : 's'} remaining
-                {totalCreditsRemaining === 0 && ' · Buy more to create'}
-              </div>
-            )}
+            {isPayg && (() => {
+              const TYPE_LABELS = {
+                'rapid-screen': 'Rapid Screen',
+                'speed-fit': 'Speed-Fit',
+                'depth-fit': 'Depth-Fit',
+                'strategy-fit': 'Strategy-Fit',
+              }
+              const withBalance = Object.keys(TYPE_LABELS)
+                .map(t => ({ type: t, label: TYPE_LABELS[t], remaining: (assessmentCredits.find(c => c.credit_type === t)?.credits_remaining) || 0 }))
+                .filter(c => c.remaining > 0)
+
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
+                  {withBalance.length === 0 ? (
+                    <span style={{
+                      fontFamily: F, fontSize: 11.5, fontWeight: 700,
+                      color: '#b91c1c', background: '#fef2f2',
+                      border: '1px solid #fecaca', borderRadius: 6, padding: '4px 10px',
+                    }}>
+                      No credits remaining
+                    </span>
+                  ) : (
+                    withBalance.map(c => (
+                      <span key={c.type} style={{
+                        fontFamily: F, fontSize: 11.5, fontWeight: 700,
+                        color: TEALD, background: TEALLT,
+                        border: `1px solid ${TEAL}55`, borderRadius: 6, padding: '4px 10px',
+                      }}>
+                        {c.remaining} {c.label}
+                      </span>
+                    ))
+                  )}
+                  <a
+                    href="/settings#billing"
+                    onClick={e => { e.preventDefault(); router.push('/settings') }}
+                    style={{
+                      fontFamily: F, fontSize: 11.5, fontWeight: 700,
+                      color: NAVY, background: TEAL, textDecoration: 'none',
+                      borderRadius: 6, padding: '4px 10px',
+                    }}
+                  >
+                    Buy more credits
+                  </a>
+                </div>
+              )
+            })()}
           </div>
         </div>
 

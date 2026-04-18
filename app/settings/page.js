@@ -167,7 +167,9 @@ export default function SettingsPage() {
   const [companySizeFocused, setCompanySizeFocused] = useState(false)
   // Credits (pay-per-assessment)
   const [assessmentCredits, setAssessmentCredits] = useState([])
-  const [creditsLoaded, setCreditsLoaded] = useState(false)
+  const [paygTab, setPaygTab] = useState('credits') // 'credits' | 'subscription'
+  const [buyQty, setBuyQty] = useState({}) // { [credit_type]: number }
+  const [buyingType, setBuyingType] = useState(null)
 
   // Promo codes
   const [promoInput, setPromoInput] = useState('')
@@ -240,12 +242,10 @@ export default function SettingsPage() {
         setMonthlyCount(count || 0)
 
         // Load assessment credits
-        const { data: credits, error: creditsError } = await supabase.from('assessment_credits')
+        const { data: credits } = await supabase.from('assessment_credits')
           .select('credit_type, credits_remaining, credits_purchased, last_purchased_at')
           .eq('user_id', user.id)
-        console.log('[credits debug] settings load', { userId: user.id, credits, creditsError })
         if (credits && credits.length > 0) setAssessmentCredits(credits)
-        setCreditsLoaded(true)
 
         // Load promo redemption history
         const { data: redemptions } = await supabase.from('promo_redemptions')
@@ -261,6 +261,26 @@ export default function SettingsPage() {
     }
     load()
   }, [router])
+
+  async function handleBuyCredits(credit_type) {
+    const quantity = Math.max(1, parseInt(buyQty[credit_type], 10) || 1)
+    setBuyingType(credit_type)
+    try {
+      const res = await fetch('/api/stripe/credit-bundle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credit_type, quantity }),
+      })
+      const body = await res.json()
+      if (body?.url) window.location.href = body.url
+      else throw new Error(body?.error || 'Could not start checkout.')
+    } catch (err) {
+      setPromoToast({ type: 'error', message: err.message || 'Could not start checkout. Please try again.' })
+      setTimeout(() => setPromoToast(null), 4500)
+    } finally {
+      setBuyingType(null)
+    }
+  }
 
   async function handleSaveCompany() {
     setSavingCompany(true)
@@ -487,7 +507,6 @@ export default function SettingsPage() {
   const atLimit    = !isUnlimited && monthlyCount >= planLimit
   const monthLabel = new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
   const isPayg = profile?.plan_type === 'payg' || profile?.plan === 'payg'
-  console.log('[isPayg debug]', { isPayg, plan: profile?.plan, plan_type: profile?.plan_type })
   const hasActiveSubscription = profile?.subscription_status === 'active' && !isPayg
   const hasCredits = assessmentCredits.length > 0
   const payAsYouGoOnly = !hasActiveSubscription && hasCredits
@@ -949,87 +968,151 @@ export default function SettingsPage() {
             )}
             </>)}
 
-            {/* ── Pay As You Go billing card (payg accounts only) ── */}
-            {isPayg && creditsLoaded && (
-              <div style={{
-                background: TEALLT, border: `1px solid ${BD}`, borderRadius: 12,
-                padding: 24, marginBottom: 20,
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-                  <div>
-                    <div style={{ fontFamily: F, fontWeight: 700, fontSize: 18, color: NAVY }}>Pay As You Go</div>
-                    <div style={{ fontFamily: F, color: TX2, fontSize: 14, marginTop: 4 }}>Pay per assessment. No monthly fee. Credits do not expire.</div>
-                  </div>
-                  <span style={{ background: TEAL, color: '#fff', borderRadius: 20, padding: '4px 14px', fontSize: 13, fontWeight: 600, fontFamily: F }}>Active</span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
-                  {['rapid-screen', 'speed-fit', 'depth-fit', 'strategy-fit'].map(type => {
-                    const credit = assessmentCredits.find(c => c.credit_type === type)
-                    console.log('[credit find]', type, credit, assessmentCredits)
-                    const labels = { 'rapid-screen': 'Rapid Screen', 'speed-fit': 'Speed-Fit', 'depth-fit': 'Depth-Fit', 'strategy-fit': 'Strategy-Fit' }
-                    const remaining = credit?.credits_remaining ?? 0
-                    console.log('[remaining debug]', type, credit?.credits_remaining, remaining)
-                    return (
-                      <div key={type} style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 8, padding: 16, textAlign: 'center' }}>
-                        <div style={{ fontFamily: FM, fontWeight: 800, fontSize: 24, color: remaining > 0 ? TEAL : TX3 }}>{remaining}</div>
-                        <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 4 }}>{labels[type]}</div>
-                      </div>
-                    )
-                  })}
-                </div>
-                <button
-                  onClick={() => router.push('/billing/credits')}
-                  style={{
-                    background: TEAL, color: NAVY, border: 'none', borderRadius: 8,
-                    padding: '10px 24px', fontWeight: 700, cursor: 'pointer',
-                    fontSize: 14, fontFamily: F,
-                  }}
-                >
-                  Buy more credits
-                </button>
-              </div>
-            )}
-
-            {/* ── Switch to monthly subscription (PAYG accounts only) ── */}
-            {isPayg && (
-              <div style={{ ...cs, marginBottom: 16 }}>
-                <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX }}>Switch to a monthly subscription</h2>
-                <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
-                  Switch to a monthly subscription to get a bundle of assessments each month.
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {[
-                    { plan: 'Starter', price: '£49/mo', limit: '10 assessments/month' },
-                    { plan: 'Professional', price: '£120/mo', limit: '30 assessments/month' },
-                    { plan: 'Unlimited', price: '£159/mo', limit: 'Unlimited assessments' },
-                  ].map(p => (
-                    <div key={p.plan} style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '14px 16px', borderRadius: 10, border: `1.5px solid ${BD}`,
-                      background: '#fff',
-                    }}>
-                      <div>
-                        <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{p.plan}</div>
-                        <div style={{ fontFamily: F, fontSize: 12.5, color: TX3 }}>{p.limit}</div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY }}>{p.price}</span>
-                        <a
-                          href={`mailto:hello@prodicta.co.uk?subject=Switch to ${p.plan} subscription`}
+            {/* ── PAYG two-tab billing (payg accounts only) ── */}
+            {isPayg && (() => {
+              const PAYG_TYPES = [
+                { type: 'rapid-screen', label: 'Rapid Screen', unit: 6 },
+                { type: 'speed-fit',    label: 'Speed-Fit',    unit: 18 },
+                { type: 'depth-fit',    label: 'Depth-Fit',    unit: 35 },
+                { type: 'strategy-fit', label: 'Strategy-Fit', unit: 65 },
+              ]
+              const PLANS = [
+                { plan: 'Starter',         price: '£49/mo',  limit: '10 assessments per month' },
+                { plan: 'Professional',    price: '£120/mo', limit: '30 assessments per month' },
+                { plan: 'Unlimited',       price: '£159/mo', limit: 'Unlimited assessments' },
+                { plan: 'Founding Member', price: '£79/mo',  limit: 'Unlimited for 3 months, then 20/month' },
+              ]
+              return (
+                <div style={{ ...cs, marginBottom: 16 }}>
+                  {/* Tab toggle */}
+                  <div style={{ display: 'flex', gap: 28, borderBottom: `1px solid ${BD}`, marginBottom: 22 }}>
+                    {[
+                      { key: 'credits',      label: 'Pay As You Go' },
+                      { key: 'subscription', label: 'Monthly Subscription' },
+                    ].map(t => {
+                      const active = paygTab === t.key
+                      return (
+                        <button
+                          key={t.key}
+                          onClick={() => setPaygTab(t.key)}
                           style={{
-                            fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY,
-                            background: TEAL, textDecoration: 'none',
-                            padding: '7px 16px', borderRadius: 7,
+                            fontFamily: F, fontSize: 14, fontWeight: active ? 700 : 500,
+                            color: active ? TEALD : TX2,
+                            background: 'transparent', border: 'none', padding: '10px 0',
+                            borderBottom: active ? `2px solid ${TEAL}` : '2px solid transparent',
+                            marginBottom: -1, cursor: 'pointer',
                           }}
                         >
-                          Switch
-                        </a>
+                          {t.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {paygTab === 'credits' && (
+                    <div>
+                      <h2 style={{ margin: '0 0 14px', fontSize: 16, fontWeight: 700, color: TX }}>Your Credits</h2>
+                      <div style={{
+                        display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 24,
+                      }}>
+                        {PAYG_TYPES.map(t => {
+                          const credit = assessmentCredits.find(c => c.credit_type === t.type)
+                          const remaining = credit?.credits_remaining ?? 0
+                          return (
+                            <div key={t.type} style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '18px 16px', textAlign: 'center' }}>
+                              <div style={{ fontFamily: FM, fontWeight: 800, fontSize: 32, color: remaining > 0 ? TEAL : TX3, lineHeight: 1 }}>{remaining}</div>
+                              <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, marginTop: 8 }}>{t.label}</div>
+                              <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 2 }}>£{t.unit} each</div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 700, color: TX }}>Buy more credits</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {PAYG_TYPES.map(t => {
+                          const qty = Math.max(1, parseInt(buyQty[t.type], 10) || 1)
+                          const total = qty * t.unit
+                          const busy = buyingType === t.type
+                          return (
+                            <div key={t.type} style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              gap: 12, flexWrap: 'wrap',
+                              padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${BD}`, background: '#fff',
+                            }}>
+                              <div style={{ minWidth: 160 }}>
+                                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{t.label}</div>
+                                <div style={{ fontFamily: F, fontSize: 12.5, color: TX3 }}>£{t.unit} per assessment</div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <input
+                                  type="number" min={1} max={100}
+                                  value={buyQty[t.type] ?? 1}
+                                  onChange={e => setBuyQty(prev => ({ ...prev, [t.type]: e.target.value }))}
+                                  style={{
+                                    width: 70, padding: '7px 10px', borderRadius: 7,
+                                    border: `1.5px solid ${BD}`, background: CARD,
+                                    fontFamily: FM, fontSize: 14, fontWeight: 700, color: TX, textAlign: 'right',
+                                    outline: 'none',
+                                  }}
+                                />
+                                <span style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, minWidth: 60, textAlign: 'right' }}>£{total}</span>
+                                <button
+                                  onClick={() => handleBuyCredits(t.type)}
+                                  disabled={busy}
+                                  style={{
+                                    fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY,
+                                    background: TEAL, border: 'none', padding: '7px 16px', borderRadius: 7,
+                                    cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1,
+                                  }}
+                                >
+                                  {busy ? 'Opening…' : 'Buy'}
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {paygTab === 'subscription' && (
+                    <div>
+                      <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX }}>Switch to a monthly subscription</h2>
+                      <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+                        Get a bundle of assessments each month. Cancel any time.
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {PLANS.map(p => (
+                          <div key={p.plan} style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '14px 16px', borderRadius: 10, border: `1.5px solid ${BD}`, background: '#fff',
+                          }}>
+                            <div>
+                              <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{p.plan}</div>
+                              <div style={{ fontFamily: F, fontSize: 12.5, color: TX3 }}>{p.limit}</div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                              <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY }}>{p.price}</span>
+                              <a
+                                href={`mailto:hello@prodicta.co.uk?subject=Switch to ${p.plan} subscription`}
+                                style={{
+                                  fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY,
+                                  background: TEAL, textDecoration: 'none',
+                                  padding: '7px 16px', borderRadius: 7,
+                                }}
+                              >
+                                Switch
+                              </a>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              )
+            })()}
 
             {/* ── Promo code ── */}
             <div style={{ ...cs, marginBottom: 16 }}>
