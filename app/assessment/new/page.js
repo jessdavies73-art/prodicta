@@ -186,6 +186,7 @@ export default function NewAssessmentPage() {
   const confirmationRef = useRef(null)
   const modeSelectorRef = useRef(null)
   const prevAnalysedRef = useRef(false)
+  const mountedRef = useRef(true)
   const [modeConfirmed, setModeConfirmed] = useState(false)
 
   // Inline candidate details — collapsed one-step flow
@@ -273,6 +274,17 @@ export default function NewAssessmentPage() {
     setAnalysing(false)
     setShowAdjust(false)
   }
+
+  // Mount / unmount guard. Used to suppress late-arriving async state updates
+  // (e.g. a fetch that resolves after the user navigates away) so they don't
+  // race with fresh mounts of this page.
+  useEffect(() => {
+    mountedRef.current = true
+    // Invalidate any server-component cache Next.js might be holding for this
+    // segment. One-shot on mount — no dependency so it can't fire in a loop.
+    try { router.refresh() } catch {}
+    return () => { mountedRef.current = false }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounced auto-analyse trigger when JD changes
   useEffect(() => {
@@ -1221,7 +1233,9 @@ export default function NewAssessmentPage() {
           })()}
         </div>
 
-        {/* Card 2: Skill weights */}
+        {/* Card 2: Skill weights — hidden until the JD has real substance so
+            the card doesn't flash in empty on first paint. */}
+        {words >= 50 && (
         <div style={{
           background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
           padding: '28px 32px', marginBottom: 24
@@ -1292,6 +1306,7 @@ export default function NewAssessmentPage() {
             )}
           </div>
         </div>
+        )}
 
         {/* Save as template */}
         <div style={{
