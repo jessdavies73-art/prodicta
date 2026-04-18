@@ -31,17 +31,12 @@ export async function GET(request, { params }) {
       .single()
 
     if (!assessment) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (assessment.workspace_content) return NextResponse.json(assessment.workspace_content)
+    if (assessment.workspace_content) {
+      console.log('[workspace-content] cache hit, returning stored content', { assessmentId: params.id })
+      return NextResponse.json(assessment.workspace_content)
+    }
 
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    // Stream to keep the outbound connection active while Haiku generates;
-    // finalMessage() aggregates the deltas into the same Message shape.
-    const msg = await client.messages.stream({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1500,
-      messages: [{
-        role: 'user',
-        content: `Generate realistic Day 1 morning workspace content for a "${assessment.role_title}" role (${assessment.role_level || 'LEADERSHIP'} level). This simulates the candidate's first morning inbox, messages, and tasks.
+    const prompt = `Generate realistic Day 1 morning workspace content for a "${assessment.role_title}" role (${assessment.role_level || 'LEADERSHIP'} level). This simulates the candidate's first morning inbox, messages, and tasks.
 
 Return JSON only. UK English. No emoji. No em dashes.
 {
@@ -74,13 +69,41 @@ Return JSON only. UK English. No emoji. No em dashes.
 }
 
 Make all content specific to the role. For senior/leadership roles use board-level language and strategic content. Each email should require a thoughtful response.`
-      }],
+
+    console.log('[workspace-content] prompt length', prompt.length)
+    const claudeStart = Date.now()
+
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+    // Stream to keep the outbound connection active while Haiku generates;
+    // finalMessage() aggregates the deltas into the same Message shape.
+    const msg = await client.messages.stream({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }],
     }).finalMessage()
 
     const text = msg.content[0]?.text || ''
+    console.log('[workspace-content] claude response', {
+      elapsed_ms: Date.now() - claudeStart,
+      stop_reason: msg.stop_reason,
+      content_length: text.length,
+      first_100_chars: text.substring(0, 100),
+      input_tokens: msg.usage?.input_tokens,
+      output_tokens: msg.usage?.output_tokens,
+    })
+
     const match = text.match(/\{[\s\S]*\}/)
-    if (!match) return NextResponse.json({ error: 'Generation failed' }, { status: 500 })
-    const content = JSON.parse(match[0].replace(/[\u2014\u2013]/g, ', '))
+    if (!match) {
+      console.warn('[workspace-content] no JSON block found in response', { text_preview: text.substring(0, 300) })
+      return NextResponse.json({ error: 'Generation failed', message: 'Claude response did not contain a JSON block' }, { status: 500 })
+    }
+    let content
+    try {
+      content = JSON.parse(match[0].replace(/[\u2014\u2013]/g, ', '))
+    } catch (parseErr) {
+      console.error('[workspace-content] JSON parse failed', { parseErr: parseErr.message, match_preview: match[0].substring(0, 300) })
+      return NextResponse.json({ error: 'Generation failed', message: 'Claude returned malformed JSON' }, { status: 500 })
+    }
 
     await admin.from('assessments').update({ workspace_content: content }).eq('id', params.id)
     return NextResponse.json(content)
