@@ -1168,88 +1168,140 @@ function DashboardPageInner() {
     ? { strong: 'Strong Hire Candidates', maybe: 'Review Candidates', risk: 'High Risk Candidates' }[activeFilter.value]
     : ''
 
-  // ── today's actions builder (agency only) ──────────────────────────────────
+  // ── today's actions builder (all account types) ───────────────────────────
   const todaysActions = []
-  if (isAgencyAccount) {
+  {
     const now = new Date()
-    const todayStr = now.toISOString().slice(0, 10)
 
-    // URGENT: placement health RED
-    if (placementHealth?.placements) {
-      for (const p of placementHealth.placements) {
-        if (p.health_status === 'RED') todaysActions.push({ priority: 'urgent', text: `${p.candidate_name}${p.client_name ? ' at ' + p.client_name : ''} is critical. View intervention plan.`, link: `/assessment/${p.candidate_id}/candidate/${p.candidate_id}/assignment-review`, who: p.candidate_name })
+    // ── Shared: all account types ──────────────────────────────────────────
+    // URGENT: completed assessments with no outcome logged
+    for (const c of candidates) {
+      if (c.status === 'completed' && !outcomesById[c.id]) {
+        todaysActions.push({ priority: 'urgent', text: `Log outcome for ${c.name}.`, link: `/assessment/${c.assessments?.id}/candidate/${c.id}`, who: c.name })
       }
     }
-    // URGENT: unresolved REDLINE assignment alerts
-    for (const a of assignmentAlerts) {
-      if (a.deviation_severity === 'REDLINE' && !a.resolved) todaysActions.push({ priority: 'urgent', text: `Performance alert for ${a.worker_name}. Act now.`, link: `/assessment/${a.assessment_id}/candidate/${a.candidate_id}/assignment-review`, who: a.worker_name })
-    }
-    // URGENT: SSP alerts uncompleted > 24h
-    for (const a of sspAlerts) {
-      if (!a.ssp_check_completed) {
-        const hrs = (now.getTime() - new Date(a.reported_at).getTime()) / 3600000
-        if (hrs > 24) todaysActions.push({ priority: 'urgent', text: `SSP check overdue for ${a.worker_name}.`, link: '/ssp', who: a.worker_name })
+    // TODAY: assessments pending candidate completion > 7 days
+    for (const c of candidates) {
+      if ((c.status === 'sent' || c.status === 'pending') && c.invited_at) {
+        const daysSince = (now.getTime() - new Date(c.invited_at).getTime()) / 86400000
+        if (daysSince > 7) todaysActions.push({ priority: 'today', text: `${c.name} has not completed their assessment (${Math.floor(daysSince)} days).`, link: `/assessment/${c.assessments?.id}/candidate/${c.id}`, who: c.name })
       }
     }
-    // URGENT: pre-start HIGH risk
-    for (const s of upcomingStarts) {
-      if (s.prestart_check?.overall_risk === 'high') todaysActions.push({ priority: 'urgent', text: `High risk pre-start for ${s.worker_name} starting ${new Date(s.assignment_start_date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long' })}.`, link: `/assessment/${s.assessment_id}/candidate/${s.candidate_id}/assignment-review`, who: s.worker_name })
-    }
-    // URGENT: attendance below 60
-    for (const [cid, att] of Object.entries(attendanceByCandidate)) {
-      if (att.reliability_score < 60) {
-        const c = candidates.find(x => x.id === cid)
-        if (c) todaysActions.push({ priority: 'urgent', text: `${c.name} attendance critical. Call client.`, link: `/assessment/${c.assessments?.id}/candidate/${c.id}/assignment-review`, who: c.name })
-      }
-    }
-    // URGENT: engagement ghosting risk HIGH/CRITICAL
-    for (const seq of engagementSequences) {
-      if (seq.ghosting_risk === 'critical') {
-        todaysActions.push({ priority: 'urgent', text: `Critical ghosting risk for ${seq.worker_name}. Call immediately.`, link: `/assessment/${seq.assessment_id}/candidate/${seq.candidate_id}/assignment-review`, who: seq.worker_name })
-      } else if (seq.ghosting_risk === 'high') {
-        todaysActions.push({ priority: 'urgent', text: `High ghosting risk for ${seq.worker_name}. Follow up now.`, link: `/assessment/${seq.assessment_id}/candidate/${seq.candidate_id}/assignment-review`, who: seq.worker_name })
+    // THIS WEEK: low credit balance (PAYG only)
+    if (isPayg && assessmentCredits.length > 0) {
+      const lowCredits = assessmentCredits.filter(c => (c.credits_remaining || 0) > 0 && (c.credits_remaining || 0) <= 3)
+      const noCredits = assessmentCredits.filter(c => (c.credits_remaining || 0) === 0)
+      if (noCredits.length > 0) {
+        todaysActions.push({ priority: 'urgent', text: `No ${noCredits.map(c => c.credit_type).join(', ')} credits remaining. Top up to continue.`, link: '/billing/credits', who: 'credits' })
+      } else if (lowCredits.length > 0) {
+        todaysActions.push({ priority: 'week', text: `Low credit balance on ${lowCredits.map(c => `${c.credit_type} (${c.credits_remaining})`).join(', ')}.`, link: '/billing/credits', who: 'credits' })
       }
     }
 
-    // TODAY: placement health AMBER
-    if (placementHealth?.placements) {
-      for (const p of placementHealth.placements) {
-        if (p.health_status === 'AMBER') todaysActions.push({ priority: 'today', text: `${p.candidate_name}${p.client_name ? ' at ' + p.client_name : ''} is at risk. Check in with client.`, link: `/assessment/${p.candidate_id}/candidate/${p.candidate_id}/copilot`, who: p.candidate_name })
+    // ── Agency-only actions ────────────────────────────────────────────────
+    if (isAgencyAccount) {
+      // URGENT: placement health RED
+      if (placementHealth?.placements) {
+        for (const p of placementHealth.placements) {
+          if (p.health_status === 'RED') todaysActions.push({ priority: 'urgent', text: `${p.candidate_name}${p.client_name ? ' at ' + p.client_name : ''} is critical. View intervention plan.`, link: `/assessment/${p.candidate_id}/candidate/${p.candidate_id}/assignment-review`, who: p.candidate_name })
+        }
       }
-    }
-    // TODAY: SSP alerts same day
-    for (const a of sspAlerts) {
-      if (!a.ssp_check_completed) {
-        const hrs = (now.getTime() - new Date(a.reported_at).getTime()) / 3600000
-        if (hrs <= 24) todaysActions.push({ priority: 'today', text: `SSP check needed for ${a.worker_name}.`, link: '/ssp', who: a.worker_name })
+      // URGENT: unresolved REDLINE assignment alerts
+      for (const a of assignmentAlerts) {
+        if (a.deviation_severity === 'REDLINE' && !a.resolved) todaysActions.push({ priority: 'urgent', text: `Performance alert for ${a.worker_name}. Act now.`, link: `/assessment/${a.assessment_id}/candidate/${a.candidate_id}/assignment-review`, who: a.worker_name })
       }
-    }
-    // TODAY: pre-start MEDIUM risk within 3 days
-    for (const s of upcomingStarts) {
-      if (s.prestart_check?.overall_risk === 'medium' && s.days_until_start <= 3) todaysActions.push({ priority: 'today', text: `Check in with ${s.worker_name} before ${new Date(s.assignment_start_date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long' })}.`, link: `/assessment/${s.assessment_id}/candidate/${s.candidate_id}/assignment-review`, who: s.worker_name })
-    }
-    // TODAY: attendance 60-79
-    for (const [cid, att] of Object.entries(attendanceByCandidate)) {
-      if (att.reliability_score >= 60 && att.reliability_score < 80) {
-        const c = candidates.find(x => x.id === cid)
-        if (c) todaysActions.push({ priority: 'today', text: `Monitor ${c.name} attendance.`, link: `/assessment/${c.assessments?.id}/candidate/${c.id}/assignment-review`, who: c.name })
+      // URGENT: SSP alerts uncompleted > 24h
+      for (const a of sspAlerts) {
+        if (!a.ssp_check_completed) {
+          const hrs = (now.getTime() - new Date(a.reported_at).getTime()) / 3600000
+          if (hrs > 24) todaysActions.push({ priority: 'urgent', text: `SSP check overdue for ${a.worker_name}.`, link: '/ssp', who: a.worker_name })
+        }
       }
-    }
+      // URGENT: pre-start HIGH risk
+      for (const s of upcomingStarts) {
+        if (s.prestart_check?.overall_risk === 'high') todaysActions.push({ priority: 'urgent', text: `High risk pre-start for ${s.worker_name} starting ${new Date(s.assignment_start_date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long' })}.`, link: `/assessment/${s.assessment_id}/candidate/${s.candidate_id}/assignment-review`, who: s.worker_name })
+      }
+      // URGENT: attendance below 60
+      for (const [cid, att] of Object.entries(attendanceByCandidate)) {
+        if (att.reliability_score < 60) {
+          const c = candidates.find(x => x.id === cid)
+          if (c) todaysActions.push({ priority: 'urgent', text: `${c.name} attendance critical. Call client.`, link: `/assessment/${c.assessments?.id}/candidate/${c.id}/assignment-review`, who: c.name })
+        }
+      }
+      // URGENT: engagement ghosting risk HIGH/CRITICAL
+      for (const seq of engagementSequences) {
+        if (seq.ghosting_risk === 'critical') {
+          todaysActions.push({ priority: 'urgent', text: `Critical ghosting risk for ${seq.worker_name}. Call immediately.`, link: `/assessment/${seq.assessment_id}/candidate/${seq.candidate_id}/assignment-review`, who: seq.worker_name })
+        } else if (seq.ghosting_risk === 'high') {
+          todaysActions.push({ priority: 'urgent', text: `High ghosting risk for ${seq.worker_name}. Follow up now.`, link: `/assessment/${seq.assessment_id}/candidate/${seq.candidate_id}/assignment-review`, who: seq.worker_name })
+        }
+      }
 
-    // THIS WEEK: pre-start checks needed (no check done, start within 7 days)
-    for (const s of upcomingStarts) {
-      if (!s.prestart_check) todaysActions.push({ priority: 'week', text: `Pre-start check needed for ${s.worker_name}.`, link: `/assessment/${s.assessment_id}/candidate/${s.candidate_id}/assignment-review`, who: s.worker_name })
-    }
-    // THIS WEEK: rebate ending this month
-    if (placementHealth?.rebate_ending_this_month > 0 && placementHealth?.placements) {
-      for (const p of placementHealth.placements) {
-        if (p.days_until_rebate_ends != null && p.days_until_rebate_ends >= 0 && p.days_until_rebate_ends <= 7) {
-          todaysActions.push({ priority: 'week', text: `Rebate period ends soon for ${p.candidate_name}.`, link: `/assessment/${p.candidate_id}/candidate/${p.candidate_id}`, who: p.candidate_name })
+      // TODAY: placement health AMBER
+      if (placementHealth?.placements) {
+        for (const p of placementHealth.placements) {
+          if (p.health_status === 'AMBER') todaysActions.push({ priority: 'today', text: `${p.candidate_name}${p.client_name ? ' at ' + p.client_name : ''} is at risk. Check in with client.`, link: `/assessment/${p.candidate_id}/candidate/${p.candidate_id}/copilot`, who: p.candidate_name })
+        }
+      }
+      // TODAY: SSP alerts same day
+      for (const a of sspAlerts) {
+        if (!a.ssp_check_completed) {
+          const hrs = (now.getTime() - new Date(a.reported_at).getTime()) / 3600000
+          if (hrs <= 24) todaysActions.push({ priority: 'today', text: `SSP check needed for ${a.worker_name}.`, link: '/ssp', who: a.worker_name })
+        }
+      }
+      // TODAY: pre-start MEDIUM risk within 3 days
+      for (const s of upcomingStarts) {
+        if (s.prestart_check?.overall_risk === 'medium' && s.days_until_start <= 3) todaysActions.push({ priority: 'today', text: `Check in with ${s.worker_name} before ${new Date(s.assignment_start_date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long' })}.`, link: `/assessment/${s.assessment_id}/candidate/${s.candidate_id}/assignment-review`, who: s.worker_name })
+      }
+      // TODAY: attendance 60-79
+      for (const [cid, att] of Object.entries(attendanceByCandidate)) {
+        if (att.reliability_score >= 60 && att.reliability_score < 80) {
+          const c = candidates.find(x => x.id === cid)
+          if (c) todaysActions.push({ priority: 'today', text: `Monitor ${c.name} attendance.`, link: `/assessment/${c.assessments?.id}/candidate/${c.id}/assignment-review`, who: c.name })
+        }
+      }
+
+      // THIS WEEK: pre-start checks needed (no check done, start within 7 days)
+      for (const s of upcomingStarts) {
+        if (!s.prestart_check) todaysActions.push({ priority: 'week', text: `Pre-start check needed for ${s.worker_name}.`, link: `/assessment/${s.assessment_id}/candidate/${s.candidate_id}/assignment-review`, who: s.worker_name })
+      }
+      // THIS WEEK: rebate ending this month
+      if (placementHealth?.rebate_ending_this_month > 0 && placementHealth?.placements) {
+        for (const p of placementHealth.placements) {
+          if (p.days_until_rebate_ends != null && p.days_until_rebate_ends >= 0 && p.days_until_rebate_ends <= 7) {
+            todaysActions.push({ priority: 'week', text: `Rebate period ends soon for ${p.candidate_name}.`, link: `/assessment/${p.candidate_id}/candidate/${p.candidate_id}`, who: p.candidate_name })
+          }
         }
       }
     }
 
-    // Deduplicate by who + priority
+    // ── Employer-only actions ──────────────────────────────────────────────
+    if (profile?.account_type === 'employer') {
+      for (const h of probationHires) {
+        const cand = h.candidates
+        const name = cand?.name
+        if (!name) continue
+        const assessmentId = cand?.assessment_id
+        const candidateId = cand?.id
+        const link = assessmentId && candidateId ? `/assessment/${assessmentId}/candidate/${candidateId}` : '/dashboard'
+        const startDate = h.placement_date || h.outcome_date || h.created_at
+        if (!startDate) continue
+        const totalDays = Math.round((h.probation_months || 6) * 30.44)
+        const elapsedDays = Math.max(0, Math.floor((now.getTime() - new Date(startDate).getTime()) / 86400000))
+        const remainingDays = totalDays - elapsedDays
+        if (remainingDays < 0) continue
+        if (remainingDays <= 3) {
+          todaysActions.push({ priority: 'urgent', text: `Probation review due for ${name} (${remainingDays} day${remainingDays === 1 ? '' : 's'} left).`, link, who: name })
+        } else if (remainingDays <= 14) {
+          todaysActions.push({ priority: 'today', text: `Probation review due soon for ${name} (${remainingDays} days left).`, link, who: name })
+        } else if (remainingDays <= 30) {
+          todaysActions.push({ priority: 'week', text: `${name} approaching probation end (${remainingDays} days).`, link, who: name })
+        }
+      }
+    }
+
+    // Deduplicate by who + priority (keeps first occurrence; urgent pushed before today/week)
     const seen = new Set()
     const deduped = []
     for (const a of todaysActions) {
@@ -1908,8 +1960,8 @@ function DashboardPageInner() {
           )
         })()}
 
-        {/* ── Today's Actions (agency only) ── */}
-        {isAgencyAccount && (
+        {/* ── Today's Actions (all account types) ── */}
+        {(
           <div style={{
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
             padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 24,
@@ -1936,7 +1988,7 @@ function DashboardPageInner() {
                 <div style={{ width: 32, height: 32, borderRadius: '50%', background: GRN, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Ic name="check" size={18} color="#fff" />
                 </div>
-                <span style={{ fontFamily: F, fontSize: 14, fontWeight: 600, color: TX }}>All placements on track. Nothing urgent today.</span>
+                <span style={{ fontFamily: F, fontSize: 14, fontWeight: 600, color: TX }}>{isAgencyAccount ? 'All placements on track. Nothing urgent today.' : 'All caught up. Nothing urgent today.'}</span>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

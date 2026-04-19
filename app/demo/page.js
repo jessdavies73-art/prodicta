@@ -467,14 +467,22 @@ function DemoDashboardInner() {
           </div>
         )}
 
-        {/* ── Today's Actions (agency only) ── */}
-        {isAgency && (() => {
-          const demoActions = [
+        {/* ── Today's Actions (all account types) ── */}
+        {(() => {
+          const demoActions = isAgency ? [
             { priority: 'urgent', text: "James O'Brien at DemoRecruit is critical. Placement health RED.", link: '/demo/candidate/demo-c4?type=agency' },
+            { priority: 'urgent', text: 'Log outcome for Priya Sharma.', link: '/demo/candidate/demo-c3?type=agency' },
             { priority: 'today', text: 'SSP check needed for Tom Fletcher.', link: '/ssp' },
             { priority: 'today', text: 'Week 4 review overdue for Aisha Johnson.', link: '/demo/candidate/demo-c7?type=agency' },
+            { priority: 'today', text: 'Marcus Lee has not completed their assessment (9 days).', link: '/demo/candidate/demo-c9?type=agency' },
             { priority: 'week', text: 'Rebate period ends Friday for Sophie Chen.', link: '/demo/candidate/demo-c1?type=agency' },
             { priority: 'week', text: 'Pre-start check needed for Ryan Murphy starting Thursday.', link: '/demo/candidate/demo-c8?type=agency' },
+          ] : [
+            { priority: 'urgent', text: 'Probation review due for David Park (2 days left).', link: '/demo/candidate/demo-c2?type=employer' },
+            { priority: 'urgent', text: 'Log outcome for Sophie Chen.', link: '/demo/candidate/demo-c1?type=employer' },
+            { priority: 'today', text: 'Probation review due soon for Aisha Johnson (11 days left).', link: '/demo/candidate/demo-c7?type=employer' },
+            { priority: 'today', text: 'Marcus Lee has not completed their assessment (8 days).', link: '/demo/candidate/demo-c9?type=employer' },
+            { priority: 'week', text: 'Priya Sharma approaching probation end (24 days).', link: '/demo/candidate/demo-c3?type=employer' },
           ]
           return (
             <div style={{
