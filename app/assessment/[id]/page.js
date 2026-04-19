@@ -966,62 +966,60 @@ export default function AssessmentPage({ params }) {
                   </span>
                 )}
               </div>
-              {accountType === 'agency' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  {!shortlistMode ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <label style={{ fontFamily: F, fontSize: 12.5, fontWeight: 600, color: TX2 }}>Score threshold:</label>
-                      <input
-                        type="number"
-                        min={0} max={100}
-                        value={shortlistThreshold}
-                        onChange={e => setShortlistThreshold(Number(e.target.value))}
-                        style={{
-                          width: 56, padding: '5px 8px', borderRadius: 7, border: `1px solid ${BD}`,
-                          fontFamily: FM, fontSize: 13, color: TX, textAlign: 'center', outline: 'none',
-                        }}
-                      />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                {!shortlistMode ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <label style={{ fontFamily: F, fontSize: 12.5, fontWeight: 600, color: TX2 }}>Score threshold:</label>
+                    <input
+                      type="number"
+                      min={0} max={100}
+                      value={shortlistThreshold}
+                      onChange={e => setShortlistThreshold(Number(e.target.value))}
+                      style={{
+                        width: 56, padding: '5px 8px', borderRadius: 7, border: `1px solid ${BD}`,
+                        fontFamily: FM, fontSize: 13, color: TX, textAlign: 'center', outline: 'none',
+                      }}
+                    />
+                    <button
+                      onClick={autoShortlist}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        padding: '7px 16px', borderRadius: 8, border: `1px solid ${TEAL}`,
+                        background: TEALLT, color: TEALD,
+                        fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      Auto-Shortlist
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {shortlisted.size >= 2 && (
                       <button
-                        onClick={autoShortlist}
+                        onClick={goToCompareShortlisted}
                         style={{
                           display: 'inline-flex', alignItems: 'center', gap: 6,
-                          padding: '7px 16px', borderRadius: 8, border: `1px solid ${TEAL}`,
-                          background: TEALLT, color: TEALD,
+                          padding: '7px 16px', borderRadius: 8, border: 'none',
+                          background: TEAL, color: '#0f172a',
                           fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
                         }}
                       >
-                        Auto-Shortlist
+                        Compare shortlisted ({shortlisted.size})
                       </button>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {shortlisted.size >= 2 && (
-                        <button
-                          onClick={goToCompareShortlisted}
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                            padding: '7px 16px', borderRadius: 8, border: 'none',
-                            background: TEAL, color: '#0f172a',
-                            fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                          }}
-                        >
-                          Compare shortlisted ({shortlisted.size})
-                        </button>
-                      )}
-                      <button
-                        onClick={clearShortlist}
-                        style={{
-                          padding: '7px 14px', borderRadius: 8, border: `1px solid ${BD}`,
-                          background: 'transparent', color: TX2,
-                          fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                        }}
-                      >
-                        Clear shortlist
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                    <button
+                      onClick={clearShortlist}
+                      style={{
+                        padding: '7px 14px', borderRadius: 8, border: `1px solid ${BD}`,
+                        background: 'transparent', color: TX2,
+                        fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                      }}
+                    >
+                      Clear shortlist
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Screening View toggle and tiered table */}
