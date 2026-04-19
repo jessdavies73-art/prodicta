@@ -195,6 +195,7 @@ export default function NewAssessmentPage() {
   const [candidateEmail, setCandidateEmail] = useState('')
   const [createdAssessmentId, setCreatedAssessmentId] = useState(null)
   const [sendingInvite, setSendingInvite] = useState(false)
+  const [sendElapsed, setSendElapsed] = useState(0)
   const [sentResult, setSentResult] = useState(null)
   const [sendError, setSendError] = useState('')
   const [mode, setMode] = useState('standard') // 'rapid' | 'quick' | 'standard' | 'advanced'
@@ -304,6 +305,16 @@ export default function NewAssessmentPage() {
     try { router.refresh() } catch {}
     return () => { mountedRef.current = false }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tick elapsed seconds while the invite is being sent — drives the progress card.
+  useEffect(() => {
+    if (!sendingInvite) { setSendElapsed(0); return }
+    const started = Date.now()
+    const id = setInterval(() => {
+      setSendElapsed(Math.floor((Date.now() - started) / 1000))
+    }, 500)
+    return () => clearInterval(id)
+  }, [sendingInvite])
 
   // Debounced auto-analyse trigger when JD changes
   useEffect(() => {
@@ -1927,6 +1938,38 @@ export default function NewAssessmentPage() {
                     )}
                     {sendingInvite ? 'Sending…' : 'Send Assessment'}
                   </button>
+
+                  {sendingInvite && (() => {
+                    const msg = sendElapsed < 10
+                      ? 'Creating your assessment scenarios…'
+                      : sendElapsed < 30
+                        ? 'Almost there, generating questions…'
+                        : 'This takes up to 90 seconds. Please do not close this page.'
+                    const pct = Math.min(100, Math.round((sendElapsed / 90) * 100))
+                    return (
+                      <div style={{
+                        marginTop: 18, padding: '22px 24px', borderRadius: 14,
+                        background: '#e6f7f4', border: '1px solid #80DFD2', textAlign: 'center',
+                      }}>
+                        <div style={{
+                          width: 36, height: 36, margin: '0 auto 14px',
+                          border: '3px solid rgba(0,191,165,0.22)',
+                          borderTopColor: '#00BFA5',
+                          borderRadius: '50%',
+                          animation: 'spin 0.8s linear infinite',
+                        }} />
+                        <p style={{ fontFamily: F, fontSize: 14, fontWeight: 600, color: '#0f2137', margin: '0 0 14px', lineHeight: 1.5 }}>
+                          {msg}
+                        </p>
+                        <div style={{ width: '100%', height: 6, background: 'rgba(0,191,165,0.15)', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{
+                            width: `${pct}%`, height: '100%', background: '#00BFA5',
+                            borderRadius: 3, transition: 'width 0.5s linear',
+                          }} />
+                        </div>
+                      </div>
+                    )
+                  })()}
 
                   <div style={{ textAlign: 'center', marginTop: 14 }}>
                     <button

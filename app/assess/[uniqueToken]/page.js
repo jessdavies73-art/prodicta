@@ -1439,7 +1439,7 @@ function CandidatePreviewPage({ candidateName, uniqueToken, onContinue }) {
   )
 }
 
-function CompletePage({ candidateName }) {
+function CompletePage({ candidateName, uniqueToken }) {
   const [textVisible, setTextVisible] = useState(false)
   useEffect(() => { const t = setTimeout(() => setTextVisible(true), 700); return () => clearTimeout(t) }, [])
   const firstName = (candidateName || '').split(' ')[0] || 'you'
@@ -1475,9 +1475,19 @@ function CompletePage({ candidateName }) {
             <h2 style={{ fontFamily: F, color: TX, fontSize: 26, fontWeight: 800, margin: '0 0 12px' }}>
               Thank you{candidateName ? `, ${firstName}` : ''}.
             </h2>
-            <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 36px', lineHeight: 1.6 }}>
+            <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 20px', lineHeight: 1.6 }}>
               Your assessment is complete. Your results have been shared with the hiring team.
             </p>
+            {uniqueToken && (
+              <p style={{ margin: '0 0 32px' }}>
+                <a
+                  href={`/assess/${uniqueToken}/feedback`}
+                  style={{ fontFamily: F, fontSize: 13.5, color: TX3, textDecoration: 'underline', textUnderlineOffset: 3 }}
+                >
+                  Share feedback about your experience
+                </a>
+              </p>
+            )}
           </div>
           <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
             <ProdictaLogo textColor={NAVY} size={28} />
@@ -2191,7 +2201,7 @@ export default function AssessPage({ params }) {
       onContinue={() => setUiState('complete')}
     />
   )
-  if (uiState === 'complete') return <CompletePage candidateName={candidate?.name} />
+  if (uiState === 'complete') return <CompletePage candidateName={candidate?.name} uniqueToken={uniqueToken} />
 
   return null
 }
