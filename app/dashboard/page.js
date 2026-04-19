@@ -2665,11 +2665,11 @@ function DashboardPageInner() {
           <ActivePlacements placements={activePlacements} router={router} />
         )}
 
-        {/* ── Candidate Pipeline / Bulk Screening Mode (all account types) ── */}
+        {/* ── Candidate Pipeline (all account types) ── */}
         {candidates.length > 0 && (
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
-              {isAgencyAccount ? 'Bulk Screening Mode' : 'Candidate Pipeline'}
+              Candidate Pipeline
             </div>
             <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
               {[
@@ -2976,6 +2976,71 @@ function DashboardPageInner() {
           </div>
         )}
 
+        {/* ── Placement Health (employer variant, based on probation copilot status) ── */}
+        {profile?.account_type === 'employer' && (
+          probationHires.length > 0 ? (() => {
+            let critical = 0, atRisk = 0, healthy = 0
+            for (const h of probationHires) {
+              const cid = h.candidates?.id
+              if (!cid) continue
+              if (redlineCandidates.has(cid) || copilotStatus[cid] === 'Critical') critical++
+              else if (copilotStatus[cid] === 'At Risk') atRisk++
+              else healthy++
+            }
+            const cards = [
+              { key: 'healthy', label: 'Healthy',  count: healthy,  accent: '#00BFA5', sub: 'Probation on track' },
+              { key: 'atRisk',  label: 'At Risk',  count: atRisk,   accent: '#D97706', sub: 'Early warning signals' },
+              { key: 'critical',label: 'Critical', count: critical, accent: '#B91C1C', sub: 'Immediate action required' },
+            ]
+            return (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  Placement Health
+                  <InfoTooltip text="Health status for every hired candidate currently in their probation period. Green means on track. Amber means at risk. Red means critical action needed." />
+                </div>
+                <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
+                  {cards.map(c => (
+                    <div key={c.key} style={{
+                      flex: isMobile ? undefined : 1,
+                      width: isMobile ? '100%' : undefined,
+                      background: '#fff',
+                      border: '1px solid #E5E7EB',
+                      borderLeft: `4px solid ${c.accent}`,
+                      borderRadius: 12, padding: '20px 22px',
+                      fontFamily: F,
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
+                    }}>
+                      <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: c.accent }}>
+                        {c.count}
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2, color: NAVY }}>{c.label}</div>
+                      <div style={{ fontSize: 12, color: TX3 }}>{c.sub}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 14, fontSize: 12.5, color: TX3, fontFamily: F }}>
+                  <strong style={{ color: TX2 }}>{probationHires.length}</strong> hire{probationHires.length === 1 ? '' : 's'} currently in probation.
+                </div>
+              </div>
+            )
+          })() : (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                Placement Health
+                <InfoTooltip text="Health status for every hired candidate currently in their probation period." />
+              </div>
+              <div style={{ ...cs, padding: '24px 26px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: BG, border: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Ic name="shield" size={18} color={TX3} />
+                </div>
+                <div style={{ fontFamily: F, fontSize: 13.5, color: TX2, lineHeight: 1.55 }}>
+                  No hires in probation yet. Hires appear here once you log a &ldquo;still in probation&rdquo; outcome on a candidate report.
+                </div>
+              </div>
+            </div>
+          )
+        )}
+
         {/* ── Probation Tracker (all employer accounts, including PAYG) ── */}
         {profile?.account_type === 'employer' && (
           <ProbationTracker hires={probationHires} router={router} />
@@ -3176,13 +3241,30 @@ function DashboardPageInner() {
         <CostOfVacancyCard profile={profile} />
 
         {/* ── Placement Health (agency only) ── */}
-        {isAgencyAccount && placementHealth && placementHealth.total_active > 0 && (
-          <PlacementHealthPanel
-            data={placementHealth}
-            activeFilter={activeFilter}
-            onFilter={(s) => { if (activeFilter?.type === 'health' && activeFilter.value === s) { setActiveFilter(null) } else { setActiveFilter({ type: 'health', value: s }) } }}
-            isMobile={isMobile}
-          />
+        {isAgencyAccount && placementHealth && (
+          placementHealth.total_active > 0 ? (
+            <PlacementHealthPanel
+              data={placementHealth}
+              activeFilter={activeFilter}
+              onFilter={(s) => { if (activeFilter?.type === 'health' && activeFilter.value === s) { setActiveFilter(null) } else { setActiveFilter({ type: 'health', value: s }) } }}
+              isMobile={isMobile}
+            />
+          ) : (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                Placement Health
+                <InfoTooltip text="A live traffic light showing the health of every active placement. Green means on track. Amber means at risk. Red means critical action needed." />
+              </div>
+              <div style={{ ...cs, padding: '24px 26px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: BG, border: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Ic name="shield" size={18} color={TX3} />
+                </div>
+                <div style={{ fontFamily: F, fontSize: 13.5, color: TX2, lineHeight: 1.55 }}>
+                  No active placements. Placements appear here once you log a start date on a candidate report.
+                </div>
+              </div>
+            </div>
+          )
         )}
 
         {/* ── Rebate Period Tracker (agency only) ── */}
