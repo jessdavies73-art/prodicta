@@ -1144,8 +1144,9 @@ function DashboardPageInner() {
 
   const searchFiltered = search.trim()
     ? candidates.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.email.toLowerCase().includes(search.toLowerCase())
+        c.name?.toLowerCase().includes(search.toLowerCase()) ||
+        c.email?.toLowerCase().includes(search.toLowerCase()) ||
+        c.assessments?.role_title?.toLowerCase().includes(search.toLowerCase())
       )
     : candidates
 

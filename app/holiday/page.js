@@ -23,6 +23,7 @@ export default function HolidayPage() {
   const [loading, setLoading] = useState(true)
   const [records, setRecords] = useState([])
   const [focusedField, setFocusedField] = useState(null)
+  const [search, setSearch] = useState('')
 
   // New record form
   const [showNewRecord, setShowNewRecord] = useState(false)
@@ -68,6 +69,10 @@ export default function HolidayPage() {
   }, [])
 
   const selectedRecord = useMemo(() => records.find(r => r.id === selectedId), [records, selectedId])
+
+  const filteredRecords = search.trim()
+    ? records.filter(r => r.worker_name?.toLowerCase().includes(search.toLowerCase()))
+    : records
 
   async function loadEntries(recordId) {
     setLoadingEntries(true)
@@ -326,8 +331,30 @@ export default function HolidayPage() {
               </p>
             </div>
           ) : records.length > 0 && (
+            <>
+              <div style={{ position: 'relative', marginBottom: 14 }}>
+                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
+                  <Ic name="search" size={15} color={focusedField === 'search' ? TEALD : TX3} />
+                </span>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  onFocus={() => setFocusedField('search')}
+                  onBlur={() => setFocusedField(null)}
+                  placeholder="Search by worker name..."
+                  style={{ ...inputStyle('search'), paddingLeft: 36 }}
+                />
+              </div>
+              {filteredRecords.length === 0 ? (
+                <div style={{ ...cs, textAlign: 'center', padding: '32px 24px', marginBottom: 24 }}>
+                  <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: 0 }}>
+                    No workers match &ldquo;{search}&rdquo;.
+                  </p>
+                </div>
+              ) : (
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 24 }}>
-              {records.map(r => {
+              {filteredRecords.map(r => {
                 const totalAvailable = (r.total_entitlement_days || 0) + (r.carry_over_days || 0)
                 const usedPct = totalAvailable > 0 ? Math.min(100, Math.round(((r.days_taken || 0) / totalAvailable) * 100)) : 0
                 const isSelected = r.id === selectedId
@@ -360,6 +387,8 @@ export default function HolidayPage() {
                 )
               })}
             </div>
+              )}
+            </>
           )}
 
           {/* Selected record detail */}

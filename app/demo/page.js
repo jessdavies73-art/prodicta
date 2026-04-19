@@ -332,7 +332,11 @@ function DemoDashboardInner() {
     ? activeCandidates.filter(c => c.assessments?.id === filterAssessmentId)
     : activeCandidates
   const searchedDemo = search.trim()
-    ? byAssessment.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase()))
+    ? byAssessment.filter(c =>
+        c.name?.toLowerCase().includes(search.toLowerCase()) ||
+        c.email?.toLowerCase().includes(search.toLowerCase()) ||
+        c.assessments?.role_title?.toLowerCase().includes(search.toLowerCase())
+      )
     : byAssessment
   const filtered = activeFilter?.type === 'verdict'
     ? searchedDemo.filter(c => getVerdict(c) === activeFilter.value)
