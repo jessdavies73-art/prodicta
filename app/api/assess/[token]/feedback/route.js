@@ -158,7 +158,10 @@ Respond in JSON format:
       }
     }
 
-    // Check for retake/growth trajectory data
+    // Check for retake/growth trajectory data. Only emit when the candidate has
+    // at least 2 completed assessments WITH results under the same email, and
+    // compute the change as (most recent - previous) so a single-assessment
+    // candidate never sees a spurious delta against someone else's baseline.
     let growth_trajectory = null
     if (candidate.email) {
       try {
@@ -176,29 +179,39 @@ Respond in JSON format:
             .select('candidate_id, scores')
             .in('candidate_id', candidateIds)
 
-          if (allResults && allResults.length >= 2) {
-            const resultMap = {}
-            allResults.forEach(r => { resultMap[r.candidate_id] = r.scores })
+          const resultMap = {}
+          ;(allResults || []).forEach(r => { if (r?.scores) resultMap[r.candidate_id] = r.scores })
 
-            // Find common skills across assessments
-            const allSkillSets = allResults.map(r => Object.keys(r.scores || {}).filter(k => !k.startsWith('pf_')))
-            const commonSkills = allSkillSets[0]?.filter(skill =>
-              allSkillSets.every(set => set.includes(skill))
-            ) || []
+          // History is candidates that actually have a scored result, in chronological order.
+          const history = allCandidates.filter(c => resultMap[c.id])
+
+          if (history.length >= 2) {
+            const previous = history[history.length - 2]
+            const latest = history[history.length - 1]
+
+            const skillsInLatest = Object.keys(resultMap[latest.id] || {}).filter(k => !k.startsWith('pf_'))
+            const skillsInPrevious = Object.keys(resultMap[previous.id] || {}).filter(k => !k.startsWith('pf_'))
+            const commonSkills = skillsInLatest.filter(skill => skillsInPrevious.includes(skill))
 
             if (commonSkills.length > 0) {
-              growth_trajectory = commonSkills.slice(0, 5).map(skill => ({
-                skill,
-                assessments: allCandidates
-                  .filter(c => resultMap[c.id]?.hasOwnProperty(skill))
-                  .map(c => ({
-                    role: c.assessments?.role_title || 'Assessment',
-                    date: c.completed_at ? new Date(c.completed_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '',
-                    score_change: resultMap[c.id]?.[skill] != null
-                      ? (resultMap[c.id][skill] - (resultMap[allCandidates[0].id]?.[skill] || 0))
-                      : null,
-                  })),
-              }))
+              growth_trajectory = commonSkills.slice(0, 5).map(skill => {
+                const prevScore = resultMap[previous.id][skill]
+                const latestScore = resultMap[latest.id][skill]
+                const change = (typeof prevScore === 'number' && typeof latestScore === 'number')
+                  ? latestScore - prevScore
+                  : null
+                return {
+                  skill,
+                  change,
+                  assessments: history
+                    .filter(c => typeof resultMap[c.id]?.[skill] === 'number')
+                    .map(c => ({
+                      role: c.assessments?.role_title || 'Assessment',
+                      date: c.completed_at ? new Date(c.completed_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '',
+                      score: resultMap[c.id][skill],
+                    })),
+                }
+              })
             }
           }
         }

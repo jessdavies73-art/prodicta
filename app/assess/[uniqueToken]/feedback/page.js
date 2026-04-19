@@ -262,18 +262,17 @@ export default function CandidateFeedbackPage({ params }) {
             </div>
 
             {/* Growth Trajectory */}
-            {data.growth_trajectory && data.growth_trajectory.length > 0 && (
+            {data.growth_trajectory && data.growth_trajectory.length > 0 ? (
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '26px 28px', marginBottom: 20 }}>
                 <h2 style={{ fontSize: 17, fontWeight: 800, color: NAVY, margin: '0 0 16px' }}>Growth Trajectory</h2>
                 <p style={{ fontSize: 13, color: TX2, lineHeight: 1.6, margin: '0 0 14px' }}>
-                  You have completed multiple assessments. Here is how your skills have changed over time.
+                  You have completed multiple assessments. Here is how your skills have changed since your previous assessment.
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {data.growth_trajectory.map((g, i) => {
-                    const latest = g.assessments[g.assessments.length - 1]
-                    const change = latest?.score_change
-                    const improved = change != null && change > 0
-                    const declined = change != null && change < 0
+                    const change = g.change
+                    const improved = typeof change === 'number' && change > 0
+                    const declined = typeof change === 'number' && change < 0
                     return (
                       <div key={i} style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -284,7 +283,7 @@ export default function CandidateFeedbackPage({ params }) {
                           {g.assessments.map((a, j) => (
                             <span key={j} style={{ fontSize: 11, color: TX3 }}>{a.date}</span>
                           ))}
-                          {change != null && (
+                          {typeof change === 'number' && (
                             <span style={{
                               fontSize: 12, fontWeight: 700,
                               color: improved ? '#10b981' : declined ? '#ef4444' : TX3,
@@ -297,6 +296,13 @@ export default function CandidateFeedbackPage({ params }) {
                     )
                   })}
                 </div>
+              </div>
+            ) : (
+              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '22px 28px', marginBottom: 20 }}>
+                <h2 style={{ fontSize: 17, fontWeight: 800, color: NAVY, margin: '0 0 8px' }}>Growth Trajectory</h2>
+                <p style={{ fontSize: 13.5, color: TX2, lineHeight: 1.6, margin: 0 }}>
+                  Complete another assessment to see how your skills develop over time.
+                </p>
               </div>
             )}
 
