@@ -2665,11 +2665,11 @@ function DashboardPageInner() {
           <ActivePlacements placements={activePlacements} router={router} />
         )}
 
-        {/* ── Candidate Pipeline (employer only, after Speed to Offer / before Prediction Accuracy) ── */}
-        {!isAgencyAccount && candidates.length > 0 && (
+        {/* ── Candidate Pipeline / Bulk Screening Mode (all account types) ── */}
+        {candidates.length > 0 && (
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
-              Candidate Pipeline
+              {isAgencyAccount ? 'Bulk Screening Mode' : 'Candidate Pipeline'}
             </div>
             <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
               {[
@@ -2709,8 +2709,8 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Employer: verdict filtered results (directly after employer pipeline cards) ── */}
-        {!isAgencyAccount && activeFilter?.type === 'verdict' && (
+        {/* ── Verdict filtered results (directly after pipeline cards) ── */}
+        {activeFilter?.type === 'verdict' && (
           <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
             <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <div>
@@ -3183,6 +3183,163 @@ function DashboardPageInner() {
             onFilter={(s) => { if (activeFilter?.type === 'health' && activeFilter.value === s) { setActiveFilter(null) } else { setActiveFilter({ type: 'health', value: s }) } }}
             isMobile={isMobile}
           />
+        )}
+
+        {/* ── Rebate Period Tracker (agency only) ── */}
+        {isAgencyAccount && placementHealth?.placements?.some(p => p.placement_date && p.rebate_weeks) && (
+          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+            <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Ic name="clock" size={16} color={TEAL} />
+                <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Rebate Period Tracker</h2>
+              </div>
+              <p style={{ margin: '4px 0 0', fontSize: 12.5, color: TX3 }}>Active placements tracked through their rebate window</p>
+            </div>
+            <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {placementHealth.placements
+                .filter(p => p.placement_date && p.rebate_weeks)
+                .slice(0, 8)
+                .map(p => {
+                  const elapsedDays = Math.max(0, Math.floor((Date.now() - new Date(p.placement_date).getTime()) / 86400000))
+                  const totalDays = p.rebate_weeks * 7
+                  const week = Math.min(p.rebate_weeks, Math.floor(elapsedDays / 7) + 1)
+                  const pct = Math.min(100, Math.round((elapsedDays / totalDays) * 100))
+                  const daysLeft = p.days_until_rebate_ends
+                  const status = daysLeft == null || daysLeft < 0 ? 'Rebate cleared'
+                    : daysLeft <= 7 ? 'Nearing end'
+                    : 'On track'
+                  const col = status === 'Rebate cleared' ? GRN : status === 'Nearing end' ? AMB : TEAL
+                  return (
+                    <div key={p.candidate_id} style={{ padding: '12px 16px', background: BG, border: `1px solid ${BD}`, borderRadius: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <span style={{ fontSize: 13.5, fontWeight: 700, color: TX }}>{p.candidate_name}</span>
+                          {p.client_name && <span style={{ fontSize: 12, color: TX3, marginLeft: 8 }}>at {p.client_name}</span>}
+                        </div>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, color: col, background: `${col}18`, padding: '2px 10px', borderRadius: 20 }}>{status}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+                        <div style={{ flex: 1, height: 8, background: `${col}22`, borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: col, borderRadius: 4 }} />
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: TX3, flexShrink: 0 }}>Week {week}/{p.rebate_weeks}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Auto Shortlist (agency only): top-ranked completed candidates this month ── */}
+        {isAgencyAccount && (() => {
+          const ranked = candidates
+            .filter(c => c.status === 'completed')
+            .map(c => {
+              const r = Array.isArray(c.results) ? c.results[0] : c.results
+              return { c, score: r?.overall_score ?? null, role: c.assessments?.role_title || 'Assessment' }
+            })
+            .filter(x => typeof x.score === 'number')
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 3)
+          if (ranked.length === 0) return null
+          return (
+            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+              <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Ic name="award" size={16} color={TEAL} />
+                  <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Auto Shortlist</h2>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: 12.5, color: TX3 }}>Top-ranked candidates across your assessments</p>
+              </div>
+              <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {ranked.map((x, i) => {
+                  const rank = i + 1
+                  const isTop = rank === 1
+                  return (
+                    <a
+                      key={x.c.id}
+                      href={`/assessment/${x.c.assessments?.id}/candidate/${x.c.id}`}
+                      style={{
+                        display: 'flex', gap: 14, alignItems: 'center',
+                        padding: '12px 16px', borderRadius: 10,
+                        background: isTop ? TEALLT : BG,
+                        border: `1px solid ${isTop ? `${TEAL}55` : BD}`,
+                        textDecoration: 'none', color: TX,
+                      }}
+                    >
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: isTop ? TEAL : BD, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: isTop ? NAVY : TX3, flexShrink: 0 }}>{rank}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: TX }}>{x.c.name}</span>
+                          <span style={{ fontSize: 12, color: TX3 }}>{x.role}</span>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: x.score >= 70 ? TEALD : x.score >= 55 ? AMB : RED, flexShrink: 0 }}>{x.score}/100</span>
+                    </a>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* ── Red Flag Alerts (agency variant): critical/at-risk placements ── */}
+        {isAgencyAccount && placementHealth?.placements?.some(p => p.health_status === 'RED' || p.health_status === 'AMBER') && (
+          <div style={{ ...cs, marginBottom: 24, borderTop: `3px solid ${RED}`, padding: '20px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <Ic name="alert" size={14} color={RED} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Red flag alerts
+              </span>
+            </div>
+            <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 14px', lineHeight: 1.55 }}>
+              Placements showing warning signs. You&rsquo;ll also receive email alerts when a placement turns critical.{' '}
+              <a
+                href="/settings"
+                onClick={e => { e.preventDefault(); router.push('/settings') }}
+                style={{ color: TEALD, fontWeight: 600, textDecoration: 'none' }}
+              >
+                Configure thresholds in Settings
+              </a>
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {placementHealth.placements
+                .filter(p => p.health_status === 'RED' || p.health_status === 'AMBER')
+                .slice(0, 5)
+                .map(p => {
+                  const isCritical = p.health_status === 'RED'
+                  return (
+                    <div key={p.candidate_id} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 14px', background: isCritical ? REDBG : AMBBG,
+                      border: `1px solid ${isCritical ? REDBD : AMBBD}`, borderRadius: 8,
+                      gap: 12, flexWrap: 'wrap',
+                    }}>
+                      <div style={{ minWidth: 180, flex: 1 }}>
+                        <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX }}>
+                          {p.candidate_name}{p.client_name ? ` at ${p.client_name}` : ''}
+                        </div>
+                        <div style={{ fontFamily: F, fontSize: 12, color: TX3 }}>
+                          {p.health_reason || (isCritical ? 'Critical placement health' : 'Placement at risk')}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/assessment/${p.candidate_id}/candidate/${p.candidate_id}/assignment-review`)}
+                        style={{
+                          fontFamily: F, fontSize: 12.5, fontWeight: 700, color: '#fff',
+                          background: isCritical ? RED : AMB, border: 'none', padding: '7px 14px', borderRadius: 7,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        View placement
+                      </button>
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
         )}
 
 
