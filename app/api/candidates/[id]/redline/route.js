@@ -152,7 +152,7 @@ Return JSON only. UK English. No emoji. No em dashes.
     if (body.action === 'intervene') {
       const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
       const msg = await client.messages.stream({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-4-5',
         max_tokens: 1500,
         messages: [{
           role: 'user',

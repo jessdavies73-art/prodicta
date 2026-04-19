@@ -121,7 +121,7 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const message = await client.messages.stream({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-5',
       max_tokens: 2048,
       messages: [{ role: 'user', content: prompt }]
     }).finalMessage()

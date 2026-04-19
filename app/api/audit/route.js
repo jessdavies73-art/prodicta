@@ -19,7 +19,7 @@ function stripDashes(value) {
 
 async function generateRiskReport(client, jobDescription) {
   const message = await client.messages.stream({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-sonnet-4-5',
     max_tokens: 900,
     messages: [{
       role: 'user',

@@ -693,7 +693,7 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
           `${sectorGuidanceBlock}${seniorityGuidanceBlock}\nFORMATTING RULE: Never use em dash`
         )
 
-    const scenarioModel = 'claude-sonnet-4-6'
+    const scenarioModel = 'claude-sonnet-4-5'
     const scenarioMaxTokens = MAX_TOKENS_BY_MODE[mode] ?? 3000
     // Stream the response so the server-to-Anthropic connection stays active
     // for the full generation. 90s per-call cap so a single stuck call can't

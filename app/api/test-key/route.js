@@ -15,7 +15,7 @@ export async function GET() {
   try {
     const anthropic = new Anthropic({ apiKey })
     const message = await anthropic.messages.stream({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-5',
       max_tokens: 16,
       messages: [{ role: 'user', content: 'Say hello.' }],
     }).finalMessage()
