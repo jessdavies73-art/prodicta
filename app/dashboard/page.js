@@ -1128,10 +1128,9 @@ function DashboardPageInner() {
     const r = c.results?.[0]
     if (!r || r.overall_score == null) return null
     const s = r.overall_score
-    const rl = r.risk_level
-    if (s >= 75 && (rl === 'Low' || rl === 'Very Low')) return 'strong'
-    if (s < 55 || rl === 'High') return 'risk'
-    return 'maybe'
+    if (s >= 70) return 'strong'
+    if (s >= 50) return 'maybe'
+    return 'risk'
   }
 
   const verdictCounts = { strong: 0, maybe: 0, risk: 0 }
@@ -2673,9 +2672,9 @@ function DashboardPageInner() {
             </div>
             <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
               {[
-                { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
-                { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
-                { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
+                { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Score 70 and above', accent: '#00BFA5' },
+                { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Score 50 to 69', accent: '#D97706' },
+                { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Score below 50', accent: '#B91C1C' },
               ].map(v => {
                 const active = activeFilter?.type === 'verdict' && activeFilter.value === v.key
                 return (
@@ -2706,6 +2705,83 @@ function DashboardPageInner() {
                 )
               })}
             </div>
+
+            {/* Grouped candidate lists (inline, shown when no filter is active) */}
+            {!activeFilter && (() => {
+              const buckets = [
+                { key: 'strong', label: 'Strong Hire', sub: 'Score 70 and above', accent: '#00BFA5' },
+                { key: 'maybe',  label: 'Review',      sub: 'Score 50 to 69',     accent: '#D97706' },
+                { key: 'risk',   label: 'High Risk',   sub: 'Score below 50',     accent: '#B91C1C' },
+              ]
+              const grouped = { strong: [], maybe: [], risk: [] }
+              for (const c of candidates) {
+                const v = getVerdict(c)
+                if (v) grouped[v].push(c)
+              }
+              for (const k of ['strong', 'maybe', 'risk']) {
+                grouped[k].sort((a, b) => (b.results?.[0]?.overall_score ?? 0) - (a.results?.[0]?.overall_score ?? 0))
+              }
+              if (!buckets.some(b => grouped[b.key].length > 0)) return null
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 18 }}>
+                  {buckets.map(b => {
+                    const list = grouped[b.key]
+                    if (list.length === 0) return null
+                    return (
+                      <div key={b.key} style={{ background: CARD, border: `1px solid ${BD}`, borderLeft: `4px solid ${b.accent}`, borderRadius: 12, overflow: 'hidden' }}>
+                        <div style={{ padding: '12px 18px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                          <div>
+                            <div style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY }}>{b.label}</div>
+                            <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>{b.sub}</div>
+                          </div>
+                          <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: b.accent, background: `${b.accent}18`, padding: '3px 10px', borderRadius: 20 }}>
+                            {list.length}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          {list.map((c, i) => {
+                            const r = c.results?.[0]
+                            const score = r?.overall_score
+                            const completedAt = c.completed_at ? new Date(c.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '--'
+                            const role = c.assessments?.role_title || '--'
+                            return (
+                              <div key={c.id} style={{
+                                display: 'flex', alignItems: 'center', gap: 12,
+                                padding: isMobile ? '10px 14px' : '12px 18px',
+                                borderTop: i === 0 ? 'none' : `1px solid ${BD}`,
+                                flexWrap: isMobile ? 'wrap' : 'nowrap',
+                              }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                                  <div style={{ fontFamily: F, fontSize: 12, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{role}</div>
+                                </div>
+                                <div style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: b.accent, minWidth: 56, textAlign: 'right' }}>
+                                  {typeof score === 'number' ? `${score}/100` : '--'}
+                                </div>
+                                <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, minWidth: 92, textAlign: 'right' }}>
+                                  {completedAt}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => router.push(`/assessment/${c.assessments?.id}/candidate/${c.id}`)}
+                                  style={{
+                                    padding: '6px 12px', borderRadius: 7, border: `1px solid ${BD}`,
+                                    background: 'transparent', color: TX2, fontFamily: F, fontSize: 12, fontWeight: 700,
+                                    cursor: 'pointer', flexShrink: 0,
+                                  }}
+                                >
+                                  View report
+                                </button>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </div>
         )}
 

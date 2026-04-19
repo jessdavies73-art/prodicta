@@ -315,10 +315,9 @@ function DemoDashboardInner() {
     const r = Array.isArray(c.results) ? c.results[0] : c.results
     if (!r || r.overall_score == null) return null
     const s = r.overall_score
-    const rl = r.risk_level
-    if (s >= 75 && (rl === 'Low' || rl === 'Very Low')) return 'strong'
-    if (s < 55 || rl === 'High') return 'risk'
-    return 'maybe'
+    if (s >= 70) return 'strong'
+    if (s >= 50) return 'maybe'
+    return 'risk'
   }
 
   const verdictCounts = { strong: 0, maybe: 0, risk: 0 }
