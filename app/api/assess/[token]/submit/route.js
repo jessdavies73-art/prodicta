@@ -28,23 +28,27 @@ async function scoreAndNotify(candidateId, adminClient) {
   try {
     const { data: candidate } = await adminClient
       .from('candidates')
-      .select('name, email')
+      .select('name, email, unique_link')
       .eq('id', candidateId)
       .single()
     if (!candidate?.email) return
 
     const firstName = (candidate.name || '').split(' ')[0] || 'there'
+    const feedbackUrl = `https://prodicta.co.uk/assess/${candidate.unique_link}/feedback`
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
       from: 'Prodicta <hello@prodicta.co.uk>',
       to: candidate.email,
-      subject: 'Your PRODICTA assessment is complete',
+      subject: 'Your PRODICTA assessment results are ready',
       html: `<!DOCTYPE html><html><body style="margin:0;padding:24px;background:#f7f9fb;font-family:'Outfit',system-ui,sans-serif;color:#0f2137;">
         <div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e9f0;border-radius:14px;padding:32px;">
-          <h1 style="margin:0 0 16px;font-size:20px;font-weight:800;color:#0f2137;">Assessment received</h1>
+          <h1 style="margin:0 0 16px;font-size:20px;font-weight:800;color:#0f2137;">Your results are ready</h1>
           <p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#5e6b7f;">Hi ${firstName},</p>
-          <p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#5e6b7f;">Thank you for completing your assessment. Your results have been shared with the hiring team.</p>
-          <p style="margin:0;font-size:14px;line-height:1.6;color:#5e6b7f;">Best of luck with the next stage.</p>
+          <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#5e6b7f;">Thank you for completing your assessment. Leave optional feedback about your experience and then view your personalised development report.</p>
+          <p style="margin:0 0 20px;text-align:center;">
+            <a href="${feedbackUrl}" style="display:inline-block;background:#00BFA5;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 22px;border-radius:10px;">Leave feedback and view my report</a>
+          </p>
+          <p style="margin:0;font-size:12px;line-height:1.6;color:#94a1b3;text-align:center;">Or paste this link into your browser: ${feedbackUrl}</p>
         </div>
       </body></html>`,
     })

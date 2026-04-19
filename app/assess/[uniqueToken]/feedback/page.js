@@ -18,6 +18,11 @@ export default function CandidateFeedbackPage({ params }) {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [phase, setPhase] = useState('form') // 'form' | 'report'
+  const [rating, setRating] = useState(0)
+  const [hovered, setHovered] = useState(0)
+  const [comments, setComments] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -40,6 +45,21 @@ export default function CandidateFeedbackPage({ params }) {
     load()
   }, [params.uniqueToken])
 
+  async function submitFeedback() {
+    setSubmitting(true)
+    try {
+      await fetch(`/api/assess/${params.uniqueToken}/rate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating, feedback: comments }),
+      })
+    } catch {}
+    setSubmitting(false)
+    setPhase('report')
+  }
+
+  const filledStars = hovered || rating
+
   return (
     <div style={{ minHeight: '100vh', background: BG, fontFamily: F, color: TX }}>
       <header style={{ background: NAVY, padding: '20px 24px', textAlign: 'center' }}>
@@ -47,17 +67,100 @@ export default function CandidateFeedbackPage({ params }) {
       </header>
 
       <main style={{ maxWidth: 720, margin: '0 auto', padding: '48px 20px 80px' }}>
-        {loading && (
+        {phase === 'form' && (
+          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '48px 36px', textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>🌟</div>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: NAVY, margin: '0 0 10px' }}>
+              How was your experience?
+            </h1>
+            <p style={{ fontSize: 15, color: TX2, margin: '0 0 32px', lineHeight: 1.6 }}>
+              Your feedback helps us improve the assessment experience for everyone.
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 24 }}>
+              {[1, 2, 3, 4, 5].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setRating(n)}
+                  onMouseEnter={() => setHovered(n)}
+                  onMouseLeave={() => setHovered(0)}
+                  aria-label={`${n} star${n === 1 ? '' : 's'}`}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+                    transition: 'transform 0.12s',
+                    transform: filledStars >= n ? 'scale(1.2)' : 'scale(1)',
+                  }}
+                >
+                  <svg
+                    width={36} height={36} viewBox="0 0 24 24"
+                    fill={filledStars >= n ? '#f59e0b' : 'none'}
+                    stroke={filledStars >= n ? '#f59e0b' : BD}
+                    strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+                  >
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+
+            <div style={{ textAlign: 'left', marginBottom: 24 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: TX2, display: 'block', marginBottom: 6 }}>
+                Any comments about the assessment process? (optional)
+              </label>
+              <textarea
+                value={comments}
+                onChange={e => setComments(e.target.value)}
+                placeholder="What went well? What could be improved?"
+                rows={3}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  fontFamily: F, fontSize: 14, color: TX, background: CARD,
+                  border: `1.5px solid ${BD}`, borderRadius: 10, padding: '12px 14px',
+                  resize: 'none', outline: 'none', lineHeight: 1.65,
+                  transition: 'border-color 0.15s',
+                }}
+                onFocus={e => e.currentTarget.style.borderColor = TEAL}
+                onBlur={e => e.currentTarget.style.borderColor = BD}
+              />
+            </div>
+
+            <button
+              onClick={submitFeedback}
+              disabled={submitting || rating === 0}
+              style={{
+                background: (submitting || rating === 0) ? '#cbd5e0' : TEAL,
+                color: '#fff', fontFamily: F, fontWeight: 700, fontSize: 15,
+                border: 'none', borderRadius: 10, padding: '14px 28px',
+                cursor: (submitting || rating === 0) ? 'not-allowed' : 'pointer',
+                width: '100%', marginBottom: 12,
+              }}
+            >
+              {submitting ? 'Submitting…' : 'Submit feedback and see your development report'}
+            </button>
+            <button
+              onClick={() => setPhase('report')}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px',
+                fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX3,
+                textDecoration: 'underline', textUnderlineOffset: 3,
+              }}
+            >
+              Skip and see my development report
+            </button>
+          </div>
+        )}
+
+        {phase === 'report' && loading && (
           <div style={{ textAlign: 'center', color: TX3, fontSize: 14 }}>Loading your development report...</div>
         )}
 
-        {!loading && error && (
+        {phase === 'report' && !loading && error && (
           <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 32, textAlign: 'center' }}>
             <p style={{ fontSize: 15, color: TX2, lineHeight: 1.6, margin: 0 }}>{error}</p>
           </div>
         )}
 
-        {!loading && data && (
+        {phase === 'report' && !loading && data && (
           <>
             <div style={{ textAlign: 'center', marginBottom: 36 }}>
               <div style={{

@@ -210,7 +210,7 @@ function AlreadyCompletedPage({ candidateName, token }) {
                   textDecoration: 'underline', textUnderlineOffset: 3,
                 }}
               >
-                Share optional feedback
+                Leave feedback and view your development report
               </a>
             )}
           </div>
@@ -1484,7 +1484,7 @@ function CompletePage({ candidateName, uniqueToken }) {
                   href={`/assess/${uniqueToken}/feedback`}
                   style={{ fontFamily: F, fontSize: 13.5, color: TX3, textDecoration: 'underline', textUnderlineOffset: 3 }}
                 >
-                  Share feedback about your experience
+                  Leave feedback and view your development report
                 </a>
               </p>
             )}
