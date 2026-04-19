@@ -65,6 +65,18 @@ async function createSupabaseUserAndGrantCredits({ email, password, companyName,
     throw usersUpsertError
   }
 
+  // Forced verification UPDATE — runs after any DB trigger so PAYG plan values always win.
+  await admin
+    .from('users')
+    .update({
+      plan: 'payg',
+      plan_type: 'payg',
+      subscription_status: 'payg',
+      onboarding_complete: true,
+    })
+    .eq('id', userId)
+  console.log('[payg-signup] plan verified and set to payg for', userId)
+
   const { error: creditError } = await admin.from('assessment_credits').upsert(
     {
       user_id: userId,

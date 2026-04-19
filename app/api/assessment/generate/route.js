@@ -86,6 +86,26 @@ export async function POST(request) {
     // ── Plan / credit check ──────────────────────────────────────────────────
     const adminClient = createServiceClient()
 
+    // Safety net: if signup failed to create the public.users row, create an
+    // emergency PAYG row so the FK on assessments.user_id does not break.
+    const { data: userRow } = await adminClient
+      .from('users')
+      .select('id, plan, plan_type')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (!userRow) {
+      console.error('[generate] no users row for', user.id, '- creating emergency row')
+      await adminClient.from('users').upsert({
+        id: user.id,
+        email: user.email,
+        plan: 'payg',
+        plan_type: 'payg',
+        subscription_status: 'payg',
+        onboarding_complete: true,
+      }, { onConflict: 'id' })
+    }
+
     const { data: userProfile } = await adminClient
       .from('users')
       .select('plan, subscription_status')

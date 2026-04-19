@@ -58,6 +58,17 @@ async function createSupabaseUser({ adminClient, email, password, companyName, a
     throw usersUpsertError
   }
 
+  // Forced verification UPDATE — runs after any DB trigger so subscription plan values always win.
+  await adminClient
+    .from('users')
+    .update({
+      plan,
+      plan_type: 'subscription',
+      subscription_status: 'active',
+    })
+    .eq('id', userId)
+  console.log('[subscription-signup] plan verified and set for', userId, 'plan:', plan)
+
   return userId
 }
 
