@@ -38,17 +38,25 @@ async function createSupabaseUser({ adminClient, email, password, companyName, a
   })
   if (updateError) throw updateError
 
-  await adminClient.from('users').insert({
-    id: userId,
-    email: email.trim(),
-    company_name: companyName.trim(),
-    account_type: accountType,
-    plan,
-    onboarding_complete: true,
-    subscription_status: 'active',
-    stripe_customer_id: customerId,
-    stripe_subscription_id: subscriptionId,
-  })
+  const { error: usersUpsertError } = await adminClient.from('users').upsert(
+    {
+      id: userId,
+      email: email.trim(),
+      company_name: companyName.trim(),
+      account_type: accountType,
+      plan,
+      plan_type: 'subscription',
+      onboarding_complete: true,
+      subscription_status: 'active',
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscriptionId,
+    },
+    { onConflict: 'id' }
+  )
+  if (usersUpsertError) {
+    console.error('[create-subscription] public.users upsert failed', { userId, error: usersUpsertError })
+    throw usersUpsertError
+  }
 
   return userId
 }

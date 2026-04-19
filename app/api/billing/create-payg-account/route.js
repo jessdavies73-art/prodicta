@@ -61,7 +61,7 @@ export async function POST(request) {
       },
     })
 
-    await adminClient.from('users').upsert(
+    const { error: usersUpsertError } = await adminClient.from('users').upsert(
       {
         id: userId,
         email: email.trim(),
@@ -74,6 +74,10 @@ export async function POST(request) {
       },
       { onConflict: 'id' }
     )
+    if (usersUpsertError) {
+      console.error('[create-payg-account] public.users upsert failed', { userId, error: usersUpsertError })
+      throw usersUpsertError
+    }
 
     let promoMessage = null
     if (promoCode) {

@@ -99,7 +99,7 @@ export async function POST(request) {
         stripe_customer_id: customerId,
       },
     })
-    await admin.from('users').upsert(
+    const { error: usersUpsertError } = await admin.from('users').upsert(
       {
         id: userId,
         email: email.trim(),
@@ -113,6 +113,10 @@ export async function POST(request) {
       },
       { onConflict: 'id' }
     )
+    if (usersUpsertError) {
+      console.error('[confirm-payg-bundle] public.users upsert failed', { userId, error: usersUpsertError })
+      throw usersUpsertError
+    }
 
     const { error: creditError } = await admin.from('assessment_credits').upsert(
       {

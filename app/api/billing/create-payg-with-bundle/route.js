@@ -46,7 +46,7 @@ async function createSupabaseUserAndGrantCredits({ email, password, companyName,
     },
   })
 
-  await admin.from('users').upsert(
+  const { error: usersUpsertError } = await admin.from('users').upsert(
     {
       id: userId,
       email: email.trim(),
@@ -60,6 +60,10 @@ async function createSupabaseUserAndGrantCredits({ email, password, companyName,
     },
     { onConflict: 'id' }
   )
+  if (usersUpsertError) {
+    console.error('[create-payg-with-bundle] public.users upsert failed', { userId, error: usersUpsertError })
+    throw usersUpsertError
+  }
 
   const { error: creditError } = await admin.from('assessment_credits').upsert(
     {

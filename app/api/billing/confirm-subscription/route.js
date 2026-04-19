@@ -93,17 +93,25 @@ export async function POST(request) {
     })
     if (updateError) throw updateError
 
-    await adminClient.from('users').insert({
-      id:               userId,
-      email:            email.trim(),
-      company_name:     companyName.trim(),
-      account_type:     accountType,
-      plan,
-      onboarding_complete:    true,
-      subscription_status:    'active',
-      stripe_customer_id:     customerId,
-      stripe_subscription_id: subscription.id,
-    })
+    const { error: usersUpsertError } = await adminClient.from('users').upsert(
+      {
+        id:               userId,
+        email:            email.trim(),
+        company_name:     companyName.trim(),
+        account_type:     accountType,
+        plan,
+        plan_type:              'subscription',
+        onboarding_complete:    true,
+        subscription_status:    'active',
+        stripe_customer_id:     customerId,
+        stripe_subscription_id: subscription.id,
+      },
+      { onConflict: 'id' }
+    )
+    if (usersUpsertError) {
+      console.error('[confirm-subscription] public.users upsert failed', { userId, error: usersUpsertError })
+      throw usersUpsertError
+    }
 
     let promoMessage = null
     if (promoCode) {
