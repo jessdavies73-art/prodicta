@@ -1156,13 +1156,13 @@ function DashboardPageInner() {
 
   // Separate lists for filtered views (replace main table when active)
   const healthFilteredCandidates = activeFilter?.type === 'health'
-    ? candidates.filter(c => healthByCandidate[c.id]?.health_status === activeFilter.value)
+    ? searchFiltered.filter(c => healthByCandidate[c.id]?.health_status === activeFilter.value)
     : []
   const healthFilterLabel = activeFilter?.type === 'health'
     ? { GREEN: 'Healthy Placements', AMBER: 'At Risk Placements', RED: 'Critical Placements' }[activeFilter.value]
     : ''
   const verdictFilteredCandidates = activeFilter?.type === 'verdict'
-    ? candidates.filter(c => getVerdict(c) === activeFilter.value)
+    ? searchFiltered.filter(c => getVerdict(c) === activeFilter.value)
     : []
   const verdictFilterLabel = activeFilter?.type === 'verdict'
     ? { strong: 'Strong Hire Candidates', maybe: 'Review Candidates', risk: 'High Risk Candidates' }[activeFilter.value]

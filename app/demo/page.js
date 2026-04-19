@@ -344,7 +344,7 @@ function DemoDashboardInner() {
 
   // Separate list for Placement Health filtered view (agency only, replaces main table)
   const healthFilteredCandidates = activeFilter?.type === 'health'
-    ? activeCandidates.filter(c => DEMO_PLACEMENT_HEALTH[c.id]?.health_status === activeFilter.value)
+    ? searchedDemo.filter(c => DEMO_PLACEMENT_HEALTH[c.id]?.health_status === activeFilter.value)
     : []
   const healthFilterLabel = activeFilter?.type === 'health'
     ? { GREEN: 'Healthy Placements', AMBER: 'At Risk Placements', RED: 'Critical Placements' }[activeFilter.value]
@@ -352,7 +352,7 @@ function DemoDashboardInner() {
 
   // Separate list for Candidate Pipeline filtered view (replaces main table)
   const verdictFilteredCandidates = activeFilter?.type === 'verdict'
-    ? activeCandidates.filter(c => getVerdict(c) === activeFilter.value)
+    ? searchedDemo.filter(c => getVerdict(c) === activeFilter.value)
     : []
   const verdictFilterLabel = activeFilter?.type === 'verdict'
     ? { strong: 'Strong Hire Candidates', maybe: 'Review Candidates', risk: 'High Risk Candidates' }[activeFilter.value]
