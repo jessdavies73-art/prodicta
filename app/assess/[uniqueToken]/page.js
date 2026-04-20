@@ -200,19 +200,27 @@ function AlreadyCompletedPage({ candidateName, token }) {
           <p style={{ fontFamily: F, color: TX2, fontSize: 15, margin: '0 0 28px', lineHeight: 1.6 }}>
             Thank you{firstName ? `, ${firstName}` : ''}. Your results have been shared with the hiring team.
           </p>
-          <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-            <ProdictaLogo textColor={NAVY} size={28} />
-            {token && (
+          {token && (
+            <div style={{ marginBottom: 28 }}>
               <a
                 href={`/assess/${token}/feedback`}
                 style={{
-                  fontFamily: F, fontSize: 12.5, color: '#94a1b3',
-                  textDecoration: 'underline', textUnderlineOffset: 3,
+                  display: 'inline-block',
+                  padding: '14px 28px',
+                  borderRadius: 10,
+                  background: '#00BFA5',
+                  color: '#fff',
+                  fontFamily: F, fontSize: 15, fontWeight: 700,
+                  textDecoration: 'none',
+                  boxShadow: '0 4px 14px rgba(0,191,165,0.28)',
                 }}
               >
-                Leave feedback and view your development report
+                Leave feedback and view your report
               </a>
-            )}
+            </div>
+          )}
+          <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <ProdictaLogo textColor={NAVY} size={28} />
           </div>
         </Card>
       </CentredCard>
@@ -1479,14 +1487,23 @@ function CompletePage({ candidateName, uniqueToken }) {
               Your assessment is complete. Your results have been shared with the hiring team.
             </p>
             {uniqueToken && (
-              <p style={{ margin: '0 0 32px' }}>
+              <div style={{ margin: '0 0 32px' }}>
                 <a
                   href={`/assess/${uniqueToken}/feedback`}
-                  style={{ fontFamily: F, fontSize: 13.5, color: TX3, textDecoration: 'underline', textUnderlineOffset: 3 }}
+                  style={{
+                    display: 'inline-block',
+                    padding: '14px 28px',
+                    borderRadius: 10,
+                    background: '#00BFA5',
+                    color: '#fff',
+                    fontFamily: F, fontSize: 15, fontWeight: 700,
+                    textDecoration: 'none',
+                    boxShadow: '0 4px 14px rgba(0,191,165,0.28)',
+                  }}
                 >
-                  Leave feedback and view your development report
+                  Leave feedback and view your report
                 </a>
-              </p>
+              </div>
             )}
           </div>
           <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>

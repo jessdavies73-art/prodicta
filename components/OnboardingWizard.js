@@ -219,13 +219,14 @@ export default function OnboardingWizard({ userId, initialAccountType, onComplet
                   onClick={() => finishAndClose(false)}
                   disabled={saving}
                   style={{
-                    width: '100%', padding: '11px 0', borderRadius: 10,
-                    border: `1.5px solid ${BD}`, background: 'transparent',
-                    color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 600,
+                    width: '100%', padding: '12px 0', borderRadius: 10,
+                    border: `1.5px solid ${NAVY}`, background: 'transparent',
+                    color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 700,
                     cursor: saving ? 'not-allowed' : 'pointer',
+                    textAlign: 'center',
                   }}
                 >
-                  Explore the dashboard first
+                  Skip setup and go to dashboard
                 </button>
               </div>
               <div style={{ marginTop: 12, fontFamily: F, fontSize: 11.5, color: TX3 }}>Step 3 of 3</div>
