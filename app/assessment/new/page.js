@@ -751,7 +751,7 @@ export default function NewAssessmentPage() {
               background: '#fff', cursor: 'pointer', color: '#5e6b7f', flexShrink: 0
             }}
           >
-            <Ic name="arrow-left" size={18} />
+            <Ic name="left" size={18} />
           </button>
           <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: '#0f172a', fontFamily: F }}>
             New Assessment
