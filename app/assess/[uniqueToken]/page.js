@@ -1504,8 +1504,20 @@ function DemographicsPage({ candidateId, candidateName, onDone }) {
             <h2 style={{ fontFamily: F, color: TX, fontSize: 22, fontWeight: 800, margin: '0 0 10px' }}>
               Optional: Help us ensure fair hiring
             </h2>
-            <p style={{ fontFamily: F, color: TX2, fontSize: 14, margin: 0, lineHeight: 1.65 }}>
+            <p style={{ fontFamily: F, color: TX2, fontSize: 14, margin: '0 0 10px', lineHeight: 1.65 }}>
               This information is never shared with employers and is not used in your assessment score. It helps us monitor that our assessments are fair for everyone.
+            </p>
+            <p style={{ fontFamily: F, color: TX3, fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+              Your responses are stored separately from your assessment and are never used in scoring. View our{' '}
+              <a
+                href="https://prodicta.co.uk/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: TX3, textDecoration: 'underline' }}
+              >
+                privacy policy
+              </a>{' '}
+              at prodicta.co.uk/privacy.
             </p>
           </div>
 
