@@ -51,8 +51,42 @@ function adverseChecks(scores) {
     { label: 'Score range is broad (candidates are differentiated)', pass: range >= 20 },
     { label: 'Lowest scoring group has meaningful scores (above 30)', pass: min >= 30 },
     { label: 'No cliff edge (no bucket exceeds 60% of candidates)', pass: maxBucketPct <= 0.6 },
-    { label: '4/5ths rule across protected groups', pass: null, pending: 'Awaiting candidate self-report data' },
   ]
+}
+
+// Group demographic rows by a characteristic field and return per-group stats.
+// rows: [{ age_band, gender, ethnicity, score }]
+// Groups with fewer than 5 candidates are flagged as insufficient.
+function groupStatsByField(rows, field) {
+  const groups = {}
+  for (const r of rows) {
+    const key = r[field]
+    if (!key) continue
+    if (!groups[key]) groups[key] = []
+    if (typeof r.score === 'number') groups[key].push(r.score)
+  }
+  const out = {}
+  for (const [key, scores] of Object.entries(groups)) {
+    const count = scores.length
+    const avg = count > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / count) : 0
+    const passCount = scores.filter(s => s >= 70).length
+    const passRate = count > 0 ? passCount / count : 0
+    out[key] = { count, avg, passRate, insufficient: count < 5 }
+  }
+  return out
+}
+
+// Apply the 4/5ths rule to grouped stats. Returns { pass, highest, failures: [group names] }.
+// Only groups with sufficient data (count >= 5) are compared; the reference pass rate
+// is the highest rate among sufficient groups.
+function fourFifthsResult(groupStats) {
+  const sufficient = Object.entries(groupStats).filter(([, s]) => !s.insufficient)
+  if (sufficient.length < 2) return { pass: null, highest: null, failures: [], sufficient: sufficient.length }
+  const highest = Math.max(...sufficient.map(([, s]) => s.passRate))
+  if (highest === 0) return { pass: true, highest, failures: [], sufficient: sufficient.length }
+  const threshold = highest * 0.8
+  const failures = sufficient.filter(([, s]) => s.passRate < threshold).map(([k]) => k)
+  return { pass: failures.length === 0, highest, failures, sufficient: sufficient.length }
 }
 
 export default function EdiPage() {
@@ -64,6 +98,7 @@ export default function EdiPage() {
   const [allScores, setAllScores] = useState([])
   const [ediReports, setEdiReports] = useState({})
   const [generating, setGenerating] = useState(null)
+  const [demographicsRows, setDemographicsRows] = useState([])
 
   useEffect(() => {
     async function load() {
@@ -107,6 +142,29 @@ export default function EdiPage() {
 
       setAssessments(enriched)
       setAllScores(scores.map(s => s.score))
+
+      // Demographics: fetch self-report rows for any of this user's candidates
+      // and join to their overall score.
+      const scoredById = {}
+      for (const c of (cands || [])) {
+        const sc = c.results?.[0]?.overall_score
+        if (typeof sc === 'number') scoredById[c.id] = sc
+      }
+      const ids = Object.keys(scoredById)
+      if (ids.length > 0) {
+        const { data: demoRows } = await supabase
+          .from('candidate_demographics')
+          .select('candidate_id, age_band, gender, ethnicity')
+          .in('candidate_id', ids)
+        const joined = (demoRows || []).map(d => ({
+          candidate_id: d.candidate_id,
+          age_band: d.age_band,
+          gender: d.gender,
+          ethnicity: d.ethnicity,
+          score: scoredById[d.candidate_id],
+        })).filter(r => typeof r.score === 'number')
+        setDemographicsRows(joined)
+      }
 
       // Load existing EDI reports
       try {
@@ -199,25 +257,96 @@ export default function EdiPage() {
             </div>
           )}
 
-          {/* Protected Characteristic Self-Report (in preparation) */}
-          <div style={{ ...cs, marginBottom: 24, padding: '18px 22px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-              <h2 style={{ fontSize: 14, fontWeight: 700, color: TX, margin: 0 }}>Candidate self-report (protected characteristics)</h2>
-              <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 50, fontSize: 10, fontWeight: 800, background: BG, color: TX3, border: `1px solid ${BD}` }}>
-                In preparation
-              </span>
-            </div>
-            <p style={{ fontSize: 12.5, color: TX2, margin: '0 0 12px', lineHeight: 1.6 }}>
-              When enabled, candidates may optionally declare age band, gender, and ethnicity at the end of their assessment. Data is stored separately from their assessment responses and is never used for scoring. Once at least 10 candidates have self-reported in a given assessment, per-group pass rates and 4/5ths rule analysis become available here.
-            </p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {['Age band', 'Gender', 'Ethnicity'].map(cat => (
-                <span key={cat} style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: BG, color: TX3, border: `1px solid ${BD}` }}>
-                  {cat}
-                </span>
-              ))}
-            </div>
-          </div>
+          {/* Adverse Impact Analysis (uses self-reported demographics) */}
+          {(() => {
+            const participationPct = totalAssessed > 0 ? Math.round((demographicsRows.length / totalAssessed) * 100) : 0
+            const hasEnough = totalAssessed >= 10 && demographicsRows.length >= 10
+            const FIELDS = [
+              { key: 'age_band', label: 'Age band' },
+              { key: 'gender', label: 'Gender' },
+              { key: 'ethnicity', label: 'Ethnicity' },
+            ]
+            return (
+              <div style={{ ...cs, marginBottom: 24, padding: '18px 22px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+                  <h2 style={{ fontSize: 14, fontWeight: 700, color: TX, margin: 0 }}>
+                    Adverse Impact Analysis
+                    <InfoTooltip text="Applies the 4/5ths rule: a group's pass rate (score at or above 70) should be at least 80% of the highest pass rate. Only groups with 5 or more candidates are compared." />
+                  </h2>
+                  <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 50, fontSize: 10, fontWeight: 800, background: BG, color: TX2, border: `1px solid ${BD}` }}>
+                    {demographicsRows.length} of {totalAssessed} self-reported ({participationPct}%)
+                  </span>
+                </div>
+                <p style={{ fontSize: 12.5, color: TX2, margin: '0 0 14px', lineHeight: 1.6 }}>
+                  Candidates may optionally declare age band, gender, and ethnicity at the end of their assessment. Demographic data is stored separately from scoring and is never used to rank candidates. Tables below compare pass rates across groups that have at least 5 candidates.
+                </p>
+
+                {!hasEnough && (
+                  <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, padding: '10px 14px' }}>
+                    <p style={{ fontSize: 12, color: TX2, margin: 0, lineHeight: 1.5 }}>
+                      Collect self-report data from at least 10 candidates to run statistical analysis. Currently {demographicsRows.length} have self-reported.
+                    </p>
+                  </div>
+                )}
+
+                {hasEnough && FIELDS.map(f => {
+                  const stats = groupStatsByField(demographicsRows, f.key)
+                  const keys = Object.keys(stats)
+                  const ff = fourFifthsResult(stats)
+                  const headerLabel = ff.pass === null
+                    ? 'Insufficient groups'
+                    : ff.pass ? '4/5ths rule: PASS' : '4/5ths rule: REVIEW'
+                  const headerColor = ff.pass === null ? TX3 : ff.pass ? GRN : AMB
+                  const headerBg = ff.pass === null ? BG : ff.pass ? GRNBG : AMBBG
+                  return (
+                    <div key={f.key} style={{ marginTop: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 10 }}>
+                        <h3 style={{ fontSize: 13, fontWeight: 700, color: TX, margin: 0 }}>{f.label}</h3>
+                        <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 50, color: headerColor, background: headerBg, border: `1px solid ${headerColor}44` }}>
+                          {headerLabel}
+                        </span>
+                      </div>
+                      {keys.length === 0 ? (
+                        <p style={{ fontSize: 12, color: TX3, margin: 0 }}>No self-report data yet for this characteristic.</p>
+                      ) : (
+                        <div style={{ overflowX: 'auto' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: F, fontSize: 12 }}>
+                            <thead>
+                              <tr style={{ background: BG, borderBottom: `1px solid ${BD}` }}>
+                                <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 700, color: TX3, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Group</th>
+                                <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700, color: TX3, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Candidates</th>
+                                <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700, color: TX3, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Avg Score</th>
+                                <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700, color: TX3, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Pass Rate</th>
+                                <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700, color: TX3, textTransform: 'uppercase', fontSize: 10, letterSpacing: '0.05em' }}>Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {keys.map(k => {
+                                const s = stats[k]
+                                let status = 'Pass'
+                                let statusColor = GRN
+                                if (s.insufficient) { status = 'Insufficient data'; statusColor = TX3 }
+                                else if (ff.failures.includes(k)) { status = 'Review'; statusColor = AMB }
+                                return (
+                                  <tr key={k} style={{ borderBottom: `1px solid ${BD}` }}>
+                                    <td style={{ padding: '8px 10px', color: TX }}>{k}</td>
+                                    <td style={{ padding: '8px 10px', color: TX, textAlign: 'right' }}>{s.count}</td>
+                                    <td style={{ padding: '8px 10px', color: TX, textAlign: 'right' }}>{s.insufficient ? '-' : s.avg}</td>
+                                    <td style={{ padding: '8px 10px', color: TX, textAlign: 'right' }}>{s.insufficient ? '-' : `${Math.round(s.passRate * 100)}%`}</td>
+                                    <td style={{ padding: '8px 10px', textAlign: 'right', color: statusColor, fontWeight: 700 }}>{status}</td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
 
           {/* Overview Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>

@@ -62,8 +62,54 @@ export async function GET(request) {
       .eq('user_id', user.id)
       .eq('status', 'completed')
 
-    const scores = (candidates || []).map(c => c.results?.[0]?.overall_score).filter(s => s != null)
-    if (scores.length < 3) return NextResponse.json({ error: 'At least 3 completed candidates required' }, { status: 400 })
+    const scoredCandidates = (candidates || [])
+      .map(c => ({ id: c.id, score: c.results?.[0]?.overall_score }))
+      .filter(c => typeof c.score === 'number')
+    const scores = scoredCandidates.map(c => c.score)
+    if (scores.length < 10) return NextResponse.json({ error: 'At least 10 completed candidates required' }, { status: 400 })
+
+    // Demographics join for per-characteristic 4/5ths analysis
+    const candIds = scoredCandidates.map(c => c.id)
+    const { data: demoRows } = await adminClient
+      .from('candidate_demographics')
+      .select('candidate_id, age_band, gender, ethnicity')
+      .in('candidate_id', candIds)
+
+    const scoreById = Object.fromEntries(scoredCandidates.map(c => [c.id, c.score]))
+    const demoWithScore = (demoRows || []).map(d => ({ ...d, score: scoreById[d.candidate_id] })).filter(r => typeof r.score === 'number')
+    const participationPct = scores.length > 0 ? Math.round((demoWithScore.length / scores.length) * 100) : 0
+
+    function groupBy(rows, field) {
+      const groups = {}
+      for (const r of rows) {
+        const key = r[field]
+        if (!key) continue
+        if (!groups[key]) groups[key] = []
+        groups[key].push(r.score)
+      }
+      const out = {}
+      for (const [k, s] of Object.entries(groups)) {
+        const passCount = s.filter(x => x >= 70).length
+        out[k] = { count: s.length, passRate: s.length > 0 ? passCount / s.length : 0, insufficient: s.length < 5 }
+      }
+      return out
+    }
+    function fourFifths(groups) {
+      const sufficient = Object.entries(groups).filter(([, g]) => !g.insufficient)
+      if (sufficient.length < 2) return { pass: null, failures: [] }
+      const highest = Math.max(...sufficient.map(([, g]) => g.passRate))
+      if (highest === 0) return { pass: true, failures: [] }
+      const threshold = highest * 0.8
+      const failures = sufficient.filter(([, g]) => g.passRate < threshold).map(([k]) => k)
+      return { pass: failures.length === 0, failures }
+    }
+
+    const ageStats = groupBy(demoWithScore, 'age_band')
+    const genderStats = groupBy(demoWithScore, 'gender')
+    const ethnicityStats = groupBy(demoWithScore, 'ethnicity')
+    const ageFF = fourFifths(ageStats)
+    const genderFF = fourFifths(genderStats)
+    const ethnicityFF = fourFifths(ethnicityStats)
 
     const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
     const buckets = { '0-49': 0, '50-64': 0, '65-74': 0, '75-84': 0, '85-100': 0 }
@@ -118,7 +164,8 @@ export async function GET(request) {
     label('DATE GENERATED', dateStr, y); y -= 40
     label('ASSESSMENT', assessment.role_title || 'Untitled Assessment', y); y -= 40
     label('PREPARED BY', profile?.company_name || 'Hiring team', y); y -= 40
-    label('CANDIDATES ASSESSED', String(scores.length), y); y -= 50
+    label('CANDIDATES ASSESSED', String(scores.length), y); y -= 40
+    label('DEMOGRAPHICS PARTICIPATION', `${demoWithScore.length} of ${scores.length} (${participationPct}%)`, y); y -= 50
 
     page.drawRectangle({ x: 40, y, width: 515, height: 1, color: rgb(0.88, 0.9, 0.94) })
     y -= 24
@@ -165,12 +212,34 @@ export async function GET(request) {
     }
     y -= 10
 
+    // 4/5ths rule per characteristic
+    page.drawText('4/5THS RULE BY PROTECTED CHARACTERISTIC', { x: 40, y, size: 9, font: helvB, color: grey }); y -= 18
+    function renderFF(label, ff) {
+      let status, col
+      if (ff.pass === null) { status = 'INSUFFICIENT DATA'; col = grey }
+      else if (ff.pass) { status = 'PASS'; col = greenRgb }
+      else { status = 'REVIEW'; col = amberRgb }
+      page.drawText(status, { x: 40, y, size: 10, font: helvB, color: col })
+      page.drawText(safe(label), { x: 160, y, size: 10, font: helv, color: black })
+      if (ff.pass === false && ff.failures.length > 0) {
+        y -= 12
+        const failText = `Groups below 80% of highest pass rate: ${ff.failures.join(', ')}`
+        const failLines = wrap(failText, helv, 9, 495)
+        failLines.forEach(l => { page.drawText(l, { x: 60, y, size: 9, font: helv, color: grey }); y -= 12 })
+      }
+      y -= 16
+    }
+    renderFF('Age band', ageFF)
+    renderFF('Gender', genderFF)
+    renderFF('Ethnicity', ethnicityFF)
+    y -= 6
+
     page.drawRectangle({ x: 40, y, width: 515, height: 1, color: rgb(0.88, 0.9, 0.94) })
     y -= 22
 
     // Statement
     page.drawText('STATEMENT', { x: 40, y, size: 9, font: helvB, color: grey }); y -= 16
-    const stmt = 'No demographic data is collected or used in scoring. All candidates complete identical scenarios under identical conditions. This certificate confirms that the assessment methodology is designed to evaluate candidates fairly and objectively, in compliance with the Equality Act 2010 and Employment Rights Act 2025.'
+    const stmt = 'This assessment process has been reviewed for adverse impact and meets the standards required under the Equality Act 2010 and Employment Rights Act 2025. Demographic data is self-reported, stored separately from assessment responses, and is never used in scoring. All candidates complete identical scenarios under identical conditions.'
     const stmtLines = wrap(stmt, helv, 10, 515)
     stmtLines.forEach(l => { page.drawText(l, { x: 40, y, size: 10, font: helv, color: black }); y -= 14 })
 

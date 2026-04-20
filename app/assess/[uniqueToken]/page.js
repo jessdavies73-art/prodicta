@@ -1447,6 +1447,124 @@ function CandidatePreviewPage({ candidateName, uniqueToken, onContinue }) {
   )
 }
 
+function DemographicsPage({ candidateId, candidateName, onDone }) {
+  const [ageBand, setAgeBand] = useState('')
+  const [gender, setGender] = useState('')
+  const [ethnicity, setEthnicity] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const firstName = (candidateName || '').split(' ')[0] || ''
+
+  const AGE_OPTIONS = ['Under 25', '25-34', '35-44', '45-54', '55-64', '65 and over', 'Prefer not to say']
+  const GENDER_OPTIONS = ['Man', 'Woman', 'Non-binary', 'Prefer not to say', 'Prefer to self-describe']
+  const ETHNICITY_OPTIONS = [
+    'Asian or Asian British',
+    'Black or Black British',
+    'Mixed or multiple ethnic groups',
+    'White',
+    'Other ethnic group',
+    'Prefer not to say',
+  ]
+
+  async function submitAndContinue() {
+    if (!candidateId) { onDone(); return }
+    setSubmitting(true)
+    try {
+      await fetch('/api/candidates/demographics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidate_id: candidateId,
+          age_band: ageBand || null,
+          gender: gender || null,
+          ethnicity: ethnicity || null,
+        }),
+      })
+    } catch {}
+    setSubmitting(false)
+    onDone()
+  }
+
+  const selectStyle = {
+    width: '100%', padding: '12px 14px', borderRadius: 10,
+    border: `1.5px solid ${BD}`, background: '#fff', color: TX,
+    fontFamily: F, fontSize: 14, outline: 'none', cursor: 'pointer',
+    boxSizing: 'border-box',
+  }
+  const labelStyle = {
+    fontFamily: F, fontSize: 13, fontWeight: 600, color: TX2,
+    display: 'block', marginBottom: 6, textAlign: 'left',
+  }
+
+  return (
+    <>
+      <NavBar candidateName={candidateName} />
+      <CentredCard>
+        <Card style={{ padding: '40px 32px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <h2 style={{ fontFamily: F, color: TX, fontSize: 22, fontWeight: 800, margin: '0 0 10px' }}>
+              Optional: Help us ensure fair hiring
+            </h2>
+            <p style={{ fontFamily: F, color: TX2, fontSize: 14, margin: 0, lineHeight: 1.65 }}>
+              This information is never shared with employers and is not used in your assessment score. It helps us monitor that our assessments are fair for everyone.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 28 }}>
+            <div>
+              <label style={labelStyle}>Age band</label>
+              <select value={ageBand} onChange={e => setAgeBand(e.target.value)} style={selectStyle}>
+                <option value="">Select or skip</option>
+                {AGE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Gender</label>
+              <select value={gender} onChange={e => setGender(e.target.value)} style={selectStyle}>
+                <option value="">Select or skip</option>
+                {GENDER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Ethnicity</label>
+              <select value={ethnicity} onChange={e => setEthnicity(e.target.value)} style={selectStyle}>
+                <option value="">Select or skip</option>
+                {ETHNICITY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button
+              onClick={submitAndContinue}
+              disabled={submitting}
+              style={{
+                width: '100%', padding: '14px 0', borderRadius: 10, border: 'none',
+                background: submitting ? '#a8d5d4' : '#00BFA5', color: '#fff',
+                fontFamily: F, fontSize: 15, fontWeight: 700,
+                cursor: submitting ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {submitting ? 'Submitting…' : 'Submit and continue'}
+            </button>
+            <button
+              onClick={onDone}
+              disabled={submitting}
+              style={{
+                width: '100%', padding: '12px 0', borderRadius: 10,
+                border: `1.5px solid ${NAVY}`, background: 'transparent',
+                color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 700,
+                cursor: submitting ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Skip
+            </button>
+          </div>
+        </Card>
+      </CentredCard>
+    </>
+  )
+}
+
 function CompletePage({ candidateName, uniqueToken }) {
   const [textVisible, setTextVisible] = useState(false)
   useEffect(() => { const t = setTimeout(() => setTextVisible(true), 700); return () => clearTimeout(t) }, [])
@@ -1991,6 +2109,7 @@ export default function AssessPage({ params }) {
   const uniqueToken = params?.uniqueToken || null
 
   const [uiState, setUiState] = useState('loading') // loading | error | already_complete | intro | active | calendar | workspace | submitting | rating | preview | complete
+  const [demographicsDone, setDemographicsDone] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [candidate, setCandidate] = useState(null)
   const [assessment, setAssessment] = useState(null)
@@ -2218,7 +2337,12 @@ export default function AssessPage({ params }) {
       onContinue={() => setUiState('complete')}
     />
   )
-  if (uiState === 'complete') return <CompletePage candidateName={candidate?.name} uniqueToken={uniqueToken} />
+  if (uiState === 'complete') {
+    if (!demographicsDone) {
+      return <DemographicsPage candidateId={candidate?.id} candidateName={candidate?.name} onDone={() => setDemographicsDone(true)} />
+    }
+    return <CompletePage candidateName={candidate?.name} uniqueToken={uniqueToken} />
+  }
 
   return null
 }
