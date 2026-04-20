@@ -1149,6 +1149,8 @@ function DashboardPageInner() {
       )
     : candidates
 
+  console.log('[search] value:', search, 'candidates:', candidates.length, 'filtered:', searchFiltered.length)
+
   const filtered = activeFilter?.type === 'verdict'
     ? searchFiltered.filter(c => getVerdict(c) === activeFilter.value)
     : searchFiltered

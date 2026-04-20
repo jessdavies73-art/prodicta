@@ -37,6 +37,10 @@ export default function HolidayPage() {
   const [formCarryExpiry, setFormCarryExpiry] = useState('')
   const [savingRecord, setSavingRecord] = useState(false)
 
+  // Candidate search (pre-fills worker name in new record form)
+  const [workerSearch, setWorkerSearch] = useState('')
+  const [workerSuggestions, setWorkerSuggestions] = useState([])
+
   // Selected record
   const [selectedId, setSelectedId] = useState(null)
   const [entries, setEntries] = useState([])
@@ -67,6 +71,21 @@ export default function HolidayPage() {
     }
     load()
   }, [])
+
+  useEffect(() => {
+    if (workerSearch.trim().length < 2) { setWorkerSuggestions([]); return }
+    let cancelled = false
+    const t = setTimeout(async () => {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('candidates')
+        .select('name, email')
+        .ilike('name', `%${workerSearch}%`)
+        .limit(5)
+      if (!cancelled) setWorkerSuggestions(data || [])
+    }, 200)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [workerSearch])
 
   const selectedRecord = useMemo(() => records.find(r => r.id === selectedId), [records, selectedId])
 
@@ -256,11 +275,44 @@ export default function HolidayPage() {
                 New Holiday Record
               </h2>
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 14 }}>
-                <div>
+                <div style={{ position: 'relative' }}>
                   <label style={labelStyle}>Worker name</label>
-                  <input type="text" value={formName} onChange={e => setFormName(e.target.value)}
-                    onFocus={() => setFocusedField('fn')} onBlur={() => setFocusedField(null)}
+                  <input type="text" value={formName}
+                    onChange={e => { setFormName(e.target.value); setWorkerSearch(e.target.value) }}
+                    onFocus={() => setFocusedField('fn')}
+                    onBlur={() => setTimeout(() => { setFocusedField(null); setWorkerSuggestions([]) }, 150)}
                     placeholder="Enter worker name" style={inputStyle('fn')} />
+                  {workerSuggestions.length > 0 && (
+                    <div style={{
+                      position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+                      marginTop: 4, background: CARD, border: `1px solid ${BD}`, borderRadius: 8,
+                      boxShadow: '0 4px 12px rgba(15,33,55,0.08)', overflow: 'hidden',
+                    }}>
+                      {workerSuggestions.map((c, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onMouseDown={e => {
+                            e.preventDefault()
+                            setFormName(c.name)
+                            setWorkerSearch('')
+                            setWorkerSuggestions([])
+                          }}
+                          style={{
+                            display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2,
+                            width: '100%', padding: '10px 14px', background: 'none',
+                            border: 'none', borderBottom: i === workerSuggestions.length - 1 ? 'none' : `1px solid ${BD}`,
+                            textAlign: 'left', cursor: 'pointer', fontFamily: F,
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = BG}
+                          onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                        >
+                          <span style={{ fontSize: 13.5, fontWeight: 600, color: TX }}>{c.name}</span>
+                          {c.email && <span style={{ fontSize: 12, color: TX3 }}>{c.email}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label style={labelStyle}>Employment type</label>
