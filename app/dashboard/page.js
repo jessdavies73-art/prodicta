@@ -611,6 +611,8 @@ function DashboardPageInner() {
   const [qaAttStatus, setQaAttStatus] = useState('')
   const [qaAttDate, setQaAttDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [qaReplaceReason, setQaReplaceReason] = useState('')
+  const [qaReplacementCandidates, setQaReplacementCandidates] = useState(null)
+  const [qaReplacementLoading, setQaReplacementLoading] = useState(false)
   const [qaSaving, setQaSaving] = useState(false)
   const [qaDone, setQaDone] = useState(false)
   const [qaCopied, setQaCopied] = useState(false)
@@ -974,7 +976,20 @@ function DashboardPageInner() {
     ? qaSearchPool.filter(c => c.name.toLowerCase().includes(qaSearch.toLowerCase())).slice(0, 6)
     : []
 
-  function resetQaModal() { setQaModal(null); setQaSearch(''); setQaSelectedCandidate(null); setQaAttStatus(''); setQaReplaceReason(''); setQaSaving(false); setQaDone(false); setQaCopied(false) }
+  function resetQaModal() { setQaModal(null); setQaSearch(''); setQaSelectedCandidate(null); setQaAttStatus(''); setQaReplaceReason(''); setQaReplacementCandidates(null); setQaReplacementLoading(false); setQaSaving(false); setQaDone(false); setQaCopied(false) }
+
+  async function fetchReplacementCandidates(assessmentId) {
+    if (!assessmentId) return
+    setQaReplacementLoading(true)
+    try {
+      const res = await fetch(`/api/placements/replacement-candidates?assessment_id=${assessmentId}`)
+      const json = await res.json()
+      setQaReplacementCandidates(res.ok ? (json.candidates || []) : [])
+    } catch {
+      setQaReplacementCandidates([])
+    }
+    setQaReplacementLoading(false)
+  }
 
   async function handleQaAttendance() {
     if (!qaSelectedCandidate || !qaAttStatus) return
@@ -2175,13 +2190,18 @@ function DashboardPageInner() {
                         </div>
                       )}
 
-                      {/* Replace: reason + go */}
+                      {/* Replace: reason + replacement candidate matching */}
                       {qaModal === 'replace' && (
                         <div>
                           <label style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX, display: 'block', marginBottom: 6 }}>Reason</label>
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
                             {['End Early', 'Performance', 'Attendance', 'Client Request'].map(r => (
-                              <button key={r} onClick={() => setQaReplaceReason(r)} style={{
+                              <button key={r} onClick={() => {
+                                setQaReplaceReason(r)
+                                if (qaReplacementCandidates === null && !qaReplacementLoading) {
+                                  fetchReplacementCandidates(qaSelectedCandidate?.assessments?.id)
+                                }
+                              }} style={{
                                 padding: '10px 16px', borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: F, cursor: 'pointer',
                                 background: qaReplaceReason === r ? `${RED}14` : BG,
                                 border: `1.5px solid ${qaReplaceReason === r ? RED : BD}`,
@@ -2189,9 +2209,57 @@ function DashboardPageInner() {
                               }}>{r}</button>
                             ))}
                           </div>
-                          <button onClick={() => { router.push(`/assessment/${qaSelectedCandidate.assessments?.id}/candidate/${qaSelectedCandidate.id}/assignment-review`); resetQaModal() }} disabled={!qaReplaceReason} style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: !qaReplaceReason ? BD : RED, color: !qaReplaceReason ? TX3 : '#fff', fontFamily: F, fontSize: 14, fontWeight: 700, cursor: !qaReplaceReason ? 'not-allowed' : 'pointer' }}>
-                            Find Replacement
-                          </button>
+
+                          {qaReplaceReason && (
+                            <>
+                              {qaReplacementLoading && (
+                                <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 14px' }}>Finding replacement candidates...</p>
+                              )}
+
+                              {!qaReplacementLoading && qaReplacementCandidates && qaReplacementCandidates.length > 0 && (
+                                <>
+                                  <label style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX, display: 'block', marginBottom: 8 }}>
+                                    Top candidates for this role
+                                  </label>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                                    {qaReplacementCandidates.map(c => (
+                                      <div key={c.id} style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        padding: '10px 14px', background: BG, border: `1px solid ${BD}`, borderRadius: 8,
+                                      }}>
+                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                          <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                                          <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>
+                                            Score <strong style={{ color: c.score >= 85 ? GRN : c.score >= 75 ? TEALD : AMB }}>{c.score}</strong>/100{c.risk_level ? ` · Risk: ${c.risk_level}` : ''}
+                                          </div>
+                                        </div>
+                                        <button
+                                          onClick={() => { router.push(`/assessment/${c.assessment_id}/candidate/${c.id}`); resetQaModal() }}
+                                          style={{ padding: '7px 14px', borderRadius: 7, border: `1px solid ${TEAL}`, background: TEALLT, color: TEALD, fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', flexShrink: 0, marginLeft: 10 }}
+                                        >
+                                          View report
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+
+                              {!qaReplacementLoading && qaReplacementCandidates && qaReplacementCandidates.length === 0 && (
+                                <>
+                                  <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 12px', lineHeight: 1.55 }}>
+                                    No previously screened candidates for this role scored 70 or above and are currently available. Send a Rapid Screen to source new candidates.
+                                  </p>
+                                  <button
+                                    onClick={() => { router.push('/assessment/new'); resetQaModal() }}
+                                    style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                                  >
+                                    Send Rapid Screen
+                                  </button>
+                                </>
+                              )}
+                            </>
+                          )}
                         </div>
                       )}
 
