@@ -2030,6 +2030,161 @@ function DemoCandidateInner({ params }) {
 
             {layer3Open && (<>
 
+            {/* ── SIMPLE VIEW (plain English for line managers) ── */}
+            <ScrollReveal id="simple-view" delay={40}>
+              <Card style={{ marginBottom: 20, borderLeft: `4px solid ${TEALD}` }}>
+                <SectionHeading tooltip="A plain English rewrite of the report for line managers who need the headlines without the data.">Simple View</SectionHeading>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 14 }}>
+                  <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '16px 18px' }}>
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>What kind of person they are</div>
+                    <p style={{ fontFamily: F, fontSize: 13.5, color: TX, margin: 0, lineHeight: 1.7 }}>
+                      Calm, organised, and thinks clearly under pressure. Sophie takes time to understand a problem before acting, and keeps people informed as she goes. She is easy to manage and likely to get on well with most colleagues.
+                    </p>
+                  </div>
+                  <div style={{ background: TEALLT, border: `1px solid ${TEAL}33`, borderRadius: 10, padding: '16px 18px' }}>
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>What they are good at</div>
+                    <p style={{ fontFamily: F, fontSize: 13.5, color: TX, margin: 0, lineHeight: 1.7 }}>
+                      Making clear decisions, managing competing priorities, and keeping stakeholders aligned. She explains marketing activity in commercial terms, which the sales team and senior leadership will appreciate.
+                    </p>
+                  </div>
+                  <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 10, padding: '16px 18px' }}>
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Watch out for</div>
+                    <p style={{ fontFamily: F, fontSize: 13.5, color: TX, margin: 0, lineHeight: 1.7 }}>
+                      She likes to plan thoroughly before acting. In a fast-moving quarter, nudge her toward a few quick visible wins alongside the longer planning work.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </ScrollReveal>
+
+            {/* ── VERDICT PANEL (navy hero) ── */}
+            <ScrollReveal id="verdict" delay={50}>
+              <div style={{ background: NAVY, borderRadius: 14, padding: isMobile ? '22px 22px' : '28px 32px', marginBottom: 20, position: 'relative', overflow: 'hidden' }}>
+                <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+                  Verdict
+                </div>
+                <div style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 10px', lineHeight: 1.3 }}>
+                  {(results.candidate_type || 'Strategic Executor with High Composure').split('|')[0]}
+                </div>
+                <p style={{ fontFamily: F, fontSize: 14, color: 'rgba(255,255,255,0.75)', margin: '0 0 20px', lineHeight: 1.7 }}>
+                  {(results.candidate_type || '|Consistently structured and decisive under pressure. Handles complex stakeholder situations with calm authority.').split('|')[1] || 'Consistently structured and decisive under pressure. Handles complex stakeholder situations with calm authority.'}
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 14 }}>
+                  <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '14px 18px' }}>
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Pass probability</div>
+                    <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: TEAL, lineHeight: 1 }}>{results.pass_probability ?? 94}%</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '14px 18px' }}>
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Hiring confidence</div>
+                    <div style={{ fontFamily: F, fontSize: 20, fontWeight: 800, color: TEAL, lineHeight: 1.2, marginTop: 2 }}>{results.confidence_level || 'High'}</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '14px 18px' }}>
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Overall score</div>
+                    <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: TEAL, lineHeight: 1 }}>{results.overall_score}/100</div>
+                  </div>
+                </div>
+              </div>
+            </ScrollReveal>
+
+            {/* ── PREDICTED OUTCOMES ── */}
+            <ScrollReveal id="predicted-outcomes" delay={60}>
+              <Card style={{ marginBottom: 20 }}>
+                <SectionHeading tooltip="Probability-based forecasts for the first 6 months, each grounded in the candidate's evidence from the assessment.">
+                  What happens in the first 90 days
+                </SectionHeading>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 14 }}>
+                  {[
+                    { label: 'Pass probation', value: 94, color: TEAL, note: 'Sophie\'s self-awareness around her one watch-out and her consistent delivery language across all four scenarios place her in the top band for probation pass probability.' },
+                    { label: 'Become top performer', value: 78, color: TEAL, note: 'Evidence of systems-level thinking, commercial framing, and proactive stakeholder management suggests strong upside. She is a credible Head of Marketing candidate within 18 to 24 months.' },
+                    { label: 'Leave within 6 months', value: 8, color: GRN, note: 'Low flight risk. She spoke about building long-term stakeholder relationships and wanting to see a strategy through rather than hopping to the next thing.' },
+                    { label: 'Underperformance risk', value: 12, color: GRN, note: 'Low. Her answers included specific, measurable success criteria she would hold herself to. Any underperformance would show up quickly and she would surface it herself.' },
+                  ].map((p, i) => (
+                    <div key={i} style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '16px 18px' }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{p.label}</div>
+                        <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: p.color, lineHeight: 1 }}>{p.value}%</div>
+                      </div>
+                      <div style={{ width: '100%', height: 6, background: '#fff', border: `1px solid ${BD}`, borderRadius: 4, overflow: 'hidden', marginBottom: 10 }}>
+                        <div style={{ width: `${p.value}%`, height: '100%', background: p.color }} />
+                      </div>
+                      <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.6 }}>{p.note}</p>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </ScrollReveal>
+
+            {/* ── COUNTER-OFFER RESILIENCE ── */}
+            <ScrollReveal id="counter-offer" delay={70}>
+              <Card style={{ marginBottom: 20 }}>
+                <SectionHeading tooltip="Likelihood the candidate accepts and sticks with the offer, based on what they said about their motivations and commitments.">
+                  Will they accept the offer?
+                </SectionHeading>
+                <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 14 : 24, flexDirection: isMobile ? 'column' : 'row' }}>
+                  <div style={{ flexShrink: 0 }}>
+                    <div style={{ fontFamily: FM, fontSize: 40, fontWeight: 800, color: TEAL, lineHeight: 1 }}>88%</div>
+                    <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Strong commitment</div>
+                  </div>
+                  <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: 0, lineHeight: 1.75 }}>
+                    Sophie spoke about her motivation for this specific role in concrete terms. She referenced the scope of the Marketing Manager remit, the fact that the brand has room to be rebuilt, and a wish to move from executing someone else&rsquo;s strategy to setting her own. She did not mention money unprompted. A counter-offer from her current employer is unlikely to hold her unless it restructures the role itself, which rarely happens in a time-pressured retention conversation.
+                  </p>
+                </div>
+              </Card>
+            </ScrollReveal>
+
+            {/* ── CULTURE FIT ── */}
+            <ScrollReveal id="culture-fit" delay={80}>
+              <Card style={{ marginBottom: 20 }}>
+                <SectionHeading tooltip="Alignment and friction points between this candidate's working style and the culture signals you described in the role context.">
+                  Will they fit the culture?
+                </SectionHeading>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '0 0 16px' }}>
+                  <span style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: TEAL, lineHeight: 1 }}>82%</span>
+                  <span style={{ fontFamily: F, fontSize: 13, color: TX2 }}>alignment with the culture signals you described</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
+                  <div style={{ background: TEALLT, border: `1px solid ${TEAL}33`, borderLeft: `3px solid ${TEAL}`, borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Alignment</div>
+                    <ul style={{ margin: 0, paddingLeft: 18, fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.75 }}>
+                      <li>Commercial framing first, creative second. Matches the outcomes-focused culture you described.</li>
+                      <li>Collaborative decision-making. Brings stakeholders along rather than announcing decisions.</li>
+                      <li>Comfortable disagreeing with senior leaders using evidence, not deference.</li>
+                    </ul>
+                  </div>
+                  <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderLeft: `3px solid ${AMB}`, borderRadius: '0 8px 8px 0', padding: '12px 16px' }}>
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Friction</div>
+                    <ul style={{ margin: 0, paddingLeft: 18, fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.75 }}>
+                      <li>Prefers structured planning cadences. If your team ships fast and iterates, flag this early.</li>
+                      <li>Values written decisions. In a meeting-heavy culture she may push for more async written follow-ups.</li>
+                    </ul>
+                  </div>
+                </div>
+              </Card>
+            </ScrollReveal>
+
+            {/* ── MONDAY MORNING REALITY ── */}
+            <ScrollReveal id="monday-reality" delay={90}>
+              <Card style={{ marginBottom: 20, borderLeft: `4px solid ${NAVY}` }}>
+                <SectionHeading tooltip="A plain English description of what it actually looks like to manage this candidate day to day. No scores, no jargon.">
+                  What managing them actually looks like
+                </SectionHeading>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <p style={{ fontFamily: F, fontSize: 14.5, color: TX, margin: 0, lineHeight: 1.8 }}>
+                    On a normal Monday morning, Sophie would arrive early, review her inbox in focused blocks rather than continuously, and have a clear plan for the week before your 10am check-in. She would bring two or three things she wants to talk about, each with her proposed answer attached. You will rarely be asked to make a decision without also being shown the reasoning behind it.
+                  </p>
+                  <p style={{ fontFamily: F, fontSize: 14.5, color: TX, margin: 0, lineHeight: 1.8 }}>
+                    She is easy to manage because she tells you what she is doing, why, and where she is stuck. She will push back if she disagrees, but she will do it with evidence and a proposal, not complaints. Expect her to surface stakeholder tension with sales and product early, and to have already attempted a structured conversation before she brings it to you.
+                  </p>
+                  <p style={{ fontFamily: F, fontSize: 14.5, color: TX, margin: 0, lineHeight: 1.8 }}>
+                    The friction point, if one appears, will be around pace. Sophie plans thoroughly and wants to understand the full picture before committing. In a quarter where you need visible quick wins to build trust across the exec team, nudge her to ship something small and learn-ready in her first three weeks alongside the longer strategy work. She will respond well to that framing because it gives her permission to experiment.
+                  </p>
+                  <p style={{ fontFamily: F, fontSize: 14.5, color: TX, margin: 0, lineHeight: 1.8 }}>
+                    By the end of her first month you should have a written marketing audit, three prioritised hypotheses, and a measurable plan for quarter one. By month three, her first campaign will be running and she will know, in precise numbers, whether it is working.
+                  </p>
+                </div>
+              </Card>
+            </ScrollReveal>
+
             {/* ── AI SUMMARY ── */}
             {results.ai_summary && (
               <ScrollReveal id="ai-assessment" delay={60}>
@@ -2281,6 +2436,47 @@ function DemoCandidateInner({ params }) {
                               <p style={{ fontFamily: F, fontSize: 13, color: NAVY, margin: 0, lineHeight: 1.55 }}>
                                 {getReskilingSuggestion(title)}
                               </p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </Card>
+              </ScrollReveal>
+            )}
+
+            {/* ── DECISION ALERTS (if unmanaged predictions) ── */}
+            {results.watchouts?.length > 0 && (
+              <ScrollReveal id="decision-alerts" delay={60}>
+                <Card style={{ marginBottom: 20, borderLeft: `4px solid ${AMB}` }}>
+                  <SectionHeading tooltip="For each watch-out, the specific consequence if it is not managed, and the mitigation that blocks it.">
+                    If unmanaged, here is what will show up
+                  </SectionHeading>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {results.watchouts.map((w, i) => {
+                      const title = typeof w === 'object' ? (w.watchout || w.title || w.text) : w
+                      const severity = typeof w === 'object' ? w.severity : null
+                      const unmanagedCopy = (severity === 'High'
+                        ? 'Left alone this will surface within the first month. Sales, product, or the exec team will notice, and recovery gets harder every week it goes unaddressed.'
+                        : severity === 'Medium'
+                        ? 'If not actively managed, this will show up by the end of the first quarter and start to erode the trust Sophie has otherwise earned.'
+                        : 'Weeks two and three feel slow to the exec team. Sales and product ask where the first campaign is. Trust erodes before the audit is even delivered, and the candidate loses the benefit of the doubt they would otherwise have earned.')
+                      const mitigation = typeof w === 'object' && w.action
+                        ? w.action
+                        : getReskilingSuggestion(title)
+                      return (
+                        <div key={i} style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px' }}>
+                          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Watch-out</div>
+                          <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 12 }}>{title}</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
+                            <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, padding: '10px 14px' }}>
+                              <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: AMB, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>If unmanaged</div>
+                              <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0, lineHeight: 1.65 }}>{unmanagedCopy}</p>
+                            </div>
+                            <div style={{ background: TEALLT, border: `1px solid ${TEAL}33`, borderRadius: 8, padding: '10px 14px' }}>
+                              <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Mitigation</div>
+                              <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0, lineHeight: 1.65 }}>{mitigation}</p>
                             </div>
                           </div>
                         </div>
