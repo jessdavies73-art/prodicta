@@ -3704,8 +3704,8 @@ function DashboardPageInner() {
                                     <span style={{
                                       fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
                                       padding: '1px 6px', borderRadius: 4, flexShrink: 0,
-                                      background: c.assessments?.employment_type === 'temporary' ? TEAL : '#e4e9f0',
-                                      color: c.assessments?.employment_type === 'temporary' ? '#fff' : NAVY,
+                                      background: c.assessments?.employment_type === 'temporary' ? TEAL : NAVY,
+                                      color: '#fff',
                                     }}>
                                       {c.assessments?.employment_type === 'temporary' ? 'TEMP' : 'PERM'}
                                     </span>
