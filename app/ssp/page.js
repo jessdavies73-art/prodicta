@@ -32,6 +32,10 @@ export default function SSPPage() {
   const [focusedField, setFocusedField] = useState(null)
   const [sspRecordId, setSspRecordId] = useState(null)
 
+  // Candidate search (pre-fills worker name)
+  const [workerSearch, setWorkerSearch] = useState('')
+  const [workerSuggestions, setWorkerSuggestions] = useState([])
+
   // Calculator state (step 2)
   const [showCalculator, setShowCalculator] = useState(false)
   const [awe, setAwe] = useState('')
@@ -68,6 +72,21 @@ export default function SSPPage() {
     }
     load()
   }, [])
+
+  useEffect(() => {
+    if (workerSearch.trim().length < 2) { setWorkerSuggestions([]); return }
+    let cancelled = false
+    const t = setTimeout(async () => {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('candidates')
+        .select('name, email')
+        .ilike('name', `%${workerSearch}%`)
+        .limit(5)
+      if (!cancelled) setWorkerSuggestions(data || [])
+    }, 200)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [workerSearch])
 
   async function generateCompliancePack() {
     setGeneratingPdf(true)
@@ -688,6 +707,56 @@ export default function SSPPage() {
           {/* Form */}
           <div style={{ ...cs, marginBottom: 24 }}>
             <form onSubmit={handleSubmit}>
+              {/* Find existing candidate */}
+              <div style={{ marginBottom: 20, position: 'relative' }}>
+                <label style={labelStyle}>Find existing candidate (optional)</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
+                    <Ic name="search" size={15} color={focusedField === 'workerSearch' ? TEALD : TX3} />
+                  </span>
+                  <input
+                    type="text"
+                    value={workerSearch}
+                    onChange={e => setWorkerSearch(e.target.value)}
+                    onFocus={() => setFocusedField('workerSearch')}
+                    onBlur={() => setTimeout(() => setFocusedField(null), 150)}
+                    placeholder="Search candidates by name..."
+                    style={{ ...inputStyle('workerSearch'), paddingLeft: 36 }}
+                  />
+                </div>
+                {workerSuggestions.length > 0 && (
+                  <div style={{
+                    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+                    marginTop: 4, background: CARD, border: `1px solid ${BD}`, borderRadius: 8,
+                    boxShadow: '0 4px 12px rgba(15,33,55,0.08)', overflow: 'hidden',
+                  }}>
+                    {workerSuggestions.map((c, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onMouseDown={e => {
+                          e.preventDefault()
+                          setWorkerName(c.name)
+                          setWorkerSearch('')
+                          setWorkerSuggestions([])
+                        }}
+                        style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2,
+                          width: '100%', padding: '10px 14px', background: 'none',
+                          border: 'none', borderBottom: i === workerSuggestions.length - 1 ? 'none' : `1px solid ${BD}`,
+                          textAlign: 'left', cursor: 'pointer', fontFamily: F,
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = BG}
+                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                      >
+                        <span style={{ fontSize: 13.5, fontWeight: 600, color: TX }}>{c.name}</span>
+                        {c.email && <span style={{ fontSize: 12, color: TX3 }}>{c.email}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Worker name */}
               <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>Worker name</label>
