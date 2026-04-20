@@ -261,7 +261,7 @@ export default function CandidateFeedbackPage({ params }) {
               )}
             </div>
 
-            {/* Growth Trajectory */}
+            {/* Growth Trajectory — only when there are 2+ assessments with comparable data */}
             {data.growth_trajectory && data.growth_trajectory.length > 0 ? (
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '26px 28px', marginBottom: 20 }}>
                 <h2 style={{ fontSize: 17, fontWeight: 800, color: NAVY, margin: '0 0 16px' }}>Growth Trajectory</h2>
@@ -270,9 +270,10 @@ export default function CandidateFeedbackPage({ params }) {
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {data.growth_trajectory.map((g, i) => {
-                    const change = g.change
-                    const improved = typeof change === 'number' && change > 0
-                    const declined = typeof change === 'number' && change < 0
+                    const change = typeof g.change === 'number' ? g.change : null
+                    const improved = change !== null && change > 0
+                    const declined = change !== null && change < 0
+                    const sign = improved ? '+' : declined ? '-' : ''
                     return (
                       <div key={i} style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -283,12 +284,12 @@ export default function CandidateFeedbackPage({ params }) {
                           {g.assessments.map((a, j) => (
                             <span key={j} style={{ fontSize: 11, color: TX3 }}>{a.date}</span>
                           ))}
-                          {typeof change === 'number' && (
+                          {change !== null && (
                             <span style={{
                               fontSize: 12, fontWeight: 700,
                               color: improved ? '#10b981' : declined ? '#ef4444' : TX3,
                             }}>
-                              {improved ? '+' : ''}{change} pts
+                              {sign}{Math.abs(change)} pts
                             </span>
                           )}
                         </div>
@@ -298,12 +299,9 @@ export default function CandidateFeedbackPage({ params }) {
                 </div>
               </div>
             ) : (
-              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '22px 28px', marginBottom: 20 }}>
-                <h2 style={{ fontSize: 17, fontWeight: 800, color: NAVY, margin: '0 0 8px' }}>Growth Trajectory</h2>
-                <p style={{ fontSize: 13.5, color: TX2, lineHeight: 1.6, margin: 0 }}>
-                  Complete another assessment to see how your skills develop over time.
-                </p>
-              </div>
+              <p style={{ fontSize: 13.5, color: TX3, lineHeight: 1.6, textAlign: 'center', margin: '0 0 20px' }}>
+                Complete another assessment to track your progress over time.
+              </p>
             )}
 
             {/* Download PDF button */}
