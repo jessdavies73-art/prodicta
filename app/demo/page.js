@@ -458,7 +458,7 @@ function DemoDashboardInner() {
             <p style={{ fontFamily: F, fontSize: 16, fontWeight: 500, fontStyle: 'italic', color: 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.5 }}>
               {isAgency
                 ? 'We told you this placement could fail. Now you can stop it.'
-                : 'You knew before you hired them. That is the difference.'}
+                : 'Permanent placement failure is predictable. PRODICTA shows you the signs before you make the hire.'}
             </p>
             <button onClick={e => { e.currentTarget.parentElement.style.display = 'none'; try { localStorage.setItem(isAgency ? 'prodicta_demo_motto_dismissed' : 'prodicta_demo_employer_motto_dismissed', '1') } catch {} }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}>
               <Ic name="x" size={16} color="rgba(255,255,255,0.35)" />
@@ -734,6 +734,42 @@ function DemoDashboardInner() {
                   </button>
                 )
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Employer: Placement Health (probation-based, mirrors live) */}
+        {!isAgency && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+              Placement Health
+            </div>
+            <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
+              {[
+                { key: 'healthy',  label: 'Healthy',  count: 4, accent: '#00BFA5', sub: 'Probation on track' },
+                { key: 'atRisk',   label: 'At Risk',  count: 1, accent: '#D97706', sub: 'Early warning signals' },
+                { key: 'critical', label: 'Critical', count: 1, accent: '#B91C1C', sub: 'Immediate action required' },
+              ].map(c => (
+                <div key={c.key} style={{
+                  flex: isMobile ? undefined : 1,
+                  width: isMobile ? '100%' : undefined,
+                  background: '#fff',
+                  border: '1px solid #E5E7EB',
+                  borderLeft: `4px solid ${c.accent}`,
+                  borderRadius: 12, padding: '20px 22px',
+                  fontFamily: F,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
+                }}>
+                  <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: c.accent }}>
+                    {c.count}
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2, color: NAVY }}>{c.label}</div>
+                  <div style={{ fontSize: 12, color: TX3 }}>{c.sub}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 14, fontSize: 12.5, color: TX3, fontFamily: F }}>
+              <strong style={{ color: TX2 }}>6</strong> hires currently in probation.
             </div>
           </div>
         )}
@@ -1035,7 +1071,7 @@ function DemoDashboardInner() {
                 </div>
               </div>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Red flag email alerts</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Red flag alerts</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, marginBottom: 10 }}>
                   <Ic name="alert" size={16} color={RED} />
                   <div>
@@ -1043,7 +1079,15 @@ function DemoDashboardInner() {
                     <div style={{ fontSize: 11.5, color: TX3 }}>Tom Walsh, Customer Service Team Leader, scored 47/100</div>
                   </div>
                 </div>
-                <p style={{ fontSize: 12, color: TX3, margin: 0, lineHeight: 1.5 }}>Automatic notifications when a candidate scores below your threshold. Configure thresholds in Settings.</p>
+                <p style={{ fontSize: 12, color: TX3, margin: 0, lineHeight: 1.5 }}>Automatic notifications when a candidate scores below your threshold.{' '}
+                  <a
+                    href="/settings"
+                    onClick={e => { e.preventDefault(); router.push('/settings') }}
+                    style={{ color: TEALD, fontWeight: 600, textDecoration: 'none' }}
+                  >
+                    Configure thresholds in Settings
+                  </a>
+                </p>
               </div>
             </div>
 
@@ -1342,7 +1386,7 @@ function DemoDashboardInner() {
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Probation co-pilot</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
                   <span style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: TEALD }}>2</span>
-                  <span style={{ fontSize: 13, color: TX2 }}>hires being monitored</span>
+                  <span style={{ fontSize: 13, color: TX2 }}>Live status on your current probation hires.</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: GRNBG, border: `1px solid ${GRNBD}`, borderRadius: 8 }}>
@@ -1377,7 +1421,7 @@ function DemoDashboardInner() {
             {/* Employer: Red Flag Alerts */}
             <div style={{ marginBottom: 24 }}>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Red flag email alerts</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Red flag alerts</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, marginBottom: 10 }}>
                   <Ic name="alert" size={16} color={RED} />
                   <div>
@@ -1385,7 +1429,15 @@ function DemoDashboardInner() {
                     <div style={{ fontSize: 11.5, color: TX3 }}>Tom Walsh, Customer Service Team Leader, scored 47/100</div>
                   </div>
                 </div>
-                <p style={{ fontSize: 12, color: TX3, margin: 0, lineHeight: 1.5 }}>Automatic notifications when a candidate scores below your threshold. Configure thresholds in Settings.</p>
+                <p style={{ fontSize: 12, color: TX3, margin: 0, lineHeight: 1.5 }}>Automatic notifications when a candidate scores below your threshold.{' '}
+                  <a
+                    href="/settings"
+                    onClick={e => { e.preventDefault(); router.push('/settings') }}
+                    style={{ color: TEALD, fontWeight: 600, textDecoration: 'none' }}
+                  >
+                    Configure thresholds in Settings
+                  </a>
+                </p>
               </div>
             </div>
           </>
