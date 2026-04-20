@@ -41,7 +41,7 @@ function distributionShape(buckets, total) {
 }
 
 function adverseChecks(scores) {
-  if (scores.length < 3) return []
+  if (scores.length < 10) return []
   const min = Math.min(...scores)
   const max = Math.max(...scores)
   const range = max - min
@@ -51,6 +51,7 @@ function adverseChecks(scores) {
     { label: 'Score range is broad (candidates are differentiated)', pass: range >= 20 },
     { label: 'Lowest scoring group has meaningful scores (above 30)', pass: min >= 30 },
     { label: 'No cliff edge (no bucket exceeds 60% of candidates)', pass: maxBucketPct <= 0.6 },
+    { label: '4/5ths rule across protected groups', pass: null, pending: 'Awaiting candidate self-report data' },
   ]
 }
 
@@ -179,8 +180,43 @@ export default function EdiPage() {
           {/* Disclaimer */}
           <div style={{ ...cs, borderLeft: `4px solid ${TEAL}`, marginBottom: 24, padding: '16px 22px' }}>
             <p style={{ fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.65 }}>
-              PRODICTA assessments are based on real work performance not personality, appearance, or background. This monitor tracks score distributions to help you identify any unintended patterns in your hiring process. It does not collect or store demographic data. Assessment fairness is monitored at the aggregate level only.
+              PRODICTA assessments are based on real work performance not personality, appearance, or background. This monitor tracks score distributions to help you identify any unintended patterns in your hiring process. Statistical adverse impact analysis across protected characteristics becomes available when candidate self-report is enabled (see below).
             </p>
+          </div>
+
+          {/* Insufficient data gate */}
+          {totalAssessed < 10 && (
+            <div style={{ ...cs, borderLeft: `4px solid ${AMB}`, marginBottom: 24, padding: '16px 22px', background: AMBBG }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <Ic name="info" size={16} color={AMB} />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: TX, marginBottom: 4 }}>Not enough data yet</div>
+                  <p style={{ fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.6 }}>
+                    Collect assessments from at least 10 candidates to unlock statistical analysis. You currently have {totalAssessed}.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Protected Characteristic Self-Report (in preparation) */}
+          <div style={{ ...cs, marginBottom: 24, padding: '18px 22px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+              <h2 style={{ fontSize: 14, fontWeight: 700, color: TX, margin: 0 }}>Candidate self-report (protected characteristics)</h2>
+              <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 50, fontSize: 10, fontWeight: 800, background: BG, color: TX3, border: `1px solid ${BD}` }}>
+                In preparation
+              </span>
+            </div>
+            <p style={{ fontSize: 12.5, color: TX2, margin: '0 0 12px', lineHeight: 1.6 }}>
+              When enabled, candidates may optionally declare age band, gender, and ethnicity at the end of their assessment. Data is stored separately from their assessment responses and is never used for scoring. Once at least 10 candidates have self-reported in a given assessment, per-group pass rates and 4/5ths rule analysis become available here.
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {['Age band', 'Gender', 'Ethnicity'].map(cat => (
+                <span key={cat} style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: BG, color: TX3, border: `1px solid ${BD}` }}>
+                  {cat}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* Overview Stats */}
@@ -234,7 +270,8 @@ export default function EdiPage() {
                 const shape = distributionShape(buckets, a.scores.length)
                 const checks = adverseChecks(a.scores)
                 const hasCert = !!ediReports[a.id]
-                const anyReview = checks.some(c => !c.pass)
+                const anyReview = checks.some(c => c.pass === false)
+                const allResolvedChecksPassed = checks.length > 0 && checks.filter(c => c.pass !== null).every(c => c.pass === true)
 
                 return (
                   <div key={a.id} style={{ ...cs }}>
@@ -294,21 +331,31 @@ export default function EdiPage() {
                           <InfoTooltip text="A statistical check for patterns that could indicate unintentional bias in assessment scoring. PRODICTA tests on work performance not personal characteristics." />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          {checks.map((ck, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{
-                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                                background: ck.pass ? GRNBG : AMBBG,
-                              }}>
-                                <Ic name={ck.pass ? 'check' : 'alert'} size={12} color={ck.pass ? GRN : AMB} />
-                              </span>
-                              <span style={{ fontSize: 12, color: TX2 }}>{ck.label}</span>
-                              <span style={{ fontSize: 10, fontWeight: 800, color: ck.pass ? GRN : AMB, marginLeft: 'auto', flexShrink: 0 }}>
-                                {ck.pass ? 'PASS' : 'REVIEW'}
-                              </span>
-                            </div>
-                          ))}
+                          {checks.map((ck, i) => {
+                            const isPending = ck.pass === null
+                            const bg = isPending ? BG : (ck.pass ? GRNBG : AMBBG)
+                            const fg = isPending ? TX3 : (ck.pass ? GRN : AMB)
+                            const icon = isPending ? 'info' : (ck.pass ? 'check' : 'alert')
+                            const status = isPending ? 'PENDING' : (ck.pass ? 'PASS' : 'REVIEW')
+                            return (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                  width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                                  background: bg,
+                                }}>
+                                  <Ic name={icon} size={12} color={fg} />
+                                </span>
+                                <span style={{ fontSize: 12, color: TX2 }}>
+                                  {ck.label}
+                                  {isPending && ck.pending && <span style={{ color: TX3, fontSize: 11, marginLeft: 6 }}>({ck.pending})</span>}
+                                </span>
+                                <span style={{ fontSize: 10, fontWeight: 800, color: fg, marginLeft: 'auto', flexShrink: 0 }}>
+                                  {status}
+                                </span>
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
                     )}
@@ -322,24 +369,41 @@ export default function EdiPage() {
                       </div>
                     )}
 
-                    {/* Generate Certificate */}
+                    {/* Generate Certificate, only when all resolved checks pass and count >= 10 */}
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                      <button
-                        onClick={() => handleGenerateCertificate(a.id)}
-                        disabled={a.candidateCount < 3 || generating === a.id}
-                        style={{
-                          padding: '8px 18px', borderRadius: 8, border: 'none',
-                          background: (a.candidateCount < 3 || generating === a.id) ? BD : TEAL,
-                          color: (a.candidateCount < 3 || generating === a.id) ? TX3 : NAVY,
-                          fontFamily: F, fontSize: 12.5, fontWeight: 700,
-                          cursor: (a.candidateCount < 3 || generating === a.id) ? 'not-allowed' : 'pointer',
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                        }}
-                      >
-                        <Ic name="shield" size={14} color={(a.candidateCount < 3 || generating === a.id) ? TX3 : NAVY} />
-                        {generating === a.id ? 'Generating...' : hasCert ? 'Regenerate Certificate' : a.candidateCount < 3 ? 'Requires 3+ candidates' : 'Generate Certificate'}
-                      </button>
-                      <InfoTooltip text="A downloadable certificate confirming this assessment met fairness criteria under the Equality Act 2010 and ERA 2025." />
+                      {(() => {
+                        const insufficientData = a.candidateCount < 10
+                        const blocked = insufficientData || !allResolvedChecksPassed
+                        const busy = generating === a.id
+                        const disabled = blocked || busy
+                        const label = busy
+                          ? 'Generating...'
+                          : insufficientData
+                          ? 'Requires 10+ candidates'
+                          : !allResolvedChecksPassed
+                          ? 'Resolve review items to unlock'
+                          : hasCert
+                          ? 'Regenerate Certificate'
+                          : 'Generate Certificate'
+                        return (
+                          <button
+                            onClick={() => handleGenerateCertificate(a.id)}
+                            disabled={disabled}
+                            style={{
+                              padding: '8px 18px', borderRadius: 8, border: 'none',
+                              background: disabled ? BD : TEAL,
+                              color: disabled ? TX3 : NAVY,
+                              fontFamily: F, fontSize: 12.5, fontWeight: 700,
+                              cursor: disabled ? 'not-allowed' : 'pointer',
+                              display: 'inline-flex', alignItems: 'center', gap: 6,
+                            }}
+                          >
+                            <Ic name="shield" size={14} color={disabled ? TX3 : NAVY} />
+                            {label}
+                          </button>
+                        )
+                      })()}
+                      <InfoTooltip text="A downloadable certificate confirming this assessment met fairness criteria under the Equality Act 2010 and ERA 2025. Generated only when all non-pending checks pass and the assessment has at least 10 candidates." />
                     </div>
                   </div>
                 )
