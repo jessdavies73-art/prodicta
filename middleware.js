@@ -10,7 +10,7 @@ function isPublic(pathname) {
 export async function middleware(request) {
   const { pathname } = request.nextUrl
 
-  // Let public routes through immediately — no Supabase call needed
+  // Let public routes through immediately, no Supabase call needed
   if (isPublic(pathname)) {
     return NextResponse.next()
   }
@@ -18,7 +18,7 @@ export async function middleware(request) {
   // Guard: if env vars are missing (e.g. misconfigured deployment) fail open
   // rather than crashing the entire middleware with INVOCATION_FAILED
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.error('Supabase env vars missing — middleware failing open')
+    console.error('Supabase env vars missing, middleware failing open')
     return NextResponse.next()
   }
 
@@ -46,7 +46,7 @@ export async function middleware(request) {
       }
     )
 
-    // getUser() is safe for middleware — uses the JWT, no DB call
+    // getUser() is safe for middleware, uses the JWT, no DB call
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -59,7 +59,7 @@ export async function middleware(request) {
 
     return response
   } catch (err) {
-    // Never let middleware crash the entire request — log and fail open
+    // Never let middleware crash the entire request, log and fail open
     console.error('Middleware error:', err)
     return NextResponse.next()
   }

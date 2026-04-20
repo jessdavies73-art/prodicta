@@ -306,7 +306,7 @@ export default function NewAssessmentPage() {
     return () => { mountedRef.current = false }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Tick elapsed seconds while the invite is being sent — drives the progress card.
+  // Tick elapsed seconds while the invite is being sent, drives the progress card.
   useEffect(() => {
     if (!sendingInvite) { setSendElapsed(0); return }
     const started = Date.now()

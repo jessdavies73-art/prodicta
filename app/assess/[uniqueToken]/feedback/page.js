@@ -261,7 +261,7 @@ export default function CandidateFeedbackPage({ params }) {
               )}
             </div>
 
-            {/* Growth Trajectory — only when there are 2+ assessments with comparable data */}
+            {/* Growth Trajectory, only when there are 2+ assessments with comparable data */}
             {data.growth_trajectory && data.growth_trajectory.length > 0 ? (
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '26px 28px', marginBottom: 20 }}>
                 <h2 style={{ fontSize: 17, fontWeight: 800, color: NAVY, margin: '0 0 16px' }}>Growth Trajectory</h2>

@@ -26,7 +26,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url)
 
-  // Skip API calls and auth endpoints — always go to network
+  // Skip API calls and auth endpoints, always go to network
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/')) return
 
   event.respondWith(

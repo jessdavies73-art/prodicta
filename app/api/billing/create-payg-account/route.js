@@ -79,7 +79,7 @@ export async function POST(request) {
       throw usersUpsertError
     }
 
-    // Forced verification UPDATE — runs after any DB trigger so PAYG plan values always win.
+    // Forced verification UPDATE, runs after any DB trigger so PAYG plan values always win.
     await adminClient
       .from('users')
       .update({

@@ -58,7 +58,7 @@ async function createSupabaseUser({ adminClient, email, password, companyName, a
     throw usersUpsertError
   }
 
-  // Forced verification UPDATE — runs after any DB trigger so subscription plan values always win.
+  // Forced verification UPDATE, runs after any DB trigger so subscription plan values always win.
   await adminClient
     .from('users')
     .update({

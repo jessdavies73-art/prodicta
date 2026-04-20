@@ -27,14 +27,14 @@ In your Supabase project dashboard go to **Project Settings > API**. You will ne
 | Key | Where to find it |
 |-----|-----------------|
 | Project URL | "Project URL" field |
-| Anon / Public key | Under "Project API keys" — `anon` `public` |
-| Service Role key | Under "Project API keys" — `service_role` (keep this secret) |
+| Anon / Public key | Under "Project API keys", `anon` `public` |
+| Service Role key | Under "Project API keys", `service_role` (keep this secret) |
 
 ---
 
 ## 4. Set Up Environment Variables
 
-Create a `.env.local` file in the root of the project (it is already listed in `.gitignore` — do not commit it):
+Create a `.env.local` file in the root of the project (it is already listed in `.gitignore`, do not commit it):
 
 ```env
 # Supabase
