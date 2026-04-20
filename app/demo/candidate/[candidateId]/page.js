@@ -691,6 +691,7 @@ function DemoCandidateInner({ params }) {
     const s = DEMO_RESULTS[params.candidateId]?.overall_score ?? 0
     return s >= 80 ? 'passed_probation' : s >= 70 ? 'still_in_probation' : null
   })
+  const [demoPlacementDate, setDemoPlacementDate] = useState('')
   const [signupPrompt, setSignupPrompt] = useState(false)
   const [evidencePackModal, setEvidencePackModal] = useState(false)
   const [candidatePreview, setCandidatePreview] = useState(false)
@@ -2917,7 +2918,19 @@ function DemoCandidateInner({ params }) {
                   </button>
                 ))}
               </div>
-              {/* Date */}
+              {/* Placement / hire start date */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                  {isAgency ? 'Placement start date' : 'Start date'}
+                </label>
+                <input
+                  type="date"
+                  value={demoPlacementDate}
+                  onChange={e => setDemoPlacementDate(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: F, fontSize: 14, color: TX, background: BG, outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+              {/* Outcome date */}
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>Outcome date (optional)</label>
                 <input type="date" defaultValue={new Date().toISOString().slice(0,10)} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: F, fontSize: 14, color: TX, background: BG, outline: 'none', boxSizing: 'border-box' }} />

@@ -3274,7 +3274,7 @@ function DashboardPageInner() {
                     <Ic name="shield" size={18} color={TX3} />
                   </div>
                   <div style={{ fontFamily: F, fontSize: 13.5, color: TX2, lineHeight: 1.55 }}>
-                    No active placements. Placements appear here once you log a start date on a candidate report.
+                    No active placements yet. To track a placement, open a candidate report, log the outcome and enter a start date. The placement will appear here automatically.
                   </div>
                 </div>
               </div>

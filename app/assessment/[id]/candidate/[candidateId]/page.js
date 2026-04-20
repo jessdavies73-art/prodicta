@@ -5670,7 +5670,7 @@ export default function CandidateReportPage({ params }) {
                 />
               </div>
               <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Placement date</label>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Placement start date</label>
                 <input
                   type="date"
                   value={placementDate}
@@ -5758,7 +5758,7 @@ export default function CandidateReportPage({ params }) {
             {/* Employer fields */}
             {profile?.account_type === 'employer' && (<>
               <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Hire start date</label>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Start date</label>
                 <input
                   type="date"
                   value={placementDate}
