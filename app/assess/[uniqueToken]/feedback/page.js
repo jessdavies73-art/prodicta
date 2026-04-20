@@ -261,44 +261,25 @@ export default function CandidateFeedbackPage({ params }) {
               )}
             </div>
 
-            {/* Growth Trajectory, only when there are 2+ assessments with comparable data */}
-            {data.growth_trajectory && data.growth_trajectory.length > 0 ? (
-              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '26px 28px', marginBottom: 20 }}>
-                <h2 style={{ fontSize: 17, fontWeight: 800, color: NAVY, margin: '0 0 16px' }}>Growth Trajectory</h2>
-                <p style={{ fontSize: 13, color: TX2, lineHeight: 1.6, margin: '0 0 14px' }}>
-                  You have completed multiple assessments. Here is how your skills have changed since your previous assessment.
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {data.growth_trajectory.map((g, i) => {
-                    const change = typeof g.change === 'number' ? g.change : null
-                    const improved = change !== null && change > 0
-                    const declined = change !== null && change < 0
-                    const sign = improved ? '+' : declined ? '-' : ''
-                    return (
-                      <div key={i} style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '10px 16px',
-                      }}>
-                        <span style={{ fontSize: 13.5, fontWeight: 600, color: TX }}>{g.skill}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          {g.assessments.map((a, j) => (
-                            <span key={j} style={{ fontSize: 11, color: TX3 }}>{a.date}</span>
-                          ))}
-                          {change !== null && (
-                            <span style={{
-                              fontSize: 12, fontWeight: 700,
-                              color: improved ? '#10b981' : declined ? '#ef4444' : TX3,
-                            }}>
-                              {sign}{Math.abs(change)} pts
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
+            {/* Growth Trajectory, single overall-score delta for genuine retakes only */}
+            {data.growth_trajectory && typeof data.growth_trajectory.change === 'number' ? (() => {
+              const change = data.growth_trajectory.change
+              const improved = change > 0
+              const declined = change < 0
+              const sign = improved ? '+' : declined ? '-' : ''
+              const color = improved ? '#10b981' : declined ? '#ef4444' : TX3
+              return (
+                <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '32px 28px', marginBottom: 20, textAlign: 'center' }}>
+                  <h2 style={{ fontSize: 17, fontWeight: 800, color: NAVY, margin: '0 0 20px' }}>Growth Trajectory</h2>
+                  <div style={{ fontSize: 52, fontWeight: 800, color, lineHeight: 1, marginBottom: 12, letterSpacing: '-1px' }}>
+                    {sign}{Math.abs(change)} pts
+                  </div>
+                  <p style={{ fontSize: 13.5, color: TX2, margin: 0, lineHeight: 1.6 }}>
+                    vs. your previous {data.growth_trajectory.role_title} assessment
+                  </p>
                 </div>
-              </div>
-            ) : (
+              )
+            })() : (
               <p style={{ fontSize: 13.5, color: TX3, lineHeight: 1.6, textAlign: 'center', margin: '0 0 20px' }}>
                 Complete another assessment to track your progress over time.
               </p>

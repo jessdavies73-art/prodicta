@@ -158,60 +158,42 @@ Respond in JSON format:
       }
     }
 
-    // Check for retake/growth trajectory data. Only emit when the candidate has
-    // at least 2 completed assessments WITH results under the same email, and
-    // compute the change as (most recent - previous) so a single-assessment
-    // candidate never sees a spurious delta against someone else's baseline.
+    // Growth trajectory: single overall-score delta, only for genuine retakes
+    // of the SAME role by the SAME email. Scoping to role_title rules out false
+    // positives from the same email being used across different role assessments
+    // (e.g. hirer test accounts or candidates applying to multiple roles).
     let growth_trajectory = null
-    if (candidate.email) {
+    const currentRoleTitle = candidate.assessments?.role_title
+    if (candidate.email && currentRoleTitle) {
       try {
         const { data: allCandidates } = await adminClient
           .from('candidates')
-          .select('id, completed_at, assessments(role_title)')
+          .select('id, completed_at, assessments!inner(role_title)')
           .eq('email', candidate.email)
           .eq('status', 'completed')
+          .eq('assessments.role_title', currentRoleTitle)
           .order('completed_at', { ascending: true })
 
         if (allCandidates && allCandidates.length >= 2) {
           const candidateIds = allCandidates.map(c => c.id)
           const { data: allResults } = await adminClient
             .from('results')
-            .select('candidate_id, scores')
+            .select('candidate_id, overall_score')
             .in('candidate_id', candidateIds)
 
-          const resultMap = {}
-          ;(allResults || []).forEach(r => { if (r?.scores) resultMap[r.candidate_id] = r.scores })
+          const scoreMap = {}
+          ;(allResults || []).forEach(r => {
+            if (typeof r?.overall_score === 'number') scoreMap[r.candidate_id] = r.overall_score
+          })
 
-          // History is candidates that actually have a scored result, in chronological order.
-          const history = allCandidates.filter(c => resultMap[c.id])
+          const history = allCandidates.filter(c => typeof scoreMap[c.id] === 'number')
 
           if (history.length >= 2) {
-            const previous = history[history.length - 2]
-            const latest = history[history.length - 1]
-
-            const skillsInLatest = Object.keys(resultMap[latest.id] || {}).filter(k => !k.startsWith('pf_'))
-            const skillsInPrevious = Object.keys(resultMap[previous.id] || {}).filter(k => !k.startsWith('pf_'))
-            const commonSkills = skillsInLatest.filter(skill => skillsInPrevious.includes(skill))
-
-            if (commonSkills.length > 0) {
-              growth_trajectory = commonSkills.slice(0, 5).map(skill => {
-                const prevScore = resultMap[previous.id][skill]
-                const latestScore = resultMap[latest.id][skill]
-                const change = (typeof prevScore === 'number' && typeof latestScore === 'number')
-                  ? latestScore - prevScore
-                  : null
-                return {
-                  skill,
-                  change,
-                  assessments: history
-                    .filter(c => typeof resultMap[c.id]?.[skill] === 'number')
-                    .map(c => ({
-                      role: c.assessments?.role_title || 'Assessment',
-                      date: c.completed_at ? new Date(c.completed_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '',
-                      score: resultMap[c.id][skill],
-                    })),
-                }
-              })
+            const previousScore = scoreMap[history[history.length - 2].id]
+            const latestScore = scoreMap[history[history.length - 1].id]
+            growth_trajectory = {
+              change: latestScore - previousScore,
+              role_title: currentRoleTitle,
             }
           }
         }
