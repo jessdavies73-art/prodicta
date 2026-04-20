@@ -2058,6 +2058,40 @@ function DashboardPageInner() {
           </div>
         )}
 
+        {/* ── Quick Actions (employer) ── */}
+        {profile?.account_type === 'employer' && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Quick Actions</div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 12 }}>
+              {[
+                { key: 'emp-outcome',    icon: 'check',     label: 'Log outcome',         desc: 'Record hire result',      color: GRN,  bg: GRNBG },
+                { key: 'emp-send',       icon: 'send',      label: 'Send assessment',     desc: 'Invite a new candidate',  color: TEAL, bg: TEALLT },
+                { key: 'emp-review',     icon: 'file-text', label: 'Probation review',    desc: 'Generate structured review', color: NAVY, bg: BG },
+                { key: 'emp-feedback',   icon: 'mail',      label: 'Send feedback',       desc: 'Share report with candidate', color: TEALD, bg: TEALLT },
+              ].map(a => (
+                <button key={a.key} onClick={() => {
+                  if (a.key === 'emp-send') { router.push('/assessment/new'); return }
+                  resetQaModal(); setQaModal(a.key)
+                }} style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  padding: isMobile ? '18px 12px' : '20px 16px', borderRadius: 12,
+                  border: `1.5px solid ${BD}`, background: CARD, cursor: 'pointer',
+                  transition: 'all 0.15s', textAlign: 'center',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = a.color; e.currentTarget.style.background = a.bg; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = BD; e.currentTarget.style.background = CARD; e.currentTarget.style.transform = 'none' }}
+                >
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: a.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ic name={a.icon} size={20} color={a.color} />
+                  </div>
+                  <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{a.label}</div>
+                  <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>{a.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ── Quick Actions (agency only) ── */}
         {isAgencyAccount && (
           <div style={{ marginBottom: 24 }}>
@@ -2099,7 +2133,7 @@ function DashboardPageInner() {
           <div style={{ position: 'fixed', inset: 0, zIndex: 1500, background: 'rgba(15,33,55,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => { if (!qaSaving) resetQaModal() }}>
             <div onClick={e => e.stopPropagation()} style={{ background: CARD, borderRadius: 16, padding: '28px 24px', maxWidth: 440, width: '100%', boxShadow: '0 24px 72px rgba(0,0,0,0.35)', maxHeight: '85vh', overflowY: 'auto' }}>
               <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: NAVY, margin: '0 0 16px' }}>
-                {qaModal === 'sickness' ? 'Report Sickness' : qaModal === 'attendance' ? 'Log Attendance' : qaModal === 'replace' ? 'Replace Worker' : qaModal === 'interview-brief' ? 'Interview Brief' : qaModal === 'highlight-reel' ? 'Send Highlight Reel' : 'Send Client Update'}
+                {qaModal === 'sickness' ? 'Report Sickness' : qaModal === 'attendance' ? 'Log Attendance' : qaModal === 'replace' ? 'Replace Worker' : qaModal === 'interview-brief' ? 'Interview Brief' : qaModal === 'highlight-reel' ? 'Send Highlight Reel' : qaModal === 'emp-outcome' ? 'Log Outcome' : qaModal === 'emp-review' ? 'Generate Probation Review' : qaModal === 'emp-feedback' ? 'Send Feedback to Candidate' : 'Send Client Update'}
               </h3>
 
               {qaDone ? (
@@ -2301,6 +2335,28 @@ function DashboardPageInner() {
                             setQaDone(true)
                           }} style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: GRN, color: '#fff', fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
                             Copy Highlight Reel Link
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Employer: log outcome / probation review / send feedback (all route to candidate report) */}
+                      {(qaModal === 'emp-outcome' || qaModal === 'emp-review' || qaModal === 'emp-feedback') && (
+                        <div>
+                          <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 16px', lineHeight: 1.55 }}>
+                            {qaModal === 'emp-outcome' && <>Open <strong>{qaSelectedCandidate.name}</strong>&rsquo;s report to log the hire outcome, start date, and probation length.</>}
+                            {qaModal === 'emp-review' && <>Open <strong>{qaSelectedCandidate.name}</strong>&rsquo;s probation co-pilot to generate a structured review at month 1, 3, or 5.</>}
+                            {qaModal === 'emp-feedback' && <>Open <strong>{qaSelectedCandidate.name}</strong>&rsquo;s report to send development feedback to the candidate.</>}
+                          </p>
+                          <button onClick={() => {
+                            const aid = qaSelectedCandidate.assessments?.id
+                            const cid = qaSelectedCandidate.id
+                            const path = qaModal === 'emp-review'
+                              ? `/assessment/${aid}/candidate/${cid}/copilot`
+                              : `/assessment/${aid}/candidate/${cid}`
+                            router.push(path)
+                            resetQaModal()
+                          }} style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                            Open Candidate Report
                           </button>
                         </div>
                       )}
