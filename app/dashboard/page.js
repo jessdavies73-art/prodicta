@@ -78,11 +78,18 @@ const SECTION_THEME = {
 // account types with no content don't see an empty banner.
 // order={10/20/30/40} places the header at the start of its section when
 // the parent <main> is a flex column (see the main element for ordering).
+const SECTION_ANCHOR_ID = {
+  1: 'assessment-screening',
+  2: 'shortlisting',
+  3: 'post-placement',
+  4: 'compliance',
+}
+
 function SectionHeader({ number, title, subtitle, description, order, visible = true }) {
   if (!visible) return null
   const theme = SECTION_THEME[number] || SECTION_THEME[1]
   return (
-    <div style={{
+    <div id={SECTION_ANCHOR_ID[number]} style={{
       order,
       marginTop: 24, marginBottom: 14,
       borderTop: `4px solid ${theme.accent}`,
@@ -90,6 +97,7 @@ function SectionHeader({ number, title, subtitle, description, order, visible = 
       borderRadius: '0 0 12px 12px',
       padding: '18px 22px 20px',
       boxShadow: '0 1px 0 rgba(15,33,55,0.04)',
+      scrollMarginTop: 24,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <span style={{

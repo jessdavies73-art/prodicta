@@ -38,17 +38,17 @@ function buildGroups({ accountType, showTemp, showPerm }) {
   ]
 
   const group2 = [
-    { key: 'shortlist', label: 'Shortlist',          icon: 'check', href: '/dashboard' },
-    { key: 'feedback',  label: 'Candidate feedback', icon: 'mail',  href: '/dashboard' },
+    { key: 'shortlist', label: 'Shortlist',          icon: 'check', href: '/dashboard#shortlisting' },
+    { key: 'feedback',  label: 'Candidate feedback', icon: 'mail',  href: '/dashboard', comingSoon: true },
   ]
 
   const group3 = []
   if (isAgency) {
-    group3.push({ key: 'placements',  label: 'Placements',         icon: 'shield', href: '/dashboard' })
-    group3.push({ key: 'assignments', label: 'Assignment reviews', icon: 'file',   href: '/dashboard' })
+    group3.push({ key: 'placements',  label: 'Placements',         icon: 'shield', href: '/dashboard#post-placement' })
+    group3.push({ key: 'assignments', label: 'Assignment reviews', icon: 'file',   href: '/dashboard', comingSoon: true })
   }
   if (isEmployer) {
-    group3.push({ key: 'probation',   label: 'Probation tracker',  icon: 'shield', href: '/dashboard' })
+    group3.push({ key: 'probation',   label: 'Probation tracker',  icon: 'shield', href: '/dashboard#post-placement' })
   }
   group3.push({ key: 'outcomes', label: 'Outcomes', icon: 'award', href: '/outcomes' })
 
@@ -87,6 +87,7 @@ export default function Sidebar({ active, companyName }) {
   const [accountType, setAccountType] = useState('employer')
   const [showTemp, setShowTemp] = useState(false)
   const [showPerm, setShowPerm] = useState(true)
+  const [toastMessage, setToastMessage] = useState('')
 
   useEffect(() => { setMobileOpen(false) }, [active])
 
@@ -146,14 +147,25 @@ export default function Sidebar({ active, companyName }) {
     setMobileOpen(false)
   }
 
+  function showSidebarToast(label) {
+    setToastMessage(`${label} is coming soon`)
+    setTimeout(() => setToastMessage(''), 2400)
+  }
+
   const groups = buildGroups({ accountType, showTemp, showPerm })
 
-  function NavButton({ itemKey, label, icon, href, accent }) {
+  function NavButton({ itemKey, label, icon, href, accent, comingSoon }) {
     const isActive = active === itemKey
     const isHovered = hoveredKey === itemKey
     return (
       <button
-        onClick={() => handleNavClick(href)}
+        onClick={() => {
+          if (comingSoon) {
+            showSidebarToast(label)
+            return
+          }
+          handleNavClick(href)
+        }}
         onMouseEnter={() => setHoveredKey(itemKey)}
         onMouseLeave={() => setHoveredKey(null)}
         style={{
@@ -203,6 +215,19 @@ export default function Sidebar({ active, companyName }) {
             lineHeight: 1,
           }}>
             +
+          </span>
+        )}
+        {comingSoon && (
+          <span style={{
+            marginLeft: 'auto',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1px 7px', borderRadius: 999,
+            background: 'rgba(255,255,255,0.08)',
+            color: 'rgba(255,255,255,0.55)',
+            fontFamily: F, fontSize: 9.5, fontWeight: 800,
+            letterSpacing: '0.04em', textTransform: 'uppercase',
+          }}>
+            Soon
           </span>
         )}
       </button>
@@ -272,12 +297,32 @@ export default function Sidebar({ active, companyName }) {
                   icon={item.icon}
                   href={item.href}
                   accent={accent}
+                  comingSoon={item.comingSoon}
                 />
               ))}
             </div>
           )
         })}
       </nav>
+
+      {/* Coming-soon toast (transient) */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed', left: isMobile ? '50%' : 240, bottom: 24,
+          transform: isMobile ? 'translateX(-50%)' : 'none',
+          background: NAVY, color: '#fff',
+          padding: '10px 16px', borderRadius: 8,
+          fontFamily: F, fontSize: 13, fontWeight: 600,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+          border: `1px solid ${TEAL}55`,
+          zIndex: 200,
+          pointerEvents: 'none',
+          animation: 'sidebarToastIn 0.2s ease-out',
+        }}>
+          <style>{`@keyframes sidebarToastIn{from{opacity:0;transform:${isMobile ? 'translateX(-50%) translateY(8px)' : 'translateY(8px)'}}to{opacity:1;transform:${isMobile ? 'translateX(-50%) translateY(0)' : 'translateY(0)'}}}`}</style>
+          {toastMessage}
+        </div>
+      )}
 
       {/* Pinned sign-out */}
       <div style={{
