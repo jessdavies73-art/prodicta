@@ -60,6 +60,45 @@ function initials(name = '') {
 
 // ── sub-components ────────────────────────────────────────────────────────────
 
+// Section header for the four process buckets on the dashboard.
+// Renders a labelled heading with a visual separator, gated on `visible`.
+// order={10/20/30/40} places the header at the start of its section when
+// the parent <main> is a flex column (see the main element for ordering).
+function SectionHeader({ number, title, subtitle, order, visible = true }) {
+  if (!visible) return null
+  return (
+    <div style={{
+      order,
+      marginTop: 12,
+      marginBottom: 14,
+      paddingTop: 18,
+      borderTop: `1px solid ${BD}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 26, height: 26, borderRadius: 999,
+          background: TEALLT, color: TEALD,
+          fontFamily: FM, fontSize: 13, fontWeight: 800,
+        }}>
+          {number}
+        </span>
+        <h2 style={{
+          margin: 0, fontFamily: F, fontSize: 16, fontWeight: 800,
+          color: TX, letterSpacing: '-0.01em',
+        }}>
+          {title}
+        </h2>
+        {subtitle && (
+          <span style={{ fontFamily: F, fontSize: 12.5, color: TX3, fontWeight: 500 }}>
+            {subtitle}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function StatRing({ value, accent = '#00BFA5', size = 140, fillPercent = 100 }) {
   const sw = 10
   const r = (size - sw * 2) / 2
@@ -1902,7 +1941,66 @@ function DashboardPageInner() {
         background: BG,
         flex: 1,
         minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
       }}>
+
+        {/* ── Section dividers (rendered inline, slotted by CSS order) ── */}
+        <SectionHeader
+          order={10}
+          number="1"
+          title="Assessment and Screening"
+          subtitle="Pipeline, roles, shortlist, invites"
+        />
+        <SectionHeader
+          order={20}
+          number="2"
+          title="Shortlisting and Progression"
+          subtitle="Decide who moves forward"
+        />
+        <div style={{
+          order: 21,
+          ...cs,
+          marginBottom: 20,
+          padding: isMobile ? '18px 18px' : '22px 24px',
+          borderLeft: `4px solid ${TEAL}`,
+          display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10, background: TEALLT,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <Ic name="layers" size={18} color={TEALD} />
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: TX, marginBottom: 2 }}>
+              Shortlisting tools coming soon
+            </div>
+            <div style={{ fontFamily: F, fontSize: 12.5, color: TX3, lineHeight: 1.55 }}>
+              Progress, hold and reject groups with side-by-side comparison will live here.
+            </div>
+          </div>
+        </div>
+        <SectionHeader
+          order={30}
+          number="3"
+          title="Post-placement and Aftercare"
+          subtitle="Placement health, probation, rebate"
+          visible={
+            isAgencyAccount ||
+            profile?.account_type === 'employer' ||
+            (placementHealth?.placements?.length || 0) > 0
+          }
+        />
+        <SectionHeader
+          order={40}
+          number="4"
+          title="Compliance"
+          subtitle="SSP, holiday, Fair Work Agency, EDI"
+          visible={
+            (isAgencyAccount && sspAlerts.filter(a => a.employment_type === 'temporary').length > 0)
+          }
+        />
 
         {/* ── PWA Install Banner ── */}
         {showInstallBanner && installPrompt && (
@@ -2688,6 +2786,7 @@ function DashboardPageInner() {
         {/* ── Pre-Start Risk panel (agency, upcoming temp starts) ── */}
         {isAgencyAccount && upcomingStarts.length > 0 && (
           <div style={{
+            order: 31,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
             borderTop: `3px solid ${AMB}`, padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
           }}>
@@ -2747,6 +2846,7 @@ function DashboardPageInner() {
         {/* ── Pre-Start Engagement panel (agency + temp, active pulse sequences) ── */}
         {isAgencyAccount && hasTemporaryCandidates && engagementSequences.length > 0 && (
           <div style={{
+            order: 31,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
             borderTop: `3px solid ${TEAL}`, padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
           }}>
@@ -2842,9 +2942,10 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── SSP Alerts panel (agency + temporary only) ── */}
+        {/* ── SSP Alerts panel (agency + temporary only) ── Section 4 Compliance */}
         {isAgencyAccount && hasTemporaryCandidates && sspAlerts.filter(a => a.employment_type === 'temporary').length > 0 && (
           <div style={{
+            order: 41,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
             borderTop: '3px solid #D97706', padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
           }}>
@@ -3006,9 +3107,9 @@ function DashboardPageInner() {
           <ActivePlacements placements={activePlacements} router={router} />
         )}
 
-        {/* ── Candidate Pipeline (all account types) ── */}
+        {/* ── Candidate Pipeline (all account types) ── Section 1 */}
         {candidates.length > 0 && (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ order: 11, marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
               Candidate Pipeline
             </div>
@@ -3127,9 +3228,9 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Verdict filtered results (directly after pipeline cards) ── */}
+        {/* ── Verdict filtered results (directly after pipeline cards) ── Section 1 */}
         {activeFilter?.type === 'verdict' && (
-          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ order: 11, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
             <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>{verdictFilterLabel}</h2>
@@ -3344,9 +3445,9 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Placement Health filtered results (agency, replaces All Candidates table) ── */}
+        {/* ── Placement Health filtered results (agency, replaces All Candidates table) ── Section 3 */}
         {activeFilter?.type === 'health' && (
-          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ order: 31, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
             <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>{healthFilterLabel}</h2>
@@ -3394,14 +3495,16 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Probation Tracker (all employer accounts, including PAYG) ── */}
+        {/* ── Probation Tracker (all employer accounts, including PAYG) ── Section 3 */}
         {profile?.account_type === 'employer' && (
-          <ProbationTracker hires={probationHires} router={router} />
+          <div style={{ order: 31 }}>
+            <ProbationTracker hires={probationHires} router={router} />
+          </div>
         )}
 
- {/* ── Probation Co-pilot (employer only, live status on current hires) ── */}
+ {/* ── Probation Co-pilot (employer only, live status on current hires) ── Section 3 */}
         {profile?.account_type === 'employer' && probationHires.length > 0 && (
-          <div style={{ ...cs, marginBottom: 20 }}>
+          <div style={{ order: 31, ...cs, marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <Ic name="shield" size={14} color={TEAL} />
               <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -3449,9 +3552,9 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Probation Review Generator (employer only) ── */}
+        {/* ── Probation Review Generator (employer only) ── Section 3 */}
         {profile?.account_type === 'employer' && probationHires.length > 0 && (
-          <div style={{ ...cs, marginBottom: 20 }}>
+          <div style={{ order: 31, ...cs, marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <Ic name="file" size={14} color={NAVY} />
               <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -3496,13 +3599,13 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Red Flag Alerts (employer only) ── */}
+        {/* ── Red Flag Alerts (employer only) ── Section 3 (probation warning signs) */}
         {profile?.account_type === 'employer' && (() => {
           const flaggedIds = new Set([...redlineCandidates, ...Object.keys(copilotStatus)])
           const flagged = candidates.filter(c => flaggedIds.has(c.id)).slice(0, 8)
           if (flagged.length === 0) return null
           return (
-            <div style={{ ...cs, marginBottom: 20, borderTop: `3px solid ${RED}` }}>
+            <div style={{ order: 31, ...cs, marginBottom: 20, borderTop: `3px solid ${RED}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <Ic name="alert" size={14} color={RED} />
                 <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -3593,18 +3696,20 @@ function DashboardPageInner() {
         <RiskCalculator profile={profile} completed={completed} />
         <CostOfVacancyCard profile={profile} />
 
-        {/* ── Placement Health (all account types) ── */}
+        {/* ── Placement Health (all account types) ── Section 3 */}
         {isAgencyAccount ? (
           placementHealth && (
             placementHealth.total_active > 0 ? (
-              <PlacementHealthPanel
-                data={placementHealth}
-                activeFilter={activeFilter}
-                onFilter={(s) => { if (activeFilter?.type === 'health' && activeFilter.value === s) { setActiveFilter(null) } else { setActiveFilter({ type: 'health', value: s }) } }}
-                isMobile={isMobile}
-              />
+              <div style={{ order: 31 }}>
+                <PlacementHealthPanel
+                  data={placementHealth}
+                  activeFilter={activeFilter}
+                  onFilter={(s) => { if (activeFilter?.type === 'health' && activeFilter.value === s) { setActiveFilter(null) } else { setActiveFilter({ type: 'health', value: s }) } }}
+                  isMobile={isMobile}
+                />
+              </div>
             ) : (
-              <div style={{ marginBottom: 24 }}>
+              <div style={{ order: 31, marginBottom: 24 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   Placement Health
                   <InfoTooltip text="A live traffic light showing the health of every active placement. Green means on track. Amber means at risk. Red means critical action needed." />
@@ -3636,7 +3741,7 @@ function DashboardPageInner() {
               { key: 'critical',label: 'Critical', count: critical, accent: '#B91C1C', sub: 'Immediate action required' },
             ]
             return (
-              <div style={{ marginBottom: 24 }}>
+              <div style={{ order: 31, marginBottom: 24 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   Placement Health
                   <InfoTooltip text="Health status for every hired candidate currently in their probation period. Green means on track. Amber means at risk. Red means critical action needed." />
@@ -3667,7 +3772,7 @@ function DashboardPageInner() {
               </div>
             )
           })() : (
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ order: 31, marginBottom: 24 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 Placement Health
                 <InfoTooltip text="Health status for every hired candidate currently in their probation period." />
@@ -3684,9 +3789,9 @@ function DashboardPageInner() {
           )
         ) : null}
 
-        {/* ── Rebate Period Tracker (agency only) ── */}
+        {/* ── Rebate Period Tracker (agency only) ── Section 3 */}
         {isAgencyAccount && placementHealth?.placements?.some(p => p.placement_date && p.rebate_weeks) && (
-          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ order: 31, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
             <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Ic name="clock" size={16} color={TEAL} />
@@ -3743,7 +3848,7 @@ function DashboardPageInner() {
             .slice(0, 3)
           if (ranked.length === 0) return null
           return (
-            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+            <div style={{ order: 11, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
               <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Ic name="award" size={16} color={TEAL} />
@@ -3783,9 +3888,9 @@ function DashboardPageInner() {
           )
         })()}
 
-        {/* ── Red Flag Alerts (agency variant): critical/at-risk placements ── */}
+        {/* ── Red Flag Alerts (agency variant): critical/at-risk placements ── Section 3 */}
         {isAgencyAccount && placementHealth?.placements?.some(p => p.health_status === 'RED' || p.health_status === 'AMBER') && (
-          <div style={{ ...cs, marginBottom: 24, borderTop: `3px solid ${RED}`, padding: '20px 24px' }}>
+          <div style={{ order: 31, ...cs, marginBottom: 24, borderTop: `3px solid ${RED}`, padding: '20px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <Ic name="alert" size={14} color={RED} />
               <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -3842,9 +3947,9 @@ function DashboardPageInner() {
         )}
 
 
-        {/* ── Location filter bar (all account types) ── */}
+        {/* ── Location filter bar (all account types) ── Section 1 */}
         {!activeFilter && !selectedRole && !selectedClient && !selectedTeamMember && (
-          <div style={{ ...cs, marginBottom: 20, padding: isMobile ? '14px 16px' : '16px 20px' }}>
+          <div style={{ order: 11, ...cs, marginBottom: 20, padding: isMobile ? '14px 16px' : '16px 20px' }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               flexWrap: 'wrap', gap: 10, marginBottom: hasAnyLocation ? 12 : 0,
@@ -3931,9 +4036,9 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Roles Overview (all account types) ── */}
+        {/* ── Roles Overview (all account types) ── Section 1 */}
         {!activeFilter && !selectedRole && rolesOverview.length > 0 && (
-          <div style={{ ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
+          <div style={{ order: 11, ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               marginBottom: 16, flexWrap: 'wrap', gap: 10,
@@ -4074,11 +4179,11 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Role Detail view (all account types) ── */}
+        {/* ── Role Detail view (all account types) ── Section 1 */}
         {selectedRole && activeRole && (() => {
           const completedForRole = roleDetailCandidates.filter(c => c.status === 'completed')
           return (
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ order: 11, marginBottom: 24 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
                 <button
                   type="button"
@@ -4251,9 +4356,9 @@ function DashboardPageInner() {
           )
         })()}
 
-        {/* ── Clients Overview (agency only) ── */}
+        {/* ── Clients Overview (agency only) ── Section 1 */}
         {isAgencyAccount && !activeFilter && !selectedRole && !selectedClient && (
-          <div style={{ ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
+          <div style={{ order: 11, ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               marginBottom: 16, flexWrap: 'wrap', gap: 10,
@@ -4430,9 +4535,9 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Client Detail view (agency only) ── */}
+        {/* ── Client Detail view (agency only) ── Section 1 */}
         {isAgencyAccount && selectedClient && activeClient && (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ order: 11, marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
               <button
                 type="button"
@@ -4634,9 +4739,9 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Team Overview (all account types) ── */}
+        {/* ── Team Overview (all account types) ── Section 1 */}
         {!activeFilter && !selectedRole && !selectedClient && !selectedTeamMember && (
-          <div style={{ ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
+          <div style={{ order: 11, ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               marginBottom: 16, flexWrap: 'wrap', gap: 10,
@@ -4805,9 +4910,9 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Team Member Detail view ── */}
+        {/* ── Team Member Detail view ── Section 1 */}
         {selectedTeamMember && activeTeamMember && (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ order: 11, marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
               <button
                 type="button"
@@ -4981,9 +5086,10 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Bulk Invite prompt (all account types, always visible) ── */}
+        {/* ── Bulk Invite prompt (all account types, always visible) ── Section 1 */}
         {!activeFilter && !selectedRole && !selectedClient && !selectedTeamMember && (
           <div style={{
+            order: 11,
             ...cs,
             marginBottom: 20,
             padding: isMobile ? '18px 18px' : '20px 24px',
@@ -5025,8 +5131,8 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Bottom grid: table + assessments panel (hidden when filter active or drilled into a role/client/team member) ── */}
-        <div className="dashboard-layout" style={{ display: (activeFilter || selectedRole || selectedClient || selectedTeamMember) ? 'none' : 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
+        {/* ── Bottom grid: table + assessments panel (hidden when filter active or drilled into a role/client/team member) ── Section 1 */}
+        <div className="dashboard-layout" style={{ order: 11, display: (activeFilter || selectedRole || selectedClient || selectedTeamMember) ? 'none' : 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
 
           {/* ── Candidates table ── */}
           <div className="dashboard-candidates" style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : 'auto' }}>

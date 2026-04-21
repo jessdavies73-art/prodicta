@@ -70,6 +70,32 @@ function StatCard({ icon, label, value, sub, accent = TEAL, fillPercent = 100 })
   )
 }
 
+function SectionHeader({ number, title, subtitle, order, visible = true }) {
+  if (!visible) return null
+  return (
+    <div style={{
+      order, marginTop: 12, marginBottom: 14, paddingTop: 18,
+      borderTop: `1px solid ${BD}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 26, height: 26, borderRadius: 999,
+          background: TEALLT, color: TEALD,
+          fontFamily: FM, fontSize: 13, fontWeight: 800,
+        }}>{number}</span>
+        <h2 style={{
+          margin: 0, fontFamily: F, fontSize: 16, fontWeight: 800,
+          color: TX, letterSpacing: '-0.01em',
+        }}>{title}</h2>
+        {subtitle && (
+          <span style={{ fontFamily: F, fontSize: 12.5, color: TX3, fontWeight: 500 }}>{subtitle}</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function StatusBadge({ status }) {
   const map = {
     completed:      { label: 'Completed',      bg: GRNBG,     color: GRN, bd: GRNBD },
@@ -930,7 +956,9 @@ function DemoDashboardInner() {
           </div>
         </div>
 
-        {/* Candidate Pipeline (employer only, after Speed to Offer / before Prediction Accuracy) */}
+        <SectionHeader number="1" title="Assessment and Screening" subtitle="Pipeline, roles, shortlist, invites" />
+
+        {/* Candidate Pipeline (employer only, after Speed to Offer / before Prediction Accuracy) — Section 1 */}
         {!isAgency && (
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
@@ -1066,6 +1094,8 @@ function DemoDashboardInner() {
             <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '12px 0 0', lineHeight: 1.55 }}>Available when 3+ outcomes are logged. Track whether PRODICTA predictions matched real hiring outcomes.</p>
           </div>
         </div>
+
+        <SectionHeader number="3" title="Post-placement and Aftercare" subtitle="Placement health, probation, rebate" visible={isAgency || !isAgency} />
 
         {/* Agency-only sections */}
         {isAgency && (
@@ -3041,6 +3071,33 @@ function DemoDashboardInner() {
               </button>
             </div>
           </div>
+        )}
+
+        <SectionHeader number="2" title="Shortlisting and Progression" subtitle="Decide who moves forward" />
+        <div style={{
+          ...cs, marginBottom: 20,
+          padding: isMobile ? '18px 18px' : '22px 24px',
+          borderLeft: `4px solid ${TEAL}`,
+          display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10, background: TEALLT,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <Ic name="layers" size={18} color={TEALD} />
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: TX, marginBottom: 2 }}>
+              Shortlisting tools coming soon
+            </div>
+            <div style={{ fontFamily: F, fontSize: 12.5, color: TX3, lineHeight: 1.55 }}>
+              Progress, hold and reject groups with side-by-side comparison will live here.
+            </div>
+          </div>
+        </div>
+
+        {isAgency && (
+          <SectionHeader number="4" title="Compliance" subtitle="SSP, holiday, Fair Work Agency, EDI" />
         )}
       </main>
     </DemoLayout>
