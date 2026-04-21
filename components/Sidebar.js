@@ -11,27 +11,70 @@ const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
 function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
-function buildGroups({ showDocuments }) {
-  const compliance = [
-    { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/ssp' },
-    { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/holiday' },
-    { key: 'edi',     label: 'EDI',     icon: 'shield',   href: '/edi' },
+// Per-bucket accent on the sidebar. Navy on the dashboard maps to a muted
+// blue-grey here because the sidebar itself is navy, and dark-on-dark would
+// disappear. Slate stays muted to indicate compliance is a "quiet" group.
+const GROUP_ACCENTS = {
+  1: '#00BFA5', // jade, Assessment and Screening
+  2: '#93C5FD', // light blue, Shortlisting and Progression
+  3: '#E8B84B', // gold, Post-placement and Aftercare
+  4: '#94A3B8', // slate, Compliance
+}
+
+// Build the four-bucket nav. `accountType` is 'agency' | 'employer'.
+// `showTemp` and `showPerm` indicate which employment types the account
+// currently has active or has set as default. Items only surface if their
+// bucket has at least one item for this account.
+function buildGroups({ accountType, showTemp, showPerm }) {
+  const isAgency   = accountType === 'agency'
+  const isEmployer = accountType === 'employer'
+
+  const group1 = [
+    { key: 'dashboard',  label: 'Dashboard',          icon: 'grid',    href: '/dashboard' },
+    { key: 'assessment', label: 'New assessment',     icon: 'plus',    href: '/assessment/new' },
+    { key: 'all-candidates', label: 'All candidates', icon: 'users',   href: '/dashboard' },
+    { key: 'compare',    label: 'Compare candidates', icon: 'sliders', href: '/compare' },
+    { key: 'archive',    label: 'Archive',            icon: 'archive', href: '/archive' },
   ]
-  if (showDocuments) {
-    compliance.push({ key: 'documents', label: 'Documents', icon: 'file', href: '/documents' })
+
+  const group2 = [
+    { key: 'shortlist', label: 'Shortlist',          icon: 'check', href: '/dashboard' },
+    { key: 'feedback',  label: 'Candidate feedback', icon: 'mail',  href: '/dashboard' },
+  ]
+
+  const group3 = []
+  if (isAgency) {
+    group3.push({ key: 'placements',  label: 'Placements',         icon: 'shield', href: '/dashboard' })
+    group3.push({ key: 'assignments', label: 'Assignment reviews', icon: 'file',   href: '/dashboard' })
   }
+  if (isEmployer) {
+    group3.push({ key: 'probation',   label: 'Probation tracker',  icon: 'shield', href: '/dashboard' })
+  }
+  group3.push({ key: 'outcomes', label: 'Outcomes', icon: 'award', href: '/outcomes' })
+
+  const group4 = []
+  if (isAgency && showTemp) {
+    group4.push({ key: 'ssp',       label: 'SSP',         icon: 'shield',   href: '/ssp' })
+    group4.push({ key: 'holiday',   label: 'Holiday pay', icon: 'calendar', href: '/holiday' })
+    group4.push({ key: 'documents', label: 'Documents',   icon: 'file',     href: '/documents' })
+  }
+  if (isEmployer) {
+    if (showTemp) {
+      group4.push({ key: 'ssp',     label: 'SSP',         icon: 'shield',   href: '/ssp' })
+      group4.push({ key: 'holiday', label: 'Holiday pay', icon: 'calendar', href: '/holiday' })
+    }
+    if (showPerm) {
+      group4.push({ key: 'era',     label: 'ERA 2025 compliance', icon: 'shield', href: '/edi' })
+    }
+  }
+  group4.push({ key: 'edi',      label: 'EDI monitor', icon: 'shield',   href: '/edi' })
+  group4.push({ key: 'settings', label: 'Settings',    icon: 'settings', href: '/settings' })
 
   return [
-    { label: 'Main', items: [
-      { key: 'dashboard',  label: 'Dashboard',      icon: 'grid', href: '/dashboard' },
-      { key: 'assessment', label: 'New assessment', icon: 'plus', href: '/assessment/new' },
-    ]},
-    { label: 'Placement', items: [
-      { key: 'compare',  label: 'Compare',  icon: 'sliders', href: '/compare' },
-      { key: 'archive',  label: 'Archive',  icon: 'archive', href: '/archive' },
-      { key: 'outcomes', label: 'Outcomes', icon: 'award',   href: '/outcomes' },
-    ]},
-    { label: 'Compliance', items: compliance },
+    { number: 1, label: 'Assessment and Screening',   items: group1 },
+    { number: 2, label: 'Shortlisting and Progression', items: group2 },
+    { number: 3, label: 'Post-placement and Aftercare', items: group3 },
+    { number: 4, label: 'Compliance',                 items: group4 },
   ]
 }
 
@@ -41,38 +84,54 @@ export default function Sidebar({ active, companyName }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [hoveredKey, setHoveredKey] = useState(null)
   const [logoutHover, setLogoutHover] = useState(false)
-  const [showDocuments, setShowDocuments] = useState(false)
+  const [accountType, setAccountType] = useState('employer')
+  const [showTemp, setShowTemp] = useState(false)
+  const [showPerm, setShowPerm] = useState(true)
 
   useEffect(() => { setMobileOpen(false) }, [active])
 
   useEffect(() => {
     let cancelled = false
-    async function detectTempWork() {
+    async function loadProfile() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user || cancelled) return
 
       const { data: prof } = await supabase.from('users')
-        .select('default_employment_type')
+        .select('account_type, default_employment_type')
         .eq('id', user.id)
         .maybeSingle()
+      if (cancelled) return
+
+      const acct = prof?.account_type === 'agency' ? 'agency' : 'employer'
+      setAccountType(acct)
 
       const defaultType = prof?.default_employment_type
+      // Decide temp vs perm scope. 'both' and 'ask' fall back to checking
+      // the account's actual assessments so the sidebar reflects real use.
       if (defaultType === 'temporary') {
-        if (!cancelled) setShowDocuments(true)
+        setShowTemp(true); setShowPerm(false)
+        return
+      }
+      if (defaultType === 'permanent') {
+        setShowTemp(false); setShowPerm(true)
         return
       }
 
- // Hide for 'permanent', 'ask', 'both', or unset, unless the account has
-      // at least one assessment with employment_type === 'temporary'.
-      const { count } = await supabase.from('assessments')
-        .select('id', { count: 'exact', head: true })
+      const { data: assess } = await supabase.from('assessments')
+        .select('employment_type')
         .eq('user_id', user.id)
-        .eq('employment_type', 'temporary')
-
-      if (!cancelled) setShowDocuments((count || 0) > 0)
+      if (cancelled) return
+      const rows = assess || []
+      const hasTemp = rows.some(r => r.employment_type === 'temporary')
+      const hasPerm = rows.some(r => r.employment_type !== 'temporary')
+      // Empty account: default to perm so the sidebar does not start wider
+      // than it needs to for a new user; temp items appear the moment they
+      // create their first temp assessment.
+      setShowTemp(hasTemp)
+      setShowPerm(hasPerm || (!hasTemp && !hasPerm))
     }
-    detectTempWork()
+    loadProfile()
     return () => { cancelled = true }
   }, [])
 
@@ -87,9 +146,9 @@ export default function Sidebar({ active, companyName }) {
     setMobileOpen(false)
   }
 
-  const groups = buildGroups({ showDocuments })
+  const groups = buildGroups({ accountType, showTemp, showPerm })
 
-  function NavButton({ itemKey, label, icon, href }) {
+  function NavButton({ itemKey, label, icon, href, accent }) {
     const isActive = active === itemKey
     const isHovered = hoveredKey === itemKey
     return (
@@ -106,7 +165,7 @@ export default function Sidebar({ active, companyName }) {
           paddingLeft: isActive ? 9 : 12,
           borderRadius: 8,
           border: 'none',
-          borderLeft: isActive ? `3px solid ${TEAL}` : '3px solid transparent',
+          borderLeft: isActive ? `3px solid ${accent}` : '3px solid transparent',
           cursor: 'pointer',
           fontFamily: F,
           fontSize: 13,
@@ -114,18 +173,18 @@ export default function Sidebar({ active, companyName }) {
           textAlign: 'left',
           transition: 'background 0.15s, color 0.15s, border-color 0.15s',
           background: isActive
-            ? 'rgba(0,191,165,0.12)'
+            ? `${accent}1F`
             : isHovered
             ? 'rgba(255,255,255,0.06)'
             : 'transparent',
-          color: isActive ? TEAL : isHovered ? '#fff' : 'rgba(255,255,255,0.6)',
-          boxShadow: isActive ? 'inset 0 0 16px rgba(0,191,165,0.08)' : 'none',
+          color: isActive ? accent : isHovered ? '#fff' : 'rgba(255,255,255,0.6)',
+          boxShadow: isActive ? `inset 0 0 16px ${accent}14` : 'none',
         }}
       >
         <Ic
           name={icon}
           size={17}
-          color={isActive ? TEAL : isHovered ? '#fff' : 'rgba(255,255,255,0.5)'}
+          color={isActive ? accent : isHovered ? '#fff' : 'rgba(255,255,255,0.5)'}
         />
         {label}
         {itemKey === 'assessment' && (
@@ -172,29 +231,38 @@ export default function Sidebar({ active, companyName }) {
         )}
       </div>
 
-      {/* Compact nav: groups sized to fit without scrolling */}
+      {/* Four-bucket nav, scrollable if it overflows */}
       <nav
         className="prodicta-sidebar-nav"
         style={{
           padding: '10px 12px 8px',
           display: 'flex',
           flexDirection: 'column',
-          gap: 10,
+          gap: 12,
+          flex: 1,
+          overflowY: 'auto',
         }}
       >
-        {groups.map(group => (
-          group.items.length > 0 && (
+        {groups.map(group => {
+          if (!group.items || group.items.length === 0) return null
+          const accent = GROUP_ACCENTS[group.number]
+          return (
             <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <div style={{
-                fontFamily: F,
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: 'rgba(255,255,255,0.32)',
-                padding: '0 12px 4px',
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '2px 12px 6px',
               }}>
-                {group.label}
+                <span style={{
+                  display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+                  background: accent, flexShrink: 0,
+                }} />
+                <span style={{
+                  fontFamily: F, fontSize: 11, fontWeight: 700,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  color: 'rgba(255,255,255,0.4)',
+                }}>
+                  {group.label}
+                </span>
               </div>
               {group.items.map(item => (
                 <NavButton
@@ -203,17 +271,16 @@ export default function Sidebar({ active, companyName }) {
                   label={item.label}
                   icon={item.icon}
                   href={item.href}
+                  accent={accent}
                 />
               ))}
             </div>
           )
-        ))}
+        })}
       </nav>
 
- {/* Pinned bottom: Account group, Settings + Sign Out only, no user display.
-          marginTop: 'auto' keeps this block pinned to the bottom of the flex column. */}
+      {/* Pinned sign-out */}
       <div style={{
-        marginTop: 'auto',
         padding: '8px 12px 14px',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         display: 'flex',
@@ -221,20 +288,6 @@ export default function Sidebar({ active, companyName }) {
         gap: 1,
         flexShrink: 0,
       }}>
-        <div style={{
-          fontFamily: F,
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.32)',
-          padding: '4px 12px 4px',
-        }}>
-          Account
-        </div>
-
-        <NavButton itemKey="settings" label="Settings" icon="settings" href="/settings" />
-
         <button
           onClick={handleLogout}
           onMouseEnter={() => setLogoutHover(true)}
