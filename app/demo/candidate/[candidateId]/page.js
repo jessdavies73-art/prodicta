@@ -2296,6 +2296,105 @@ function DemoCandidateInner({ params }) {
               )
             })()}
 
+            {/* ── REPUTATION AND REPEAT RISK ── */}
+            {(() => {
+              const pf = typeof results.pressure_fit_score === 'number' ? results.pressure_fit_score : null
+              const er = typeof results.execution_reliability === 'number' ? results.execution_reliability : null
+              const tp = typeof results.training_potential === 'number' ? results.training_potential : null
+              if (pf == null && er == null && tp == null) return null
+
+              const integrity = results.integrity || {}
+              const integrityFlag = (integrity.flag || integrity.status || integrity.label || '').toLowerCase()
+              const integrityPenalty =
+                integrityFlag.includes('suspicious')    ? 50 :
+                integrityFlag.includes('possibly ai')   ? 30 :
+                integrityFlag.includes('ai-assisted')   ? 30 :
+                integrityFlag.includes('inconsistent')  ? 25 : 0
+              const watchouts = Array.isArray(results.watchouts) ? results.watchouts : []
+              const isHighSev = w => {
+                const s = (typeof w === 'object' ? (w.severity || w.level || '') : '').toString().toLowerCase()
+                return s === 'high' || s === 'severe' || s === 'critical' || s === 'redline'
+              }
+              const highSevWatchouts = watchouts.filter(isHighSev).length
+              const watchoutCount = watchouts.length
+
+              const clamp = v => Math.max(0, Math.min(100, Math.round(v)))
+              const reputationRisk = clamp(
+                (pf != null ? (100 - pf) * 0.5 : 30)
+                + integrityPenalty
+                + (highSevWatchouts * 12)
+              )
+              const repeatRisk = clamp(
+                (er != null ? (100 - er) * 0.5 : 25)
+                + (tp != null ? (100 - tp) * 0.35 : 15)
+                + (watchoutCount * 5)
+              )
+
+              const rColor = v => v >= 60 ? RED : v >= 30 ? AMB : GRN
+              const rBg    = v => v >= 60 ? REDBG : v >= 30 ? AMBBG : GRNBG
+              const rBd    = v => v >= 60 ? REDBD : v >= 30 ? AMBBD : GRNBD
+              const rLabel = v => v >= 60 ? 'High' : v >= 30 ? 'Moderate' : 'Low'
+
+              const REP_METHOD = "Reputation Risk measures the likelihood that this candidate's behaviour or performance could create reputational exposure for your organisation or client. It is calculated from: response integrity signals (AI assistance detection, consistency of answers), pressure handling score (how they respond under stress), communication quality under time pressure, and any watch-out flags categorised as client-facing or stakeholder risk. A high Reputation Risk score means the candidate showed patterns that could lead to client complaints, professional misconduct, or public-facing incidents."
+              const REPEAT_METHOD = "Repeat Risk measures the likelihood that this candidate will need to be managed repeatedly for the same issues rather than developing and improving. It is calculated from: execution reliability score (consistency of follow-through), training potential score (capacity to adapt and improve), response patterns showing deflection or blame-shifting, and watch-outs categorised as recurring behavioural patterns. A high Repeat Risk score means the candidate is likely to require ongoing management intervention for the same issues rather than resolving them independently."
+
+              const RiskTile = ({ title, value, method }) => (
+                <div style={{
+                  flex: 1, minWidth: 240,
+                  background: rBg(value), border: `1px solid ${rBd(value)}`,
+                  borderRadius: 12, padding: '16px 18px',
+                  display: 'flex', flexDirection: 'column', gap: 10,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      {title}
+                    </span>
+                    <span style={{
+                      fontSize: 10.5, fontWeight: 800, padding: '2px 9px', borderRadius: 50,
+                      background: `${rColor(value)}22`, color: rColor(value),
+                      border: `1px solid ${rColor(value)}44`,
+                    }}>{rLabel(value)}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                    <span style={{ fontFamily: FM, fontSize: 30, fontWeight: 800, color: rColor(value), lineHeight: 1 }}>{value}</span>
+                    <span style={{ fontSize: 12.5, color: TX3 }}>/100</span>
+                  </div>
+                  <details style={{ marginTop: 4 }}>
+                    <summary style={{
+                      cursor: 'pointer', listStyle: 'none',
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      fontFamily: F, fontSize: 12, fontWeight: 700, color: TX2,
+                      padding: '4px 0',
+                    }}>
+                      <Ic name="info" size={12} color={TX2} />
+                      How this score is calculated
+                    </summary>
+                    <div style={{
+                      marginTop: 8, padding: '12px 14px',
+                      background: BG, border: `1px solid ${BD}`, borderRadius: 8,
+                      fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.6,
+                    }}>
+                      {method}
+                    </div>
+                  </details>
+                </div>
+              )
+
+              return (
+                <ScrollReveal delay={60}>
+                  <Card style={{ marginBottom: 20 }}>
+                    <SectionHeading tooltip="Two forward-looking risk scores drawn from the assessment signals. Click each one to see the methodology.">
+                      Reputation and repeat risk
+                    </SectionHeading>
+                    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                      <RiskTile title="Reputation Risk" value={reputationRisk} method={REP_METHOD} />
+                      <RiskTile title="Repeat Risk" value={repeatRisk} method={REPEAT_METHOD} />
+                    </div>
+                  </Card>
+                </ScrollReveal>
+              )
+            })()}
+
             {/* ── EXPECTATION ALIGNMENT ── */}
             <ScrollReveal delay={60}>
               <Card style={{ marginBottom: 20 }}>
