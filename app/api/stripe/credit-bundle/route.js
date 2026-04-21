@@ -60,18 +60,33 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing bundle_id or credit_type' }, { status: 400 })
     }
 
+    // Credits are granted asynchronously by the /api/billing/webhook handler
+    // on the `checkout.session.completed` event, which is the source of
+    // truth that the payment actually cleared. We set client_reference_id as
+    // a backup user identifier so the webhook can still resolve the user if
+    // metadata is ever stripped.
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: user.email,
+      client_reference_id: user.id,
       line_items: [lineItem],
+      payment_intent_data: { metadata },
       success_url: `${siteUrl}${successPath}`,
       cancel_url: `${siteUrl}/settings?purchase=cancelled`,
       metadata,
     })
 
+    console.log('[credit-bundle] checkout session created', {
+      sessionId: session.id,
+      userId: user.id,
+      creditType: metadata.credit_type,
+      quantity: metadata.quantity,
+      bundleId: metadata.bundle_id || null,
+    })
+
     return NextResponse.json({ url: session.url })
   } catch (err) {
-    console.error('Credit bundle checkout error:', err)
+    console.error('[credit-bundle] checkout error', { error: err?.message })
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
