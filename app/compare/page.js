@@ -16,6 +16,11 @@ const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
 function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
+// Maximum number of candidates that can be placed side by side in the
+// comparison view. Increased from 3 so recruiters can hold a full shortlist in
+// one view (two rows of three on desktop, two across on tablet, one on phone).
+const MAX_COMPARE = 6
+
 function ScoreRing({ score, size = 64, strokeWidth = 5 }) {
   const r = (size - strokeWidth * 2) / 2
   const circ = 2 * Math.PI * r
@@ -62,7 +67,7 @@ function CompareContent() {
 
       const { data: allCands } = await supabase
         .from('candidates')
-        .select('id, name, email, status, results(overall_score, scores, score_narratives, strengths, watchouts, risk_level, hiring_confidence, candidate_type)')
+        .select('id, name, email, status, assessments(employment_type, role_title), results(overall_score, scores, score_narratives, strengths, watchouts, risk_level, hiring_confidence, candidate_type)')
         .eq('assessment_id', assessmentId)
         .eq('status', 'scored')
         .order('name')
@@ -70,13 +75,15 @@ function CompareContent() {
       setAllCandidates(scored)
 
       if (idsParam) {
-        const ids = new Set(idsParam.split(',').filter(Boolean))
+        const requested = idsParam.split(',').filter(Boolean).slice(0, MAX_COMPARE)
+        const ids = new Set(requested)
         setSelectedIds(ids)
         setCandidates(scored.filter(c => ids.has(c.id)))
       } else {
-        const ids = new Set(scored.map(c => c.id))
+        const first = scored.slice(0, MAX_COMPARE)
+        const ids = new Set(first.map(c => c.id))
         setSelectedIds(ids)
-        setCandidates(scored)
+        setCandidates(first)
       }
       setLoading(false)
     }
@@ -86,7 +93,12 @@ function CompareContent() {
   function toggleCandidate(id) {
     setSelectedIds(prev => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id); else next.add(id)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        if (next.size >= MAX_COMPARE) return prev
+        next.add(id)
+      }
       setCandidates(allCandidates.filter(c => next.has(c.id)))
       return next
     })
@@ -125,7 +137,11 @@ function CompareContent() {
   }
 
   const SKILLS = ['Communication', 'Problem solving', 'Prioritisation', 'Leadership']
-  const cols = Math.min(candidates.length, isMobile ? 2 : 4)
+  // Responsive column counts: desktop up to 6, tablet 3, mobile 2.
+  const isTablet = typeof window !== 'undefined' && window.innerWidth <= 1080
+  const desktopCap = isTablet ? 3 : 6
+  const cols = Math.min(candidates.length || 1, isMobile ? 2 : desktopCap)
+  const detailCols = Math.min(candidates.length || 1, isMobile ? 1 : Math.min(desktopCap, 3))
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: BG }}>
@@ -146,16 +162,32 @@ function CompareContent() {
           {/* Candidate selector */}
           {allCandidates.length > 2 && (
             <div style={{ ...cs, marginBottom: 20, padding: '14px 20px' }}>
-              <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Select candidates to compare</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Select up to {MAX_COMPARE} candidates to compare
+                </div>
+                <div style={{ fontFamily: F, fontSize: 11.5, color: TX3 }}>
+                  {selectedIds.size} of {MAX_COMPARE} selected
+                </div>
+              </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {allCandidates.map(c => {
                   const sel = selectedIds.has(c.id)
+                  const full = !sel && selectedIds.size >= MAX_COMPARE
                   return (
-                    <button key={c.id} onClick={() => toggleCandidate(c.id)} style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8,
-                      border: `1.5px solid ${sel ? TEAL : BD}`, background: sel ? TEALLT : CARD,
-                      fontFamily: F, fontSize: 12.5, fontWeight: 600, color: sel ? TEALD : TX2, cursor: 'pointer',
-                    }}>
+                    <button
+                      key={c.id}
+                      onClick={() => toggleCandidate(c.id)}
+                      disabled={full}
+                      title={full ? `Clear one candidate first (max ${MAX_COMPARE})` : undefined}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8,
+                        border: `1.5px solid ${sel ? TEAL : BD}`, background: sel ? TEALLT : CARD,
+                        fontFamily: F, fontSize: 12.5, fontWeight: 600, color: sel ? TEALD : TX2,
+                        cursor: full ? 'not-allowed' : 'pointer',
+                        opacity: full ? 0.5 : 1,
+                      }}
+                    >
                       {c.name}
                       {sel && <Ic name="check" size={12} color={TEALD} />}
                     </button>
@@ -176,10 +208,25 @@ function CompareContent() {
                 {candidates.map(c => {
                   const r = c.results[0]
                   const score = r?.overall_score ?? 0
+                  const empType = c.assessments?.employment_type
                   return (
                     <div key={c.id} style={{ ...cs, textAlign: 'center', padding: '20px 16px' }}>
                       <div style={{ marginBottom: 10 }}><Avatar name={c.name} size={40} /></div>
-                      <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 2 }}>{c.name}</div>
+                      <div style={{
+                        fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 4,
+                        display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center',
+                      }}>
+                        {c.name}
+                        {empType && (
+                          <span style={{
+                            fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
+                            padding: '1px 6px', borderRadius: 4,
+                            background: empType === 'temporary' ? TEAL : NAVY, color: '#fff',
+                          }}>
+                            {empType === 'temporary' ? 'TEMP' : 'PERM'}
+                          </span>
+                        )}
+                      </div>
                       <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginBottom: 12 }}>{r?.candidate_type || '--'}</div>
                       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
                         <ScoreRing score={score} />
@@ -252,7 +299,7 @@ function CompareContent() {
               {/* Strengths */}
               <div style={{ ...cs, marginBottom: 20 }}>
                 <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 14 }}>Top Strengths</div>
-                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(cols, isMobile ? 1 : 4)}, 1fr)`, gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${detailCols}, 1fr)`, gap: 14 }}>
                   {candidates.map(c => {
                     const r = c.results[0]
                     const strengths = r?.strengths || []
@@ -275,7 +322,7 @@ function CompareContent() {
               {/* Watch-outs */}
               <div style={{ ...cs, marginBottom: 20 }}>
                 <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, marginBottom: 14 }}>Watch-outs</div>
-                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(cols, isMobile ? 1 : 4)}, 1fr)`, gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${detailCols}, 1fr)`, gap: 14 }}>
                   {candidates.map(c => {
                     const r = c.results[0]
                     const watchouts = r?.watchouts || []

@@ -86,7 +86,19 @@ function Col({ candidateId, onClear, onViewReport }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Avatar name={c.name} size={40} />
             <div>
-              <p style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: '#fff', margin: '0 0 3px' }}>{c.name}</p>
+              <p style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: '#fff', margin: '0 0 3px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                {c.name}
+                {c.assessments?.employment_type && (
+                  <span style={{
+                    fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
+                    padding: '1px 6px', borderRadius: 4,
+                    background: c.assessments.employment_type === 'temporary' ? TEAL : 'rgba(255,255,255,0.2)',
+                    color: c.assessments.employment_type === 'temporary' ? NAVY : '#fff',
+                  }}>
+                    {c.assessments.employment_type === 'temporary' ? 'TEMP' : 'PERM'}
+                  </span>
+                )}
+              </p>
               <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.55)', margin: 0 }}>{c.assessments.role_title}</p>
             </div>
           </div>
@@ -183,7 +195,9 @@ export default function DemoComparePage() {
   const router = useRouter()
   const isMobile = useIsMobile()
   const [modal, setModal] = useState(false)
-  const [slots, setSlots] = useState([null, null, null])
+  // Six slots lets recruiters hold a full shortlist in view. The grid
+   // uses auto-fit/minmax below, so it collapses gracefully on smaller screens.
+  const [slots, setSlots] = useState([null, null, null, null, null, null])
 
   const setSlot = (i, val) => setSlots(prev => prev.map((v, idx) => idx === i ? val : v))
 
@@ -197,8 +211,8 @@ export default function DemoComparePage() {
           {/* Page header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h1 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: '0 0 4px', letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: 8 }}>Compare Candidates <InfoTooltip text="Side-by-side comparison of up to 3 candidates across all metrics." /></h1>
-              <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: 0 }}>Select up to 3 completed candidates to compare side by side</p>
+              <h1 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: TX, margin: '0 0 4px', letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: 8 }}>Compare Candidates <InfoTooltip text="Side-by-side comparison of up to 6 candidates across all metrics." /></h1>
+              <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: 0 }}>Select up to 6 completed candidates to compare side by side</p>
             </div>
             <button
               onClick={() => setModal(true)}
