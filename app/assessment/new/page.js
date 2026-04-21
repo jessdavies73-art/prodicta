@@ -349,7 +349,7 @@ export default function NewAssessmentPage() {
   }, [analysed])
 
   useEffect(() => {
-    const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null, payg: null }
+    const PLAN_LIMITS = { starter: 10, professional: 30, agency: 100, founding: null, growth: 30, scale: 100, payg: null }
     const init = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()

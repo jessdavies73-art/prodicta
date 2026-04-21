@@ -620,7 +620,7 @@ export default function LandingPage() {
         {/* Stats bar */}
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 40, flexWrap: 'wrap', justifyContent: 'center', padding: '20px 32px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14 }}>
           {[
-            { to: null, display: 'From £79', label: 'Per month' },
+            { to: null, display: 'From £99', label: 'Per month' },
             { to: 4,   suffix: '',  label: 'Scenario types' },
  { to: null, display: '15-45 min', label: 'Assessment time' },
             { to: null, display: 'UK-built', label: 'For ERA 2025 compliance' },
@@ -1011,7 +1011,7 @@ export default function LandingPage() {
                 Start assessing candidates
               </a>
               <div style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 12 }}>
-                From just £79/month with a £39 first-month introductory price. No long setup. First assessment in 5 minutes.
+                From just £99/month with a £49 first-month introductory price. No long setup. First assessment in 5 minutes.
               </div>
             </div>
           </Reveal>
@@ -1341,29 +1341,29 @@ export default function LandingPage() {
             {[
               {
                 name: 'Starter',
-                price: '£79',
-                promo: 'First 30 days: £39 then £79/month',
+                price: '£99',
+                promo: 'First 30 days: £49 then £99/month',
                 limit: '10 assessments/mo · Up to 2 users',
                 desc: 'For small teams getting started with AI assessment.',
-                features: ['10 assessments per month', 'Up to 2 users, extra £25/user/month', 'AI scenario generation', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs and interview questions', 'All features included'],
+                features: ['10 assessments per month', 'Up to 2 users, extra £35/user/month', 'AI scenario generation', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs and interview questions', 'All features included'],
                 highlight: false,
               },
               {
                 name: 'Professional',
-                price: '£249',
-                promo: 'First 30 days: £124 then £249/month',
+                price: '£299',
+                promo: 'First 30 days: £149 then £299/month',
                 limit: '30 assessments/mo · Up to 5 users',
                 desc: 'For growing teams hiring at volume.',
-                features: ['30 assessments per month', 'Up to 5 users, extra £25/user/month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking tools', 'Archive and outcomes tracking', 'All features included'],
+                features: ['30 assessments per month', 'Up to 5 users, extra £35/user/month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking tools', 'Archive and outcomes tracking', 'All features included'],
                 highlight: false,
               },
               {
-                name: 'Unlimited',
-                price: '£399',
-                promo: 'First 30 days: £199 then £399/month',
-                limit: 'Unlimited assessments · Up to 15 users',
-                desc: 'For high-volume hiring with no limits.',
-                features: ['Unlimited assessments', 'Up to 15 users, extra £25/user/month', 'Everything in Professional', 'Agency features', 'Placement risk scores', 'Document upload and send', 'All features included'],
+                name: 'Agency',
+                price: '£499',
+                promo: 'First 30 days: £249 then £499/month',
+                limit: '100 assessments/mo · Up to 15 users',
+                desc: 'For high-volume hiring and recruitment agencies.',
+                features: ['100 assessments per month', 'Up to 15 users, extra £35/user/month', 'Everything in Professional', 'Agency features', 'Placement risk scores', 'Document upload and send', 'All features included'],
                 highlight: true,
                 badge: 'BEST VALUE',
               },
@@ -1951,7 +1951,7 @@ export default function LandingPage() {
                 },
                 {
                   q: 'How much does PRODICTA cost?',
-                  a: 'Starter is £79 per month (£39 for the first 30 days) for 10 assessments and up to 2 users. Professional is £249 per month (£124 for the first 30 days) for 30 assessments and up to 5 users. Unlimited is £399 per month (£199 for the first 30 days) for unlimited assessments and up to 15 users. Extra users are £25 per user per month on any plan. All plans include every feature. Transparent pricing. No hidden fees. No setup costs.',
+                  a: 'Starter is £99 per month (£49 for the first 30 days) for 10 assessments and up to 2 users. Professional is £299 per month (£149 for the first 30 days) for 30 assessments and up to 5 users. Agency is £499 per month (£249 for the first 30 days) for 100 assessments and up to 15 users. Extra users are £35 per user per month on any plan. All plans include every feature. Transparent pricing. No hidden fees. No setup costs.',
                 },
                 {
                   q: 'What makes PRODICTA different from personality tests and psychometric assessments?',

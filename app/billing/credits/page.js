@@ -47,9 +47,9 @@ const ADDON_TYPES = [
 ]
 
 const PLANS = [
-  { key: 'starter',      plan: 'Starter',         price: '£79/mo',  priceNum: 79,  limit: '10 assessments per month, up to 2 users' },
-  { key: 'professional', plan: 'Professional',    price: '£249/mo', priceNum: 249, limit: '30 assessments per month, up to 5 users' },
-  { key: 'unlimited',    plan: 'Unlimited',       price: '£399/mo', priceNum: 399, limit: 'Unlimited assessments, up to 15 users' },
+  { key: 'starter',      plan: 'Starter',         price: '£99/mo',  priceNum: 99,  limit: '10 assessments per month, up to 2 users' },
+  { key: 'professional', plan: 'Professional',    price: '£299/mo', priceNum: 299, limit: '30 assessments per month, up to 5 users' },
+  { key: 'agency',       plan: 'Agency',          price: '£499/mo', priceNum: 499, limit: '100 assessments per month, up to 15 users' },
 ]
 
 // Subscription users still see bundles (they aren't billed per-unit).

@@ -117,7 +117,7 @@ export async function POST(request) {
       .maybeSingle()
 
 
-    const PLAN_LIMITS = { starter: 10, professional: 30, unlimited: null, founding: null, growth: 30, scale: null, payg: null }
+    const PLAN_LIMITS = { starter: 10, professional: 30, agency: 100, founding: null, growth: 30, scale: 100, payg: null }
     const planKey = (userProfile?.plan || 'starter').toLowerCase()
     const isPaygUser = planKey === 'payg' || userProfile?.plan_type === 'payg'
  // PAYG users never have a monthly limit, they are credit-gated only.

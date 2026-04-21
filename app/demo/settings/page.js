@@ -71,9 +71,9 @@ function BillingTab({ onUpgrade }) {
     { type: 'highlight-reel', label: 'Highlight Reel only',  unit: 10, description: 'A 60-second shareable summary of how the candidate performed. For Strategy-Fit accounts, workspace is already included.' },
   ]
   const PLANS = [
-    { plan: 'Starter',      price: '£79/mo',  limit: '10 assessments per month, up to 2 users' },
-    { plan: 'Professional', price: '£249/mo', limit: '30 assessments per month, up to 5 users' },
-    { plan: 'Unlimited',    price: '£399/mo', limit: 'Unlimited assessments, up to 15 users' },
+    { plan: 'Starter',      price: '£99/mo',  limit: '10 assessments per month, up to 2 users' },
+    { plan: 'Professional', price: '£299/mo', limit: '30 assessments per month, up to 5 users' },
+    { plan: 'Agency',       price: '£499/mo', limit: '100 assessments per month, up to 15 users' },
   ]
 
   return (
