@@ -39,13 +39,13 @@ function buildGroups({ accountType, showTemp, showPerm }) {
 
   const group2 = [
     { key: 'shortlist', label: 'Shortlist',          icon: 'check', href: '/dashboard#shortlisting' },
-    { key: 'feedback',  label: 'Candidate feedback', icon: 'mail',  href: '/dashboard', comingSoon: true },
+    { key: 'feedback',  label: 'Candidate feedback', icon: 'mail',  href: '/candidate-feedback' },
   ]
 
   const group3 = []
   if (isAgency) {
     group3.push({ key: 'placements',  label: 'Placements',         icon: 'shield', href: '/dashboard#post-placement' })
-    group3.push({ key: 'assignments', label: 'Assignment reviews', icon: 'file',   href: '/dashboard', comingSoon: true })
+    group3.push({ key: 'assignments', label: 'Assignment reviews', icon: 'file',   href: '/assignment-reviews' })
   }
   if (isEmployer) {
     group3.push({ key: 'probation',   label: 'Probation tracker',  icon: 'shield', href: '/dashboard#post-placement' })
