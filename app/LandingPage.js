@@ -634,12 +634,6 @@ export default function LandingPage() {
           ))}
         </div>
 
-        {/* Founding member urgency */}
-        <div style={{ marginTop: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, position: 'relative', zIndex: 1 }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0, animation: 'goldPulse 2s ease infinite' }} />
-          <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: GOLD }}>Currently onboarding founding members</span>
-        </div>
-
         {/* Scroll indicator */}
         <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: 0.35 }}>
           <div style={{ fontFamily: F, fontSize: 11, color: '#fff', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Scroll</div>
@@ -1343,34 +1337,6 @@ export default function LandingPage() {
           )}
 
           {pricingMode === 'subscription' && <>
-          {/* Founding callout */}
-          <Reveal>
-            <div style={{
-              background: `linear-gradient(135deg, ${NAVY} 0%, #0d2a43 100%)`,
-              borderRadius: 16, padding: '24px 32px', marginBottom: 32,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              flexWrap: 'wrap', gap: 20,
-              border: `1.5px solid ${GOLD}66`,
-              boxShadow: `0 8px 32px ${GOLD}22`,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ background: `${GOLD}22`, border: `1px solid ${GOLD}66`, borderRadius: 10, padding: '8px 14px', fontFamily: FM, fontSize: 13, fontWeight: 700, color: GOLD, whiteSpace: 'nowrap' }}>OFFER</div>
-                <div>
-                  <div style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: '#fff', marginBottom: 3 }}>Founding Member: £79/month</div>
-                  <div style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.55)' }}>Limited time offer. Unlimited assessments for the first 3 months, then 20 per month. Price locked in for 12 months.</div>
-                </div>
-              </div>
-              <a href="/login" style={{
-                fontFamily: F, fontSize: 14, fontWeight: 700, color: NAVY,
-                background: GOLD, textDecoration: 'none',
-                padding: '11px 24px', borderRadius: 9, whiteSpace: 'nowrap',
-                flexShrink: 0,
-              }}>
-                Claim founding price →
-              </a>
-            </div>
-          </Reveal>
-
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, alignItems: 'start' }}>
             {[
               {
@@ -1985,7 +1951,7 @@ export default function LandingPage() {
                 },
                 {
                   q: 'How much does PRODICTA cost?',
-                  a: 'Starter is £79 per month (£39 for the first 30 days) for 10 assessments and up to 2 users. Professional is £249 per month (£124 for the first 30 days) for 30 assessments and up to 5 users. Unlimited is £399 per month (£199 for the first 30 days) for unlimited assessments and up to 15 users. Extra users are £25 per user per month on any plan. We are currently offering a Founding Member rate of £79 per month with unlimited assessments for the first 3 months, then 20 per month after that, with the price locked for 12 months. All plans include every feature. Transparent pricing. No hidden fees. No setup costs.',
+                  a: 'Starter is £79 per month (£39 for the first 30 days) for 10 assessments and up to 2 users. Professional is £249 per month (£124 for the first 30 days) for 30 assessments and up to 5 users. Unlimited is £399 per month (£199 for the first 30 days) for unlimited assessments and up to 15 users. Extra users are £25 per user per month on any plan. All plans include every feature. Transparent pricing. No hidden fees. No setup costs.',
                 },
                 {
                   q: 'What makes PRODICTA different from personality tests and psychometric assessments?',

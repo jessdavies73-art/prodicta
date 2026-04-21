@@ -1816,7 +1816,6 @@ function DashboardPageInner() {
               {[
                 { plan: 'Professional', price: '£249', limit: '30 assessments/mo · Up to 5 users', highlight: true },
                 { plan: 'Unlimited', price: '£399', limit: 'Unlimited · Up to 15 users', highlight: false },
-                { plan: 'Founding Member', price: '£79', limit: 'Unlimited for 3 months, then 20/mo', highlight: false },
               ].map(p => (
                 <div key={p.plan} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${BD}` }}>
                   <div>
