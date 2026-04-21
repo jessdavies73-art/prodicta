@@ -6229,7 +6229,25 @@ function DashboardPageInner() {
                         assessment={a}
                         completed={completedCount}
                         total={totalForAssessment}
-                        onClick={() => router.push(`/assessment/${a.id}`)}
+                        onClick={() => {
+                          // Drill into the Role Detail view when candidates exist
+                          // for this role. When it is brand new with no candidates
+                          // yet, fall back to the assessment page so the user can
+                          // invite candidates.
+                          if (totalForAssessment > 0) {
+                            setSelectedRole(a.role_title)
+                            setSelectedClient(null)
+                            setSelectedTeamMember(null)
+                            setRoleDetailSearch('')
+                            setRoleDetailStageFilter('')
+                            setTimeout(() => {
+                              const el = document.getElementById('assessment-screening')
+                              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                            }, 50)
+                          } else {
+                            router.push(`/assessment/${a.id}`)
+                          }
+                        }}
                       />
                     )
                   })}
