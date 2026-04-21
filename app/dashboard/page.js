@@ -99,6 +99,68 @@ function SectionHeader({ number, title, subtitle, order, visible = true }) {
   )
 }
 
+// Small pill that sits next to the candidate name to indicate shortlist stage.
+// Active candidates render nothing (default state).
+function StagePill({ stage }) {
+  if (!stage || stage === 'active') return null
+  const styles = {
+    progress: { label: 'Progressing', color: '#0F7A66', bg: '#D8F4EC', border: '#00BFA555' },
+    hold:     { label: 'On hold',     color: '#92400E', bg: '#FEF3C7', border: '#F59E0B55' },
+    reject:   { label: 'Not progressed', color: '#991B1B', bg: '#FEE2E2', border: '#DC262655' },
+  }
+  const s = styles[stage]
+  if (!s) return null
+  return (
+    <span style={{
+      fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
+      padding: '1px 6px', borderRadius: 4, flexShrink: 0,
+      background: s.bg, color: s.color,
+      border: `1px solid ${s.border}`,
+      textTransform: 'uppercase',
+    }}>
+      {s.label}
+    </span>
+  )
+}
+
+// Three small Progress / Hold / Reject action buttons, shown inline in the
+// candidate row actions cell. When the candidate is already in that stage the
+// button renders filled to make the current state obvious.
+function StageActionButtons({ stage, onSet }) {
+  const items = [
+    { key: 'progress', label: 'Progress', color: '#0F7A66', bg: '#D8F4EC' },
+    { key: 'hold',     label: 'Hold',     color: '#92400E', bg: '#FEF3C7' },
+    { key: 'reject',   label: 'Reject',   color: '#991B1B', bg: '#FEE2E2' },
+  ]
+  return (
+    <div style={{ display: 'inline-flex', gap: 4 }}>
+      {items.map(i => {
+        const active = stage === i.key
+        return (
+          <button
+            key={i.key}
+            type="button"
+            onClick={e => { e.stopPropagation(); onSet(active ? 'active' : i.key) }}
+            title={active ? `${i.label} (click to clear)` : i.label}
+            style={{
+              padding: '4px 9px', borderRadius: 6,
+              border: `1px solid ${active ? i.color : BD}`,
+              background: active ? i.bg : 'transparent',
+              color: active ? i.color : TX3,
+              fontFamily: F, fontSize: 10.5, fontWeight: 800, letterSpacing: '0.02em',
+              cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={e => { if (!active) { e.currentTarget.style.background = i.bg; e.currentTarget.style.color = i.color; e.currentTarget.style.borderColor = i.color } }}
+            onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = TX3; e.currentTarget.style.borderColor = BD } }}
+          >
+            {i.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 function StatRing({ value, accent = '#00BFA5', size = 140, fillPercent = 100 }) {
   const sw = 10
   const r = (size - sw * 2) / 2
@@ -635,10 +697,12 @@ function DashboardPageInner() {
   const [selectedRole, setSelectedRole] = useState(null) // role_title currently drilled into
   const [showAllRoles, setShowAllRoles] = useState(false)
   const [roleDetailSearch, setRoleDetailSearch] = useState('')
+  const [roleDetailStageFilter, setRoleDetailStageFilter] = useState('') // '' | 'progress' | 'hold' | 'reject'
   const [selectedClient, setSelectedClient] = useState(null)
   const [showAllClients, setShowAllClients] = useState(false)
   const [clientDetailSearch, setClientDetailSearch] = useState('')
   const [clientDetailRoleFilter, setClientDetailRoleFilter] = useState('')
+  const [rejectExpanded, setRejectExpanded] = useState(false)
   const [teamMembers, setTeamMembers] = useState([])
   const [selectedTeamMember, setSelectedTeamMember] = useState(null)
   const [showAllTeam, setShowAllTeam] = useState(false)
@@ -703,7 +767,7 @@ function DashboardPageInner() {
 
         const { data: cands, error: candsErr } = await supabase
           .from('candidates')
-          .select('*, assessments!inner(role_title, id, employment_type, created_at, location), results(overall_score, risk_level, percentile, pressure_fit_score)')
+          .select('*, stage, assessments!inner(role_title, id, employment_type, created_at, location), results(overall_score, risk_level, percentile, pressure_fit_score)')
           .eq('user_id', user.id)
           .neq('status', 'archived')
           .order('invited_at', { ascending: false })
@@ -988,6 +1052,26 @@ function DashboardPageInner() {
       toast('Candidate archived')
     } finally {
       setArchivingIds(prev => { const next = new Set(prev); next.delete(id); return next })
+    }
+  }
+
+  async function handleStage(id, stage) {
+    const prev = candidates.find(c => c.id === id)?.stage || 'active'
+    if (prev === stage) return
+    // Optimistic update
+    setCandidates(list => list.map(c => c.id === id ? { ...c, stage } : c))
+    try {
+      const res = await fetch(`/api/candidates/${id}/stage`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage }),
+      })
+      if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || 'Failed to update stage')
+      const labels = { active: 'Active', progress: 'Progressing', hold: 'On hold', reject: 'Not progressed' }
+      toast(`Moved to ${labels[stage] || stage}`)
+    } catch (err) {
+      setCandidates(list => list.map(c => c.id === id ? { ...c, stage: prev } : c))
+      toast(err?.message || 'Could not update stage', 'error')
     }
   }
 
@@ -1284,12 +1368,17 @@ function DashboardPageInner() {
   const roleDetailCandidates = selectedRole
     ? candidatesInLocation.filter(c => c.assessments?.role_title === selectedRole)
     : []
-  const roleDetailFiltered = roleDetailSearch.trim()
-    ? roleDetailCandidates.filter(c =>
-        c.name?.toLowerCase().includes(roleDetailSearch.toLowerCase()) ||
-        c.email?.toLowerCase().includes(roleDetailSearch.toLowerCase())
-      )
-    : roleDetailCandidates
+  const roleDetailFiltered = roleDetailCandidates
+    .filter(c => {
+      if (!roleDetailStageFilter) return true
+      return (c.stage || 'active') === roleDetailStageFilter
+    })
+    .filter(c => {
+      const q = roleDetailSearch.trim().toLowerCase()
+      if (!q) return true
+      return c.name?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q)
+    })
 
   // ── clients overview aggregation (agency only) ──────────────────────────────
   const clientByCandidate = (() => {
@@ -1958,29 +2047,140 @@ function DashboardPageInner() {
           title="Shortlisting and Progression"
           subtitle="Decide who moves forward"
         />
-        <div style={{
-          order: 21,
-          ...cs,
-          marginBottom: 20,
-          padding: isMobile ? '18px 18px' : '22px 24px',
-          borderLeft: `4px solid ${TEAL}`,
-          display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
-        }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 10, background: TEALLT,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <Ic name="layers" size={18} color={TEALD} />
-          </div>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: TX, marginBottom: 2 }}>
-              Shortlisting tools coming soon
+        {(() => {
+          const progressing = candidates.filter(c => c.stage === 'progress')
+          const onHold      = candidates.filter(c => c.stage === 'hold')
+          const rejected    = candidates.filter(c => c.stage === 'reject')
+
+          const isAgency = isAgencyAccount
+          // Label selection. For 'both' agencies, pick per-candidate employment
+          // type; for direct employers pick by default_employment_type.
+          const progressingLabel = isAgency
+            ? 'Progressing to interview or placement'
+            : 'Progressing to interview'
+          const holdLabel = 'On hold, keeping warm'
+          const rejectedLabel = 'Not progressed'
+
+          const renderGroup = ({ key, title, label, count, list, accent, accentBg, accentBd, collapsible }) => {
+            const expanded = collapsible ? rejectExpanded : true
+            return (
+              <div key={key} style={{
+                ...cs, marginBottom: 16,
+                padding: 0, overflow: 'hidden',
+                borderLeft: `4px solid ${accent}`,
+              }}>
+                <div
+                  onClick={() => collapsible && setRejectExpanded(v => !v)}
+                  style={{
+                    padding: '14px 20px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    gap: 12, cursor: collapsible ? 'pointer' : 'default',
+                    borderBottom: expanded && count > 0 ? `1px solid ${BD}` : 'none',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      minWidth: 28, height: 22, padding: '0 8px', borderRadius: 999,
+                      background: accentBg, color: accent, border: `1px solid ${accentBd}`,
+                      fontFamily: FM, fontSize: 12, fontWeight: 800,
+                    }}>
+                      {count}
+                    </span>
+                    <div>
+                      <div style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: TX }}>
+                        {title}
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, marginTop: 1 }}>
+                        {label}
+                      </div>
+                    </div>
+                  </div>
+                  {collapsible && (
+                    <span style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TX3 }}>
+                      {expanded ? 'Hide' : 'Show'}
+                    </span>
+                  )}
+                </div>
+                {expanded && (
+                  count === 0 ? (
+                    <div style={{ padding: '14px 20px', fontSize: 12.5, color: TX3 }}>
+                      No candidates in this group yet.
+                    </div>
+                  ) : (
+                    <div>
+                      {list.map((c, i) => {
+                        const res = c.results?.[0]
+                        const score = res?.overall_score ?? null
+                        const isCompleted = c.status === 'completed'
+                        return (
+                          <div key={c.id} style={{
+                            display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+                            padding: '12px 20px',
+                            borderBottom: i < list.length - 1 ? `1px solid ${BD}` : 'none',
+                          }}>
+                            <Avatar name={c.name} size={28} />
+                            <div style={{ minWidth: 160, flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: TX }}>
+                                {c.name}
+                              </div>
+                              <div style={{ fontSize: 11.5, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {c.assessments?.role_title || '-'}
+                              </div>
+                            </div>
+                            {isCompleted && score !== null && (
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+                                <span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>
+                                  {score}
+                                </span>
+                                <span style={{ fontSize: 10, color: TX3 }}>/100</span>
+                              </div>
+                            )}
+                            <StageActionButtons stage={c.stage} onSet={(s) => handleStage(c.id, s)} />
+                            {isCompleted && (
+                              <button
+                                type="button"
+                                onClick={() => router.push(`/assessment/${c.assessments?.id}/candidate/${c.id}`)}
+                                style={{
+                                  padding: '6px 12px', borderRadius: 7, border: `1px solid ${BD}`,
+                                  background: 'transparent', color: TX2,
+                                  fontFamily: F, fontSize: 11.5, fontWeight: 700, cursor: 'pointer',
+                                }}
+                              >
+                                View report
+                              </button>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                )}
+              </div>
+            )
+          }
+
+          return (
+            <div style={{ order: 21, marginBottom: 20 }}>
+              {renderGroup({
+                key: 'progress', title: 'Progressing', label: progressingLabel,
+                count: progressing.length, list: progressing,
+                accent: '#0F7A66', accentBg: '#D8F4EC', accentBd: '#00BFA555',
+              })}
+              {renderGroup({
+                key: 'hold', title: 'On hold', label: holdLabel,
+                count: onHold.length, list: onHold,
+                accent: '#92400E', accentBg: '#FEF3C7', accentBd: '#F59E0B55',
+              })}
+              {renderGroup({
+                key: 'reject', title: 'Rejected', label: rejectedLabel,
+                count: rejected.length, list: rejected,
+                accent: '#991B1B', accentBg: '#FEE2E2', accentBd: '#DC262655',
+                collapsible: true,
+              })}
             </div>
-            <div style={{ fontFamily: F, fontSize: 12.5, color: TX3, lineHeight: 1.55 }}>
-              Progress, hold and reject groups with side-by-side comparison will live here.
-            </div>
-          </div>
-        </div>
+          )
+        })()}
         <SectionHeader
           order={30}
           number="3"
@@ -4241,22 +4441,52 @@ function DashboardPageInner() {
                     <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>
                       {roleDetailFiltered.length} of {roleDetailCandidates.length}
                       {roleDetailSearch ? ` matching "${roleDetailSearch}"` : ''}
+                      {roleDetailStageFilter ? ` · ${({ progress: 'Progressing', hold: 'On hold', reject: 'Not progressed' })[roleDetailStageFilter]}` : ''}
                     </div>
                   </div>
-                  <div style={{ position: 'relative', minWidth: isMobile ? '100%' : 260 }}>
-                    <input
-                      type="text"
-                      value={roleDetailSearch}
-                      onChange={e => setRoleDetailSearch(e.target.value)}
-                      placeholder="Search by name or email"
-                      style={{
-                        width: '100%', padding: '9px 12px 9px 34px',
-                        borderRadius: 8, border: `1px solid ${BD}`, background: BG,
-                        fontFamily: F, fontSize: 13, color: TX, outline: 'none',
-                      }}
-                    />
-                    <div style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
-                      <Ic name="search" size={13} color={TX3} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap' }}>
+                      {[
+                        { key: '', label: 'All' },
+                        { key: 'progress', label: 'Progressing', color: '#0F7A66', bg: '#D8F4EC' },
+                        { key: 'hold',     label: 'On hold',     color: '#92400E', bg: '#FEF3C7' },
+                        { key: 'reject',   label: 'Not progressed', color: '#991B1B', bg: '#FEE2E2' },
+                      ].map(b => {
+                        const active = roleDetailStageFilter === b.key
+                        return (
+                          <button
+                            key={b.key || '__all__'}
+                            type="button"
+                            onClick={() => setRoleDetailStageFilter(b.key)}
+                            style={{
+                              padding: '6px 12px', borderRadius: 999,
+                              border: `1.5px solid ${active ? (b.color || TEAL) : BD}`,
+                              background: active ? (b.bg || TEAL) : CARD,
+                              color: active ? (b.color || NAVY) : TX2,
+                              fontFamily: F, fontSize: 12, fontWeight: 700,
+                              cursor: 'pointer', whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {b.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <div style={{ position: 'relative', minWidth: isMobile ? '100%' : 260 }}>
+                      <input
+                        type="text"
+                        value={roleDetailSearch}
+                        onChange={e => setRoleDetailSearch(e.target.value)}
+                        placeholder="Search by name or email"
+                        style={{
+                          width: '100%', padding: '9px 12px 9px 34px',
+                          borderRadius: 8, border: `1px solid ${BD}`, background: BG,
+                          fontFamily: F, fontSize: 13, color: TX, outline: 'none',
+                        }}
+                      />
+                      <div style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
+                        <Ic name="search" size={13} color={TX3} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -4264,7 +4494,7 @@ function DashboardPageInner() {
                   <div style={{ padding: '40px 24px', textAlign: 'center', color: TX3, fontSize: 13 }}>
                     {roleDetailCandidates.length === 0
                       ? 'No candidates for this role yet.'
-                      : 'No candidates match your search.'}
+                      : 'No candidates match your filters.'}
                   </div>
                 ) : (
                   <div style={{ overflowX: 'auto' }}>
@@ -5329,6 +5559,7 @@ function DashboardPageInner() {
                                         Redline
                                       </a>
                                     )}
+                                    <StagePill stage={c.stage} />
                                   </div>
                                   <div style={{
                                     fontSize: 11, color: TX3,
@@ -5424,7 +5655,8 @@ function DashboardPageInner() {
 
                             {/* Actions */}
                             <td style={{ padding: '10px 4px', overflow: 'hidden' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                <StageActionButtons stage={c.stage} onSet={(s) => handleStage(c.id, s)} />
                                 {isAgencyAccount && c.assessments?.employment_type === 'temporary' && (
                                   <button
                                     onClick={e => {
