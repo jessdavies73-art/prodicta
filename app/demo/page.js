@@ -908,14 +908,17 @@ function DemoDashboardInner() {
               : (isTemp ? 'Placed on assignment' : 'Progressing to interview')
           }
 
+          const avgColor = avgScore == null
+            ? TX3
+            : avgScore >= 70 ? '#00BFA5' : avgScore >= 50 ? '#E8B84B' : '#DC2626'
+
           const tiles = [
-            { label: 'Live roles',       value: liveRoleIds.size, sub: 'Roles currently being assessed', color: NAVY },
-            { label: 'Total applicants', value: totalApplicants,  sub: 'Across all live roles',         color: TEALD },
-            { label: 'Completed',        value: completedCount,   sub: 'Assessments submitted',         color: GRN },
-            { label: 'Average score',    value: avgScore != null ? avgScore : '-', sub: 'Across all roles',
-              color: avgScore != null ? scolor(avgScore) : TX3 },
-            { label: 'Recommended',      value: recommendedCount, sub: 'Score 70 and above',            color: TEALD },
-            { label: 'Progressing',      value: progressingCount, sub: progressSub,                      color: '#0F7A66' },
+            { label: 'Live roles',       value: liveRoleIds.size, sub: 'Roles currently being assessed', color: '#00BFA5' },
+            { label: 'Total applicants', value: totalApplicants,  sub: 'Across all live roles',         color: '#6366F1' },
+            { label: 'Completed',        value: completedCount,   sub: 'Assessments submitted',         color: '#00BFA5' },
+            { label: 'Average score',    value: avgScore != null ? avgScore : '-', sub: 'Across all roles', color: avgColor },
+            { label: 'Recommended',      value: recommendedCount, sub: 'Score 70 and above',            color: '#00BFA5' },
+            { label: 'Progressing',      value: progressingCount, sub: progressSub,                      color: '#0F2137' },
           ]
 
           return (
@@ -926,7 +929,9 @@ function DemoDashboardInner() {
             }}>
               {tiles.map(t => (
                 <div key={t.label} style={{
-                  ...cs, padding: '14px 16px',
+                  ...cs,
+                  borderTop: `3px solid ${t.color}`,
+                  padding: '14px 16px',
                   display: 'flex', flexDirection: 'column', gap: 4,
                 }}>
                   <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
