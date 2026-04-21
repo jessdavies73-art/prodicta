@@ -592,6 +592,9 @@ function DashboardPageInner() {
   const [engagementSequences, setEngagementSequences] = useState([])
   const [ediCertifiedAssessments, setEdiCertifiedAssessments] = useState(new Set())
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
+  const [selectedRole, setSelectedRole] = useState(null) // role_title currently drilled into
+  const [showAllRoles, setShowAllRoles] = useState(false)
+  const [roleDetailSearch, setRoleDetailSearch] = useState('')
   const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
   const [showFirstTime, setShowFirstTime] = useState(false)
   const [installPrompt, setInstallPrompt] = useState(null)
@@ -1167,6 +1170,58 @@ function DashboardPageInner() {
   const filtered = activeFilter?.type === 'verdict'
     ? searchFiltered.filter(c => getVerdict(c) === activeFilter.value)
     : searchFiltered
+
+  // ── roles overview aggregation ──────────────────────────────────────────────
+  const rolesOverview = (() => {
+    const map = new Map()
+    for (const c of candidates) {
+      const title = c.assessments?.role_title
+      if (!title) continue
+      if (!map.has(title)) {
+        map.set(title, {
+          role_title: title,
+          assessment_id: c.assessments?.id,
+          total: 0, completed: 0, pending: 0,
+          scoreSum: 0, scoreCount: 0, recommended: 0,
+          lastActive: 0,
+        })
+      }
+      const r = map.get(title)
+      r.total++
+      if (c.status === 'completed') {
+        r.completed++
+        const s = c.results?.[0]?.overall_score
+        if (typeof s === 'number') {
+          r.scoreSum += s
+          r.scoreCount++
+          if (s >= 70) r.recommended++
+        }
+      } else {
+        r.pending++
+      }
+      const d = c.completed_at || c.invited_at
+      if (d) {
+        const t = new Date(d).getTime()
+        if (Number.isFinite(t) && t > r.lastActive) r.lastActive = t
+      }
+    }
+    return Array.from(map.values())
+      .map(r => ({ ...r, avgScore: r.scoreCount ? Math.round(r.scoreSum / r.scoreCount) : null }))
+      .sort((a, b) => b.lastActive - a.lastActive)
+  })()
+
+  const activeRole = selectedRole
+    ? rolesOverview.find(r => r.role_title === selectedRole) || null
+    : null
+  const roleDetailCandidates = selectedRole
+    ? candidates.filter(c => c.assessments?.role_title === selectedRole)
+    : []
+  const roleDetailFiltered = roleDetailSearch.trim()
+    ? roleDetailCandidates.filter(c =>
+        c.name?.toLowerCase().includes(roleDetailSearch.toLowerCase()) ||
+        c.email?.toLowerCase().includes(roleDetailSearch.toLowerCase())
+      )
+    : roleDetailCandidates
 
   // Separate lists for filtered views (replace main table when active)
   const healthFilteredCandidates = activeFilter?.type === 'health'
@@ -3624,8 +3679,328 @@ function DashboardPageInner() {
         )}
 
 
+        {/* ── Roles Overview (all account types) ── */}
+        {!activeFilter && !selectedRole && rolesOverview.length > 0 && (
+          <div style={{ ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: 16, flexWrap: 'wrap', gap: 10,
+            }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>
+                  Roles Overview
+                </h2>
+                <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>
+                  {rolesOverview.length} role{rolesOverview.length !== 1 ? 's' : ''} assessed. Click a role to drill into its candidates.
+                </div>
+              </div>
+              {rolesOverview.length > 6 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllRoles(v => !v)}
+                  style={{
+                    background: 'transparent', border: `1px solid ${BD}`, borderRadius: 8,
+                    padding: '7px 14px', fontFamily: F, fontSize: 12.5, fontWeight: 700,
+                    color: TEALD, cursor: 'pointer',
+                  }}
+                >
+                  {showAllRoles ? 'Show top 6' : `View all roles (${rolesOverview.length})`}
+                </button>
+              )}
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: 12,
+            }}>
+              {(showAllRoles ? rolesOverview : rolesOverview.slice(0, 6)).map(r => {
+                const iconColor = r.assessment_id ? roleColor(r.assessment_id) : TEAL
+                const pct = r.total > 0 ? Math.round((r.completed / r.total) * 100) : 0
+                return (
+                  <div
+                    key={r.role_title}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSelectedRole(r.role_title); setRoleDetailSearch('') }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setSelectedRole(r.role_title)
+                        setRoleDetailSearch('')
+                      }
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = TEAL
+                      e.currentTarget.style.background = TEALLT
+                      e.currentTarget.style.transform = 'translateY(-1px)'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = BD
+                      e.currentTarget.style.background = CARD
+                      e.currentTarget.style.transform = 'translateY(0)'
+                    }}
+                    style={{
+                      borderRadius: 12,
+                      border: `1.5px solid ${BD}`,
+                      background: CARD,
+                      padding: '14px 16px',
+                      cursor: 'pointer',
+                      transition: 'border-color 0.15s, background 0.15s, transform 0.15s',
+                      display: 'flex', flexDirection: 'column', gap: 12,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 9, background: iconColor, flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                        </svg>
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{
+                          fontSize: 13.5, fontWeight: 700, color: TX,
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        }}>
+                          {r.role_title}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: TX3, marginTop: 2 }}>
+                          {r.total} candidate{r.total !== 1 ? 's' : ''} assessed
+                        </div>
+                      </div>
+                      <Ic name="right" size={14} color={TX3} />
+                    </div>
+
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, 1fr)',
+                      gap: 8,
+                    }}>
+                      <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Completed</div>
+                        <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: GRN, marginTop: 2 }}>{r.completed}</div>
+                      </div>
+                      <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Pending</div>
+                        <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: AMB, marginTop: 2 }}>{r.pending}</div>
+                      </div>
+                      <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Avg score</div>
+                        <div style={{
+                          fontFamily: FM, fontSize: 16, fontWeight: 800,
+                          color: r.avgScore != null ? scolor(r.avgScore) : TX3, marginTop: 2,
+                        }}>
+                          {r.avgScore != null ? r.avgScore : '-'}
+                        </div>
+                      </div>
+                      <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Recommended</div>
+                        <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: TEALD, marginTop: 2 }}>{r.recommended}</div>
+                      </div>
+                    </div>
+
+                    {r.total > 0 && (
+                      <div>
+                        <div style={{ height: 4, borderRadius: 2, background: BD, overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%', width: `${pct}%`,
+                            background: `linear-gradient(90deg, ${TEAL}, ${TEALD})`,
+                            borderRadius: 2, transition: 'width 0.3s ease',
+                          }} />
+                        </div>
+                        <div style={{ fontSize: 10.5, color: TX3, marginTop: 5 }}>
+                          {pct}% complete
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Role Detail view (all account types) ── */}
+        {selectedRole && activeRole && (() => {
+          const completedForRole = roleDetailCandidates.filter(c => c.status === 'completed')
+          return (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedRole(null); setRoleDetailSearch('') }}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: 'transparent', border: `1px solid ${BD}`, borderRadius: 8,
+                    padding: '7px 14px', fontFamily: F, fontSize: 12.5, fontWeight: 700,
+                    color: TX2, cursor: 'pointer',
+                  }}
+                >
+                  <Ic name="left" size={12} color={TX2} />
+                  Back to dashboard
+                </button>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: TX }}>
+                  {activeRole.role_title}
+                </h2>
+              </div>
+
+              <div style={{
+                ...cs,
+                marginBottom: 16, padding: isMobile ? '14px 16px' : '18px 22px',
+                display: 'grid',
+                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
+                gap: 14,
+              }}>
+                {[
+                  { label: 'Total', value: activeRole.total, color: TX },
+                  { label: 'Completed', value: activeRole.completed, color: GRN },
+                  { label: 'Pending', value: activeRole.pending, color: AMB },
+                  { label: 'Average score', value: activeRole.avgScore != null ? activeRole.avgScore : '-', color: activeRole.avgScore != null ? scolor(activeRole.avgScore) : TX3 },
+                  { label: 'Recommended', value: activeRole.recommended, color: TEALD },
+                ].map(s => (
+                  <div key={s.label} style={{ textAlign: isMobile ? 'left' : 'center' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                      {s.label}
+                    </div>
+                    <div style={{ fontFamily: FM, fontSize: 24, fontWeight: 800, color: s.color, marginTop: 4 }}>
+                      {s.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ ...cs, padding: 0, overflow: 'hidden' }}>
+                <div style={{
+                  padding: '16px 20px', borderBottom: `1px solid ${BD}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 12, flexWrap: 'wrap',
+                }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: TX }}>
+                      Candidates for this role
+                    </h3>
+                    <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>
+                      {roleDetailFiltered.length} of {roleDetailCandidates.length}
+                      {roleDetailSearch ? ` matching "${roleDetailSearch}"` : ''}
+                    </div>
+                  </div>
+                  <div style={{ position: 'relative', minWidth: isMobile ? '100%' : 260 }}>
+                    <input
+                      type="text"
+                      value={roleDetailSearch}
+                      onChange={e => setRoleDetailSearch(e.target.value)}
+                      placeholder="Search by name or email"
+                      style={{
+                        width: '100%', padding: '9px 12px 9px 34px',
+                        borderRadius: 8, border: `1px solid ${BD}`, background: BG,
+                        fontFamily: F, fontSize: 13, color: TX, outline: 'none',
+                      }}
+                    />
+                    <div style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
+                      <Ic name="search" size={13} color={TX3} />
+                    </div>
+                  </div>
+                </div>
+                {roleDetailFiltered.length === 0 ? (
+                  <div style={{ padding: '40px 24px', textAlign: 'center', color: TX3, fontSize: 13 }}>
+                    {roleDetailCandidates.length === 0
+                      ? 'No candidates for this role yet.'
+                      : 'No candidates match your search.'}
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: isMobile ? 640 : undefined }}>
+                      <thead>
+                        <tr style={{ borderBottom: `1px solid ${BD}` }}>
+                          {['Candidate', 'Status', 'Score', 'Date', ''].map(h => (
+                            <th key={h} style={{
+                              padding: '10px 12px', textAlign: 'left',
+                              fontSize: 11, fontWeight: 700, color: TX3,
+                              letterSpacing: '0.04em', textTransform: 'uppercase',
+                              whiteSpace: 'nowrap', background: BG,
+                            }}>
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {roleDetailFiltered.map((c, i) => {
+                          const res = c.results?.[0]
+                          const score = res?.overall_score ?? null
+                          const isCompleted = c.status === 'completed'
+                          return (
+                            <tr
+                              key={c.id}
+                              style={{
+                                borderBottom: i < roleDetailFiltered.length - 1 ? `1px solid ${BD}` : 'none',
+                                background: CARD,
+                              }}
+                            >
+                              <td style={{ padding: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  <Avatar name={c.name} size={28} />
+                                  <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 600, color: TX }}>{c.name}</div>
+                                    <div style={{ fontSize: 11.5, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
+                                      {c.email}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td style={{ padding: '12px' }}>
+                                <StatusBadge status={c.status} />
+                              </td>
+                              <td style={{ padding: '12px' }}>
+                                {isCompleted && score !== null ? (
+                                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+                                    <span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>
+                                      {score}
+                                    </span>
+                                    <span style={{ fontSize: 10, color: TX3 }}>/100</span>
+                                  </div>
+                                ) : (
+                                  <span style={{ color: TX3, fontSize: 12 }}>-</span>
+                                )}
+                              </td>
+                              <td style={{ padding: '12px' }}>
+                                <span style={{ fontSize: 11.5, color: TX3, whiteSpace: 'nowrap' }}>
+                                  {isCompleted ? fmt(c.completed_at) : fmt(c.invited_at)}
+                                </span>
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'right' }}>
+                                {isCompleted ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => router.push(`/assessment/${c.assessments?.id}/candidate/${c.id}`)}
+                                    style={{
+                                      padding: '7px 14px', borderRadius: 7, border: 'none',
+                                      background: TEAL, color: NAVY,
+                                      fontFamily: F, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                    }}
+                                  >
+                                    View report
+                                  </button>
+                                ) : (
+                                  <span style={{ color: TX3, fontSize: 11.5 }}>-</span>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* ── Bulk Invite prompt (all account types, always visible) ── */}
-        {!activeFilter && (
+        {!activeFilter && !selectedRole && (
           <div style={{
             ...cs,
             marginBottom: 20,
@@ -3668,8 +4043,8 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Bottom grid: table + assessments panel (hidden when filter active) ── */}
-        <div className="dashboard-layout" style={{ display: activeFilter ? 'none' : 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
+        {/* ── Bottom grid: table + assessments panel (hidden when filter active or drilled into a role) ── */}
+        <div className="dashboard-layout" style={{ display: (activeFilter || selectedRole) ? 'none' : 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
 
           {/* ── Candidates table ── */}
           <div className="dashboard-candidates" style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : 'auto' }}>
