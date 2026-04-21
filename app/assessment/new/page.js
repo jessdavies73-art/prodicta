@@ -202,6 +202,7 @@ export default function NewAssessmentPage() {
   const [modeOverridden, setModeOverridden] = useState(false)
   const [employmentType, setEmploymentType] = useState('') // 'permanent' | 'temporary'
   const [employmentTypeDefaulted, setEmploymentTypeDefaulted] = useState(false) // true if pre-set from settings
+  const [location, setLocation] = useState('') // free-text location or site, used by the dashboard location filter
 
   // Context questions
   const [contextAnswers, setContextAnswers] = useState({})
@@ -577,6 +578,7 @@ export default function NewAssessmentPage() {
           context_answers: Object.keys(serialized).length > 0 ? serialized : undefined,
           assessment_mode: mode,
           employment_type: employmentType || undefined,
+          location: location.trim() || undefined,
         })
       })
       const data = await res.json()
@@ -1074,6 +1076,29 @@ export default function NewAssessmentPage() {
               onFocus={e => e.target.style.borderColor = '#00BFA5'}
               onBlur={e => e.target.style.borderColor = '#e4e9f0'}
             />
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#0f172a', marginBottom: 6 }}>
+              Location or site (optional)
+            </label>
+            <input
+              type="text"
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              placeholder="e.g. London, Manchester, Site A"
+              style={{
+                width: '100%', boxSizing: 'border-box', padding: '10px 14px',
+                borderRadius: 8, border: '1px solid #e4e9f0', fontSize: 14,
+                color: '#0f172a', fontFamily: F, background: '#fff', outline: 'none',
+                transition: 'border-color 0.15s'
+              }}
+              onFocus={e => e.target.style.borderColor = '#00BFA5'}
+              onBlur={e => e.target.style.borderColor = '#e4e9f0'}
+            />
+            <p style={{ margin: '6px 0 0', fontSize: 11.5, color: '#94a1b3' }}>
+              Filter your dashboard by location or site later on.
+            </p>
           </div>
 
           <div>

@@ -592,6 +592,7 @@ function DashboardPageInner() {
   const [engagementSequences, setEngagementSequences] = useState([])
   const [ediCertifiedAssessments, setEdiCertifiedAssessments] = useState(new Set())
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
+  const [selectedLocation, setSelectedLocation] = useState('') // '' = All locations
   const [selectedRole, setSelectedRole] = useState(null) // role_title currently drilled into
   const [showAllRoles, setShowAllRoles] = useState(false)
   const [roleDetailSearch, setRoleDetailSearch] = useState('')
@@ -663,7 +664,7 @@ function DashboardPageInner() {
 
         const { data: cands, error: candsErr } = await supabase
           .from('candidates')
-          .select('*, assessments!inner(role_title, id, employment_type, created_at), results(overall_score, risk_level, percentile, pressure_fit_score)')
+          .select('*, assessments!inner(role_title, id, employment_type, created_at, location), results(overall_score, risk_level, percentile, pressure_fit_score)')
           .eq('user_id', user.id)
           .neq('status', 'archived')
           .order('invited_at', { ascending: false })
@@ -1165,15 +1166,35 @@ function DashboardPageInner() {
     if (v) verdictCounts[v]++
   })
 
+  // ── location filter ─────────────────────────────────────────────────────────
+  // Unique, sorted list of locations seen across this user's assessments.
+  // Used to render the pill filter bar and to scope the Roles / Clients
+  // overviews and the main candidate table.
+  const locations = Array.from(
+    new Set(
+      candidates
+        .map(c => (c.assessments?.location || '').trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b))
+  const hasAnyLocation = locations.length > 0
+  // If the currently selected location disappears (e.g. the last candidate at
+  // that location is archived), clear it so the dashboard does not hang on
+  // an empty view.
+  const activeLocation = selectedLocation && locations.includes(selectedLocation) ? selectedLocation : ''
+  const candidatesInLocation = activeLocation
+    ? candidates.filter(c => (c.assessments?.location || '').trim() === activeLocation)
+    : candidates
+
   // ── filtered candidates ─────────────────────────────────────────────────────
 
   const searchFiltered = search.trim()
-    ? candidates.filter(c =>
+    ? candidatesInLocation.filter(c =>
         c.name?.toLowerCase().includes(search.toLowerCase()) ||
         c.email?.toLowerCase().includes(search.toLowerCase()) ||
         c.assessments?.role_title?.toLowerCase().includes(search.toLowerCase())
       )
-    : candidates
+    : candidatesInLocation
 
   const filtered = activeFilter?.type === 'verdict'
     ? searchFiltered.filter(c => getVerdict(c) === activeFilter.value)
@@ -1182,7 +1203,7 @@ function DashboardPageInner() {
   // ── roles overview aggregation ──────────────────────────────────────────────
   const rolesOverview = (() => {
     const map = new Map()
-    for (const c of candidates) {
+    for (const c of candidatesInLocation) {
       const title = c.assessments?.role_title
       if (!title) continue
       if (!map.has(title)) {
@@ -1222,7 +1243,7 @@ function DashboardPageInner() {
     ? rolesOverview.find(r => r.role_title === selectedRole) || null
     : null
   const roleDetailCandidates = selectedRole
-    ? candidates.filter(c => c.assessments?.role_title === selectedRole)
+    ? candidatesInLocation.filter(c => c.assessments?.role_title === selectedRole)
     : []
   const roleDetailFiltered = roleDetailSearch.trim()
     ? roleDetailCandidates.filter(c =>
@@ -1253,7 +1274,7 @@ function DashboardPageInner() {
   const clientsOverview = (() => {
     if (!isAgencyAccount) return []
     const map = new Map()
-    for (const c of candidates) {
+    for (const c of candidatesInLocation) {
       const client = clientByCandidate[c.id]
       if (!client) continue
       if (!map.has(client)) {
@@ -1293,7 +1314,7 @@ function DashboardPageInner() {
     ? clientsOverview.find(c => c.client_name === selectedClient) || null
     : null
   const clientDetailCandidates = selectedClient
-    ? candidates.filter(c => clientByCandidate[c.id] === selectedClient)
+    ? candidatesInLocation.filter(c => clientByCandidate[c.id] === selectedClient)
     : []
   const clientDetailRoles = selectedClient
     ? Array.from(new Set(clientDetailCandidates.map(c => c.assessments?.role_title).filter(Boolean))).sort()
@@ -3820,6 +3841,95 @@ function DashboardPageInner() {
           </div>
         )}
 
+
+        {/* ── Location filter bar (all account types) ── */}
+        {!activeFilter && !selectedRole && !selectedClient && !selectedTeamMember && (
+          <div style={{ ...cs, marginBottom: 20, padding: isMobile ? '14px 16px' : '16px 20px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              flexWrap: 'wrap', gap: 10, marginBottom: hasAnyLocation ? 12 : 0,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 8, background: TEALLT,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: TX }}>
+                    Location
+                  </div>
+                  {activeLocation ? (
+                    <div style={{ fontSize: 12, color: TX3, marginTop: 1 }}>
+                      Viewing: <strong style={{ color: TEALD }}>{activeLocation}</strong>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: TX3, marginTop: 1 }}>
+                      {hasAnyLocation ? 'Showing all locations' : 'No locations set yet'}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {activeLocation && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedLocation('')}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: 'transparent', border: `1px solid ${BD}`, borderRadius: 8,
+                    padding: '6px 12px', fontFamily: F, fontSize: 12, fontWeight: 700,
+                    color: TX2, cursor: 'pointer',
+                  }}
+                >
+                  Clear filter
+                  <Ic name="x" size={11} color={TX2} />
+                </button>
+              )}
+            </div>
+            {hasAnyLocation ? (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                overflowX: 'auto', paddingBottom: 2,
+              }}>
+                {[{ value: '', label: 'All' }, ...locations.map(l => ({ value: l, label: l }))].map(p => {
+                  const isSelected = activeLocation === p.value || (!activeLocation && p.value === '')
+                  return (
+                    <button
+                      key={p.value || '__all__'}
+                      type="button"
+                      onClick={() => setSelectedLocation(p.value)}
+                      style={{
+                        flexShrink: 0,
+                        padding: '7px 14px',
+                        borderRadius: 999,
+                        border: `1.5px solid ${isSelected ? TEAL : BD}`,
+                        background: isSelected ? TEAL : CARD,
+                        color: isSelected ? NAVY : TX2,
+                        fontFamily: F, fontSize: 12.5, fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'background 0.15s, border-color 0.15s',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {p.label}
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <div style={{
+                marginTop: 10, border: `1px dashed ${BD}`, borderRadius: 10,
+                padding: '14px 16px', fontSize: 12.5, color: TX3, lineHeight: 1.55,
+              }}>
+                Add a location when creating assessments to filter your dashboard by site or office.
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Roles Overview (all account types) ── */}
         {!activeFilter && !selectedRole && rolesOverview.length > 0 && (

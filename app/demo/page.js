@@ -269,6 +269,7 @@ function DemoDashboardInner() {
   const [modal, setModal] = useState(false)
   const [selectedCandidates, setSelectedCandidates] = useState(new Set())
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
+  const [selectedLocation, setSelectedLocation] = useState('')
   const [selectedRole, setSelectedRole] = useState(null)
   const [showAllRoles, setShowAllRoles] = useState(false)
   const [roleDetailSearch, setRoleDetailSearch] = useState('')
@@ -307,8 +308,26 @@ function DemoDashboardInner() {
   // Demo EDI certified assessments
   const DEMO_EDI_CERTIFIED = new Set(['demo-assess-1', 'demo-assess-2'])
 
+  // Demo locations by candidate id for location filter demonstration
+  const DEMO_LOCATION_BY_CANDIDATE = {
+    'demo-c1':  'London',
+    'demo-c2':  'London',
+    'demo-c3':  'Manchester',
+    'demo-c4':  'Manchester',
+    'demo-c5':  'London',
+    'demo-c6':  'Birmingham',
+    'demo-c7':  'Manchester',
+    'demo-c10': 'London',
+    'demo-c11': 'Birmingham',
+  }
+
   // Exclude archived from main view
-  const allActiveCandidates = DEMO_CANDIDATES.filter(c => c.status !== 'archived')
+  const allActiveCandidates = DEMO_CANDIDATES
+    .filter(c => c.status !== 'archived')
+    .map(c => ({
+      ...c,
+      assessments: { ...c.assessments, location: DEMO_LOCATION_BY_CANDIDATE[c.id] || c.assessments?.location || null },
+    }))
   const activeCandidates = demoEmploymentType === 'both'
     ? allActiveCandidates
     : allActiveCandidates.filter(c => c.assessments?.employment_type === demoEmploymentType)
@@ -336,10 +355,20 @@ function DemoDashboardInner() {
     if (v) verdictCounts[v]++
   })
 
+  // Location filter
+  const demoLocations = Array.from(
+    new Set(activeCandidates.map(c => (c.assessments?.location || '').trim()).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b))
+  const hasAnyLocation = demoLocations.length > 0
+  const activeLocation = selectedLocation && demoLocations.includes(selectedLocation) ? selectedLocation : ''
+  const candidatesInLocation = activeLocation
+    ? activeCandidates.filter(c => (c.assessments?.location || '').trim() === activeLocation)
+    : activeCandidates
+
   // Filter by assessment tab + search
   const byAssessment = filterAssessmentId
-    ? activeCandidates.filter(c => c.assessments?.id === filterAssessmentId)
-    : activeCandidates
+    ? candidatesInLocation.filter(c => c.assessments?.id === filterAssessmentId)
+    : candidatesInLocation
   const searchedDemo = search.trim()
     ? byAssessment.filter(c =>
         c.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -354,7 +383,7 @@ function DemoDashboardInner() {
   // Roles Overview aggregation
   const rolesOverview = (() => {
     const map = new Map()
-    for (const c of activeCandidates) {
+    for (const c of candidatesInLocation) {
       const title = c.assessments?.role_title
       if (!title) continue
       if (!map.has(title)) {
@@ -394,7 +423,7 @@ function DemoDashboardInner() {
     ? rolesOverview.find(r => r.role_title === selectedRole) || null
     : null
   const roleDetailCandidates = selectedRole
-    ? activeCandidates.filter(c => c.assessments?.role_title === selectedRole)
+    ? candidatesInLocation.filter(c => c.assessments?.role_title === selectedRole)
     : []
   const roleDetailFiltered = roleDetailSearch.trim()
     ? roleDetailCandidates.filter(c =>
@@ -426,7 +455,7 @@ function DemoDashboardInner() {
   const demoClientsOverview = (() => {
     if (!isAgency) return []
     const map = new Map()
-    for (const c of activeCandidates) {
+    for (const c of candidatesInLocation) {
       const client = DEMO_CLIENT_BY_CANDIDATE[c.id]
       if (!client) continue
       if (!map.has(client)) {
@@ -466,7 +495,7 @@ function DemoDashboardInner() {
     ? demoClientsOverview.find(c => c.client_name === selectedClient) || null
     : null
   const clientDetailCandidates = selectedClient
-    ? activeCandidates.filter(c => DEMO_CLIENT_BY_CANDIDATE[c.id] === selectedClient)
+    ? candidatesInLocation.filter(c => DEMO_CLIENT_BY_CANDIDATE[c.id] === selectedClient)
     : []
   const clientDetailRoles = selectedClient
     ? Array.from(new Set(clientDetailCandidates.map(c => c.assessments?.role_title).filter(Boolean))).sort()
@@ -511,7 +540,7 @@ function DemoDashboardInner() {
         scoreSum: 0, scoreCount: 0, lastActive: 0,
       })
     }
-    for (const c of activeCandidates) {
+    for (const c of candidatesInLocation) {
       const uid = DEMO_TEAM_BY_CANDIDATE[c.id]
       if (!uid || !map.has(uid)) continue
       const r = map.get(uid)
@@ -538,7 +567,7 @@ function DemoDashboardInner() {
     ? demoTeamOverview.find(m => m.id === selectedTeamMember) || null
     : null
   const teamDetailCandidates = selectedTeamMember
-    ? activeCandidates.filter(c => DEMO_TEAM_BY_CANDIDATE[c.id] === selectedTeamMember)
+    ? candidatesInLocation.filter(c => DEMO_TEAM_BY_CANDIDATE[c.id] === selectedTeamMember)
     : []
   const teamDetailFiltered = teamDetailSearch.trim()
     ? teamDetailCandidates.filter(c =>
@@ -1648,6 +1677,90 @@ function DemoDashboardInner() {
               </div>
             </div>
           </>
+        )}
+
+        {/* Location filter bar (all account types) */}
+        {!activeFilter && !selectedRole && !selectedClient && !selectedTeamMember && (
+          <div style={{ ...cs, marginBottom: 20, padding: isMobile ? '14px 16px' : '16px 20px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              flexWrap: 'wrap', gap: 10, marginBottom: hasAnyLocation ? 12 : 0,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 8, background: TEALLT,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: TX }}>Location</div>
+                  {activeLocation ? (
+                    <div style={{ fontSize: 12, color: TX3, marginTop: 1 }}>
+                      Viewing: <strong style={{ color: TEALD }}>{activeLocation}</strong>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: TX3, marginTop: 1 }}>
+                      {hasAnyLocation ? 'Showing all locations' : 'No locations set yet'}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {activeLocation && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedLocation('')}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: 'transparent', border: `1px solid ${BD}`, borderRadius: 8,
+                    padding: '6px 12px', fontFamily: F, fontSize: 12, fontWeight: 700,
+                    color: TX2, cursor: 'pointer',
+                  }}
+                >
+                  Clear filter
+                  <Ic name="x" size={11} color={TX2} />
+                </button>
+              )}
+            </div>
+            {hasAnyLocation ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+                {[{ value: '', label: 'All' }, ...demoLocations.map(l => ({ value: l, label: l }))].map(p => {
+                  const isSelected = activeLocation === p.value || (!activeLocation && p.value === '')
+                  return (
+                    <button
+                      key={p.value || '__all__'}
+                      type="button"
+                      onClick={() => setSelectedLocation(p.value)}
+                      style={{
+                        flexShrink: 0,
+                        padding: '7px 14px',
+                        borderRadius: 999,
+                        border: `1.5px solid ${isSelected ? TEAL : BD}`,
+                        background: isSelected ? TEAL : CARD,
+                        color: isSelected ? NAVY : TX2,
+                        fontFamily: F, fontSize: 12.5, fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'background 0.15s, border-color 0.15s',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {p.label}
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <div style={{
+                marginTop: 10, border: `1px dashed ${BD}`, borderRadius: 10,
+                padding: '14px 16px', fontSize: 12.5, color: TX3, lineHeight: 1.55,
+              }}>
+                Add a location when creating assessments to filter your dashboard by site or office.
+              </div>
+            )}
+          </div>
         )}
 
         {/* Roles Overview (all account types) */}

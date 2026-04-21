@@ -56,7 +56,11 @@ export async function POST(request) {
       template_name,
       context_answers: contextAnswersRaw,
       assessment_mode,
+      location: locationRaw,
     } = body
+    const location = typeof locationRaw === 'string' && locationRaw.trim()
+      ? locationRaw.trim().slice(0, 120)
+      : null
 
     // Trim oversized inputs so the prompt can't balloon past Claude/Vercel limits.
     // The JD cap is applied before it reaches any prompt template; the downstream
@@ -743,6 +747,7 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         status: 'active',
         assessment_mode: mode,
         employment_type,
+        ...(location && { location }),
         ...(context_answers && Object.values(context_answers).some(v => v?.trim()) && {
           context_answers,
         }),
