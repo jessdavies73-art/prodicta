@@ -276,6 +276,9 @@ function DemoDashboardInner() {
   const [showAllClients, setShowAllClients] = useState(false)
   const [clientDetailSearch, setClientDetailSearch] = useState('')
   const [clientDetailRoleFilter, setClientDetailRoleFilter] = useState('')
+  const [selectedTeamMember, setSelectedTeamMember] = useState(null)
+  const [showAllTeam, setShowAllTeam] = useState(false)
+  const [teamDetailSearch, setTeamDetailSearch] = useState('')
   const [demoHealthTooltip, setDemoHealthTooltip] = useState(null)
 
   // Demo placement health: traffic light per candidate id
@@ -477,6 +480,73 @@ function DemoDashboardInner() {
         c.email?.toLowerCase().includes(q) ||
         c.assessments?.role_title?.toLowerCase().includes(q)
     })
+
+  // Demo team members (shown to account owner)
+  const DEMO_TEAM_MEMBERS = [
+    { id: 'demo-user-1', name: 'Sarah Mitchell', email: 'sarah.mitchell@demorecruit.com', role: 'Owner' },
+    { id: 'demo-user-2', name: 'David Okafor',   email: 'david.okafor@demorecruit.com',   role: 'Manager' },
+    { id: 'demo-user-3', name: 'Rachel Kim',     email: 'rachel.kim@demorecruit.com',     role: 'Consultant' },
+    { id: 'demo-user-4', name: 'Ben Hargreaves', email: 'ben.hargreaves@demorecruit.com', role: 'Consultant' },
+  ]
+
+  // Assign demo candidates to team members so each member has some activity
+  const DEMO_TEAM_BY_CANDIDATE = {
+    'demo-c1':  'demo-user-1',
+    'demo-c2':  'demo-user-2',
+    'demo-c3':  'demo-user-3',
+    'demo-c4':  'demo-user-3',
+    'demo-c5':  'demo-user-1',
+    'demo-c6':  'demo-user-2',
+    'demo-c7':  'demo-user-4',
+    'demo-c10': 'demo-user-1',
+    'demo-c11': 'demo-user-4',
+  }
+
+  const demoTeamOverview = (() => {
+    const map = new Map()
+    for (const m of DEMO_TEAM_MEMBERS) {
+      map.set(m.id, {
+        id: m.id, name: m.name, email: m.email, role: m.role,
+        total: 0, completed: 0, pending: 0,
+        scoreSum: 0, scoreCount: 0, lastActive: 0,
+      })
+    }
+    for (const c of activeCandidates) {
+      const uid = DEMO_TEAM_BY_CANDIDATE[c.id]
+      if (!uid || !map.has(uid)) continue
+      const r = map.get(uid)
+      r.total++
+      if (c.status === 'completed') {
+        r.completed++
+        const s = c.results?.[0]?.overall_score
+        if (typeof s === 'number') { r.scoreSum += s; r.scoreCount++ }
+      } else {
+        r.pending++
+      }
+      const d = c.completed_at || c.invited_at
+      if (d) {
+        const t = new Date(d).getTime()
+        if (Number.isFinite(t) && t > r.lastActive) r.lastActive = t
+      }
+    }
+    return Array.from(map.values())
+      .map(r => ({ ...r, avgScore: r.scoreCount ? Math.round(r.scoreSum / r.scoreCount) : null }))
+      .sort((a, b) => b.lastActive - a.lastActive)
+  })()
+
+  const activeTeamMember = selectedTeamMember
+    ? demoTeamOverview.find(m => m.id === selectedTeamMember) || null
+    : null
+  const teamDetailCandidates = selectedTeamMember
+    ? activeCandidates.filter(c => DEMO_TEAM_BY_CANDIDATE[c.id] === selectedTeamMember)
+    : []
+  const teamDetailFiltered = teamDetailSearch.trim()
+    ? teamDetailCandidates.filter(c =>
+        c.name?.toLowerCase().includes(teamDetailSearch.toLowerCase()) ||
+        c.email?.toLowerCase().includes(teamDetailSearch.toLowerCase()) ||
+        c.assessments?.role_title?.toLowerCase().includes(teamDetailSearch.toLowerCase())
+      )
+    : teamDetailCandidates
 
   // Separate list for Placement Health filtered view (agency only, replaces main table)
   const healthFilteredCandidates = activeFilter?.type === 'health'
@@ -2211,8 +2281,300 @@ function DemoDashboardInner() {
           </div>
         )}
 
-        {/* Candidates table + assessments panel (hidden when any filter card is active or drilled into a role/client) */}
-        <div style={{ display: (activeFilter || selectedRole || selectedClient) ? 'none' : 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 20, alignItems: 'flex-start' }}>
+        {/* Team Overview (all account types) */}
+        {!activeFilter && !selectedRole && !selectedClient && !selectedTeamMember && (
+          <div style={{ ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Team Overview</h2>
+                <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>
+                  {demoTeamOverview.length} team member{demoTeamOverview.length !== 1 ? 's' : ''}. Click a member to see their activity.
+                </div>
+              </div>
+              {demoTeamOverview.length > 6 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllTeam(v => !v)}
+                  style={{
+                    background: 'transparent', border: `1px solid ${BD}`, borderRadius: 8,
+                    padding: '7px 14px', fontFamily: F, fontSize: 12.5, fontWeight: 700,
+                    color: TEALD, cursor: 'pointer',
+                  }}
+                >
+                  {showAllTeam ? 'Show top 6' : `View all members (${demoTeamOverview.length})`}
+                </button>
+              )}
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: 12,
+            }}>
+              {(showAllTeam ? demoTeamOverview : demoTeamOverview.slice(0, 6)).map(m => {
+                const pct = m.total > 0 ? Math.round((m.completed / m.total) * 100) : 0
+                return (
+                  <div
+                    key={m.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSelectedTeamMember(m.id); setTeamDetailSearch('') }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setSelectedTeamMember(m.id)
+                        setTeamDetailSearch('')
+                      }
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = TEAL
+                      e.currentTarget.style.background = TEALLT
+                      e.currentTarget.style.transform = 'translateY(-1px)'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = BD
+                      e.currentTarget.style.background = CARD
+                      e.currentTarget.style.transform = 'translateY(0)'
+                    }}
+                    style={{
+                      borderRadius: 12,
+                      border: `1.5px solid ${BD}`,
+                      background: CARD,
+                      padding: '14px 16px',
+                      cursor: 'pointer',
+                      transition: 'border-color 0.15s, background 0.15s, transform 0.15s',
+                      display: 'flex', flexDirection: 'column', gap: 12,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Avatar name={m.name} size={36} />
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{
+                          fontSize: 13.5, fontWeight: 700, color: TX,
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          display: 'flex', alignItems: 'center', gap: 6,
+                        }}>
+                          {m.name}
+                          {m.role === 'Owner' && (
+                            <span style={{
+                              fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
+                              padding: '1px 6px', borderRadius: 4,
+                              background: TEALLT, color: TEALD,
+                              border: `1px solid ${TEAL}55`,
+                            }}>
+                              OWNER
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: TX3, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {m.email}
+                        </div>
+                      </div>
+                      <Ic name="right" size={14} color={TX3} />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                      <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Sent</div>
+                        <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: TX, marginTop: 2 }}>{m.total}</div>
+                      </div>
+                      <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Completed</div>
+                        <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: GRN, marginTop: 2 }}>{m.completed}</div>
+                      </div>
+                      <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Pending</div>
+                        <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: AMB, marginTop: 2 }}>{m.pending}</div>
+                      </div>
+                      <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Avg score</div>
+                        <div style={{
+                          fontFamily: FM, fontSize: 16, fontWeight: 800,
+                          color: m.avgScore != null ? scolor(m.avgScore) : TX3, marginTop: 2,
+                        }}>{m.avgScore != null ? m.avgScore : '-'}</div>
+                      </div>
+                    </div>
+                    {m.total > 0 && (
+                      <div>
+                        <div style={{ height: 4, borderRadius: 2, background: BD, overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%', width: `${pct}%`,
+                            background: `linear-gradient(90deg, ${TEAL}, ${TEALD})`,
+                            borderRadius: 2, transition: 'width 0.3s ease',
+                          }} />
+                        </div>
+                        <div style={{ fontSize: 10.5, color: TX3, marginTop: 5 }}>{pct}% complete</div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Team Member Detail view */}
+        {selectedTeamMember && activeTeamMember && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => { setSelectedTeamMember(null); setTeamDetailSearch('') }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: 'transparent', border: `1px solid ${BD}`, borderRadius: 8,
+                  padding: '7px 14px', fontFamily: F, fontSize: 12.5, fontWeight: 700,
+                  color: TX2, cursor: 'pointer',
+                }}
+              >
+                <Ic name="left" size={12} color={TX2} />
+                Back to dashboard
+              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Avatar name={activeTeamMember.name} size={36} />
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: TX }}>{activeTeamMember.name}</h2>
+              </div>
+            </div>
+
+            <div style={{
+              ...cs,
+              marginBottom: 16, padding: isMobile ? '14px 16px' : '18px 22px',
+              display: 'grid',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+              gap: 14,
+            }}>
+              {[
+                { label: 'Total sent', value: activeTeamMember.total, color: TX },
+                { label: 'Completed', value: activeTeamMember.completed, color: GRN },
+                { label: 'Pending', value: activeTeamMember.pending, color: AMB },
+                { label: 'Average score', value: activeTeamMember.avgScore != null ? activeTeamMember.avgScore : '-', color: activeTeamMember.avgScore != null ? scolor(activeTeamMember.avgScore) : TX3 },
+              ].map(s => (
+                <div key={s.label} style={{ textAlign: isMobile ? 'left' : 'center' }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{s.label}</div>
+                  <div style={{ fontFamily: FM, fontSize: 24, fontWeight: 800, color: s.color, marginTop: 4 }}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ ...cs, padding: 0, overflow: 'hidden' }}>
+              <div style={{
+                padding: '16px 20px', borderBottom: `1px solid ${BD}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: 12, flexWrap: 'wrap',
+              }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: TX }}>Candidates sent by this team member</h3>
+                  <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>
+                    {teamDetailFiltered.length} of {teamDetailCandidates.length}
+                    {teamDetailSearch ? ` matching "${teamDetailSearch}"` : ''}
+                  </div>
+                </div>
+                <div style={{ position: 'relative', minWidth: isMobile ? '100%' : 260 }}>
+                  <input
+                    type="text"
+                    value={teamDetailSearch}
+                    onChange={e => setTeamDetailSearch(e.target.value)}
+                    placeholder="Search by name, email or role"
+                    style={{
+                      width: '100%', padding: '9px 12px 9px 34px',
+                      borderRadius: 8, border: `1px solid ${BD}`, background: BG,
+                      fontFamily: F, fontSize: 13, color: TX, outline: 'none',
+                    }}
+                  />
+                  <div style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
+                    <Ic name="search" size={13} color={TX3} />
+                  </div>
+                </div>
+              </div>
+              {teamDetailFiltered.length === 0 ? (
+                <div style={{ padding: '40px 24px', textAlign: 'center', color: TX3, fontSize: 13 }}>
+                  {teamDetailCandidates.length === 0
+                    ? 'This team member has not sent any assessments yet.'
+                    : 'No candidates match your search.'}
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: isMobile ? 720 : undefined }}>
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${BD}` }}>
+                        {['Candidate', 'Role', 'Status', 'Score', 'Date', ''].map(h => (
+                          <th key={h} style={{
+                            padding: '10px 12px', textAlign: 'left',
+                            fontSize: 11, fontWeight: 700, color: TX3,
+                            letterSpacing: '0.04em', textTransform: 'uppercase',
+                            whiteSpace: 'nowrap', background: BG,
+                          }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {teamDetailFiltered.map((c, i) => {
+                        const res = c.results?.[0]
+                        const score = res?.overall_score ?? null
+                        const isCompleted = c.status === 'completed'
+                        return (
+                          <tr key={c.id} style={{
+                            borderBottom: i < teamDetailFiltered.length - 1 ? `1px solid ${BD}` : 'none',
+                            background: CARD,
+                          }}>
+                            <td style={{ padding: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <Avatar name={c.name} size={28} />
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: TX }}>{c.name}</div>
+                                  <div style={{ fontSize: 11.5, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
+                                    {c.email}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <span style={{ fontSize: 12.5, color: TX2, fontWeight: 500 }}>
+                                {c.assessments?.role_title || '-'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <StatusBadge status={c.status} />
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              {isCompleted && score !== null ? (
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+                                  <span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>{score}</span>
+                                  <span style={{ fontSize: 10, color: TX3 }}>/100</span>
+                                </div>
+                              ) : <span style={{ color: TX3, fontSize: 12 }}>-</span>}
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <span style={{ fontSize: 11.5, color: TX3, whiteSpace: 'nowrap' }}>
+                                {isCompleted ? fmt(c.completed_at) : fmt(c.invited_at)}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px', textAlign: 'right' }}>
+                              {isCompleted ? (
+                                <button
+                                  type="button"
+                                  onClick={() => router.push(`/demo/candidate/${c.id}?type=${demoType}`)}
+                                  style={{
+                                    padding: '7px 14px', borderRadius: 7, border: 'none',
+                                    background: TEAL, color: NAVY,
+                                    fontFamily: F, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                  }}
+                                >
+                                  View report
+                                </button>
+                              ) : <span style={{ color: TX3, fontSize: 11.5 }}>-</span>}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Candidates table + assessments panel (hidden when any filter card is active or drilled into a role/client/team member) */}
+        <div style={{ display: (activeFilter || selectedRole || selectedClient || selectedTeamMember) ? 'none' : 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 20, alignItems: 'flex-start' }}>
           <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined, order: isMobile ? 2 : 1 }}>
             <div style={{ ...cs, padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
