@@ -595,6 +595,10 @@ function DashboardPageInner() {
   const [selectedRole, setSelectedRole] = useState(null) // role_title currently drilled into
   const [showAllRoles, setShowAllRoles] = useState(false)
   const [roleDetailSearch, setRoleDetailSearch] = useState('')
+  const [selectedClient, setSelectedClient] = useState(null)
+  const [showAllClients, setShowAllClients] = useState(false)
+  const [clientDetailSearch, setClientDetailSearch] = useState('')
+  const [clientDetailRoleFilter, setClientDetailRoleFilter] = useState('')
   const [healthTooltip, setHealthTooltip] = useState(null) // candidate_id of tooltip currently open
   const [showFirstTime, setShowFirstTime] = useState(false)
   const [installPrompt, setInstallPrompt] = useState(null)
@@ -725,7 +729,7 @@ function DashboardPageInner() {
         try {
           const { data: outcomes } = await supabase
             .from('candidate_outcomes')
-            .select('candidate_id, outcome')
+            .select('candidate_id, outcome, client_name')
             .eq('user_id', user.id)
           setCandidateOutcomes(outcomes || [])
 
@@ -1222,6 +1226,83 @@ function DashboardPageInner() {
         c.email?.toLowerCase().includes(roleDetailSearch.toLowerCase())
       )
     : roleDetailCandidates
+
+  // ── clients overview aggregation (agency only) ──────────────────────────────
+  const clientByCandidate = (() => {
+    const m = {}
+    for (const o of (candidateOutcomes || [])) {
+      if (o.client_name) m[o.candidate_id] = o.client_name
+    }
+    if (placementHealth?.placements) {
+      for (const p of placementHealth.placements) {
+        if (!m[p.candidate_id] && p.client_name) m[p.candidate_id] = p.client_name
+      }
+    }
+    return m
+  })()
+
+  const activePlacementIds = new Set()
+  if (placementHealth?.placements) {
+    for (const p of placementHealth.placements) activePlacementIds.add(p.candidate_id)
+  }
+
+  const clientsOverview = (() => {
+    if (!isAgencyAccount) return []
+    const map = new Map()
+    for (const c of candidates) {
+      const client = clientByCandidate[c.id]
+      if (!client) continue
+      if (!map.has(client)) {
+        map.set(client, {
+          client_name: client,
+          total: 0, completed: 0, pending: 0,
+          scoreSum: 0, scoreCount: 0, recommended: 0,
+          activePlacements: 0, lastActive: 0,
+        })
+      }
+      const r = map.get(client)
+      r.total++
+      if (c.status === 'completed') {
+        r.completed++
+        const s = c.results?.[0]?.overall_score
+        if (typeof s === 'number') {
+          r.scoreSum += s
+          r.scoreCount++
+          if (s >= 70) r.recommended++
+        }
+      } else {
+        r.pending++
+      }
+      if (activePlacementIds.has(c.id)) r.activePlacements++
+      const d = c.completed_at || c.invited_at
+      if (d) {
+        const t = new Date(d).getTime()
+        if (Number.isFinite(t) && t > r.lastActive) r.lastActive = t
+      }
+    }
+    return Array.from(map.values())
+      .map(r => ({ ...r, avgScore: r.scoreCount ? Math.round(r.scoreSum / r.scoreCount) : null }))
+      .sort((a, b) => b.lastActive - a.lastActive)
+  })()
+
+  const activeClient = selectedClient
+    ? clientsOverview.find(c => c.client_name === selectedClient) || null
+    : null
+  const clientDetailCandidates = selectedClient
+    ? candidates.filter(c => clientByCandidate[c.id] === selectedClient)
+    : []
+  const clientDetailRoles = selectedClient
+    ? Array.from(new Set(clientDetailCandidates.map(c => c.assessments?.role_title).filter(Boolean))).sort()
+    : []
+  const clientDetailFiltered = clientDetailCandidates
+    .filter(c => clientDetailRoleFilter ? c.assessments?.role_title === clientDetailRoleFilter : true)
+    .filter(c => {
+      const q = clientDetailSearch.trim().toLowerCase()
+      if (!q) return true
+      return c.name?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.assessments?.role_title?.toLowerCase().includes(q)
+    })
 
   // Separate lists for filtered views (replace main table when active)
   const healthFilteredCandidates = activeFilter?.type === 'health'
@@ -3999,8 +4080,391 @@ function DashboardPageInner() {
           )
         })()}
 
+        {/* ── Clients Overview (agency only) ── */}
+        {isAgencyAccount && !activeFilter && !selectedRole && !selectedClient && (
+          <div style={{ ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: 16, flexWrap: 'wrap', gap: 10,
+            }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>
+                  Clients Overview
+                </h2>
+                <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>
+                  {clientsOverview.length > 0
+                    ? `${clientsOverview.length} client${clientsOverview.length !== 1 ? 's' : ''}. Click a client to drill into its candidates.`
+                    : 'No client company data yet.'}
+                </div>
+              </div>
+              {clientsOverview.length > 6 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllClients(v => !v)}
+                  style={{
+                    background: 'transparent', border: `1px solid ${BD}`, borderRadius: 8,
+                    padding: '7px 14px', fontFamily: F, fontSize: 12.5, fontWeight: 700,
+                    color: TEALD, cursor: 'pointer',
+                  }}
+                >
+                  {showAllClients ? 'Show top 6' : `View all clients (${clientsOverview.length})`}
+                </button>
+              )}
+            </div>
+            {clientsOverview.length === 0 ? (
+              <div style={{
+                border: `1px dashed ${BD}`, borderRadius: 10, padding: '28px 20px',
+                textAlign: 'center', color: TX3, fontSize: 13, lineHeight: 1.6,
+              }}>
+                Add a client company name when creating assessments to group candidates by client here.
+              </div>
+            ) : (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
+                gap: 12,
+              }}>
+                {(showAllClients ? clientsOverview : clientsOverview.slice(0, 6)).map(cl => {
+                  const pct = cl.total > 0 ? Math.round((cl.completed / cl.total) * 100) : 0
+                  return (
+                    <div
+                      key={cl.client_name}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        setSelectedClient(cl.client_name)
+                        setClientDetailSearch('')
+                        setClientDetailRoleFilter('')
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          setSelectedClient(cl.client_name)
+                          setClientDetailSearch('')
+                          setClientDetailRoleFilter('')
+                        }
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.borderColor = TEAL
+                        e.currentTarget.style.background = TEALLT
+                        e.currentTarget.style.transform = 'translateY(-1px)'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = BD
+                        e.currentTarget.style.background = CARD
+                        e.currentTarget.style.transform = 'translateY(0)'
+                      }}
+                      style={{
+                        borderRadius: 12,
+                        border: `1.5px solid ${BD}`,
+                        background: CARD,
+                        padding: '14px 16px',
+                        cursor: 'pointer',
+                        transition: 'border-color 0.15s, background 0.15s, transform 0.15s',
+                        display: 'flex', flexDirection: 'column', gap: 12,
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{
+                          width: 36, height: 36, borderRadius: 9, background: NAVY, flexShrink: 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 21h18"/>
+                            <path d="M5 21V7l7-4 7 4v14"/>
+                            <path d="M9 9h.01"/>
+                            <path d="M9 12h.01"/>
+                            <path d="M9 15h.01"/>
+                            <path d="M9 18h.01"/>
+                            <path d="M15 9h.01"/>
+                            <path d="M15 12h.01"/>
+                            <path d="M15 15h.01"/>
+                            <path d="M15 18h.01"/>
+                          </svg>
+                        </div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{
+                            fontSize: 13.5, fontWeight: 700, color: TX,
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          }}>
+                            {cl.client_name}
+                          </div>
+                          <div style={{ fontSize: 11.5, color: TX3, marginTop: 2 }}>
+                            {cl.total} candidate{cl.total !== 1 ? 's' : ''} assessed
+                          </div>
+                        </div>
+                        <Ic name="right" size={14} color={TX3} />
+                      </div>
+
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, 1fr)',
+                        gap: 8,
+                      }}>
+                        <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px' }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Completed</div>
+                          <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: GRN, marginTop: 2 }}>{cl.completed}</div>
+                        </div>
+                        <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px' }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Pending</div>
+                          <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: AMB, marginTop: 2 }}>{cl.pending}</div>
+                        </div>
+                        <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px' }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Avg score</div>
+                          <div style={{
+                            fontFamily: FM, fontSize: 16, fontWeight: 800,
+                            color: cl.avgScore != null ? scolor(cl.avgScore) : TX3, marginTop: 2,
+                          }}>
+                            {cl.avgScore != null ? cl.avgScore : '-'}
+                          </div>
+                        </div>
+                        <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px' }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Recommended</div>
+                          <div style={{ fontFamily: FM, fontSize: 16, fontWeight: 800, color: TEALD, marginTop: 2 }}>{cl.recommended}</div>
+                        </div>
+                      </div>
+
+                      <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '8px 10px', background: TEALLT, borderRadius: 8,
+                        border: `1px solid ${TEAL}33`,
+                      }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Active placements
+                        </span>
+                        <span style={{ fontFamily: FM, fontSize: 15, fontWeight: 800, color: TEALD }}>
+                          {cl.activePlacements}
+                        </span>
+                      </div>
+
+                      {cl.total > 0 && (
+                        <div>
+                          <div style={{ height: 4, borderRadius: 2, background: BD, overflow: 'hidden' }}>
+                            <div style={{
+                              height: '100%', width: `${pct}%`,
+                              background: `linear-gradient(90deg, ${TEAL}, ${TEALD})`,
+                              borderRadius: 2, transition: 'width 0.3s ease',
+                            }} />
+                          </div>
+                          <div style={{ fontSize: 10.5, color: TX3, marginTop: 5 }}>
+                            {pct}% complete
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Client Detail view (agency only) ── */}
+        {isAgencyAccount && selectedClient && activeClient && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedClient(null)
+                  setClientDetailSearch('')
+                  setClientDetailRoleFilter('')
+                }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: 'transparent', border: `1px solid ${BD}`, borderRadius: 8,
+                  padding: '7px 14px', fontFamily: F, fontSize: 12.5, fontWeight: 700,
+                  color: TX2, cursor: 'pointer',
+                }}
+              >
+                <Ic name="left" size={12} color={TX2} />
+                Back to dashboard
+              </button>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: TX }}>
+                {activeClient.client_name}
+              </h2>
+            </div>
+
+            <div style={{
+              ...cs,
+              marginBottom: 16, padding: isMobile ? '14px 16px' : '18px 22px',
+              display: 'grid',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)',
+              gap: 14,
+            }}>
+              {[
+                { label: 'Total', value: activeClient.total, color: TX },
+                { label: 'Completed', value: activeClient.completed, color: GRN },
+                { label: 'Pending', value: activeClient.pending, color: AMB },
+                { label: 'Average score', value: activeClient.avgScore != null ? activeClient.avgScore : '-', color: activeClient.avgScore != null ? scolor(activeClient.avgScore) : TX3 },
+                { label: 'Recommended', value: activeClient.recommended, color: TEALD },
+                { label: 'Active placements', value: activeClient.activePlacements, color: TEALD },
+              ].map(s => (
+                <div key={s.label} style={{ textAlign: isMobile ? 'left' : 'center' }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    {s.label}
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 24, fontWeight: 800, color: s.color, marginTop: 4 }}>
+                    {s.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ ...cs, padding: 0, overflow: 'hidden' }}>
+              <div style={{
+                padding: '16px 20px', borderBottom: `1px solid ${BD}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: 12, flexWrap: 'wrap',
+              }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: TX }}>
+                    Candidates for this client
+                  </h3>
+                  <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>
+                    {clientDetailFiltered.length} of {clientDetailCandidates.length}
+                    {clientDetailSearch ? ` matching "${clientDetailSearch}"` : ''}
+                    {clientDetailRoleFilter ? ` in ${clientDetailRoleFilter}` : ''}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: isMobile ? '1 1 100%' : undefined }}>
+                  {clientDetailRoles.length > 1 && (
+                    <select
+                      value={clientDetailRoleFilter}
+                      onChange={e => setClientDetailRoleFilter(e.target.value)}
+                      style={{
+                        padding: '9px 12px', borderRadius: 8,
+                        border: `1px solid ${BD}`, background: BG,
+                        fontFamily: F, fontSize: 13, color: TX, outline: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <option value="">All roles ({clientDetailRoles.length})</option>
+                      {clientDetailRoles.map(rt => (
+                        <option key={rt} value={rt}>{rt}</option>
+                      ))}
+                    </select>
+                  )}
+                  <div style={{ position: 'relative', minWidth: isMobile ? '100%' : 240 }}>
+                    <input
+                      type="text"
+                      value={clientDetailSearch}
+                      onChange={e => setClientDetailSearch(e.target.value)}
+                      placeholder="Search by name, email or role"
+                      style={{
+                        width: '100%', padding: '9px 12px 9px 34px',
+                        borderRadius: 8, border: `1px solid ${BD}`, background: BG,
+                        fontFamily: F, fontSize: 13, color: TX, outline: 'none',
+                      }}
+                    />
+                    <div style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
+                      <Ic name="search" size={13} color={TX3} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {clientDetailFiltered.length === 0 ? (
+                <div style={{ padding: '40px 24px', textAlign: 'center', color: TX3, fontSize: 13 }}>
+                  {clientDetailCandidates.length === 0
+                    ? 'No candidates for this client yet.'
+                    : 'No candidates match your filters.'}
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: isMobile ? 720 : undefined }}>
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${BD}` }}>
+                        {['Candidate', 'Role', 'Status', 'Score', 'Date', ''].map(h => (
+                          <th key={h} style={{
+                            padding: '10px 12px', textAlign: 'left',
+                            fontSize: 11, fontWeight: 700, color: TX3,
+                            letterSpacing: '0.04em', textTransform: 'uppercase',
+                            whiteSpace: 'nowrap', background: BG,
+                          }}>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {clientDetailFiltered.map((c, i) => {
+                        const res = c.results?.[0]
+                        const score = res?.overall_score ?? null
+                        const isCompleted = c.status === 'completed'
+                        return (
+                          <tr
+                            key={c.id}
+                            style={{
+                              borderBottom: i < clientDetailFiltered.length - 1 ? `1px solid ${BD}` : 'none',
+                              background: CARD,
+                            }}
+                          >
+                            <td style={{ padding: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <Avatar name={c.name} size={28} />
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: TX }}>{c.name}</div>
+                                  <div style={{ fontSize: 11.5, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
+                                    {c.email}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <span style={{ fontSize: 12.5, color: TX2, fontWeight: 500 }}>
+                                {c.assessments?.role_title || '-'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <StatusBadge status={c.status} />
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              {isCompleted && score !== null ? (
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+                                  <span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>
+                                    {score}
+                                  </span>
+                                  <span style={{ fontSize: 10, color: TX3 }}>/100</span>
+                                </div>
+                              ) : (
+                                <span style={{ color: TX3, fontSize: 12 }}>-</span>
+                              )}
+                            </td>
+                            <td style={{ padding: '12px' }}>
+                              <span style={{ fontSize: 11.5, color: TX3, whiteSpace: 'nowrap' }}>
+                                {isCompleted ? fmt(c.completed_at) : fmt(c.invited_at)}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px', textAlign: 'right' }}>
+                              {isCompleted ? (
+                                <button
+                                  type="button"
+                                  onClick={() => router.push(`/assessment/${c.assessments?.id}/candidate/${c.id}`)}
+                                  style={{
+                                    padding: '7px 14px', borderRadius: 7, border: 'none',
+                                    background: TEAL, color: NAVY,
+                                    fontFamily: F, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                  }}
+                                >
+                                  View report
+                                </button>
+                              ) : (
+                                <span style={{ color: TX3, fontSize: 11.5 }}>-</span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ── Bulk Invite prompt (all account types, always visible) ── */}
-        {!activeFilter && !selectedRole && (
+        {!activeFilter && !selectedRole && !selectedClient && (
           <div style={{
             ...cs,
             marginBottom: 20,
@@ -4043,8 +4507,8 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Bottom grid: table + assessments panel (hidden when filter active or drilled into a role) ── */}
-        <div className="dashboard-layout" style={{ display: (activeFilter || selectedRole) ? 'none' : 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
+        {/* ── Bottom grid: table + assessments panel (hidden when filter active or drilled into a role/client) ── */}
+        <div className="dashboard-layout" style={{ display: (activeFilter || selectedRole || selectedClient) ? 'none' : 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
 
           {/* ── Candidates table ── */}
           <div className="dashboard-candidates" style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : 'auto' }}>
