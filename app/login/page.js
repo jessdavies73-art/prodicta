@@ -15,10 +15,10 @@ const TEAL   = '#00BFA5'
 const DARK_T = '#009688'
 
 const PLAN_OPTIONS = [
-  { value: 'founding',     label: 'Founding Member', price: '£79/month'  },
-  { value: 'starter',      label: 'Starter',         price: '£49/month'  },
-  { value: 'professional', label: 'Professional',    price: '£120/month' },
-  { value: 'unlimited',    label: 'Unlimited',       price: '£159/month' },
+  { value: 'founding',     label: 'Founding Member', price: '£79/month', promo: null,                  sub: 'Locked rate for 12 months' },
+  { value: 'starter',      label: 'Starter',         price: '£79/month', promo: '£39 first 30 days',   sub: 'Up to 2 users, 10 assessments per month' },
+  { value: 'professional', label: 'Professional',    price: '£249/month', promo: '£124 first 30 days', sub: 'Up to 5 users, 30 assessments per month' },
+  { value: 'unlimited',    label: 'Unlimited',       price: '£399/month', promo: '£199 first 30 days', sub: 'Up to 15 users, unlimited assessments' },
 ]
 
 // Per-assessment pricing. Unit price in GBP. Matches server CREDIT_PRICES.

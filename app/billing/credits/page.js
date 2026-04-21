@@ -47,9 +47,9 @@ const ADDON_TYPES = [
 ]
 
 const PLANS = [
-  { key: 'starter',      plan: 'Starter',         price: '£49/mo',  priceNum: 49,  limit: '10 assessments per month' },
-  { key: 'professional', plan: 'Professional',    price: '£120/mo', priceNum: 120, limit: '30 assessments per month' },
-  { key: 'unlimited',    plan: 'Unlimited',       price: '£159/mo', priceNum: 159, limit: 'Unlimited assessments' },
+  { key: 'starter',      plan: 'Starter',         price: '£79/mo',  priceNum: 79,  limit: '10 assessments per month, up to 2 users' },
+  { key: 'professional', plan: 'Professional',    price: '£249/mo', priceNum: 249, limit: '30 assessments per month, up to 5 users' },
+  { key: 'unlimited',    plan: 'Unlimited',       price: '£399/mo', priceNum: 399, limit: 'Unlimited assessments, up to 15 users' },
   { key: 'founding',     plan: 'Founding Member', price: '£79/mo',  priceNum: 79,  limit: 'Unlimited for 3 months, then 20/month' },
 ]
 

@@ -620,7 +620,7 @@ export default function LandingPage() {
         {/* Stats bar */}
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 40, flexWrap: 'wrap', justifyContent: 'center', padding: '20px 32px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14 }}>
           {[
-            { to: null, display: 'From £49', label: 'Per month' },
+            { to: null, display: 'From £79', label: 'Per month' },
             { to: 4,   suffix: '',  label: 'Scenario types' },
  { to: null, display: '15-45 min', label: 'Assessment time' },
             { to: null, display: 'UK-built', label: 'For ERA 2025 compliance' },
@@ -1017,7 +1017,7 @@ export default function LandingPage() {
                 Start assessing candidates
               </a>
               <div style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 12 }}>
-                From just £49/month. No long setup. First assessment in 5 minutes.
+                From just £79/month with a £39 first-month introductory price. No long setup. First assessment in 5 minutes.
               </div>
             </div>
           </Reveal>
@@ -1375,26 +1375,29 @@ export default function LandingPage() {
             {[
               {
                 name: 'Starter',
-                price: '£49',
-                limit: '10 assessments/mo',
+                price: '£79',
+                promo: 'First 30 days: £39 then £79/month',
+                limit: '10 assessments/mo · Up to 2 users',
                 desc: 'For small teams getting started with AI assessment.',
-                features: ['10 assessments per month', 'AI scenario generation', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs and interview questions', 'Onboarding plans'],
+                features: ['10 assessments per month', 'Up to 2 users, extra £25/user/month', 'AI scenario generation', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs and interview questions', 'All features included'],
                 highlight: false,
               },
               {
                 name: 'Professional',
-                price: '£120',
-                limit: '30 assessments/mo',
+                price: '£249',
+                promo: 'First 30 days: £124 then £249/month',
+                limit: '30 assessments/mo · Up to 5 users',
                 desc: 'For growing teams hiring at volume.',
-                features: ['30 assessments per month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking tools', 'Archive and outcomes tracking', 'Priority email support'],
+                features: ['30 assessments per month', 'Up to 5 users, extra £25/user/month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking tools', 'Archive and outcomes tracking', 'All features included'],
                 highlight: false,
               },
               {
                 name: 'Unlimited',
-                price: '£159',
-                limit: 'Unlimited assessments',
+                price: '£399',
+                promo: 'First 30 days: £199 then £399/month',
+                limit: 'Unlimited assessments · Up to 15 users',
                 desc: 'For high-volume hiring with no limits.',
-                features: ['Unlimited assessments', 'Everything in Professional', 'Agency features', 'Placement risk scores', 'Document upload and send', 'Accountability records'],
+                features: ['Unlimited assessments', 'Up to 15 users, extra £25/user/month', 'Everything in Professional', 'Agency features', 'Placement risk scores', 'Document upload and send', 'All features included'],
                 highlight: true,
                 badge: 'BEST VALUE',
               },
@@ -1415,7 +1418,19 @@ export default function LandingPage() {
                     <span style={{ fontFamily: FM, fontSize: 40, fontWeight: 700, color: p.highlight ? '#fff' : NAVY, letterSpacing: '-1px' }}>{p.price}</span>
                     <span style={{ fontFamily: F, fontSize: 13, color: p.highlight ? 'rgba(255,255,255,0.45)' : '#94a1b3' }}>/mo</span>
                   </div>
-                  <div style={{ fontFamily: F, fontSize: 12.5, color: TEAL, fontWeight: 600, marginBottom: 10 }}>{p.limit}</div>
+                  <div style={{ fontFamily: F, fontSize: 12.5, color: TEAL, fontWeight: 600, marginBottom: 6 }}>{p.limit}</div>
+                  {p.promo && (
+                    <div style={{
+                      fontFamily: F, fontSize: 12, fontWeight: 700,
+                      color: p.highlight ? 'rgba(255,255,255,0.85)' : NAVY,
+                      background: p.highlight ? 'rgba(0,191,165,0.18)' : '#FFFBF0',
+                      border: `1px solid ${p.highlight ? 'rgba(0,191,165,0.35)' : '#F5E1A4'}`,
+                      padding: '6px 10px', borderRadius: 6, marginBottom: 12,
+                      display: 'inline-block',
+                    }}>
+                      {p.promo}
+                    </div>
+                  )}
                   <p style={{ fontFamily: F, fontSize: 13, color: p.highlight ? 'rgba(255,255,255,0.5)' : '#6b7280', lineHeight: 1.55, marginBottom: 26 }}>{p.desc}</p>
                   <div style={{ height: 1, background: p.highlight ? 'rgba(255,255,255,0.08)' : '#f1f5f9', marginBottom: 22 }} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 30 }}>
@@ -1970,7 +1985,7 @@ export default function LandingPage() {
                 },
                 {
                   q: 'How much does PRODICTA cost?',
-                  a: 'Starter is £49 per month for 10 assessments. Professional is £120 per month for 30 assessments. Unlimited is £159 per month for unlimited assessments. We are currently offering a Founding Member rate of £79 per month with unlimited assessments for the first 3 months, then 20 per month after that, with the price locked for 12 months. All plans include full reports, candidate comparison, benchmarks, onboarding plans, and interview questions. Transparent pricing. No hidden fees. No setup costs.',
+                  a: 'Starter is £79 per month (£39 for the first 30 days) for 10 assessments and up to 2 users. Professional is £249 per month (£124 for the first 30 days) for 30 assessments and up to 5 users. Unlimited is £399 per month (£199 for the first 30 days) for unlimited assessments and up to 15 users. Extra users are £25 per user per month on any plan. We are currently offering a Founding Member rate of £79 per month with unlimited assessments for the first 3 months, then 20 per month after that, with the price locked for 12 months. All plans include every feature. Transparent pricing. No hidden fees. No setup costs.',
                 },
                 {
                   q: 'What makes PRODICTA different from personality tests and psychometric assessments?',

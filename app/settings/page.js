@@ -508,21 +508,21 @@ export default function SettingsPage() {
   ]
 
   const PLAN_META = {
-    starter:      { name: 'Starter',          price: '£49',  limit: 10,    period: 'month', color: TEAL,      desc: 'Perfect for small teams getting started with AI assessment.' },
-    professional: { name: 'Professional',     price: '£120', limit: 30,    period: 'month', color: '#7C3AED', desc: 'For growing teams with higher hiring volumes.' },
-    unlimited:    { name: 'Unlimited',        price: '£159', limit: null,  period: 'month', color: GRN,       desc: 'Unlimited assessments for high-volume hiring.' },
-    founding:     { name: 'Founding Member',  price: '£79',  limit: null,  period: 'month', color: TEAL,      desc: 'Founder pricing locked in. Unlimited for the first 3 months, then 20 per month.' },
+    starter:      { name: 'Starter',          price: '£79',  promo: '£39 first 30 days',  limit: 10,    userLimit: 2,  period: 'month', color: TEAL,      desc: 'For small teams. Up to 2 users and 10 assessments per month.' },
+    professional: { name: 'Professional',     price: '£249', promo: '£124 first 30 days', limit: 30,    userLimit: 5,  period: 'month', color: '#7C3AED', desc: 'For growing teams. Up to 5 users and 30 assessments per month.' },
+    unlimited:    { name: 'Unlimited',        price: '£399', promo: '£199 first 30 days', limit: null,  userLimit: 15, period: 'month', color: GRN,       desc: 'For high-volume hiring. Up to 15 users and unlimited assessments.' },
+    founding:     { name: 'Founding Member',  price: '£79',                               limit: null,  userLimit: 2,  period: 'month', color: TEAL,      desc: 'Founder pricing locked in. Unlimited for the first 3 months, then 20 per month.' },
     // Legacy keys retained so existing rows render correctly
-    growth:       { name: 'Professional',     price: '£120', limit: 30,    period: 'month', color: '#7C3AED', desc: 'For growing teams with higher hiring volumes.' },
-    scale:        { name: 'Unlimited',        price: '£159', limit: null,  period: 'month', color: GRN,       desc: 'Unlimited assessments for high-volume hiring.' },
+    growth:       { name: 'Professional',     price: '£249', promo: '£124 first 30 days', limit: 30,    userLimit: 5,  period: 'month', color: '#7C3AED', desc: 'For growing teams. Up to 5 users and 30 assessments per month.' },
+    scale:        { name: 'Unlimited',        price: '£399', promo: '£199 first 30 days', limit: null,  userLimit: 15, period: 'month', color: GRN,       desc: 'For high-volume hiring. Up to 15 users and unlimited assessments.' },
   }
   const PLAN_FEATURES = {
-    starter:      ['10 assessments per month', 'AI scenario assessment', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs and interview questions'],
-    professional: ['30 assessments per month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking', 'Onboarding plans'],
-    unlimited:    ['Unlimited assessments', 'Everything in Professional', 'Archive and outcomes tracking', 'Agency features', 'Priority support'],
+    starter:      ['10 assessments per month', 'Up to 2 users, extra £25/user/month', 'AI scenario assessment', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs and interview questions'],
+    professional: ['30 assessments per month', 'Up to 5 users, extra £25/user/month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking', 'Onboarding plans'],
+    unlimited:    ['Unlimited assessments', 'Up to 15 users, extra £25/user/month', 'Everything in Professional', 'Archive and outcomes tracking', 'Agency features', 'Priority support'],
     founding:     ['Unlimited assessments for first 3 months', 'Then 20 per month', 'Everything in Unlimited', 'Founding member rate locked in for 12 months', 'Direct feedback line', 'Feature co-creation'],
-    growth:       ['30 assessments per month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking', 'Onboarding plans'],
-    scale:        ['Unlimited assessments', 'Everything in Professional', 'Archive and outcomes tracking', 'Agency features', 'Priority support'],
+    growth:       ['30 assessments per month', 'Up to 5 users, extra £25/user/month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking', 'Onboarding plans'],
+    scale:        ['Unlimited assessments', 'Up to 15 users, extra £25/user/month', 'Everything in Professional', 'Archive and outcomes tracking', 'Agency features', 'Priority support'],
   }
   const planKey    = (profile?.plan || 'starter').toLowerCase()
   const planMeta   = PLAN_META[planKey] || PLAN_META.starter
@@ -940,8 +940,8 @@ export default function SettingsPage() {
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
                   {[
-                    { plan: 'Professional', price: '£120/mo', limit: '30 assessments/mo', current: planKey === 'professional' || planKey === 'growth' },
-                    { plan: 'Unlimited', price: '£159/mo', limit: 'Unlimited', current: planKey === 'unlimited' || planKey === 'scale' },
+                    { plan: 'Professional', price: '£249/mo', limit: '30 assessments/mo · Up to 5 users', current: planKey === 'professional' || planKey === 'growth' },
+                    { plan: 'Unlimited', price: '£399/mo', limit: 'Unlimited · Up to 15 users', current: planKey === 'unlimited' || planKey === 'scale' },
                     { plan: 'Founding Member', price: '£79/mo', limit: 'Unlimited for 3 months, then 20/mo', current: planKey === 'founding' },
                   ].filter(p => !p.current).map(p => (
                     <div key={p.plan} style={{
@@ -1007,9 +1007,9 @@ export default function SettingsPage() {
                 { type: 'highlight-reel', label: 'Highlight Reel only',  unit: 10, description: 'A 60-second shareable summary of how the candidate performed. For Strategy-Fit, the workspace simulation is already included, this is the Highlight Reel only.' },
               ]
               const PLANS = [
-                { key: 'starter',      plan: 'Starter',         price: '£49/mo',  priceNum: 49,  limit: '10 assessments per month' },
-                { key: 'professional', plan: 'Professional',    price: '£120/mo', priceNum: 120, limit: '30 assessments per month' },
-                { key: 'unlimited',    plan: 'Unlimited',       price: '£159/mo', priceNum: 159, limit: 'Unlimited assessments' },
+                { key: 'starter',      plan: 'Starter',         price: '£79/mo',  priceNum: 79,  limit: '10 assessments per month, up to 2 users' },
+                { key: 'professional', plan: 'Professional',    price: '£249/mo', priceNum: 249, limit: '30 assessments per month, up to 5 users' },
+                { key: 'unlimited',    plan: 'Unlimited',       price: '£399/mo', priceNum: 399, limit: 'Unlimited assessments, up to 15 users' },
                 { key: 'founding',     plan: 'Founding Member', price: '£79/mo',  priceNum: 79,  limit: 'Unlimited for 3 months, then 20/month' },
               ]
               return (
