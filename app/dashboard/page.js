@@ -2527,6 +2527,71 @@ function DashboardPageInner() {
           </div>
         )}
 
+        {/* ── Hero overview row (all account types) ─────────────────────
+            Role-level overview first, candidate-level detail below. Subtext
+            on Progressing is gated on account_type + default employment
+            type so the language lands for each market. */}
+        {(() => {
+          // Live roles: unique assessments.id referenced by any non-archived
+          // candidate. This matches the candidate-centric denominator used
+          // elsewhere on the dashboard (archived candidates filtered at load).
+          const liveRoleIds = new Set()
+          for (const c of candidates) {
+            const id = c.assessments?.id
+            if (id) liveRoleIds.add(id)
+          }
+          const totalApplicants = candidates.length
+          const completedCount = completed.length
+          const recommended = recommendedCount
+          const progressingCount = candidates.filter(c => c.stage === 'progress').length
+
+          const isBoth = profile?.default_employment_type !== 'permanent' && profile?.default_employment_type !== 'temporary'
+          let progressSub
+          if (isAgencyAccount) {
+            progressSub = isBoth ? 'To interview or placement'
+              : (defaultIsTemp ? 'Placed or being placed' : 'Submitted to client')
+          } else {
+            progressSub = isBoth ? 'To interview or placement'
+              : (defaultIsTemp ? 'Placed on assignment' : 'Progressing to interview')
+          }
+
+          const tiles = [
+            { label: 'Live roles',       value: liveRoleIds.size, sub: 'Roles currently being assessed', color: NAVY },
+            { label: 'Total applicants', value: totalApplicants,  sub: 'Across all live roles',         color: TEALD },
+            { label: 'Completed',        value: completedCount,   sub: 'Assessments submitted',         color: GRN },
+            { label: 'Average score',    value: avgScore != null ? avgScore : '-', sub: 'Across all roles',
+              color: avgScore != null ? scolor(avgScore) : TX3 },
+            { label: 'Recommended',      value: recommended,      sub: 'Score 70 and above',            color: TEALD },
+            { label: 'Progressing',      value: progressingCount, sub: progressSub,                      color: '#0F7A66' },
+          ]
+
+          return (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)',
+              gap: 12, marginBottom: 16,
+            }}>
+              {tiles.map(t => (
+                <div key={t.label} style={{
+                  ...cs,
+                  padding: '14px 16px',
+                  display: 'flex', flexDirection: 'column', gap: 4,
+                }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    {t.label}
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: t.color, lineHeight: 1.05 }}>
+                    {t.value}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: TX3, lineHeight: 1.4 }}>
+                    {t.sub}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
+
         {/* ── Stats row ── */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
           <StatCard

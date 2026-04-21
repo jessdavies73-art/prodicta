@@ -866,6 +866,64 @@ function DemoDashboardInner() {
           )
         })()}
 
+        {/* Hero overview row */}
+        {(() => {
+          const liveRoleIds = new Set()
+          for (const c of activeCandidates) {
+            const id = c.assessments?.id
+            if (id) liveRoleIds.add(id)
+          }
+          const totalApplicants  = activeCandidates.length
+          const completedCount   = completed.length
+          const progressingCount = activeCandidates.filter(c => c.stage === 'progress').length
+
+          const isBoth = demoEmploymentType === 'both'
+          const isTemp = demoEmploymentType === 'temporary'
+          let progressSub
+          if (isAgency) {
+            progressSub = isBoth ? 'To interview or placement'
+              : (isTemp ? 'Placed or being placed' : 'Submitted to client')
+          } else {
+            progressSub = isBoth ? 'To interview or placement'
+              : (isTemp ? 'Placed on assignment' : 'Progressing to interview')
+          }
+
+          const tiles = [
+            { label: 'Live roles',       value: liveRoleIds.size, sub: 'Roles currently being assessed', color: NAVY },
+            { label: 'Total applicants', value: totalApplicants,  sub: 'Across all live roles',         color: TEALD },
+            { label: 'Completed',        value: completedCount,   sub: 'Assessments submitted',         color: GRN },
+            { label: 'Average score',    value: avgScore != null ? avgScore : '-', sub: 'Across all roles',
+              color: avgScore != null ? scolor(avgScore) : TX3 },
+            { label: 'Recommended',      value: recommendedCount, sub: 'Score 70 and above',            color: TEALD },
+            { label: 'Progressing',      value: progressingCount, sub: progressSub,                      color: '#0F7A66' },
+          ]
+
+          return (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)',
+              gap: 12, marginBottom: 16,
+            }}>
+              {tiles.map(t => (
+                <div key={t.label} style={{
+                  ...cs, padding: '14px 16px',
+                  display: 'flex', flexDirection: 'column', gap: 4,
+                }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    {t.label}
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: t.color, lineHeight: 1.05 }}>
+                    {t.value}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: TX3, lineHeight: 1.4 }}>
+                    {t.sub}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
+
         {/* Stats */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
           <StatCard icon="check" label="Completed" value={completed.length} sub="Completed assessments" accent={TEAL} fillPercent={activeCandidates.length > 0 ? Math.round((completed.length / activeCandidates.length) * 100) : 0} />
