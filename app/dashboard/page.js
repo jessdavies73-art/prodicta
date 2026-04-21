@@ -703,6 +703,9 @@ function DashboardPageInner() {
   const [clientDetailSearch, setClientDetailSearch] = useState('')
   const [clientDetailRoleFilter, setClientDetailRoleFilter] = useState('')
   const [rejectExpanded, setRejectExpanded] = useState(false)
+  const [pendingStageConfirm, setPendingStageConfirm] = useState(null) // { candidate, stage } | null
+  const [pendingStageNotify, setPendingStageNotify] = useState(true)
+  const [pendingStageSaving, setPendingStageSaving] = useState(false)
   const [teamMembers, setTeamMembers] = useState([])
   const [selectedTeamMember, setSelectedTeamMember] = useState(null)
   const [showAllTeam, setShowAllTeam] = useState(false)
@@ -1055,7 +1058,7 @@ function DashboardPageInner() {
     }
   }
 
-  async function handleStage(id, stage) {
+  async function handleStage(id, stage, { notify = true } = {}) {
     const prev = candidates.find(c => c.id === id)?.stage || 'active'
     if (prev === stage) return
     // Optimistic update
@@ -1064,14 +1067,30 @@ function DashboardPageInner() {
       const res = await fetch(`/api/candidates/${id}/stage`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stage }),
+        body: JSON.stringify({ stage, notify }),
       })
       if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || 'Failed to update stage')
+      const json = await res.json().catch(() => ({}))
       const labels = { active: 'Active', progress: 'Progressing', hold: 'On hold', reject: 'Not progressed' }
-      toast(`Moved to ${labels[stage] || stage}`)
+      const suffix = notify && (stage === 'hold' || stage === 'reject')
+        ? (json.emailSent ? ' and email sent' : ', email not sent')
+        : ''
+      toast(`Moved to ${labels[stage] || stage}${suffix}`)
     } catch (err) {
       setCandidates(list => list.map(c => c.id === id ? { ...c, stage: prev } : c))
       toast(err?.message || 'Could not update stage', 'error')
+    }
+  }
+
+  // For hold / reject, open a confirm modal so the recruiter can opt out of
+  // the candidate notification email. For progress or active (clearing),
+  // apply the change immediately.
+  function requestStage(candidate, stage) {
+    if (stage === 'hold' || stage === 'reject') {
+      setPendingStageNotify(true)
+      setPendingStageConfirm({ candidate, stage })
+    } else {
+      handleStage(candidate.id, stage)
     }
   }
 
@@ -1748,6 +1767,109 @@ function DashboardPageInner() {
         </div>
       )}
 
+      {/* ── Stage confirm modal (hold / reject) ── */}
+      {pendingStageConfirm && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(15,33,55,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 24,
+          }}
+          onClick={() => !pendingStageSaving && setPendingStageConfirm(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: CARD, borderRadius: 14, padding: '28px 32px',
+              maxWidth: 440, width: '100%',
+              boxShadow: '0 16px 48px rgba(15,33,55,0.2)', fontFamily: F,
+            }}
+          >
+            {(() => {
+              const stage = pendingStageConfirm.stage
+              const candidate = pendingStageConfirm.candidate
+              const isReject = stage === 'reject'
+              const accent = isReject ? RED : AMB
+              const accentBg = isReject ? REDBG : AMBBG
+              const title = isReject ? 'Reject candidate' : 'Move to on hold'
+              const verb = isReject ? 'Not progressed' : 'On hold'
+              return (
+                <>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 12, background: accentBg,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+                  }}>
+                    <Ic name="alert" size={20} color={accent} />
+                  </div>
+                  <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 800, color: TX }}>
+                    {title}
+                  </h3>
+                  <p style={{ margin: '0 0 16px', fontSize: 13.5, color: TX2, lineHeight: 1.6 }}>
+                    Move <strong>{candidate.name}</strong> to <strong>{verb}</strong> for the {candidate.assessments?.role_title || 'role'}.
+                  </p>
+                  <label style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 10,
+                    padding: '12px 14px', background: BG, border: `1px solid ${BD}`, borderRadius: 10,
+                    marginBottom: 18, cursor: 'pointer',
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={pendingStageNotify}
+                      onChange={e => setPendingStageNotify(e.target.checked)}
+                      style={{ marginTop: 2, accentColor: TEAL, cursor: 'pointer' }}
+                    />
+                    <div>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: TX }}>
+                        Send notification email to candidate
+                      </div>
+                      <div style={{ fontSize: 12, color: TX3, marginTop: 2, lineHeight: 1.5 }}>
+                        {candidate.email
+                          ? <>We will email <strong>{candidate.email}</strong> with a standard {isReject ? 'rejection' : 'holding pattern'} message.</>
+                          : 'No email address on file for this candidate.'}
+                      </div>
+                    </div>
+                  </label>
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      onClick={() => setPendingStageConfirm(null)}
+                      disabled={pendingStageSaving}
+                      style={{
+                        padding: '10px 18px', borderRadius: 8,
+                        border: `1.5px solid ${BD}`, background: 'transparent',
+                        color: TX2, fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setPendingStageSaving(true)
+                        await handleStage(candidate.id, stage, { notify: pendingStageNotify && !!candidate.email })
+                        setPendingStageSaving(false)
+                        setPendingStageConfirm(null)
+                      }}
+                      disabled={pendingStageSaving}
+                      style={{
+                        padding: '10px 18px', borderRadius: 8, border: 'none',
+                        background: accent, color: '#fff',
+                        fontFamily: F, fontSize: 13, fontWeight: 800,
+                        cursor: pendingStageSaving ? 'wait' : 'pointer',
+                        opacity: pendingStageSaving ? 0.7 : 1,
+                      }}
+                    >
+                      {pendingStageSaving ? 'Saving...' : `Move to ${verb}`}
+                    </button>
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* ── Confirmation modal ── */}
       {confirmArchive && (
         <div style={{
@@ -2136,7 +2258,7 @@ function DashboardPageInner() {
                                 <span style={{ fontSize: 10, color: TX3 }}>/100</span>
                               </div>
                             )}
-                            <StageActionButtons stage={c.stage} onSet={(s) => handleStage(c.id, s)} />
+                            <StageActionButtons stage={c.stage} onSet={(s) => requestStage(c, s)} />
                             {isCompleted && (
                               <button
                                 type="button"
@@ -5656,7 +5778,7 @@ function DashboardPageInner() {
                             {/* Actions */}
                             <td style={{ padding: '10px 4px', overflow: 'hidden' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                <StageActionButtons stage={c.stage} onSet={(s) => handleStage(c.id, s)} />
+                                <StageActionButtons stage={c.stage} onSet={(s) => requestStage(c, s)} />
                                 {isAgencyAccount && c.assessments?.employment_type === 'temporary' && (
                                   <button
                                     onClick={e => {
