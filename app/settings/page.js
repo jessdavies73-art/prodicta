@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
 import InfoTooltip from '@/components/InfoTooltip'
+import TeamSettings from '@/components/TeamSettings'
 
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
 const _mSnap = () => window.innerWidth <= 768
@@ -1360,85 +1361,7 @@ export default function SettingsPage() {
 
         {/* Team tab */}
         {activeTab === 'team' && (
-          <div style={{ maxWidth: 520 }}>
-            <div style={{ ...cs }}>
-              <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: TX }}>
-                Team members
-              </h2>
-
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '12px 16px',
-                background: BG,
-                border: `1px solid ${BD}`,
-                borderRadius: 10,
-                marginBottom: 20,
-              }}>
-                <div style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: '50%',
-                  background: TEALLT,
-                  border: `1.5px solid ${TEAL}55`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontFamily: FM,
-                  fontSize: 15,
-                  fontWeight: 700,
-                  color: TEALD,
-                  flexShrink: 0,
-                }}>
-                  {emailInitial}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{
-                    fontSize: 13.5,
-                    fontWeight: 600,
-                    color: TX,
-                    fontFamily: F,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    display: 'block',
-                  }}>
-                    {userEmail}
-                  </span>
-                </div>
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  padding: '3px 10px',
-                  borderRadius: 50,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  background: TEALLT,
-                  color: TEALD,
-                  border: `1px solid ${TEAL}55`,
-                  flexShrink: 0,
-                }}>
-                  Owner
-                </span>
-              </div>
-
-              <button
-                disabled
-                style={{
-                  ...bs('primary', 'md'),
-                  opacity: 0.5,
-                  cursor: 'default',
-                }}
-              >
-                <Ic name="plus" size={15} color={NAVY} />
-                Invite team member
-              </button>
-              <p style={{ margin: '10px 0 0', fontSize: 12, color: TX3, fontFamily: F }}>
-                Team management coming soon
-              </p>
-            </div>
-          </div>
+          <TeamSettings toast={toast} userEmail={userEmail} emailInitial={emailInitial} />
         )}
 
         {/* Alerts tab */}

@@ -741,6 +741,8 @@ function DashboardPageInner() {
   const [pendingStageNotify, setPendingStageNotify] = useState(true)
   const [pendingStageSaving, setPendingStageSaving] = useState(false)
   const [teamMembers, setTeamMembers] = useState([])
+  const [viewerRole, setViewerRole] = useState('owner')
+  const [visibleUserIds, setVisibleUserIds] = useState(null) // null = not loaded yet, [] = consultant with just their own id
   const [selectedTeamMember, setSelectedTeamMember] = useState(null)
   const [showAllTeam, setShowAllTeam] = useState(false)
   const [teamDetailSearch, setTeamDetailSearch] = useState('')
@@ -805,10 +807,44 @@ function DashboardPageInner() {
           .single()
         setProfile(prof)
 
+        // Resolve team context: who can this user see? Owners and managers see
+        // every active team member's data. Consultants see only their own.
+        // Legacy pre-teams users fall back to seeing just their own data.
+        let allowedUserIds = [user.id]
+        let role = 'owner'
+        let memberRows = []
+        try {
+          const { data: selfMembership } = await supabase
+            .from('team_members')
+            .select('account_id, role')
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .maybeSingle()
+          if (selfMembership) {
+            role = selfMembership.role || 'owner'
+            if (role === 'owner' || role === 'manager') {
+              const { data: teamRows } = await supabase
+                .from('team_members')
+                .select('id, user_id, email, name, role, status, joined_at')
+                .eq('account_id', selfMembership.account_id)
+                .eq('status', 'active')
+                .not('user_id', 'is', null)
+              memberRows = teamRows || []
+              allowedUserIds = memberRows.map(r => r.user_id).filter(Boolean)
+              if (!allowedUserIds.includes(user.id)) allowedUserIds.push(user.id)
+            }
+          }
+        } catch (_) {
+          // team_members table missing or inaccessible, stay in single-user mode.
+        }
+        setViewerRole(role)
+        setVisibleUserIds(allowedUserIds)
+        setTeamMembers(memberRows)
+
         const { data: cands, error: candsErr } = await supabase
           .from('candidates')
           .select('*, stage, assessments!inner(role_title, id, employment_type, created_at, location), results(overall_score, risk_level, percentile, pressure_fit_score)')
-          .eq('user_id', user.id)
+          .in('user_id', allowedUserIds)
           .neq('status', 'archived')
           .order('invited_at', { ascending: false })
 
@@ -818,7 +854,7 @@ function DashboardPageInner() {
         const { data: assess, error: assessErr } = await supabase
           .from('assessments')
           .select('*')
-          .eq('user_id', user.id)
+          .in('user_id', allowedUserIds)
           .eq('status', 'active')
 
         if (assessErr) throw assessErr
@@ -1522,18 +1558,20 @@ function DashboardPageInner() {
     })
 
   // ── team overview aggregation ──────────────────────────────────────────────
-  // Team functionality is not yet wired into the backend (no team table, no
-  // parent/child user relationship). teamMembers stays empty so the empty
-  // state renders, prompting the owner to invite team members via Settings.
+  // Sourced from the team_members table: one tile per active member, with
+  // their own assessment activity aggregated from the visible candidate set.
+  // Keyed by user_id so candidate.user_id maps cleanly.
   const hasTeam = teamMembers.length > 1
   const teamOverview = (() => {
     if (!hasTeam) return []
     const map = new Map()
     for (const m of teamMembers) {
-      map.set(m.id, {
-        id: m.id,
+      if (!m.user_id) continue
+      map.set(m.user_id, {
+        id: m.user_id,
         name: m.name || m.email || 'Team member',
         email: m.email || '',
+        role: m.role || 'consultant',
         total: 0, completed: 0, pending: 0,
         scoreSum: 0, scoreCount: 0, lastActive: 0,
       })
