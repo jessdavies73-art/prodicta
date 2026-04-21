@@ -2623,42 +2623,6 @@ function DashboardPageInner() {
           )
         })()}
 
-        {/* ── Stats row ── */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
-          <StatCard
-            icon="check"
-            label="Completed"
-            value={completed.length}
-            sub="Completed assessments"
-            accent={TEAL}
-            fillPercent={candidates.length > 0 ? Math.round((completed.length / candidates.length) * 100) : 0}
-          />
-          <StatCard
-            icon="clock"
-            label="Pending"
-            value={pendingCandidates.length}
-            sub="Awaiting completion"
-            accent={AMB}
-            fillPercent={candidates.length > 0 ? Math.round((pendingCandidates.length / candidates.length) * 100) : 0}
-          />
-          <StatCard
-            icon="bar"
-            label="Avg score"
-            value={avgScore !== null ? avgScore : '-'}
-            sub={avgScore !== null ? slabel(avgScore) : 'No data yet'}
-            accent="#6366F1"
-            fillPercent={avgScore ?? 0}
-          />
-          <StatCard
-            icon="award"
-            label="Recommended"
-            value={recommendedCount}
-            sub="Scoring 70 or above"
-            accent={TEAL}
-            fillPercent={completed.length > 0 ? Math.round((recommendedCount / completed.length) * 100) : 0}
-          />
-        </div>
-
         {/* ── Outcome logging reminder (shown to anyone with completed */}
         {/*    candidates that have no outcome logged; snoozable 7 days) ── */}
         {!outcomeReminderSnoozed && (() => {
