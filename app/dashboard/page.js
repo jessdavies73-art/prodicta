@@ -1266,16 +1266,24 @@ function DashboardPageInner() {
     return m > 0 ? `${h}h ${m}m` : `${h}h`
   }
 
-  // Hiring cost saved: completed candidates scoring below 70 with no positive outcome
+  // Hiring cost saved: completed candidates scoring below 70 with no positive outcome.
+  // Split by employment type so we can show the right framing per account type:
+  // perm candidates count toward "bad hires avoided" (tribunal / probation risk).
+  // temp and contract candidates count toward "assignment / placement failures avoided".
   const POSITIVE_OUTCOMES = new Set(['hired', 'offer_accepted', 'passed_probation', 'still_in_probation', 'placed'])
   const outcomesById = Object.fromEntries((candidateOutcomes || []).map(o => [o.candidate_id, o.outcome]))
-  const BAD_HIRE_COST = 30000
+  const BAD_HIRE_COST       = 30000 // perm: tribunal + backfill + productivity
+  const FAILED_PLACEMENT_COST = 4500 // temp/contract: rebate risk + re-engagement + relationship
   const avoidedBadHires = completed.filter(c => {
     const score = c.results?.[0]?.overall_score ?? 0
     const outcome = outcomesById[c.id]
     return score < 70 && (!outcome || !POSITIVE_OUTCOMES.has(outcome))
   })
-  const costSaved = avoidedBadHires.length * BAD_HIRE_COST
+  const avoidedPerm = avoidedBadHires.filter(c => c.assessments?.employment_type !== 'temporary')
+  const avoidedTemp = avoidedBadHires.filter(c => c.assessments?.employment_type === 'temporary')
+  const costSavedPerm = avoidedPerm.length * BAD_HIRE_COST
+  const costSavedTemp = avoidedTemp.length * FAILED_PLACEMENT_COST
+  const costSaved = costSavedPerm + costSavedTemp
 
   const flaggedCandidates = candidates.filter(c => {
     const r = c.results?.[0]
@@ -3391,38 +3399,99 @@ function DashboardPageInner() {
           </div>
         )}
 
- {/* ── Secondary stats row (Cost saved, Speed to Offer moved to its own card above) ── */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
-          {/* Cost saved */}
-          <div style={{
-            flex: 2, minWidth: 280,
-            background: costSaved > 0 ? GRNBG : CARD,
-            border: `1px solid ${costSaved > 0 ? GRNBD : `${TEAL}55`}`,
-            borderTop: `3px solid ${costSaved > 0 ? GRN : TEAL}`,
-            borderRadius: 12, padding: '18px 22px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-              <Ic name="shield" size={13} color={costSaved > 0 ? GRN : TEAL} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Estimated cost of bad hires avoided
-              </span>
+ {/* ── Secondary stats row (Cost saved, language per account and employment type) ── */}
+        {(() => {
+          // Decide which framings to show. For 'both' accounts we show the
+          // relevant framing for each employment type present so perm hires
+          // and temp/contract placements are never conflated.
+          const permTitle = 'Estimated cost of bad hires avoided'
+          const tempTitle = isAgencyAccount
+            ? 'Assignment failures avoided'
+            : 'Poor placements avoided'
+          const permFootnote = `£30,000 average bad hire cost, covering tribunal risk, lost productivity, and probation backfill.`
+          const tempFootnote = isAgencyAccount
+            ? 'Avoiding a failed assignment saves the placement fee, the rebate risk, and the client relationship.'
+            : 'Each avoided poor placement saves shift coverage costs, agency re-engagement fees, and management time.'
+          const tempHeader = isAgencyAccount
+            ? 'Candidates screened out who would have caused assignment problems. Based on High Risk assessments not progressed.'
+            : 'Workers screened out who would have underperformed or caused issues on site. Based on High Risk assessments not progressed.'
+
+          const hasPerm = avoidedPerm.length > 0
+          const hasTemp = avoidedTemp.length > 0
+          // Which cards to render. Default to perm-only when no data yet so
+          // the empty state matches the account's most likely first use.
+          const showPerm = hasPerm || (!hasPerm && !hasTemp && !defaultIsTemp)
+          const showTemp = hasTemp || (!hasPerm && !hasTemp && defaultIsTemp)
+
+          const cards = []
+          if (showPerm) {
+            cards.push({
+              key: 'perm',
+              title: permTitle,
+              value: costSavedPerm,
+              count: avoidedPerm.length,
+              footnote: permFootnote,
+              empty: 'Once you start assessing candidates, PRODICTA will calculate how much you have saved by avoiding bad hires.',
+              unitLabel: 'candidate', unitLabelPlural: 'candidates',
+              countSuffix: 'not hired',
+            })
+          }
+          if (showTemp) {
+            cards.push({
+              key: 'temp',
+              title: tempTitle,
+              value: costSavedTemp,
+              count: avoidedTemp.length,
+              footnote: tempFootnote,
+              header: tempHeader,
+              empty: isAgencyAccount
+                ? 'Once you start screening assignments, PRODICTA will calculate how many failed placements you have avoided.'
+                : 'Once you start screening workers, PRODICTA will calculate how many poor placements you have avoided.',
+              unitLabel: isAgencyAccount ? 'candidate' : 'worker',
+              unitLabelPlural: isAgencyAccount ? 'candidates' : 'workers',
+              countSuffix: 'not progressed',
+            })
+          }
+
+          return (
+            <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
+              {cards.map(card => {
+                const hasValue = card.value > 0
+                return (
+                  <div key={card.key} style={{
+                    flex: cards.length > 1 ? 1 : 2, minWidth: 280,
+                    background: hasValue ? GRNBG : CARD,
+                    border: `1px solid ${hasValue ? GRNBD : `${TEAL}55`}`,
+                    borderTop: `3px solid ${hasValue ? GRN : TEAL}`,
+                    borderRadius: 12, padding: '18px 22px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                      <Ic name="shield" size={13} color={hasValue ? GRN : TEAL} />
+                      <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        {card.title}
+                      </span>
+                    </div>
+                    {hasValue ? (
+                      <>
+                        <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: GRN, lineHeight: 1, marginBottom: 6 }}>
+                          £{card.value.toLocaleString('en-GB')}
+                        </div>
+                        <div style={{ fontSize: 12, color: TX3, fontFamily: F, lineHeight: 1.55 }}>
+                          {card.header && <span>{card.header}<br/></span>}
+                          {card.count} {card.count !== 1 ? card.unitLabelPlural : card.unitLabel} {card.countSuffix}. {card.footnote}
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ fontSize: 13, color: TX2, fontFamily: F, lineHeight: 1.55, marginTop: 2 }}>
+                        {card.empty}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
-            {costSaved > 0 ? (
-              <>
-                <div style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: GRN, lineHeight: 1, marginBottom: 6 }}>
-                  £{costSaved.toLocaleString('en-GB')}
-                </div>
-                <div style={{ fontSize: 12, color: TX3, fontFamily: F }}>
-                  {avoidedBadHires.length} below-threshold candidate{avoidedBadHires.length !== 1 ? 's' : ''} not hired &middot; £30,000 average bad hire cost
-                </div>
-              </>
-            ) : (
-              <div style={{ fontSize: 13, color: TX2, fontFamily: F, lineHeight: 1.55, marginTop: 2 }}>
-                Once you start assessing candidates, PRODICTA will calculate how much you have saved by avoiding bad hires.
-              </div>
-            )}
-          </div>
-        </div>
+          )
+        })()}
 
         {/* ── Active Placements (agency only) ── */}
         {profile?.account_type === 'agency' && (
@@ -6473,8 +6542,15 @@ function PlacementRiskCard({ completed = [] }) {
 
 function CostOfVacancyCard({ profile }) {
   const isAgency = profile?.account_type === 'agency'
-  const [salary, setSalary] = useState(isAgency ? '6000' : '35000')
-  const [days, setDays] = useState('14')
+  const isTemp   = profile?.default_employment_type === 'temporary'
+  // Per-account/employment framing. Perm keeps the legacy "cost of vacancy"
+  // calculator. Temp/contract reframes as "Speed to fill" (agency) or
+  // "Shift coverage risk" (employer) so the copy fits the placement model.
+  const defaults = isAgency
+    ? (isTemp ? { sal: '500', days: '3' } : { sal: '6000', days: '14' })
+    : (isTemp ? { sal: '18',  days: '8' } : { sal: '35000', days: '14' })
+  const [salary, setSalary] = useState(defaults.sal)
+  const [days, setDays] = useState(defaults.days)
   const [salFocused, setSalFocused] = useState(false)
   const [daysFocused, setDaysFocused] = useState(false)
   const [showBreakdown, setShowBreakdown] = useState(false)
@@ -6482,14 +6558,25 @@ function CostOfVacancyCard({ profile }) {
   const sal = Math.max(0, parseInt(String(salary).replace(/[^0-9]/g, '')) || 0)
   const d   = Math.max(0, parseInt(String(days).replace(/[^0-9]/g, '')) || 0)
 
-  // Employer: lost productivity per working day (annual salary / 260)
-  const dailyCost = isAgency ? 0 : Math.round(sal / 260)
-  const totalCost = isAgency ? 0 : dailyCost * d
+  // Perm employer: lost productivity per working day (annual salary / 260).
+  const dailyCost = (!isAgency && !isTemp) ? Math.round(sal / 260) : 0
+  const totalCost = (!isAgency && !isTemp) ? dailyCost * d : 0
 
-  // Agency: fee at risk grows with elapsed days, capped at the full fee.
+  // Perm agency: fee at risk grows with elapsed days, capped at the full fee.
   // Treat 30 days as the point at which the client is most likely to walk.
   const urgencyFactor = Math.min(1, d / 30)
-  const feeAtRisk    = isAgency ? Math.round(sal * urgencyFactor) : 0
+  const feeAtRisk    = (isAgency && !isTemp) ? Math.round(sal * urgencyFactor) : 0
+
+  // Temp agency ("Speed to fill"): industry benchmark is 3 working days. Fee
+  // at risk scales with how far past benchmark the fill has gone.
+  const SPEED_TO_FILL_BENCHMARK = 3
+  const daysOverBenchmark = Math.max(0, d - SPEED_TO_FILL_BENCHMARK)
+  const tempAgencyFeeAtRisk = (isAgency && isTemp)
+    ? Math.round(sal * Math.min(1, daysOverBenchmark / 7))
+    : 0
+
+  // Temp employer ("Shift coverage risk"): hourly rate * hours uncovered.
+  const coverageCost = (!isAgency && isTemp) ? sal * d : 0
 
   function gbp(n) { return '£' + n.toLocaleString('en-GB') }
 
@@ -6501,11 +6588,42 @@ function CostOfVacancyCard({ profile }) {
     outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s',
   })
 
-  const headlineFigure = isAgency ? feeAtRisk : totalCost
-  const headlineLabel  = isAgency ? 'Estimated lost revenue' : 'Estimated cost of vacancy'
-  const subline = isAgency
-    ? `This role has been open for ${d} day${d !== 1 ? 's' : ''}.`
-    : `This role has been empty for ${d} day${d !== 1 ? 's' : ''}.`
+  let cardTitle, headlineLabel, headlineFigure, subline, salaryLabel, salaryPrefix, daysLabel
+  if (isAgency && isTemp) {
+    cardTitle      = 'Speed to fill'
+    headlineLabel  = daysOverBenchmark > 0 ? 'Fee at risk' : 'On pace'
+    headlineFigure = tempAgencyFeeAtRisk
+    subline        = daysOverBenchmark > 0
+      ? `${d} days to fill, ${daysOverBenchmark} over the ${SPEED_TO_FILL_BENCHMARK} day industry benchmark.`
+      : `${d} days to fill, within the ${SPEED_TO_FILL_BENCHMARK} day industry benchmark.`
+    salaryLabel    = 'Placement fee'
+    salaryPrefix   = '£'
+    daysLabel      = 'Days to fill'
+  } else if (!isAgency && isTemp) {
+    cardTitle      = 'Shift coverage risk'
+    headlineLabel  = 'Estimated coverage cost'
+    headlineFigure = coverageCost
+    subline        = `${d} hour${d !== 1 ? 's' : ''} uncovered at an ${gbp(sal)}/hr rate.`
+    salaryLabel    = 'Hourly rate'
+    salaryPrefix   = '£'
+    daysLabel      = 'Hours uncovered'
+  } else if (isAgency) {
+    cardTitle      = 'Cost of vacancy'
+    headlineLabel  = 'Estimated lost revenue'
+    headlineFigure = feeAtRisk
+    subline        = `This role has been open for ${d} day${d !== 1 ? 's' : ''}.`
+    salaryLabel    = 'Expected placement fee'
+    salaryPrefix   = '£'
+    daysLabel      = 'Days open'
+  } else {
+    cardTitle      = 'Cost of vacancy'
+    headlineLabel  = 'Estimated cost of vacancy'
+    headlineFigure = totalCost
+    subline        = `This role has been empty for ${d} day${d !== 1 ? 's' : ''}.`
+    salaryLabel    = 'Annual salary'
+    salaryPrefix   = '£'
+    daysLabel      = 'Days vacant'
+  }
 
   return (
     <div style={{
@@ -6516,7 +6634,7 @@ function CostOfVacancyCard({ profile }) {
       <div style={{ padding: '20px 24px' }}>
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
-            Cost of vacancy
+            {cardTitle}
           </div>
           <div style={{ width: 36, height: 2, background: TEAL, borderRadius: 2 }} />
         </div>
@@ -6524,13 +6642,13 @@ function CostOfVacancyCard({ profile }) {
         <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: '0 0 auto' }}>
             <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: F }}>
-              {isAgency ? 'Expected placement fee' : 'Annual salary'}
+              {salaryLabel}
             </label>
             <div style={{ position: 'relative', width: 160 }}>
               <span style={{
                 position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
                 fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.4)', pointerEvents: 'none',
-              }}>£</span>
+              }}>{salaryPrefix}</span>
               <input
                 type="text"
                 value={salary}
@@ -6538,13 +6656,13 @@ function CostOfVacancyCard({ profile }) {
                 onFocus={() => setSalFocused(true)}
                 onBlur={() => setSalFocused(false)}
                 style={{ ...inputStyle(salFocused), paddingLeft: 26 }}
-                placeholder={isAgency ? '6000' : '35000'}
+                placeholder={defaults.sal}
               />
             </div>
           </div>
           <div style={{ flex: '0 0 auto' }}>
             <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: F }}>
-              Days {isAgency ? 'open' : 'vacant'}
+              {daysLabel}
             </label>
             <input
               type="text"
@@ -6553,7 +6671,7 @@ function CostOfVacancyCard({ profile }) {
               onFocus={() => setDaysFocused(true)}
               onBlur={() => setDaysFocused(false)}
               style={{ ...inputStyle(daysFocused), width: 100 }}
-              placeholder="14"
+              placeholder={defaults.days}
             />
           </div>
           <div style={{ paddingBottom: 2 }}>
@@ -6586,7 +6704,48 @@ function CostOfVacancyCard({ profile }) {
 
         {showBreakdown && (
           <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {isAgency ? (
+            {isAgency && isTemp ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Industry benchmark</div>
+                    <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>Typical fill time for temporary and contract</div>
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color: '#fff' }}>{SPEED_TO_FILL_BENCHMARK} days</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Days over benchmark</div>
+                    <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>After a week over benchmark, the client often moves on</div>
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color: daysOverBenchmark > 0 ? AMB : GRN }}>{daysOverBenchmark}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Placement fee</div>
+                    <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>Revenue tied to winning this fill</div>
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color: '#fff' }}>{gbp(sal)}</div>
+                </div>
+              </>
+            ) : !isAgency && isTemp ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Hourly rate</div>
+                    <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>Cost of covering the uncovered hours</div>
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color: '#fff' }}>{gbp(sal)}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Hours uncovered</div>
+                    <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>Shifts, late starts, or no-shows waiting on a replacement</div>
+                  </div>
+                  <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color: AMB }}>{d}</div>
+                </div>
+              </>
+            ) : isAgency ? (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', gap: 12 }}>
                   <div>
