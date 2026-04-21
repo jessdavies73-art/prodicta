@@ -319,6 +319,7 @@ function StatNumber({ to, suffix = '', display }) {
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState(null)
   const [heroPersona, setHeroPersona] = useState('agency') // 'agency' | 'employer'
+  const [personaTab, setPersonaTab] = useState('agency_perm') // 'agency_perm' | 'agency_temp' | 'employer_perm' | 'employer_temp'
   const [pricingMode, setPricingMode] = useState('subscription') // 'subscription' | 'payg'
   const [riskJd, setRiskJd] = useState('')
   const [riskLoading, setRiskLoading] = useState(false)
@@ -647,6 +648,162 @@ export default function LandingPage() {
           </svg>
         </div>
       </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          PERSONA VALUE PROPOSITIONS
+          Four-tab selector so visitors can self-identify and read the
+          value prop that fits their market.
+      ════════════════════════════════════════════════════════════════════ */}
+      {(() => {
+        const PERSONAS = {
+          agency_perm: {
+            tab: 'Recruitment Agency, Permanent',
+            heading: 'Stop losing fees to bad placements.',
+            sub: 'PRODICTA tells you if a placement will fail before you make it. Give your clients evidence not CVs.',
+            exciters: [
+              { title: 'Placement Survival Score', body: 'A percentage that tells you exactly how likely this placement is to succeed. Impossible to ignore.' },
+              { title: 'Day 1 Highlight Reel', body: 'A 60-second shareable video of how the candidate performed. No other agency is sending clients this.' },
+              { title: 'Accountability Trail', body: 'Every risk documented. Every recommendation tracked. Your fees protected.' },
+            ],
+          },
+          agency_temp: {
+            tab: 'Recruitment Agency, Temporary and Contract',
+            heading: 'Screen faster, place better, stay compliant.',
+            sub: 'PRODICTA replaces the phone screen with a real work simulation, handles your SSP automatically, and catches no-shows before day one.',
+            exciters: [
+              { title: 'Ghosting Prevention Loop', body: 'Three automated pulses between offer and start. Catches silent no-shows before day one.' },
+              { title: 'Pre-Start Risk Check', body: 'Know who is HIGH risk before they show up. Surface backup candidates instantly.' },
+              { title: 'Replacement Trigger', body: 'When a placement fails PRODICTA finds your replacement before the client finishes their complaint.' },
+            ],
+          },
+          employer_perm: {
+            tab: 'Direct Employer, Permanent',
+            heading: 'Hire with evidence not opinion.',
+            sub: 'PRODICTA gives every hiring decision a documented, bias-free, legally defensible foundation. Protecting your business and your reputation.',
+            exciters: [
+              { title: 'Probation Co-pilot', body: 'Tracks every hire through probation with early warning alerts. Know before the problems start.' },
+              { title: '90-Day Coaching Plan', body: 'A structured manager coaching plan for every new hire. Developed with Alchemy Training UK.' },
+              { title: 'ERA 2025 Compliance Certificate', body: 'A legally defensible PDF for every assessment. Ready for any tribunal or investigation.' },
+            ],
+          },
+          employer_temp: {
+            tab: 'Direct Employer, Temporary and Contract',
+            heading: 'Manage your contingent workforce from assessment to assignment end.',
+            sub: 'PRODICTA screens at volume, tracks every placement in real time, and handles your Fair Work Agency compliance automatically.',
+            exciters: [
+              { title: 'Attendance Risk Signal', body: 'Catches reliability problems before the client complains. Not after.' },
+              { title: 'SSP Automation', body: 'Handles sickness correctly under the new 2026 rules. Nothing falls through the cracks.' },
+              { title: 'Fair Work Agency Compliance Pack', body: 'Full compliance documentation in one click. Every absence. Every check. Every record.' },
+            ],
+          },
+        }
+        const current = PERSONAS[personaTab] || PERSONAS.agency_perm
+        const order = ['agency_perm', 'agency_temp', 'employer_perm', 'employer_temp']
+
+        return (
+          <section style={{ background: '#ffffff', padding: '72px 24px' }}>
+            <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+              <Reveal>
+                <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                  <span style={{
+                    display: 'inline-block', padding: '5px 12px', borderRadius: 999,
+                    background: TEALLT, color: TEALD,
+                    fontFamily: F, fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
+                    marginBottom: 14,
+                  }}>
+                    Choose your market
+                  </span>
+                  <h2 style={{
+                    fontFamily: F, fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 800,
+                    color: NAVY, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.2,
+                  }}>
+                    Different buyers. Same proof engine.
+                  </h2>
+                </div>
+              </Reveal>
+
+              {/* Tab selector */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
+                gap: 10, marginBottom: 32, maxWidth: 960, marginLeft: 'auto', marginRight: 'auto',
+              }}>
+                {order.map(key => {
+                  const active = personaTab === key
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setPersonaTab(key)}
+                      style={{
+                        padding: '12px 18px', borderRadius: 999,
+                        border: `1.5px solid ${active ? NAVY : '#d1d5db'}`,
+                        background: active ? NAVY : '#f1f5f9',
+                        color: active ? '#ffffff' : '#475569',
+                        fontFamily: F, fontSize: 13.5, fontWeight: 700,
+                        cursor: 'pointer', textAlign: 'center',
+                        transition: 'background 0.18s ease, color 0.18s ease, border-color 0.18s ease',
+                      }}
+                    >
+                      {PERSONAS[key].tab}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Content area */}
+              <div key={personaTab} style={{
+                animation: 'personaFade 0.3s ease',
+              }}>
+                <style>{`@keyframes personaFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}`}</style>
+                <div style={{ textAlign: 'center', marginBottom: 28, maxWidth: 820, margin: '0 auto 28px' }}>
+                  <h3 style={{
+                    fontFamily: F, fontSize: 'clamp(22px, 2.6vw, 30px)', fontWeight: 800,
+                    color: NAVY, margin: '0 0 12px', letterSpacing: '-0.4px', lineHeight: 1.25,
+                  }}>
+                    {current.heading}
+                  </h3>
+                  <p style={{
+                    fontFamily: F, fontSize: 'clamp(15px, 1.5vw, 17px)', fontWeight: 400,
+                    color: '#475569', margin: 0, lineHeight: 1.6,
+                  }}>
+                    {current.sub}
+                  </p>
+                </div>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+                  gap: 16,
+                }}>
+                  {current.exciters.map((e, i) => (
+                    <div key={i} style={{
+                      background: '#ffffff',
+                      border: '1px solid #e4e9f0',
+                      borderLeft: `4px solid ${TEAL}`,
+                      borderRadius: 12, padding: '20px 22px',
+                      boxShadow: '0 4px 16px rgba(15,33,55,0.06)',
+                    }}>
+                      <h4 style={{
+                        fontFamily: F, fontSize: 16, fontWeight: 800, color: NAVY,
+                        margin: '0 0 8px', letterSpacing: '-0.2px',
+                      }}>
+                        {e.title}
+                      </h4>
+                      <p style={{
+                        fontFamily: F, fontSize: 14, color: '#475569',
+                        margin: 0, lineHeight: 1.6,
+                      }}>
+                        {e.body}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )
+      })()}
 
       {/* ════════════════════════════════════════════════════════════════════
           PROOF STATEMENT
