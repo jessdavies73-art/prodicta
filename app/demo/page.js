@@ -908,17 +908,17 @@ function DemoDashboardInner() {
               : (isTemp ? 'Placed on assignment' : 'Progressing to interview')
           }
 
-          const avgColor = avgScore == null
+          const avgNumberColor = avgScore == null
             ? TX3
-            : avgScore >= 70 ? '#00BFA5' : avgScore >= 50 ? '#E8B84B' : '#DC2626'
+            : avgScore >= 70 ? '#00BFA5' : avgScore >= 50 ? '#E8B84B' : '#B91C1C'
 
           const tiles = [
-            { label: 'Live roles',       value: liveRoleIds.size, sub: 'Roles currently being assessed', color: '#00BFA5' },
-            { label: 'Total applicants', value: totalApplicants,  sub: 'Across all live roles',         color: '#6366F1' },
-            { label: 'Completed',        value: completedCount,   sub: 'Assessments submitted',         color: '#00BFA5' },
-            { label: 'Average score',    value: avgScore != null ? avgScore : '-', sub: 'Across all roles', color: avgColor },
-            { label: 'Recommended',      value: recommendedCount, sub: 'Score 70 and above',            color: '#00BFA5' },
-            { label: 'Progressing',      value: progressingCount, sub: progressSub,                      color: '#0F2137' },
+            { label: 'Live roles',       value: liveRoleIds.size, sub: 'Roles currently being assessed', border: '#00BFA5', number: '#00BFA5' },
+            { label: 'Total applicants', value: totalApplicants,  sub: 'Across all live roles',         border: '#6366F1', number: '#6366F1' },
+            { label: 'Completed',        value: completedCount,   sub: 'Assessments submitted',         border: '#00BFA5', number: '#00BFA5' },
+            { label: 'Average score',    value: avgScore != null ? avgScore : '-', sub: 'Across all roles', border: '#8B5CF6', number: avgNumberColor },
+            { label: 'Recommended',      value: recommendedCount, sub: 'Score 70 and above',            border: '#00BFA5', number: '#00BFA5' },
+            { label: 'Progressing',      value: progressingCount, sub: progressSub,                      border: '#3B82F6', number: '#3B82F6' },
           ]
 
           return (
@@ -930,14 +930,14 @@ function DemoDashboardInner() {
               {tiles.map(t => (
                 <div key={t.label} style={{
                   ...cs,
-                  borderTop: `3px solid ${t.color}`,
+                  borderTop: `3px solid ${t.border}`,
                   padding: '14px 16px',
                   display: 'flex', flexDirection: 'column', gap: 4,
                 }}>
                   <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                     {t.label}
                   </div>
-                  <div style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: t.color, lineHeight: 1.05 }}>
+                  <div style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: t.number, lineHeight: 1.05 }}>
                     {t.value}
                   </div>
                   <div style={{ fontSize: 11.5, color: TX3, lineHeight: 1.4 }}>
