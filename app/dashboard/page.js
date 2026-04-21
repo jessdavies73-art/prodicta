@@ -4504,6 +4504,44 @@ function DashboardPageInner() {
         {/* ── Role Detail view (all account types) ── Section 1 */}
         {selectedRole && activeRole && (() => {
           const completedForRole = roleDetailCandidates.filter(c => c.status === 'completed')
+          // Funnel buckets
+          const total = roleDetailCandidates.length
+          const completedCount = completedForRole.length
+          const strongHire = completedForRole.filter(c => (c.results?.[0]?.overall_score ?? 0) >= 70).length
+          const review     = completedForRole.filter(c => {
+            const s = c.results?.[0]?.overall_score
+            return typeof s === 'number' && s >= 50 && s < 70
+          }).length
+          const highRisk   = completedForRole.filter(c => {
+            const s = c.results?.[0]?.overall_score
+            return typeof s === 'number' && s < 50
+          }).length
+          const notResponded = roleDetailCandidates.filter(c => c.status !== 'completed').length
+          const progressing = roleDetailCandidates.filter(c => c.stage === 'progress').length
+
+          // Final-stage label keyed off the candidates' employment type. Pick
+          // from the most recent candidate for the role so 'both' accounts
+          // label by the active role's employment type.
+          const firstEmp = roleDetailCandidates[0]?.assessments?.employment_type
+          const isTempRole = firstEmp === 'temporary'
+          let progressLabel
+          if (isAgencyAccount) {
+            progressLabel = isTempRole ? 'Placed on assignment' : 'Submitted to client'
+          } else {
+            progressLabel = isTempRole ? 'Placed on assignment' : 'Progressing to interview'
+          }
+
+          const pct = v => total > 0 ? Math.round((v / total) * 100) : 0
+          const stages = [
+            { key: 'invited',     label: 'Total invited',   short: 'Invited',         value: total,         color: NAVY,   bg: '#E5EAF1',     bd: '#CBD5E1' },
+            { key: 'completed',   label: 'Completed',       short: 'Finished',        value: completedCount, color: TEALD, bg: TEALLT,        bd: `${TEAL}55` },
+            { key: 'strong',      label: 'Strong hire',     short: 'Score 70+',       value: strongHire,    color: '#0F7A66', bg: '#D8F4EC',  bd: '#00BFA555' },
+            { key: 'review',      label: 'Review',          short: 'Score 50 to 69',  value: review,        color: '#92400E', bg: AMBBG,      bd: AMBBD },
+            { key: 'risk',        label: 'High risk',       short: 'Score below 50',  value: highRisk,      color: '#991B1B', bg: REDBG,      bd: REDBD },
+            { key: 'noresponse',  label: 'Not responded',   short: 'Not completed',   value: notResponded,  color: TX3,       bg: BG,         bd: BD },
+            { key: 'progress',    label: progressLabel,     short: 'Progress stage',  value: progressing,   color: '#0F7A66', bg: '#D8F4EC',  bd: '#00BFA555' },
+          ]
+
           return (
             <div style={{ order: 11, marginBottom: 24 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
@@ -4523,6 +4561,46 @@ function DashboardPageInner() {
                 <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: TX }}>
                   {activeRole.role_title}
                 </h2>
+              </div>
+
+              {/* Talent funnel */}
+              <div style={{ ...cs, marginBottom: 16, padding: isMobile ? '16px' : '20px 22px' }}>
+                <div style={{ fontFamily: F, fontSize: 13, color: TX2, marginBottom: 14, lineHeight: 1.55 }}>
+                  <strong style={{ color: TX }}>{total}</strong> candidate{total !== 1 ? 's' : ''} assessed for <strong style={{ color: TX }}>{activeRole.role_title}</strong>. <strong style={{ color: '#0F7A66' }}>{strongHire}</strong> recommended. <strong style={{ color: '#0F7A66' }}>{progressing}</strong> progressing.
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${stages.length}, 1fr)`,
+                  gap: 8,
+                }}>
+                  {stages.map((s, i) => {
+                    const p = pct(s.value)
+                    return (
+                      <div key={s.key} style={{
+                        position: 'relative',
+                        border: `1px solid ${s.bd}`, background: s.bg,
+                        borderRadius: 10, padding: '12px 12px 10px',
+                        display: 'flex', flexDirection: 'column', gap: 4,
+                      }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: s.color, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                          {s.label}
+                        </div>
+                        <div style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: s.color, lineHeight: 1.1 }}>
+                          {s.value}
+                        </div>
+                        <div style={{ fontSize: 10.5, color: s.color, opacity: 0.9 }}>
+                          {total > 0 ? `${p}% of invited` : '-'}
+                        </div>
+                        <div style={{ height: 3, borderRadius: 2, background: 'rgba(15,33,55,0.06)', marginTop: 6, overflow: 'hidden' }}>
+                          <div style={{ width: `${p}%`, height: '100%', background: s.color, borderRadius: 2, transition: 'width 0.3s ease' }} />
+                        </div>
+                        <div style={{ fontSize: 10, color: s.color, opacity: 0.75, marginTop: 2 }}>
+                          {s.short}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
 
               <div style={{
