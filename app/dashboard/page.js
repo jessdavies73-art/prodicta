@@ -741,6 +741,9 @@ function DashboardPageInner() {
   const [installPrompt, setInstallPrompt] = useState(null)
   const [showInstallBanner, setShowInstallBanner] = useState(false)
   const [mobileBannerDismissed, setMobileBannerDismissed] = useState(() => typeof window !== 'undefined' && localStorage.getItem('prodicta_mobile_banner_dismissed'))
+  // First-action nudge in Section 1: stays dismissed across sessions, and
+  // hides permanently the moment the user has any candidate on record.
+  const [firstActionDismissed, setFirstActionDismissed] = useState(() => typeof window !== 'undefined' && !!localStorage.getItem('prodicta_first_action_dismissed'))
   const [proofBannerDismissed, setProofBannerDismissed] = useState(() => typeof window !== 'undefined' && !!localStorage.getItem('prodicta_banner_dismissed'))
   const [outcomeReminderSnoozed, setOutcomeReminderSnoozed] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -4430,6 +4433,108 @@ function DashboardPageInner() {
           </div>
         )}
 
+
+        {/* ── First-action nudge (Section 1 top, new users only) ── */}
+        {!firstActionDismissed && candidates.length === 0 && (() => {
+          const isAgency = isAgencyAccount
+          const isTemp   = defaultIsTemp
+          let body
+          if (isAgency && isTemp) {
+            body = 'Screen your first candidate in under 60 seconds. At £6 for a Rapid Screen you can screen 10 candidates for £60.'
+          } else if (isAgency) {
+            body = 'Send a real assessment to a candidate or submit to a client in under 60 seconds.'
+          } else if (!isAgency && isTemp) {
+            body = 'Screen your first worker in under 60 seconds with a Rapid Screen at £6.'
+          } else {
+            body = 'Send a real work simulation to your first candidate in under 60 seconds.'
+          }
+
+          return (
+            <div style={{
+              order: 11,
+              background: '#ffffff',
+              border: `1px solid ${BD}`,
+              borderLeft: `4px solid ${TEAL}`,
+              borderRadius: 12,
+              padding: isMobile ? '22px 20px' : '28px 28px',
+              marginBottom: 20,
+              boxShadow: '0 4px 20px rgba(0,191,165,0.08)',
+              display: 'flex', flexDirection: isMobile ? 'column' : 'row',
+              alignItems: isMobile ? 'flex-start' : 'center',
+              gap: isMobile ? 16 : 22,
+            }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: 14,
+                background: TEALLT, border: `1px solid ${TEAL}55`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <Ic name="send" size={24} color={TEALD} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h2 style={{
+                  margin: '0 0 6px', fontFamily: F, fontSize: 18, fontWeight: 800,
+                  color: TX, letterSpacing: '-0.01em',
+                }}>
+                  Send your first assessment
+                </h2>
+                <p style={{
+                  margin: 0, fontFamily: F, fontSize: 13.5, color: TX2, lineHeight: 1.6,
+                }}>
+                  PRODICTA works best when you try it. {body}
+                </p>
+              </div>
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: 8,
+                alignItems: isMobile ? 'stretch' : 'flex-end',
+                flexShrink: 0,
+                width: isMobile ? '100%' : undefined,
+              }}>
+                <button
+                  type="button"
+                  onClick={() => router.push('/assessment/new')}
+                  style={{
+                    padding: '12px 22px', borderRadius: 10, border: 'none',
+                    background: TEAL, color: NAVY,
+                    fontFamily: F, fontSize: 14, fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    boxShadow: '0 4px 14px rgba(0,191,165,0.35)',
+                  }}
+                >
+                  Send your first assessment
+                  <Ic name="right" size={14} color={NAVY} />
+                </button>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/demo')}
+                    style={{
+                      background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                      fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TEALD,
+                    }}
+                  >
+                    See a demo first
+                  </button>
+                  <span style={{ color: BD }}>·</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try { localStorage.setItem('prodicta_first_action_dismissed', '1') } catch (_) {}
+                      setFirstActionDismissed(true)
+                    }}
+                    style={{
+                      background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                      fontFamily: F, fontSize: 12.5, fontWeight: 600, color: TX3,
+                    }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── Location filter bar (all account types) ── Section 1 */}
         {!activeFilter && !selectedRole && !selectedClient && !selectedTeamMember && (
