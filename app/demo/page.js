@@ -121,28 +121,48 @@ function DemoStageActionButtons({ stage, onSet }) {
   )
 }
 
-function SectionHeader({ number, title, subtitle, order, visible = true }) {
+const SECTION_THEME = {
+  1: { accent: '#00BFA5', tint: '#FFFFFF', pillBg: '#D8F4EC', pillFg: '#0F7A66' },
+  2: { accent: '#0F2137', tint: '#F0F4F8', pillBg: '#E5EAF1', pillFg: '#0F2137' },
+  3: { accent: '#E8B84B', tint: '#FFFBF0', pillBg: '#FEF3C7', pillFg: '#92400E' },
+  4: { accent: '#64748B', tint: '#F8F9FA', pillBg: '#E2E8F0', pillFg: '#334155' },
+}
+
+function SectionHeader({ number, title, subtitle, description, order, visible = true }) {
   if (!visible) return null
+  const theme = SECTION_THEME[number] || SECTION_THEME[1]
   return (
     <div style={{
-      order, marginTop: 12, marginBottom: 14, paddingTop: 18,
-      borderTop: `1px solid ${BD}`,
+      order,
+      marginTop: 24, marginBottom: 14,
+      borderTop: `4px solid ${theme.accent}`,
+      background: theme.tint,
+      borderRadius: '0 0 12px 12px',
+      padding: '18px 22px 20px',
+      boxShadow: '0 1px 0 rgba(15,33,55,0.04)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <span style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: 26, height: 26, borderRadius: 999,
-          background: TEALLT, color: TEALD,
-          fontFamily: FM, fontSize: 13, fontWeight: 800,
+          width: 30, height: 30, borderRadius: 999,
+          background: theme.pillBg, color: theme.pillFg,
+          fontFamily: FM, fontSize: 14, fontWeight: 800,
+          flexShrink: 0,
         }}>{number}</span>
         <h2 style={{
-          margin: 0, fontFamily: F, fontSize: 16, fontWeight: 800,
+          margin: 0, fontFamily: F, fontSize: 17, fontWeight: 800,
           color: TX, letterSpacing: '-0.01em',
         }}>{title}</h2>
         {subtitle && (
           <span style={{ fontFamily: F, fontSize: 12.5, color: TX3, fontWeight: 500 }}>{subtitle}</span>
         )}
       </div>
+      {description && (
+        <p style={{
+          margin: '8px 0 0 42px',
+          fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55,
+        }}>{description}</p>
+      )}
     </div>
   )
 }
@@ -1089,7 +1109,7 @@ function DemoDashboardInner() {
           </div>
         </div>
 
-        <SectionHeader number="1" title="Assessment and Screening" subtitle="Pipeline, roles, shortlist, invites" />
+        <SectionHeader number={1} title="Assessment and Screening" description="Screen and rank your candidates. Send assessments, view scores, and build your shortlist." />
 
         {/* Candidate Pipeline (employer only, after Speed to Offer / before Prediction Accuracy) — Section 1 */}
         {!isAgency && (
@@ -1228,7 +1248,7 @@ function DemoDashboardInner() {
           </div>
         </div>
 
-        <SectionHeader number="3" title="Post-placement and Aftercare" subtitle="Placement health, probation, rebate" visible={isAgency || !isAgency} />
+        <SectionHeader number={3} title="Post-placement and Aftercare" description="Manage active placements and hires. Track performance, health, and aftercare." visible={isAgency || !isAgency} />
 
         {/* Agency-only sections */}
         {isAgency && (
@@ -3306,7 +3326,7 @@ function DemoDashboardInner() {
           </div>
         )}
 
-        <SectionHeader number="2" title="Shortlisting and Progression" subtitle="Decide who moves forward" />
+        <SectionHeader number={2} title="Shortlisting and Progression" description="Decide who to progress, hold, or reject. Track your shortlist and notify candidates automatically." />
         {(() => {
           const progressing = allActiveCandidates.filter(c => c.stage === 'progress')
           const onHold      = allActiveCandidates.filter(c => c.stage === 'hold')
@@ -3415,7 +3435,7 @@ function DemoDashboardInner() {
         })()}
 
         {isAgency && (
-          <SectionHeader number="4" title="Compliance" subtitle="SSP, holiday, Fair Work Agency, EDI" />
+          <SectionHeader number={4} title="Compliance" description="Compliance and legal documentation. SSP, holiday pay, Fair Work Agency records." />
         )}
       </main>
     </DemoLayout>

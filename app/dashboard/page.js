@@ -60,31 +60,49 @@ function initials(name = '') {
 
 // ── sub-components ────────────────────────────────────────────────────────────
 
+// Per-section visual theming. Each of the four process buckets has its own
+// accent colour and a very light tint so the sections read as distinct on
+// the page. Kept as a single map so the dashboard and any section child can
+// reference the same palette.
+const SECTION_THEME = {
+  1: { accent: '#00BFA5', tint: '#FFFFFF', pillBg: '#D8F4EC', pillFg: '#0F7A66' },
+  2: { accent: '#0F2137', tint: '#F0F4F8', pillBg: '#E5EAF1', pillFg: '#0F2137' },
+  3: { accent: '#E8B84B', tint: '#FFFBF0', pillBg: '#FEF3C7', pillFg: '#92400E' },
+  4: { accent: '#64748B', tint: '#F8F9FA', pillBg: '#E2E8F0', pillFg: '#334155' },
+}
+
 // Section header for the four process buckets on the dashboard.
-// Renders a labelled heading with a visual separator, gated on `visible`.
+// Renders a full-width banner with a 4px coloured top border, a tinted
+// background, the number pill, the title, and a one-line description of
+// what this section covers. `visible={false}` collapses the section so
+// account types with no content don't see an empty banner.
 // order={10/20/30/40} places the header at the start of its section when
 // the parent <main> is a flex column (see the main element for ordering).
-function SectionHeader({ number, title, subtitle, order, visible = true }) {
+function SectionHeader({ number, title, subtitle, description, order, visible = true }) {
   if (!visible) return null
+  const theme = SECTION_THEME[number] || SECTION_THEME[1]
   return (
     <div style={{
       order,
-      marginTop: 12,
-      marginBottom: 14,
-      paddingTop: 18,
-      borderTop: `1px solid ${BD}`,
+      marginTop: 24, marginBottom: 14,
+      borderTop: `4px solid ${theme.accent}`,
+      background: theme.tint,
+      borderRadius: '0 0 12px 12px',
+      padding: '18px 22px 20px',
+      boxShadow: '0 1px 0 rgba(15,33,55,0.04)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <span style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: 26, height: 26, borderRadius: 999,
-          background: TEALLT, color: TEALD,
-          fontFamily: FM, fontSize: 13, fontWeight: 800,
+          width: 30, height: 30, borderRadius: 999,
+          background: theme.pillBg, color: theme.pillFg,
+          fontFamily: FM, fontSize: 14, fontWeight: 800,
+          flexShrink: 0,
         }}>
           {number}
         </span>
         <h2 style={{
-          margin: 0, fontFamily: F, fontSize: 16, fontWeight: 800,
+          margin: 0, fontFamily: F, fontSize: 17, fontWeight: 800,
           color: TX, letterSpacing: '-0.01em',
         }}>
           {title}
@@ -95,6 +113,14 @@ function SectionHeader({ number, title, subtitle, order, visible = true }) {
           </span>
         )}
       </div>
+      {description && (
+        <p style={{
+          margin: '8px 0 0 42px',
+          fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55,
+        }}>
+          {description}
+        </p>
+      )}
     </div>
   )
 }
@@ -2167,15 +2193,17 @@ function DashboardPageInner() {
         {/* ── Section dividers (rendered inline, slotted by CSS order) ── */}
         <SectionHeader
           order={10}
-          number="1"
+          number={1}
           title="Assessment and Screening"
-          subtitle="Pipeline, roles, shortlist, invites"
+          description="Screen and rank your candidates. Send assessments, view scores, and build your shortlist."
+          visible={candidates.length > 0 || assessments.length > 0}
         />
         <SectionHeader
           order={20}
-          number="2"
+          number={2}
           title="Shortlisting and Progression"
-          subtitle="Decide who moves forward"
+          description="Decide who to progress, hold, or reject. Track your shortlist and notify candidates automatically."
+          visible={candidates.length > 0}
         />
         {(() => {
           const progressing = candidates.filter(c => c.stage === 'progress')
@@ -2313,9 +2341,9 @@ function DashboardPageInner() {
         })()}
         <SectionHeader
           order={30}
-          number="3"
+          number={3}
           title="Post-placement and Aftercare"
-          subtitle="Placement health, probation, rebate"
+          description="Manage active placements and hires. Track performance, health, and aftercare."
           visible={
             isAgencyAccount ||
             profile?.account_type === 'employer' ||
@@ -2324,9 +2352,9 @@ function DashboardPageInner() {
         />
         <SectionHeader
           order={40}
-          number="4"
+          number={4}
           title="Compliance"
-          subtitle="SSP, holiday, Fair Work Agency, EDI"
+          description="Compliance and legal documentation. SSP, holiday pay, Fair Work Agency records."
           visible={
             (isAgencyAccount && sspAlerts.filter(a => a.employment_type === 'temporary').length > 0)
           }
