@@ -1692,7 +1692,7 @@ export default function SettingsPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
                 {[
                   { value: 'permanent', label: 'Always Permanent Hire', desc: 'Every new assessment defaults to Permanent Hire.' },
-                  { value: 'temporary', label: 'Always Temporary Placement', desc: 'Every new assessment defaults to Temporary Placement.' },
+                  { value: 'temporary', label: 'Always Temporary and Contract', desc: 'Every new assessment defaults to Temporary and Contract Placement, covering temps, contractors and interim workers.' },
                   { value: 'ask', label: 'Ask Every Time', desc: 'Choose each time you create a new assessment.' },
                 ].map(opt => (
                   <label

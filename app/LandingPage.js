@@ -1305,7 +1305,7 @@ export default function LandingPage() {
               {
                 tag: 'For Recruitment Agencies',
                 headline: 'Place faster. Protect every placement.',
-                sub: 'One platform for permanent and temporary placements. From first assessment to final day.',
+                sub: 'One platform for permanent, temporary, and contract placements. From first assessment to final day.',
                 points: [
  'Real work simulations, Every candidate assessed on the actual situations they will face in the role. Perm or temp. Not a personality test.',
  'Day 1 Highlight Reel, Send clients a 60-second video of how the candidate performed. No other agency offers that.',
@@ -1328,7 +1328,7 @@ export default function LandingPage() {
  'Probation early warning, Detects when a hire is deviating from predictions at week three. Not month four when it is too late.',
  'SSP and holiday compliance, 2026 SSP rules built in. Holiday pay records kept for 6 years automatically. Fair Work Agency ready.',
  'Document templates, Probation letters, family leave acknowledgements, SSP forms. Pre-filled from the candidate profile. Built to current legislation.',
- 'Perm and temp, One platform whether you hire permanently or use temporary workers. Same evidence. Same protection.',
+ 'Perm, temp and contract, One platform whether you hire permanently or use temporary and contract workers. Same evidence. Same protection.',
                 ],
                 more: 'And so much more. Manager DNA Assessment, Team Dynamics, Probation Co-pilot, Outcome Tracking, Candidate Development Portal, Rejected Candidate Development Plan, and more.',
                 bg: '#f0fdf8',

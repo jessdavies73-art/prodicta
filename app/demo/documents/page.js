@@ -24,7 +24,7 @@ const SSP_TEMPLATES = [
 
 const ASSIGNMENT_TEMPLATES = [
   { id: 'assignment-confirm',  name: 'Assignment Confirmation Letter', note: 'Confirm start date, role, rate, and terms' },
-  { id: 'assignment-extend',   name: 'Assignment Extension Letter',    note: 'Extend an existing temporary placement' },
+  { id: 'assignment-extend',   name: 'Assignment Extension Letter',    note: 'Extend an existing temporary or contract placement' },
   { id: 'assignment-end',      name: 'Assignment End Letter',          note: 'Notify worker of assignment end' },
   { id: 'between-assignments', name: 'Between Assignments Confirmation', note: 'Maintain continuous service record' },
 ]

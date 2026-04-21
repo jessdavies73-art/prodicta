@@ -752,7 +752,7 @@ function DemoDashboardInner() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 24 }}>
           <span style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, marginRight: 8 }}>Default to:</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: CARD, borderRadius: 10, border: `1.5px solid ${BD}`, padding: 3 }}>
-            {[{ key: 'permanent', label: 'Permanent' }, { key: 'temporary', label: 'Temporary' }, { key: 'both', label: 'Both' }].map(opt => (
+            {[{ key: 'permanent', label: 'Permanent' }, { key: 'temporary', label: 'Temporary and Contract' }, { key: 'both', label: 'Both' }].map(opt => (
               <button
                 key={opt.key}
                 onClick={() => setDemoEmploymentType(opt.key)}

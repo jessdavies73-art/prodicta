@@ -768,7 +768,7 @@ export default function NewAssessmentPage() {
             borderRadius: 999, padding: '4px 12px',
             marginBottom: 20,
           }}>
-            Defaulting to {employmentType === 'permanent' ? 'Permanent Hire' : 'Temporary Placement'} based on your settings.{' '}
+            Defaulting to {employmentType === 'permanent' ? 'Permanent Hire' : 'Temporary and Contract Placement'} based on your settings.{' '}
             <a href="/settings" style={{ color: '#00BFA5', fontWeight: 600, textDecoration: 'none' }}>Change</a>
           </div>
         )}
@@ -780,7 +780,7 @@ export default function NewAssessmentPage() {
             padding: isMobile ? '28px 20px' : '36px 36px', marginBottom: 24,
           }}>
             <p style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>
-              Is this a permanent hire or a temporary placement?
+              Is this a permanent hire or a temporary and contract placement?
             </p>
             <p style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', margin: '0 0 24px' }}>
               This determines which features and report labels are available.
@@ -818,7 +818,7 @@ export default function NewAssessmentPage() {
                 </span>
               </button>
 
-              {/* Temporary placement card */}
+              {/* Temporary and contract placement card */}
               <button
                 onClick={() => setEmploymentType('temporary')}
                 style={{
@@ -842,10 +842,10 @@ export default function NewAssessmentPage() {
                   </svg>
                 </div>
                 <span style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: '#0f2137' }}>
-                  Temporary Placement
+                  Temporary and Contract Placement
                 </span>
                 <span style={{ fontFamily: F, fontSize: 12.5, color: '#5e6b7f', lineHeight: 1.5 }}>
-                  Full assessment or Rapid Screen. Placement health tracking. SSP module.
+                  Full assessment or Rapid Screen. Placement health tracking. SSP module. For temps, contractors, and interim workers.
                 </span>
               </button>
             </div>
@@ -864,7 +864,7 @@ export default function NewAssessmentPage() {
               color: employmentType === 'permanent' ? '#0f2137' : '#009688',
               border: `1px solid ${employmentType === 'permanent' ? '#d1d5db' : '#80DFD2'}`,
             }}>
-              {employmentType === 'permanent' ? 'Permanent Hire' : 'Temporary Placement'}
+              {employmentType === 'permanent' ? 'Permanent Hire' : 'Temporary and Contract Placement'}
             </span>
             <button
               onClick={() => { setEmploymentType(''); setEmploymentTypeDefaulted(false) }}
@@ -1009,14 +1009,14 @@ export default function NewAssessmentPage() {
             })}
           </div>
 
-          {/* Rapid Screen note for temporary placements */}
+          {/* Rapid Screen note for temporary and contract placements */}
           {employmentType === 'temporary' && (
             <div style={{
               borderLeft: '4px solid #00BFA5', background: '#e0f2f0', borderRadius: '0 8px 8px 0',
               padding: '10px 14px', marginTop: 14,
             }}>
               <p style={{ fontFamily: F, fontSize: 12.5, color: '#5e6b7f', margin: 0, lineHeight: 1.5 }}>
-                Rapid Screen recommended for temporary placements. Full assessment also available.
+                Rapid Screen recommended for temporary and contract placements. Full assessment also available.
               </p>
             </div>
           )}
@@ -1904,7 +1904,7 @@ export default function NewAssessmentPage() {
                       <div style={{ display: 'flex', gap: 6, border: '1.5px solid #e4e9f0', borderRadius: 8, padding: 3, background: '#f8fafc' }}>
                         {[
                           { key: 'permanent', label: 'Permanent' },
-                          { key: 'temporary', label: 'Temporary' },
+                          { key: 'temporary', label: 'Temporary and Contract' },
                         ].map(opt => {
                           const active = employmentType === opt.key
                           return (
