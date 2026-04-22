@@ -2399,7 +2399,7 @@ function DashboardPageInner() {
           }
         />
         <SectionHeader
-          order={40}
+          order={42}
           number={4}
           title="Compliance"
           description="Compliance and legal documentation. SSP, holiday pay, Fair Work Agency records."
@@ -2649,6 +2649,7 @@ function DashboardPageInner() {
 
           return (
             <div style={{
+              order: 3,
               display: 'grid',
               gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)',
               gap: 12, marginBottom: 16,
@@ -2684,6 +2685,7 @@ function DashboardPageInner() {
           const firstLink = first?.assessments?.id ? `/assessment/${first.assessments.id}/candidate/${first.id}` : null
           return (
             <div style={{
+              order: 4,
               background: TEALLT, border: `1.5px solid ${TEAL}55`, borderLeft: `4px solid ${TEAL}`,
               borderRadius: '0 12px 12px 0', padding: '16px 20px', marginBottom: 16,
               display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap',
@@ -2735,6 +2737,7 @@ function DashboardPageInner() {
         {/* ── Today's Actions (all account types) ── */}
         {(
           <div style={{
+            order: 2,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
             padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 24,
           }}>
@@ -2816,43 +2819,9 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Quick Actions (employer) ── */}
-        {profile?.account_type === 'employer' && (
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Quick Actions</div>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 12 }}>
-              {[
-                { key: 'emp-outcome',    icon: 'check',     label: 'Log outcome',         desc: 'Record hire result',      color: GRN,  bg: GRNBG },
-                { key: 'emp-send',       icon: 'send',      label: 'Send assessment',     desc: 'Invite a new candidate',  color: TEAL, bg: TEALLT },
-                { key: 'emp-review',     icon: 'file-text', label: 'Probation review',    desc: 'Generate structured review', color: NAVY, bg: BG },
-                { key: 'emp-feedback',   icon: 'mail',      label: 'Send feedback',       desc: 'Share report with candidate', color: TEALD, bg: TEALLT },
-              ].map(a => (
-                <button key={a.key} onClick={() => {
-                  if (a.key === 'emp-send') { router.push('/assessment/new'); return }
-                  resetQaModal(); setQaModal(a.key)
-                }} style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-                  padding: isMobile ? '18px 12px' : '20px 16px', borderRadius: 12,
-                  border: `1.5px solid ${BD}`, background: CARD, cursor: 'pointer',
-                  transition: 'all 0.15s', textAlign: 'center',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = a.color; e.currentTarget.style.background = a.bg; e.currentTarget.style.transform = 'translateY(-2px)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = BD; e.currentTarget.style.background = CARD; e.currentTarget.style.transform = 'none' }}
-                >
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: a.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ic name={a.icon} size={20} color={a.color} />
-                  </div>
-                  <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>{a.label}</div>
-                  <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>{a.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Quick Actions (agency only) ── */}
+        {/* ── Quick Actions (agency only) ── Bottom */}
         {isAgencyAccount && (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ order: 50, marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Quick Actions</div>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 12 }}>
               {(hasTemporaryCandidates ? [
@@ -3182,6 +3151,7 @@ function DashboardPageInner() {
         {/* Assignment alerts banner (agency + temp only) */}
         {isAgencyAccount && hasTemporaryCandidates && assignmentAlerts.length > 0 && (
           <div style={{
+            order: 33,
             background: 'linear-gradient(135deg, #fef2f2, #fff5f5)', border: `1.5px solid #fecaca`,
             borderLeft: `4px solid #B91C1C`, borderRadius: '0 12px 12px 0',
             padding: isMobile ? '14px 16px' : '16px 24px', marginBottom: 20,
@@ -3288,7 +3258,7 @@ function DashboardPageInner() {
         {/* ── Pre-Start Engagement panel (agency + temp, active pulse sequences) ── */}
         {isAgencyAccount && hasTemporaryCandidates && engagementSequences.length > 0 && (
           <div style={{
-            order: 31,
+            order: 32,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
             borderTop: `3px solid ${TEAL}`, padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
           }}>
@@ -3387,7 +3357,7 @@ function DashboardPageInner() {
         {/* ── SSP Alerts panel (agency + temporary only) ── Section 4 Compliance */}
         {isAgencyAccount && hasTemporaryCandidates && sspAlerts.filter(a => a.employment_type === 'temporary').length > 0 && (
           <div style={{
-            order: 41,
+            order: 43,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
             borderTop: '3px solid #D97706', padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
           }}>
@@ -3566,7 +3536,7 @@ function DashboardPageInner() {
           }
 
           return (
-            <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
+            <div style={{ order: 51, display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
               {cards.map(card => {
                 const hasValue = card.value > 0
                 return (
@@ -3605,14 +3575,16 @@ function DashboardPageInner() {
           )
         })()}
 
-        {/* ── Active Placements (agency only) ── */}
+        {/* ── Active Placements (agency only) ── Section 3 */}
         {profile?.account_type === 'agency' && (
-          <ActivePlacements placements={activePlacements} router={router} />
+          <div style={{ order: 34 }}>
+            <ActivePlacements placements={activePlacements} router={router} />
+          </div>
         )}
 
         {/* ── Candidate Pipeline (all account types) ── Section 1 */}
         {candidates.length > 0 && (
-          <div style={{ order: 11, marginBottom: 24 }}>
+          <div style={{ order: 12, marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
               Candidate Pipeline
             </div>
@@ -3733,7 +3705,7 @@ function DashboardPageInner() {
 
         {/* ── Verdict filtered results (directly after pipeline cards) ── Section 1 */}
         {activeFilter?.type === 'verdict' && (
-          <div style={{ order: 11, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ order: 12, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
             <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>{verdictFilterLabel}</h2>
@@ -3779,8 +3751,8 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Speed to Offer + Prediction Accuracy (side by side) ── */}
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 20 }}>
+        {/* ── Speed to Offer + Prediction Accuracy (side by side) ── Bottom */}
+        <div style={{ order: 53, display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 20 }}>
 
         {/* Speed to Offer */}
         <div style={{
@@ -3887,9 +3859,10 @@ function DashboardPageInner() {
 
         </div>{/* end flex row: Speed to Offer + Prediction Accuracy */}
 
-        {/* ── Pending check-ins ── */}
+        {/* ── Pending check-ins (outcome tracking) ── Section 3 */}
         {pendingCheckins.length > 0 && (
           <div style={{
+            order: 40,
             ...cs, marginBottom: 20, padding: '20px 24px',
             borderTop: `3px solid ${TEAL}`,
           }}>
@@ -3927,9 +3900,10 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Override Outcomes ── */}
+        {/* ── Override Outcomes ── Section 4 Compliance */}
         {overrideStats && (
           <div style={{
+            order: 47,
             ...cs, marginBottom: 20, padding: '20px 24px',
             borderTop: `3px solid ${RED}`,
           }}>
@@ -3950,7 +3924,7 @@ function DashboardPageInner() {
 
         {/* ── Placement Health filtered results (agency, replaces All Candidates table) ── Section 3 */}
         {activeFilter?.type === 'health' && (
-          <div style={{ order: 31, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ order: 35, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
             <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>{healthFilterLabel}</h2>
@@ -4000,14 +3974,14 @@ function DashboardPageInner() {
 
         {/* ── Probation Tracker (all employer accounts, including PAYG) ── Section 3 */}
         {profile?.account_type === 'employer' && (
-          <div style={{ order: 31 }}>
+          <div style={{ order: 37 }}>
             <ProbationTracker hires={probationHires} router={router} />
           </div>
         )}
 
  {/* ── Probation Co-pilot (employer only, live status on current hires) ── Section 3 */}
         {profile?.account_type === 'employer' && probationHires.length > 0 && (
-          <div style={{ order: 31, ...cs, marginBottom: 20 }}>
+          <div style={{ order: 38, ...cs, marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <Ic name="shield" size={14} color={TEAL} />
               <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -4057,7 +4031,7 @@ function DashboardPageInner() {
 
         {/* ── Probation Review Generator (employer only) ── Section 3 */}
         {profile?.account_type === 'employer' && probationHires.length > 0 && (
-          <div style={{ order: 31, ...cs, marginBottom: 20 }}>
+          <div style={{ order: 39, ...cs, marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <Ic name="file" size={14} color={NAVY} />
               <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -4108,7 +4082,7 @@ function DashboardPageInner() {
           const flagged = candidates.filter(c => flaggedIds.has(c.id)).slice(0, 8)
           if (flagged.length === 0) return null
           return (
-            <div style={{ order: 31, ...cs, marginBottom: 20, borderTop: `3px solid ${RED}` }}>
+            <div style={{ order: 41, ...cs, marginBottom: 20, borderTop: `3px solid ${RED}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <Ic name="alert" size={14} color={RED} />
                 <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -4161,9 +4135,9 @@ function DashboardPageInner() {
           )
         })()}
 
-        {/* ── Decision Overrides stats (employer only) ── */}
+        {/* ── Decision Overrides stats (employer only) ── Section 4 Compliance */}
         {profile?.account_type === 'employer' && overrideStats && overrideStats.totalDecisions > 0 && (
-          <div style={{ ...cs, marginBottom: 20 }}>
+          <div style={{ order: 47, ...cs, marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <Ic name="target" size={14} color={NAVY} />
               <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -4195,15 +4169,19 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── ERA 2025 Risk Calculator / Placement Risk + Cost of Vacancy ── */}
-        <RiskCalculator profile={profile} completed={completed} />
-        <CostOfVacancyCard profile={profile} />
+        {/* ── ERA 2025 Risk Calculator (employer) / Placement Risk (agency) + Cost of Vacancy ── */}
+        <div style={{ order: isAgencyAccount ? 55 : 46 }}>
+          <RiskCalculator profile={profile} completed={completed} />
+        </div>
+        <div style={{ order: 52 }}>
+          <CostOfVacancyCard profile={profile} />
+        </div>
 
         {/* ── Placement Health (all account types) ── Section 3 */}
         {isAgencyAccount ? (
           placementHealth && (
             placementHealth.total_active > 0 ? (
-              <div style={{ order: 31 }}>
+              <div style={{ order: 35 }}>
                 <PlacementHealthPanel
                   data={placementHealth}
                   activeFilter={activeFilter}
@@ -4212,7 +4190,7 @@ function DashboardPageInner() {
                 />
               </div>
             ) : (
-              <div style={{ order: 31, marginBottom: 24 }}>
+              <div style={{ order: 35, marginBottom: 24 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   Placement Health
                   <InfoTooltip text="A live traffic light showing the health of every active placement. Green means on track. Amber means at risk. Red means critical action needed." />
@@ -4244,7 +4222,7 @@ function DashboardPageInner() {
               { key: 'critical',label: 'Critical', count: critical, accent: '#B91C1C', sub: 'Immediate action required' },
             ]
             return (
-              <div style={{ order: 31, marginBottom: 24 }}>
+              <div style={{ order: 35, marginBottom: 24 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   Placement Health
                   <InfoTooltip text="Health status for every hired candidate currently in their probation period. Green means on track. Amber means at risk. Red means critical action needed." />
@@ -4275,7 +4253,7 @@ function DashboardPageInner() {
               </div>
             )
           })() : (
-            <div style={{ order: 31, marginBottom: 24 }}>
+            <div style={{ order: 35, marginBottom: 24 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 Placement Health
                 <InfoTooltip text="Health status for every hired candidate currently in their probation period." />
@@ -4294,7 +4272,7 @@ function DashboardPageInner() {
 
         {/* ── Rebate Period Tracker (agency only) ── Section 3 */}
         {isAgencyAccount && placementHealth?.placements?.some(p => p.placement_date && p.rebate_weeks) && (
-          <div style={{ order: 31, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ order: 36, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
             <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Ic name="clock" size={16} color={TEAL} />
@@ -4351,7 +4329,7 @@ function DashboardPageInner() {
             .slice(0, 3)
           if (ranked.length === 0) return null
           return (
-            <div style={{ order: 11, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+            <div style={{ order: 18, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
               <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Ic name="award" size={16} color={TEAL} />
@@ -4393,7 +4371,7 @@ function DashboardPageInner() {
 
         {/* ── Red Flag Alerts (agency variant): critical/at-risk placements ── Section 3 */}
         {isAgencyAccount && placementHealth?.placements?.some(p => p.health_status === 'RED' || p.health_status === 'AMBER') && (
-          <div style={{ order: 31, ...cs, marginBottom: 24, borderTop: `3px solid ${RED}`, padding: '20px 24px' }}>
+          <div style={{ order: 41, ...cs, marginBottom: 24, borderTop: `3px solid ${RED}`, padding: '20px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <Ic name="alert" size={14} color={RED} />
               <span style={{ fontSize: 11, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -4467,7 +4445,7 @@ function DashboardPageInner() {
 
           return (
             <div style={{
-              order: 11,
+              order: 1,
               background: '#ffffff',
               border: `1px solid ${BD}`,
               borderLeft: `4px solid ${TEAL}`,
@@ -4554,7 +4532,7 @@ function DashboardPageInner() {
 
         {/* ── Location filter bar (all account types) ── Section 1 */}
         {!activeFilter && !selectedRole && !selectedClient && !selectedTeamMember && (
-          <div style={{ order: 11, ...cs, marginBottom: 20, padding: isMobile ? '14px 16px' : '16px 20px' }}>
+          <div style={{ order: 13, ...cs, marginBottom: 20, padding: isMobile ? '14px 16px' : '16px 20px' }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               flexWrap: 'wrap', gap: 10, marginBottom: hasAnyLocation ? 12 : 0,
@@ -4643,7 +4621,7 @@ function DashboardPageInner() {
 
         {/* ── Roles Overview (all account types) ── Section 1 */}
         {!activeFilter && !selectedRole && rolesOverview.length > 0 && (
-          <div style={{ order: 11, ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
+          <div style={{ order: 14, ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               marginBottom: 16, flexWrap: 'wrap', gap: 10,
@@ -4826,7 +4804,7 @@ function DashboardPageInner() {
           ]
 
           return (
-            <div style={{ order: 11, marginBottom: 24 }}>
+            <div style={{ order: 14, marginBottom: 24 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
                 <button
                   type="button"
@@ -5071,7 +5049,7 @@ function DashboardPageInner() {
 
         {/* ── Clients Overview (agency only) ── Section 1 */}
         {isAgencyAccount && !activeFilter && !selectedRole && !selectedClient && (
-          <div style={{ order: 11, ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
+          <div style={{ order: 15, ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               marginBottom: 16, flexWrap: 'wrap', gap: 10,
@@ -5250,7 +5228,7 @@ function DashboardPageInner() {
 
         {/* ── Client Detail view (agency only) ── Section 1 */}
         {isAgencyAccount && selectedClient && activeClient && (
-          <div style={{ order: 11, marginBottom: 24 }}>
+          <div style={{ order: 15, marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
               <button
                 type="button"
@@ -5454,7 +5432,7 @@ function DashboardPageInner() {
 
         {/* ── Team Overview (all account types) ── Section 1 */}
         {!activeFilter && !selectedRole && !selectedClient && !selectedTeamMember && (
-          <div style={{ order: 11, ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
+          <div style={{ order: 16, ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               marginBottom: 16, flexWrap: 'wrap', gap: 10,
@@ -5625,7 +5603,7 @@ function DashboardPageInner() {
 
         {/* ── Team Member Detail view ── Section 1 */}
         {selectedTeamMember && activeTeamMember && (
-          <div style={{ order: 11, marginBottom: 24 }}>
+          <div style={{ order: 16, marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
               <button
                 type="button"
@@ -5799,10 +5777,10 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Bulk Invite prompt (all account types, always visible) ── Section 1 */}
-        {!activeFilter && !selectedRole && !selectedClient && !selectedTeamMember && (
+        {/* ── Bulk Invite prompt (agency only) ── Section 1 */}
+        {isAgencyAccount && !activeFilter && !selectedRole && !selectedClient && !selectedTeamMember && (
           <div style={{
-            order: 11,
+            order: 19,
             ...cs,
             marginBottom: 20,
             padding: isMobile ? '18px 18px' : '20px 24px',
@@ -5845,7 +5823,7 @@ function DashboardPageInner() {
         )}
 
         {/* ── Bottom grid: table + assessments panel (hidden when filter active or drilled into a role/client/team member) ── Section 1 */}
-        <div className="dashboard-layout" style={{ order: 11, display: (activeFilter || selectedRole || selectedClient || selectedTeamMember) ? 'none' : 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
+        <div className="dashboard-layout" style={{ order: 17, display: (activeFilter || selectedRole || selectedClient || selectedTeamMember) ? 'none' : 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
 
           {/* ── Candidates table ── */}
           <div className="dashboard-candidates" style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : 'auto' }}>
