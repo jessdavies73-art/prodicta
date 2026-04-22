@@ -73,7 +73,7 @@ function BillingTab({ onUpgrade }) {
   const PLANS = [
     { plan: 'Starter',      price: '£99/mo',  limit: '10 assessments per month, up to 2 users' },
     { plan: 'Professional', price: '£299/mo', limit: '30 assessments per month, up to 5 users' },
-    { plan: 'Agency',       price: '£499/mo', limit: '100 assessments per month, up to 15 users' },
+    { plan: 'Business',     price: '£499/mo', limit: '100 assessments per month, up to 15 users' },
   ]
 
   return (

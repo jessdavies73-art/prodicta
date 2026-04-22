@@ -21,7 +21,8 @@ const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
 function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
-const PLAN_LIMITS = { starter: 10, professional: 30, agency: 100, founding: null, growth: 30, scale: 100, payg: null }
+const PLAN_LIMITS = { starter: 10, professional: 30, business: 100, founding: null, growth: 30, agency: 100, scale: 100, payg: null }
+const PLAN_LABELS = { starter: 'Starter', professional: 'Professional', business: 'Business', founding: 'Founding Member', growth: 'Professional', agency: 'Business', scale: 'Business', payg: 'Pay as you go' }
 
 const PURPLE = '#7C3AED'
 
@@ -1806,7 +1807,7 @@ function DashboardPageInner() {
               Assessment limit reached
             </h3>
             <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: '0 0 6px', lineHeight: 1.65 }}>
-              You've used <strong>{monthlyCount} of {planLimit}</strong> assessments this month on the <strong style={{ textTransform: 'capitalize' }}>{planKey}</strong> plan.
+              You've used <strong>{monthlyCount} of {planLimit}</strong> assessments this month on the <strong style={{ textTransform: 'capitalize' }}>{PLAN_LABELS[planKey] || planKey}</strong> plan.
             </p>
             <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: '0 0 28px', lineHeight: 1.65 }}>
               Upgrade to create more assessments and access premium features.
@@ -1815,7 +1816,7 @@ function DashboardPageInner() {
               <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Available plans</div>
               {[
                 { plan: 'Professional', price: '£299', limit: '30 assessments/mo · Up to 5 users', highlight: true },
-                { plan: 'Agency', price: '£499', limit: '100 assessments/mo · Up to 15 users', highlight: false },
+                { plan: 'Business', price: '£499', limit: '100 assessments/mo · Up to 15 users', highlight: false },
               ].map(p => (
                 <div key={p.plan} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${BD}` }}>
                   <div>

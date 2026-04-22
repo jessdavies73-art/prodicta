@@ -1358,7 +1358,7 @@ export default function LandingPage() {
                 highlight: false,
               },
               {
-                name: 'Agency',
+                name: 'Business',
                 price: '£499',
                 promo: 'First 30 days: £249 then £499/month',
                 limit: '100 assessments/mo · Up to 15 users',
@@ -1951,7 +1951,7 @@ export default function LandingPage() {
                 },
                 {
                   q: 'How much does PRODICTA cost?',
-                  a: 'Starter is £99 per month (£49 for the first 30 days) for 10 assessments and up to 2 users. Professional is £299 per month (£149 for the first 30 days) for 30 assessments and up to 5 users. Agency is £499 per month (£249 for the first 30 days) for 100 assessments and up to 15 users. Extra users are £35 per user per month on any plan. All plans include every feature. Transparent pricing. No hidden fees. No setup costs.',
+                  a: 'Starter is £99 per month (£49 for the first 30 days) for 10 assessments and up to 2 users. Professional is £299 per month (£149 for the first 30 days) for 30 assessments and up to 5 users. Business is £499 per month (£249 for the first 30 days) for 100 assessments and up to 15 users. Extra users are £35 per user per month on any plan. All plans include every feature. Transparent pricing. No hidden fees. No setup costs.',
                 },
                 {
                   q: 'What makes PRODICTA different from personality tests and psychometric assessments?',

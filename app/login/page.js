@@ -17,7 +17,7 @@ const DARK_T = '#009688'
 const PLAN_OPTIONS = [
   { value: 'starter',      label: 'Starter',         price: '£99/month',  promo: '£49 first 30 days',  sub: 'Up to 2 users, 10 assessments per month' },
   { value: 'professional', label: 'Professional',    price: '£299/month', promo: '£149 first 30 days', sub: 'Up to 5 users, 30 assessments per month' },
-  { value: 'agency',       label: 'Agency',          price: '£499/month', promo: '£249 first 30 days', sub: 'Up to 15 users, 100 assessments per month' },
+  { value: 'business',     label: 'Business',        price: '£499/month', promo: '£249 first 30 days', sub: 'Up to 15 users, 100 assessments per month' },
 ]
 
 // Per-assessment pricing. Unit price in GBP. Matches server CREDIT_PRICES.
