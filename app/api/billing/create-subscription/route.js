@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-import { getStripeClient, PLANS, getOrCreatePriceId } from '@/lib/stripe'
+import { getStripeClient, PLANS, getOrCreatePriceId, LAUNCH_COUPON_ID } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase-server'
 import { redeemPromoCode } from '@/lib/promo-redeem'
 
@@ -125,6 +125,7 @@ export async function POST(request) {
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
       items: [{ price: priceId }],
+      discounts: [{ coupon: LAUNCH_COUPON_ID }],
       payment_behavior: 'default_incomplete',
       payment_settings: {
         payment_method_types: ['card'],

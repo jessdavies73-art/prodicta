@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getStripeClient, PLANS, getOrCreatePriceId } from '@/lib/stripe'
+import { getStripeClient, PLANS, getOrCreatePriceId, LAUNCH_COUPON_ID } from '@/lib/stripe'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 
 // Starts a Stripe Checkout Session (mode: 'subscription') for an existing
@@ -45,6 +45,7 @@ export async function POST(request) {
       mode: 'subscription',
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
+      discounts: [{ coupon: LAUNCH_COUPON_ID }],
       success_url: `${siteUrl}/settings?subscription=success&plan=${plan}`,
       cancel_url: `${siteUrl}/settings?subscription=cancelled`,
       metadata: { user_id: user.id, plan, flow: 'switch-to-subscription' },
