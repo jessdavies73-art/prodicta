@@ -70,6 +70,7 @@ const SECTION_THEME = {
   2: { accent: '#0F2137', tint: '#F0F4F8', pillBg: '#E5EAF1', pillFg: '#0F2137' },
   3: { accent: '#E8B84B', tint: '#FFFBF0', pillBg: '#FEF3C7', pillFg: '#92400E' },
   4: { accent: '#64748B', tint: '#F8F9FA', pillBg: '#E2E8F0', pillFg: '#334155' },
+  5: { accent: '#6366F1', tint: '#F4F5FF', pillBg: '#E0E7FF', pillFg: '#4338CA' },
 }
 
 // Section header for the four process buckets on the dashboard.
@@ -84,6 +85,7 @@ const SECTION_ANCHOR_ID = {
   2: 'shortlisting',
   3: 'post-placement',
   4: 'compliance',
+  5: 'insights',
 }
 
 function SectionHeader({ number, title, subtitle, description, order, visible = true }) {
@@ -2408,6 +2410,12 @@ function DashboardPageInner() {
             (isAgencyAccount && sspAlerts.filter(a => a.employment_type === 'temporary').length > 0)
           }
         />
+        <SectionHeader
+          order={60}
+          number={5}
+          title="Insights"
+          description="Your PRODICTA performance data and business impact numbers."
+        />
 
         {/* ── PWA Install Banner ── */}
         {showInstallBanner && installPrompt && (
@@ -3537,7 +3545,7 @@ function DashboardPageInner() {
           }
 
           return (
-            <div style={{ order: 51, display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
+            <div style={{ order: 61, display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
               {cards.map(card => {
                 const hasValue = card.value > 0
                 return (
@@ -3752,16 +3760,13 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Speed to Offer + Prediction Accuracy (side by side) ── Bottom */}
-        <div style={{ order: 53, display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 20 }}>
-
-        {/* Speed to Offer */}
+        {/* ── Speed to Offer (Insights section 5) ── */}
         <div style={{
           ...cs,
-          flex: '1 1 280px',
+          order: 63,
           padding: '20px 24px',
           borderTop: `3px solid ${TEAL}`,
-          margin: 0,
+          marginBottom: 20,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <Ic name="clock" size={14} color={TEAL} />
@@ -3802,14 +3807,14 @@ function DashboardPageInner() {
           )}
         </div>
 
-        {/* Prediction Accuracy */}
+        {/* Prediction Accuracy (Insights section 5) */}
         {accuracyData && (
           <div style={{
             ...cs,
-            flex: '1 1 280px',
+            order: 64,
             padding: '20px 24px',
             borderTop: `3px solid ${TEAL}`,
-            margin: 0,
+            marginBottom: 20,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <Ic name="shield" size={14} color={TEAL} />
@@ -3839,9 +3844,11 @@ function DashboardPageInner() {
 
         {!accuracyData && candidateOutcomes.length < 3 && (
           <div style={{
-            ...cs, padding: '20px 24px',
+            ...cs,
+            order: 64,
+            padding: '20px 24px',
             borderTop: `3px solid ${BD}`,
-            flex: '1 1 280px', margin: 0,
+            marginBottom: 20,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               <Ic name="shield" size={14} color={TX3} />
@@ -3857,8 +3864,6 @@ function DashboardPageInner() {
             </a>
           </div>
         )}
-
-        </div>{/* end flex row: Speed to Offer + Prediction Accuracy */}
 
         {/* ── Pending check-ins (outcome tracking) ── Section 3 */}
         {pendingCheckins.length > 0 && (
@@ -4170,11 +4175,8 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── ERA 2025 Risk Calculator (employer) / Placement Risk (agency) + Cost of Vacancy ── */}
-        <div style={{ order: isAgencyAccount ? 55 : 46 }}>
-          <RiskCalculator profile={profile} completed={completed} />
-        </div>
-        <div style={{ order: 52 }}>
+        {/* ── Cost of Vacancy (Insights section 5) ── */}
+        <div style={{ order: 62 }}>
           <CostOfVacancyCard profile={profile} />
         </div>
 
@@ -6630,127 +6632,6 @@ function AssessmentInsights({ candidates = [] }) {
   )
 }
 
-function PlacementRiskCard({ completed = [] }) {
-  const [fee, setFee] = useState('5000')
-  const [feeFocused, setFeeFocused] = useState(false)
-  const [showBreakdown, setShowBreakdown] = useState(false)
-
-  const feeVal = Math.max(0, parseInt(fee.replace(/[^0-9]/g, '')) || 0)
-  const replacementSearch = 3000
-  const totalLoss = feeVal + replacementSearch
-
-  function gbp(n) {
-    return '£' + n.toLocaleString('en-GB')
-  }
-
-  const inputStyle = focused => ({
-    fontFamily: F,
-    fontSize: 15,
-    fontWeight: 700,
-    width: '100%',
-    padding: '10px 14px',
-    borderRadius: 8,
-    border: `1.5px solid ${focused ? TEAL : BD}`,
-    background: '#fff',
-    color: NAVY,
-    outline: 'none',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.15s',
-  })
-
-  return (
-    <div style={{
-      background: '#0f2137',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 14,
-      overflow: 'hidden',
-      marginBottom: 24,
-    }}>
-      <div style={{ padding: '20px 24px' }}>
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
-            Placement risk / cost of failed placement
-          </div>
-          <div style={{ width: 36, height: 2, background: '#00BFA5', borderRadius: 2 }} />
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap', marginBottom: 10 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: F }}>
-              Average placement fee
-            </label>
-            <div style={{ position: 'relative', width: 180 }}>
-              <span style={{
-                position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
-                fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.4)', pointerEvents: 'none',
-              }}>£</span>
-              <input
-                type="text"
-                value={fee}
-                onChange={e => setFee(e.target.value.replace(/[^0-9]/g, ''))}
-                onFocus={() => setFeeFocused(true)}
-                onBlur={() => setFeeFocused(false)}
-                style={{ ...inputStyle(feeFocused), paddingLeft: 26, background: 'rgba(255,255,255,0.08)', color: '#fff', border: `1.5px solid ${feeFocused ? TEAL : 'rgba(255,255,255,0.18)'}` }}
-                placeholder="5000"
-              />
-            </div>
-          </div>
-          <div style={{ paddingBottom: 2 }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Total exposure</div>
-            <div style={{ fontFamily: FM, fontSize: 30, fontWeight: 800, color: AMB, lineHeight: 1 }}>
-              {gbp(totalLoss)}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 14 }}>
-          Lost fee + replacement search + reputational damage.
-        </div>
-
-        <button
-          onClick={() => setShowBreakdown(!showBreakdown)}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 12.5, fontWeight: 700, color: TEAL, fontFamily: F,
-            padding: 0, display: 'flex', alignItems: 'center', gap: 5,
-          }}
-        >
-          {showBreakdown ? 'Hide breakdown' : 'Show breakdown'}
-          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
-            style={{ transform: showBreakdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
-        </button>
-
-        {showBreakdown && (
-          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[
-              { label: 'Lost placement fee',         value: gbp(feeVal),            note: 'Not recovered on failed placement',              color: RED  },
-              { label: 'Replacement search cost',    value: gbp(replacementSearch), note: 'Average cost to source a replacement',           color: AMB  },
-              { label: 'Client relationship damage', value: 'Reputational',         note: 'Loss of future instructions, hard to quantify',  color: TEAL },
-            ].map(({ label, value, note, color }) => (
-              <div key={label} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 14px', borderRadius: 8,
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                gap: 12,
-              }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{label}</div>
-                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>{note}</div>
-                </div>
-                <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color, flexShrink: 0 }}>
-                  {value}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
 function CostOfVacancyCard({ profile }) {
   const isAgency = profile?.account_type === 'agency'
   const isTemp   = profile?.default_employment_type === 'temporary'
@@ -6991,157 +6872,6 @@ function CostOfVacancyCard({ profile }) {
                 </div>
               </>
             )}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function RiskCalculator({ profile, completed = [] }) {
-  const [salary, setSalary] = useState('30000')
-  const [hires, setHires] = useState('5')
-  const [salFocused, setSalFocused] = useState(false)
-  const [hiresFocused, setHiresFocused] = useState(false)
-  const [showBreakdown, setShowBreakdown] = useState(false)
-
-  if (profile?.account_type === 'agency') {
-    return <PlacementRiskCard completed={completed} />
-  }
-
-  const sal = Math.max(0, parseInt(salary.replace(/[^0-9]/g, '')) || 0)
-  const h   = Math.max(1, parseInt(hires.replace(/[^0-9]/g, '')) || 1)
-
-  const recruitment  = Math.round(sal * 0.15)
-  const training     = 3000
-  const productivity = Math.round(sal * 0.25)
-  const tribunal     = Math.round(sal * 0.75)
-  const totalPerHire = recruitment + training + productivity + tribunal
-
-  const failCount     = Math.max(1, Math.round(h * 0.2))
-  const totalExposure = totalPerHire * failCount
-
-  function gbp(n) {
-    return '£' + n.toLocaleString('en-GB')
-  }
-
-  const inputStyle = focused => ({
-    fontFamily: F,
-    fontSize: 15,
-    fontWeight: 700,
-    width: '100%',
-    padding: '10px 14px',
-    borderRadius: 8,
-    border: `1.5px solid ${focused ? TEAL : BD}`,
-    background: '#fff',
-    color: NAVY,
-    outline: 'none',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.15s',
-  })
-
-  const BREAK = [
-    { label: 'Recruitment cost',       value: recruitment,  note: '15% of salary',          color: AMB, bg: AMBBG },
-    { label: 'Training and onboarding', value: training,    note: 'Average cost per hire',   color: AMB, bg: AMBBG },
-    { label: 'Lost productivity',      value: productivity, note: 'Roughly 3 months in role', color: AMB, bg: AMBBG },
-    { label: 'ERA 2025 tribunal risk', value: tribunal,     note: 'Uncapped from Jan 2027',  color: RED, bg: REDBG },
-  ]
-
-  return (
-    <div style={{
-      background: '#0f2137',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 14,
-      overflow: 'hidden',
-      marginBottom: 24,
-    }}>
-      <div style={{ padding: '20px 24px' }}>
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
-            ERA 2025 risk calculator
-          </div>
-          <div style={{ width: 36, height: 2, background: '#00BFA5', borderRadius: 2 }} />
-        </div>
-
-        <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div style={{ flex: '0 0 auto' }}>
-            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: F }}>
-              Average salary
-            </label>
-            <div style={{ position: 'relative', width: 160 }}>
-              <span style={{
-                position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
-                fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.4)', pointerEvents: 'none',
-              }}>£</span>
-              <input
-                type="text"
-                value={salary}
-                onChange={e => setSalary(e.target.value.replace(/[^0-9]/g, ''))}
-                onFocus={() => setSalFocused(true)}
-                onBlur={() => setSalFocused(false)}
-                style={{ ...inputStyle(salFocused), paddingLeft: 26, background: 'rgba(255,255,255,0.08)', color: '#fff', border: `1.5px solid ${salFocused ? TEAL : 'rgba(255,255,255,0.18)'}` }}
-                placeholder="30000"
-              />
-            </div>
-          </div>
-          <div style={{ flex: '0 0 auto' }}>
-            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: F }}>
-              Hires this year
-            </label>
-            <input
-              type="text"
-              value={hires}
-              onChange={e => setHires(e.target.value.replace(/[^0-9]/g, ''))}
-              onFocus={() => setHiresFocused(true)}
-              onBlur={() => setHiresFocused(false)}
-              style={{ ...inputStyle(hiresFocused), width: 100, background: 'rgba(255,255,255,0.08)', color: '#fff', border: `1.5px solid ${hiresFocused ? TEAL : 'rgba(255,255,255,0.18)'}` }}
-              placeholder="5"
-            />
-          </div>
-          <div style={{ paddingBottom: 2 }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Total exposure</div>
-            <div style={{ fontFamily: FM, fontSize: 30, fontWeight: 800, color: AMB, lineHeight: 1 }}>
-              {gbp(totalExposure)}
-            </div>
-            <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', marginTop: 3 }}>
-              {failCount} of {h} hire{h !== 1 ? 's' : ''} failing · 20% industry average
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setShowBreakdown(!showBreakdown)}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 12.5, fontWeight: 700, color: TEAL, fontFamily: F,
-            padding: 0, display: 'flex', alignItems: 'center', gap: 5,
-          }}
-        >
-          {showBreakdown ? 'Hide breakdown' : 'Show breakdown'}
-          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
-            style={{ transform: showBreakdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
-        </button>
-
-        {showBreakdown && (
-          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {BREAK.map(({ label, value, note, color }) => (
-              <div key={label} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 14px', borderRadius: 8,
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                gap: 12,
-              }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{label}</div>
-                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>{note}</div>
-                </div>
-                <div style={{ fontFamily: FM, fontSize: 17, fontWeight: 800, color, flexShrink: 0 }}>
-                  {gbp(value)}
-                </div>
-              </div>
-            ))}
           </div>
         )}
       </div>

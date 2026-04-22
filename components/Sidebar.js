@@ -23,11 +23,15 @@ function buildNav({ accountType, showTemp }) {
     { key: 'assessment', label: 'New assessment', icon: 'plus', href: '/assessment/new' },
   ]})
 
-  groups.push({ label: 'Placement', items: [
+  const placement = [
     { key: 'compare',  label: 'Compare',  icon: 'sliders', href: '/compare' },
     { key: 'archive',  label: 'Archive',  icon: 'archive', href: '/archive' },
     { key: 'outcomes', label: 'Outcomes', icon: 'award',   href: '/outcomes' },
-  ]})
+  ]
+  if (isAgency) {
+    placement.push({ key: 'placement-calculator', label: 'Placement Calculator', icon: 'target', href: '/placement-calculator' })
+  }
+  groups.push({ label: 'Placement', items: placement })
 
   const compliance = [
     { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/ssp' },

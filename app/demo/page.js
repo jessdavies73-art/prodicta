@@ -126,6 +126,7 @@ const SECTION_THEME = {
   2: { accent: '#0F2137', tint: '#F0F4F8', pillBg: '#E5EAF1', pillFg: '#0F2137' },
   3: { accent: '#E8B84B', tint: '#FFFBF0', pillBg: '#FEF3C7', pillFg: '#92400E' },
   4: { accent: '#64748B', tint: '#F8F9FA', pillBg: '#E2E8F0', pillFg: '#334155' },
+  5: { accent: '#6366F1', tint: '#F4F5FF', pillBg: '#E0E7FF', pillFg: '#4338CA' },
 }
 
 function SectionHeader({ number, title, subtitle, description, order, visible = true }) {
@@ -1099,13 +1100,8 @@ function DemoDashboardInner() {
           </div>
         )}
 
-        {/* Risk Calculator */}
-        <div style={{ order: isAgency ? 55 : 46 }}>
-          <RiskCalculator isAgency={isAgency} />
-        </div>
-
-        {/* Hiring Cost Saved + Cost of Vacancy */}
-        <div style={{ order: 51, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
+        {/* Hiring Cost Saved + Cost of Vacancy (Insights section 5) */}
+        <div style={{ order: 61, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
           <div style={{ background: NAVY, borderRadius: 14, padding: '22px 24px' }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Hiring cost saved</div>
             <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, color: TEAL, lineHeight: 1, marginBottom: 6 }}>£86,400</div>
@@ -1147,8 +1143,8 @@ function DemoDashboardInner() {
           </div>
         </div>
 
-        {/* Speed to Offer */}
-        <div style={{ order: 53, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
+        {/* Speed to Offer (Insights section 5) */}
+        <div style={{ order: 63, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Speed to offer</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
@@ -1300,7 +1296,7 @@ function DemoDashboardInner() {
         )}
 
         {/* Prediction Accuracy */}
-        <div style={{ order: 54, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
+        <div style={{ order: 64, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Prediction accuracy</div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '18px 0' }}>
             <Ic name="bar" size={28} color={BD} />
@@ -3251,9 +3247,9 @@ function DemoDashboardInner() {
             </div>
           </div>
         </div>
-        {/* Prediction Accuracy */}
+        {/* Prediction Accuracy (Insights section 5) */}
         <div style={{
-          order: 54,
+          order: 64,
           background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
           borderTop: `3px solid ${TEAL}`, padding: '20px 24px', marginTop: 20,
         }}>
@@ -3501,6 +3497,7 @@ function DemoDashboardInner() {
         })()}
 
         <SectionHeader order={42} number={4} title="Compliance" description="Compliance and legal documentation. SSP, holiday pay, Fair Work Agency records." />
+        <SectionHeader order={60} number={5} title="Insights" description="Your PRODICTA performance data and business impact numbers." />
       </main>
     </DemoLayout>
   )
