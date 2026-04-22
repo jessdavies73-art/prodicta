@@ -1476,6 +1476,62 @@ function DemoCandidateInner({ params }) {
           </Card>
         )}
 
+        {/* ── Probation Co-pilot (employer only, static demo card) ── */}
+        {!isAgency && (
+          <Card style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Ic name="shield" size={14} color={TEAL} />
+              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TX, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Probation Co-pilot
+              </span>
+            </div>
+            <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 12px', lineHeight: 1.55 }}>
+              Live status on your current probation hires. PRODICTA tracks check-ins, watch-outs, and 90-Day Coaching Plan adherence.
+            </p>
+            <div style={{ padding: '12px 16px', background: BG, border: `1px solid ${BD}`, borderRadius: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: TX }}>Sophie Chen</div>
+                  <div style={{ fontSize: 12, color: TX3 }}>Marketing Manager, Week 6 of 12</div>
+                </div>
+                <span style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: GRN, background: GRNBG, border: `1px solid ${GRNBD}`, padding: '2px 10px', borderRadius: 20 }}>On track</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                <div style={{ flex: 1, height: 6, background: `${GRN}22`, borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: '50%', background: GRN, borderRadius: 3 }} />
+                </div>
+                <span style={{ fontFamily: FM, fontSize: 11.5, fontWeight: 700, color: TX3, flexShrink: 0 }}>50%</span>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* ── Red Flag Alerts (employer only, static demo card) ── */}
+        {!isAgency && (
+          <Card style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Ic name="alert" size={14} color={RED} />
+              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TX, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Red Flag Alerts
+              </span>
+            </div>
+            <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 12px', lineHeight: 1.55 }}>
+              Automatic notifications when a probation hire shows warning signs. PRODICTA flags watch-out recurrence, missed check-ins, or sustained performance drops.
+            </p>
+            <div style={{ padding: '12px 16px', background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <Ic name="alert" size={14} color={RED} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: TX, marginBottom: 2 }}>Sophie Chen, Marketing Manager</div>
+                  <div style={{ fontSize: 12, color: TX2, lineHeight: 1.55 }}>
+                    Delegation watch-out flagged at Month 2 check-in. Co-pilot suggests a structured coaching session before Month 3 review.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* ── Accountability Trail / Document This Assessment (agency only) ── */}
         {isAgency && (
           <Card style={{ marginBottom: 16 }}>

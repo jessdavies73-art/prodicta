@@ -726,7 +726,7 @@ function DemoDashboardInner() {
     <DemoLayout active="dashboard" demoEmploymentType={demoEmploymentType}>
       {modal && <SignUpModal onClose={() => setModal(false)} />}
 
-      <main style={{ marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 96 : 46, padding: isMobile ? '16px 16px 32px' : '32px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0 }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 96 : 46, padding: isMobile ? '16px 16px 32px' : '32px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, gap: 16 }}>
@@ -823,6 +823,65 @@ function DemoDashboardInner() {
           </div>
         )}
 
+        {/* ── First-action nudge (order 1) — always dismissed in demo so it never renders; kept for structural parity with live */}
+        {false && (
+          <div style={{
+            order: 1,
+            background: '#ffffff',
+            border: `1px solid ${BD}`,
+            borderLeft: `4px solid ${TEAL}`,
+            borderRadius: 12,
+            padding: isMobile ? '22px 20px' : '28px 28px',
+            marginBottom: 20,
+            boxShadow: '0 4px 20px rgba(0,191,165,0.08)',
+            display: 'flex', flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            gap: isMobile ? 16 : 22,
+          }}>
+            <div style={{ width: 56, height: 56, borderRadius: 14, background: TEALLT, border: `1px solid ${TEAL}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Ic name="send" size={24} color={TEALD} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{ margin: '0 0 6px', fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, letterSpacing: '-0.01em' }}>
+                Send your first assessment
+              </h2>
+              <p style={{ margin: 0, fontFamily: F, fontSize: 13.5, color: TX2, lineHeight: 1.6 }}>
+                PRODICTA works best when you try it. Send a real work simulation to your first candidate in under 60 seconds.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Outcome logging reminder (order 4) — shown whenever completed candidates lack a logged outcome */}
+        <div style={{
+          order: 4,
+          background: TEALLT, border: `1.5px solid ${TEAL}55`, borderLeft: `4px solid ${TEAL}`,
+          borderRadius: '0 12px 12px 0', padding: '16px 20px', marginBottom: 16,
+          display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap',
+        }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY, marginBottom: 4 }}>
+              Log your hiring outcomes
+            </div>
+            <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.55 }}>
+              You have <strong style={{ color: NAVY }}>1</strong> completed assessment with no outcome recorded. Logging outcomes unlocks Prediction Accuracy tracking and helps PRODICTA get smarter.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setModal(true)}
+              style={{
+                fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY,
+                background: TEAL, border: 'none',
+                padding: '9px 16px', borderRadius: 8, cursor: 'pointer',
+              }}
+            >
+              Log outcomes
+            </button>
+          </div>
+        </div>
+
         {/* ── Today's Actions (all account types) ── */}
         {(() => {
           const demoActions = isAgency ? [
@@ -842,6 +901,7 @@ function DemoDashboardInner() {
           ]
           return (
             <div style={{
+              order: 2,
               background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
               padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 24,
             }}>
@@ -923,6 +983,7 @@ function DemoDashboardInner() {
 
           return (
             <div style={{
+              order: 3,
               display: 'grid',
               gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)',
               gap: 12, marginBottom: 16,
@@ -953,7 +1014,7 @@ function DemoDashboardInner() {
         {/* ── Quick Actions (agency only) ── */}
         {isAgency && (() => {
           return (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ order: 50, marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: TX3, fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Quick Actions</div>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 12 }}>
               {(demoHasTempWork ? [
@@ -1039,10 +1100,12 @@ function DemoDashboardInner() {
         )}
 
         {/* Risk Calculator */}
-        <RiskCalculator isAgency={isAgency} />
+        <div style={{ order: isAgency ? 55 : 46 }}>
+          <RiskCalculator isAgency={isAgency} />
+        </div>
 
         {/* Hiring Cost Saved + Cost of Vacancy */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
+        <div style={{ order: 51, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
           <div style={{ background: NAVY, borderRadius: 14, padding: '22px 24px' }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Hiring cost saved</div>
             <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, color: TEAL, lineHeight: 1, marginBottom: 6 }}>£86,400</div>
@@ -1085,7 +1148,7 @@ function DemoDashboardInner() {
         </div>
 
         {/* Speed to Offer */}
-        <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
+        <div style={{ order: 53, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Speed to offer</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
@@ -1106,11 +1169,11 @@ function DemoDashboardInner() {
           </div>
         </div>
 
-        <SectionHeader number={1} title="Assessment and Screening" description="Screen and rank your candidates. Send assessments, view scores, and build your shortlist." />
+        <SectionHeader order={10} number={1} title="Assessment and Screening" description="Screen and rank your candidates. Send assessments, view scores, and build your shortlist." />
 
         {/* Candidate Pipeline (employer only, after Speed to Offer / before Prediction Accuracy) — Section 1 */}
         {!isAgency && (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ order: 12, marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
               Candidate Pipeline
             </div>
@@ -1154,7 +1217,7 @@ function DemoDashboardInner() {
 
         {/* Employer: Placement Health (probation-based, mirrors live) */}
         {!isAgency && (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ order: 35, marginBottom: 24 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
               Placement Health
             </div>
@@ -1190,7 +1253,7 @@ function DemoDashboardInner() {
 
         {/* Employer: verdict filtered results (directly after employer pipeline cards) */}
         {!isAgency && activeFilter?.type === 'verdict' && (
-          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ order: 12, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
             <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>{verdictFilterLabel}</h2>
@@ -1237,7 +1300,7 @@ function DemoDashboardInner() {
         )}
 
         {/* Prediction Accuracy */}
-        <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
+        <div style={{ order: 54, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Prediction accuracy</div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '18px 0' }}>
             <Ic name="bar" size={28} color={BD} />
@@ -1245,13 +1308,13 @@ function DemoDashboardInner() {
           </div>
         </div>
 
-        <SectionHeader number={3} title="Post-placement and Aftercare" description="Manage active placements and hires. Track performance, health, and aftercare." visible={isAgency || !isAgency} />
+        <SectionHeader order={30} number={3} title="Post-placement and Aftercare" description="Manage active placements and hires. Track performance, health, and aftercare." visible={isAgency || !isAgency} />
 
         {/* Agency-only sections */}
         {isAgency && (
           <>
             {/* Placement Health (traffic light) */}
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ order: 35, marginBottom: 24 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 Placement Health
                 <InfoTooltip text="A live traffic light showing the health of every active placement. Green means on track. Amber means at risk. Red means critical action needed." />
@@ -1299,7 +1362,7 @@ function DemoDashboardInner() {
 
             {/* Placement Health filtered results (replaces All Candidates table) */}
             {activeFilter?.type === 'health' && (
-              <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
+              <div style={{ order: 35, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
                 <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
                   <div>
                     <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>{healthFilterLabel}</h2>
@@ -1396,7 +1459,7 @@ function DemoDashboardInner() {
               </div>
             )}
 
-            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+            <div style={{ order: 18, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
               <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Ic name="award" size={16} color={TEAL} />
@@ -1425,7 +1488,7 @@ function DemoDashboardInner() {
             </div>
 
             {/* Rebate Period Tracker */}
-            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+            <div style={{ order: 36, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
               <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Ic name="clock" size={16} color={TEAL} />
@@ -1463,7 +1526,7 @@ function DemoDashboardInner() {
             </div>
 
             {/* Agency: Outcome Tracking + Red Flag Alerts */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
+            <div style={{ order: 40, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Outcome tracking</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
@@ -1510,6 +1573,7 @@ function DemoDashboardInner() {
             {/* Pre-Start Risk panel (agency + temporary only) */}
             {demoHasTempWork && (
             <div style={{
+              order: 31,
               background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
               borderTop: '3px solid #D97706', padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
             }}>
@@ -1540,6 +1604,7 @@ function DemoDashboardInner() {
             {/* Pre-Start Engagement panel (agency + temporary, demo) */}
             {demoHasTempWork && (
             <div style={{
+              order: 32,
               background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
               borderTop: `3px solid ${TEAL}`, padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
             }}>
@@ -1597,6 +1662,7 @@ function DemoDashboardInner() {
             {/* SSP Alerts panel (agency + temporary) */}
             {demoHasTempWork && (
             <div style={{
+              order: 43,
               background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
               borderTop: '3px solid #D97706', padding: isMobile ? '14px 16px' : '20px 24px', marginBottom: 20,
             }}>
@@ -1633,7 +1699,7 @@ function DemoDashboardInner() {
         )}
 
         {/* Bulk Screening + Candidate Pipeline (both agency and employer) */}
-        <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '16px 24px', marginBottom: 24 }}>
+        <div style={{ order: 12, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '16px 24px', marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Ic name="sliders" size={16} color={TEAL} />
             <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Bulk Screening Mode</h2>
@@ -1678,7 +1744,7 @@ function DemoDashboardInner() {
 
         {/* Candidate Pipeline filtered results (directly after pipeline cards) */}
         {activeFilter?.type === 'verdict' && (
-          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ order: 12, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
             <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>{verdictFilterLabel}</h2>
@@ -1727,7 +1793,7 @@ function DemoDashboardInner() {
         {/* Employer-only: Probation Tracker + Decision Overrides + Pending Check-ins */}
         {!isAgency && (
           <>
-            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+            <div style={{ order: 37, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
               <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Ic name="clock" size={16} color={TEAL} />
@@ -1764,7 +1830,7 @@ function DemoDashboardInner() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
+            <div style={{ order: 40, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Decision overrides</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
@@ -1797,7 +1863,7 @@ function DemoDashboardInner() {
             </div>
 
             {/* Employer: Probation Co-pilot + Probation Review Generator */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
+            <div style={{ order: 38, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Probation co-pilot</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
@@ -1835,7 +1901,7 @@ function DemoDashboardInner() {
             </div>
 
             {/* Employer: Red Flag Alerts */}
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ order: 41, marginBottom: 24 }}>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Red flag alerts</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, marginBottom: 10 }}>
@@ -1861,7 +1927,7 @@ function DemoDashboardInner() {
 
         {/* Location filter bar (all account types) */}
         {!activeFilter && !selectedRole && !selectedClient && !selectedTeamMember && (
-          <div style={{ ...cs, marginBottom: 20, padding: isMobile ? '14px 16px' : '16px 20px' }}>
+          <div style={{ order: 13, ...cs, marginBottom: 20, padding: isMobile ? '14px 16px' : '16px 20px' }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               flexWrap: 'wrap', gap: 10, marginBottom: hasAnyLocation ? 12 : 0,
@@ -1945,7 +2011,7 @@ function DemoDashboardInner() {
 
         {/* Roles Overview (all account types) */}
         {!activeFilter && !selectedRole && rolesOverview.length > 0 && (
-          <div style={{ ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
+          <div style={{ order: 14, ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Roles Overview</h2>
@@ -2107,7 +2173,7 @@ function DemoDashboardInner() {
           ]
 
           return (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ order: 14, marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
               <button
                 type="button"
@@ -2330,7 +2396,7 @@ function DemoDashboardInner() {
 
         {/* Clients Overview (agency only) */}
         {isAgency && !activeFilter && !selectedRole && !selectedClient && (
-          <div style={{ ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
+          <div style={{ order: 15, ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Clients Overview</h2>
@@ -2485,7 +2551,7 @@ function DemoDashboardInner() {
 
         {/* Client Detail view (agency only) */}
         {isAgency && selectedClient && activeClientDemo && (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ order: 15, marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
               <button
                 type="button"
@@ -2675,7 +2741,7 @@ function DemoDashboardInner() {
 
         {/* Team Overview (all account types) */}
         {!activeFilter && !selectedRole && !selectedClient && !selectedTeamMember && (
-          <div style={{ ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
+          <div style={{ order: 16, ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Team Overview</h2>
@@ -2805,7 +2871,7 @@ function DemoDashboardInner() {
 
         {/* Team Member Detail view */}
         {selectedTeamMember && activeTeamMember && (
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ order: 16, marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
               <button
                 type="button"
@@ -2966,7 +3032,7 @@ function DemoDashboardInner() {
         )}
 
         {/* Candidates table + assessments panel (hidden when any filter card is active or drilled into a role/client/team member) */}
-        <div style={{ display: (activeFilter || selectedRole || selectedClient || selectedTeamMember) ? 'none' : 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 20, alignItems: 'flex-start' }}>
+        <div style={{ order: 17, display: (activeFilter || selectedRole || selectedClient || selectedTeamMember) ? 'none' : 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 20, alignItems: 'flex-start' }}>
           <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined, order: isMobile ? 2 : 1 }}>
             <div style={{ ...cs, padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -3187,6 +3253,7 @@ function DemoDashboardInner() {
         </div>
         {/* Prediction Accuracy */}
         <div style={{
+          order: 54,
           background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
           borderTop: `3px solid ${TEAL}`, padding: '20px 24px', marginTop: 20,
         }}>
@@ -3227,6 +3294,7 @@ function DemoDashboardInner() {
         {/* SSP Module Demo (agency + temp only) */}
         {isAgency && demoHasTempWork && (
         <div style={{
+          order: 43,
           background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
           padding: '20px 24px', marginTop: 20,
         }}>
@@ -3256,6 +3324,7 @@ function DemoDashboardInner() {
 
         {/* Holiday Pay Tracker Demo */}
         <div style={{
+          order: 44,
           background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
           padding: '20px 24px', marginTop: 20,
         }}>
@@ -3323,7 +3392,7 @@ function DemoDashboardInner() {
           </div>
         )}
 
-        <SectionHeader number={2} title="Shortlisting and Progression" description="Decide who to progress, hold, or reject. Track your shortlist and notify candidates automatically." />
+        <SectionHeader order={20} number={2} title="Shortlisting and Progression" description="Decide who to progress, hold, or reject. Track your shortlist and notify candidates automatically." />
         {(() => {
           const progressing = allActiveCandidates.filter(c => c.stage === 'progress')
           const onHold      = allActiveCandidates.filter(c => c.stage === 'hold')
@@ -3423,7 +3492,7 @@ function DemoDashboardInner() {
           }
 
           return (
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ order: 21, marginBottom: 20 }}>
               {renderGroup({ key: 'progress', title: 'Progressing', label: progressingLabel, count: progressing.length, list: progressing, accent: '#0F7A66', accentBg: '#D8F4EC', accentBd: '#00BFA555' })}
               {renderGroup({ key: 'hold', title: 'On hold', label: holdLabel, count: onHold.length, list: onHold, accent: '#92400E', accentBg: '#FEF3C7', accentBd: '#F59E0B55' })}
               {renderGroup({ key: 'reject', title: 'Rejected', label: rejectedLabel, count: rejected.length, list: rejected, accent: '#991B1B', accentBg: '#FEE2E2', accentBd: '#DC262655', collapsible: true })}
@@ -3431,9 +3500,7 @@ function DemoDashboardInner() {
           )
         })()}
 
-        {isAgency && (
-          <SectionHeader number={4} title="Compliance" description="Compliance and legal documentation. SSP, holiday pay, Fair Work Agency records." />
-        )}
+        <SectionHeader order={42} number={4} title="Compliance" description="Compliance and legal documentation. SSP, holiday pay, Fair Work Agency records." />
       </main>
     </DemoLayout>
   )
