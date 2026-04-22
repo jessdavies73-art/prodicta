@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
 import InfoTooltip from '@/components/InfoTooltip'
 import TeamSettings from '@/components/TeamSettings'
+import { useToast } from '@/components/ToastProvider'
 
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
 const _mSnap = () => window.innerWidth <= 768
@@ -151,6 +152,7 @@ function SelectInput({ value, onChange, children, focused, onFocus, onBlur }) {
 export default function SettingsPage() {
   const router = useRouter()
   const isMobile = useIsMobile()
+  const toast = useToast()
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState(null)
   const [userEmail, setUserEmail] = useState('')
