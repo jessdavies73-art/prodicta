@@ -21,26 +21,26 @@ const SKILLS = ['Communication', 'Problem solving', 'Prioritisation', 'Leadershi
 const AGENCY_QUESTIONS = [
   {
     id: 'q0',
-    text: 'What actually matters most to your client in this role?',
-    type: 'multi-select',
-    options: ['Speed/urgency', 'Revenue generation', 'Stakeholder management', 'Process/organisation', 'Leadership/ownership'],
+    text: 'What does the client need from this person in the first 90 days?',
+    type: 'text',
   },
   {
     id: 'q1',
-    text: 'What typically causes candidates to fail with this client?',
-    type: 'multi-select-other',
-    options: ['Poor communication', 'Missed deadlines', "Can't handle pressure", 'Cultural mismatch', 'Lack of ownership'],
+    text: 'What are the biggest pressures in this role?',
+    type: 'multi-select',
+    options: ['Managing stakeholders', 'High workload/pressure', 'Ambiguity', 'Conflict/difficult conversations', 'Tight deadlines'],
   },
   {
     id: 'q2',
-    text: 'What type of environment is this?',
-    type: 'single-select',
-    options: ['Fast-paced/reactive', 'Structured/process-driven', 'Chaotic/ambiguous', 'Sales-driven/target-heavy'],
+    text: "What type of candidate has worked well in this client's culture?",
+    type: 'multi-select',
+    options: ['Highly organised', 'Proactive/self-starter', 'Strong communicator', 'Commercial thinker', 'Detail-oriented'],
   },
   {
     id: 'q3',
-    text: 'What would make this placement fail in 3 months?',
-    type: 'text',
+    text: 'What has caused placements to fail here before?',
+    type: 'multi-select',
+    options: ["Didn't adapt quickly", 'Poor communication', "Couldn't prioritise", 'Culture misfit', 'Burned out'],
   },
 ]
 
@@ -58,13 +58,13 @@ const EMPLOYER_QUESTIONS = [
   },
   {
     id: 'q2',
-    text: 'What type of person thrives here?',
+    text: 'What type of person thrives in your team?',
     type: 'multi-select',
     options: ['Highly organised', 'Proactive/self-starter', 'Strong communicator', 'Commercial thinker', 'Detail-oriented'],
   },
   {
     id: 'q3',
-    text: 'What has gone wrong with past hires?',
+    text: 'What has gone wrong with previous hires in this role?',
     type: 'multi-select',
     options: ["Didn't adapt quickly", 'Poor communication', "Couldn't prioritise", 'Culture misfit', 'Burned out'],
   },
