@@ -19,11 +19,19 @@ function fmtDate(d) {
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+const PLAN_LABELS = { starter: 'Starter', professional: 'Professional', business: 'Business', growth: 'Professional', agency: 'Business', scale: 'Business', founding: 'Founding Member', payg: 'Pay as you go' }
+
 export default function TeamSettings({ toast, userEmail, emailInitial }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [members, setMembers] = useState([])
   const [viewerRole, setViewerRole] = useState('owner')
+  const [plan, setPlan] = useState('starter')
+  const [planType, setPlanType] = useState(null)
+  const [userLimit, setUserLimit] = useState(2)
+  const [extraSeats, setExtraSeats] = useState(0)
+  const [used, setUsed] = useState(0)
+  const [seatCheckoutBusy, setSeatCheckoutBusy] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteName, setInviteName] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
@@ -34,6 +42,9 @@ export default function TeamSettings({ toast, userEmail, emailInitial }) {
   const [confirmRemove, setConfirmRemove] = useState(null)
 
   const canManage = viewerRole === 'owner' || viewerRole === 'manager'
+  const isPayg = planType === 'payg' || plan === 'payg'
+  const atLimit = !isPayg && userLimit > 0 && used >= userLimit
+  const planLabel = PLAN_LABELS[plan] || (plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : 'your')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -47,6 +58,11 @@ export default function TeamSettings({ toast, userEmail, emailInitial }) {
       } else {
         setMembers(data.members || [])
         setViewerRole(data.viewerRole || 'owner')
+        setPlan(data.plan || 'starter')
+        setPlanType(data.planType || null)
+        setUserLimit(typeof data.userLimit === 'number' ? data.userLimit : 2)
+        setExtraSeats(data.extraSeats || 0)
+        setUsed(typeof data.used === 'number' ? data.used : 0)
       }
     } catch (err) {
       setError(err?.message || 'Network error.')
@@ -54,6 +70,23 @@ export default function TeamSettings({ toast, userEmail, emailInitial }) {
       setLoading(false)
     }
   }, [])
+
+  async function handleBuySeat() {
+    setSeatCheckoutBusy(true)
+    try {
+      const res = await fetch('/api/billing/extra-seat', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok || !data?.url) {
+        if (toast) toast(data?.error || 'Could not start checkout', 'error')
+        setSeatCheckoutBusy(false)
+        return
+      }
+      window.location.href = data.url
+    } catch (err) {
+      if (toast) toast(err?.message || 'Network error', 'error')
+      setSeatCheckoutBusy(false)
+    }
+  }
 
   useEffect(() => { load() }, [load])
 
@@ -134,6 +167,11 @@ export default function TeamSettings({ toast, userEmail, emailInitial }) {
   const active = members.filter(m => m.status === 'active' || m.status === 'suspended')
   const pending = members.filter(m => m.status === 'invited')
 
+  const usagePct = userLimit > 0 ? Math.min(100, Math.round((used / userLimit) * 100)) : 0
+  const usageColor = atLimit ? RED : usagePct >= 80 ? AMB : TEAL
+  const usageBg = atLimit ? REDBG : usagePct >= 80 ? AMBBG : TEALLT
+  const usageBd = atLimit ? REDBD : usagePct >= 80 ? AMBBD : `${TEAL}55`
+
   return (
     <div style={{ maxWidth: 720 }}>
       <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '24px 26px' }}>
@@ -146,22 +184,97 @@ export default function TeamSettings({ toast, userEmail, emailInitial }) {
               Invite managers and consultants. Managers can see all data. Consultants see only their own.
             </p>
           </div>
-          {canManage && (
+          {canManage && !isPayg && (
             <button
               type="button"
               onClick={() => { setInviteError(''); setInviteOpen(true) }}
+              disabled={atLimit}
+              title={atLimit ? `You have reached your ${planLabel} limit of ${userLimit} users.` : undefined}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 padding: '10px 18px', borderRadius: 8, border: 'none',
-                background: TEAL, color: NAVY,
-                fontFamily: F, fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                background: atLimit ? BD : TEAL, color: atLimit ? TX3 : NAVY,
+                fontFamily: F, fontSize: 13, fontWeight: 800,
+                cursor: atLimit ? 'not-allowed' : 'pointer',
+                opacity: atLimit ? 0.7 : 1,
               }}
             >
-              <Ic name="plus" size={14} color={NAVY} />
+              <Ic name="plus" size={14} color={atLimit ? TX3 : NAVY} />
               Invite team member
             </button>
           )}
         </div>
+
+        {/* PAYG banner */}
+        {!loading && isPayg && (
+          <div style={{
+            background: AMBBG, border: `1px solid ${AMBBD}`, borderLeft: `4px solid ${AMB}`,
+            borderRadius: 10, padding: '14px 16px', marginBottom: 18,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+          }}>
+            <div style={{ fontSize: 13, color: TX, lineHeight: 1.55 }}>
+              <strong>Team management is available on Starter, Professional, and Business plans.</strong>
+              <div style={{ fontSize: 12.5, color: TX2, marginTop: 2 }}>
+                Upgrade to a subscription to invite colleagues.
+              </div>
+            </div>
+            <a
+              href="/settings?tab=billing"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '9px 16px', borderRadius: 8, border: 'none',
+                background: TEAL, color: NAVY, textDecoration: 'none',
+                fontFamily: F, fontSize: 13, fontWeight: 800,
+              }}
+            >
+              View subscription plans
+            </a>
+          </div>
+        )}
+
+        {/* Usage strip (subscription accounts only) */}
+        {!loading && !isPayg && (
+          <div style={{
+            background: usageBg, border: `1px solid ${usageBd}`,
+            borderRadius: 10, padding: '12px 16px', marginBottom: 18,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
+              <div style={{ fontSize: 13, color: TX }}>
+                <strong>Team members: {used} of {userLimit} used</strong>
+                {extraSeats > 0 && (
+                  <span style={{ fontSize: 12, color: TX3, marginLeft: 8 }}>
+                    (includes {extraSeats} extra seat{extraSeats === 1 ? '' : 's'})
+                  </span>
+                )}
+              </div>
+              {atLimit && canManage && (
+                <button
+                  type="button"
+                  onClick={handleBuySeat}
+                  disabled={seatCheckoutBusy}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '7px 14px', borderRadius: 7, border: 'none',
+                    background: NAVY, color: '#fff',
+                    fontFamily: F, fontSize: 12, fontWeight: 700,
+                    cursor: seatCheckoutBusy ? 'wait' : 'pointer',
+                    opacity: seatCheckoutBusy ? 0.7 : 1,
+                  }}
+                >
+                  {seatCheckoutBusy ? 'Opening checkout...' : 'Add an extra seat, £35/month'}
+                </button>
+              )}
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: 'rgba(15,33,55,0.08)', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${usagePct}%`, background: usageColor, borderRadius: 3, transition: 'width 0.3s ease' }} />
+            </div>
+            {atLimit && (
+              <div style={{ marginTop: 8, fontSize: 12, color: RED, fontWeight: 600 }}>
+                You have reached your {planLabel} limit of {userLimit} user{userLimit === 1 ? '' : 's'}. Add an extra seat to invite another colleague, or upgrade your plan.
+              </div>
+            )}
+          </div>
+        )}
 
         {loading ? (
           <div style={{ padding: '28px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { getTeamContext, isOwnerOrManager } from '@/lib/team'
+import { PLANS } from '@/lib/stripe'
 
 const ALLOWED_ROLES = new Set(['manager', 'consultant'])
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://prodicta.co.uk'
@@ -18,6 +19,50 @@ export async function POST(request) {
     const ctx = await getTeamContext(admin, user.id)
     if (!isOwnerOrManager(ctx.role)) {
       return NextResponse.json({ error: 'Only owners and managers can invite team members.' }, { status: 403 })
+    }
+
+    // Plan gating. PAYG is blocked outright; subscription plans are limited to
+    // PLANS[plan].userLimit + any purchased extra seats on users.user_limit_extra.
+    const { data: accountRow } = await admin
+      .from('users')
+      .select('plan, plan_type, user_limit_extra')
+      .eq('id', ctx.accountId)
+      .maybeSingle()
+
+    const planType = accountRow?.plan_type || null
+    if (planType === 'payg' || accountRow?.plan === 'payg') {
+      return NextResponse.json({
+        error: 'Team management is not available on PAYG. Upgrade to a subscription plan to invite team members.',
+        payg: true,
+      }, { status: 403 })
+    }
+
+    const planKey = (accountRow?.plan || 'starter').toLowerCase()
+    const planMeta = PLANS[planKey]
+    const baseLimit = typeof planMeta?.userLimit === 'number' ? planMeta.userLimit : 2
+    const extraSeats = accountRow?.user_limit_extra || 0
+    const userLimit = baseLimit + extraSeats
+
+    const { count: usedCount, error: countErr } = await admin
+      .from('team_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('account_id', ctx.accountId)
+      .in('status', ['active', 'invited'])
+    if (countErr && countErr.code !== '42P01') {
+      console.error('[team/invite] seat count failed', countErr.message)
+      return NextResponse.json({ error: 'Could not verify team seat usage.' }, { status: 500 })
+    }
+    const used = usedCount || 0
+
+    if (used >= userLimit) {
+      const planLabel = planMeta?.label || 'current'
+      return NextResponse.json({
+        error: `Your ${planLabel} plan allows ${userLimit} user${userLimit === 1 ? '' : 's'}. Add an extra seat or upgrade your plan.`,
+        limit: userLimit,
+        used,
+        plan: planKey,
+        canAddSeat: true,
+      }, { status: 403 })
     }
 
     const body = await request.json()

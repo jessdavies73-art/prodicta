@@ -215,6 +215,32 @@ export async function POST(request) {
           break
         }
 
+        // Extra team seat: increment users.user_limit_extra by 1 so the
+        // inviter gets one more seat to fill. One checkout = one seat = one
+        // separate £35/month Stripe subscription.
+        if (meta.flow === 'extra-seat' && userIdFromMeta) {
+          const { data: row, error: readErr } = await adminClient
+            .from('users')
+            .select('user_limit_extra')
+            .eq('id', userIdFromMeta)
+            .maybeSingle()
+          if (readErr) {
+            console.error('[webhook] extra-seat read failed', { userId: userIdFromMeta, error: readErr.message })
+            throw new Error(`extra-seat read failed: ${readErr.message}`)
+          }
+          const next = (row?.user_limit_extra || 0) + 1
+          const { error: seatErr } = await adminClient
+            .from('users')
+            .update({ user_limit_extra: next })
+            .eq('id', userIdFromMeta)
+          if (seatErr) {
+            console.error('[webhook] extra-seat update failed', { userId: userIdFromMeta, error: seatErr.message })
+            throw new Error(`extra-seat update failed: ${seatErr.message}`)
+          }
+          console.log('[webhook] extra-seat granted', { userId: userIdFromMeta, newLimitExtra: next })
+          break
+        }
+
         // PAYG tier upgrade: swap one `from_type` credit for one `to_type`
         // credit, and bump the linked assessment's mode so the next
         // generation (or user action) uses the new tier.
