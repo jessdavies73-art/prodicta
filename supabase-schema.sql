@@ -217,3 +217,22 @@ create index if not exists idx_accountability_records_candidate_id on public.acc
 create index if not exists idx_accountability_records_user_id on public.accountability_records(user_id);
 create index if not exists idx_candidate_documents_candidate_id on public.candidate_documents(candidate_id);
 create index if not exists idx_candidate_documents_user_id on public.candidate_documents(user_id);
+
+-- =====================
+-- Saved role drafts
+-- =====================
+create table if not exists public.saved_roles (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.users(id) on delete cascade,
+  role_title text,
+  client_name text,
+  job_description text,
+  assessment_mode text,
+  employment_type text,
+  context_answers jsonb,
+  created_at timestamptz default now()
+);
+alter table public.saved_roles enable row level security;
+create policy "Users can manage own saved roles"
+  on public.saved_roles for all using (user_id = auth.uid());
+create index if not exists idx_saved_roles_user_id on public.saved_roles(user_id);

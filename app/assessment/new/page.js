@@ -229,6 +229,16 @@ export default function NewAssessmentPage() {
   const [briefChecking, setBriefChecking] = useState(false)
   const briefCheckedRef = useRef('')
 
+  // Saved role drafts
+  const [savedRoles, setSavedRoles] = useState([])
+  const [showSaveRoleModal, setShowSaveRoleModal] = useState(false)
+  const [saveRoleName, setSaveRoleName] = useState('')
+  const [saveRoleClient, setSaveRoleClient] = useState('')
+  const [savingRole, setSavingRole] = useState(false)
+  const [saveRoleError, setSaveRoleError] = useState('')
+  const [savedRolesToast, setSavedRolesToast] = useState('')
+  const SAVED_ROLES_LIMIT = 10
+
   const handleBuyAddOn = async (creditType) => {
     setImmersiveBuying(true)
     try {
@@ -412,9 +422,118 @@ export default function NewAssessmentPage() {
           .order('created_at', { ascending: false })
         setUserTemplates(ut || [])
       } catch (_) {}
+
+      // Load saved role drafts
+      try {
+        const res = await fetch('/api/saved-roles', { credentials: 'include' })
+        if (res.ok) {
+          const data = await res.json()
+          if (Array.isArray(data?.saved_roles)) setSavedRoles(data.saved_roles)
+        }
+      } catch (_) {}
     }
     init()
   }, [router])
+
+  async function applySavedRole(sr) {
+    setCreatedAssessmentId(null)
+    setSentResult(null)
+    setSendError('')
+    setSelectedRoleTemplateId('')
+    setFirstName('')
+    setLastName('')
+    setCandidateEmail('')
+    setRoleTitle(sr.role_title || '')
+    if (sr.employment_type === 'permanent' || sr.employment_type === 'temporary') {
+      setEmploymentType(sr.employment_type)
+    }
+    if (sr.job_description) setJd(sr.job_description)
+    if (sr.assessment_mode) {
+      setMode(sr.assessment_mode)
+      setModeOverridden(true)
+    }
+    if (sr.context_answers && typeof sr.context_answers === 'object') {
+      setContextAnswers(sr.context_answers)
+    }
+    runAutoAnalyse(sr.role_title || '', sr.job_description || '')
+    setModeConfirmed(true)
+    if (typeof window !== 'undefined') {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const el = document.getElementById('candidate-details')
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            el.parentElement?.querySelector('input')?.focus()
+          } else {
+            confirmationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
+        })
+      })
+    }
+  }
+
+  async function handleDeleteSavedRole(id) {
+    const prior = savedRoles
+    setSavedRoles(savedRoles.filter(s => s.id !== id))
+    try {
+      const res = await fetch(`/api/saved-roles/${id}`, { method: 'DELETE', credentials: 'include' })
+      if (!res.ok) throw new Error('Delete failed')
+    } catch (_) {
+      setSavedRoles(prior)
+    }
+  }
+
+  function openSaveRoleModal() {
+    setSaveRoleError('')
+    setSaveRoleName(roleTitle.trim())
+    setSaveRoleClient('')
+    setShowSaveRoleModal(true)
+  }
+
+  async function handleSaveRole() {
+    const name = saveRoleName.trim()
+    if (!name) { setSaveRoleError('Please enter a role title for this draft.'); return }
+    if (savedRoles.length >= SAVED_ROLES_LIMIT) {
+      setSaveRoleError(`You can save up to ${SAVED_ROLES_LIMIT} roles. Delete one before saving another.`)
+      return
+    }
+    setSavingRole(true)
+    setSaveRoleError('')
+    try {
+      const contextQs = smartQuestions && smartQuestions.length > 0
+        ? smartQuestions
+        : (accountType === 'agency' ? AGENCY_QUESTIONS : EMPLOYER_QUESTIONS)
+      const serialized = serializeContextAnswers(contextQs, contextAnswers)
+      const res = await fetch('/api/saved-roles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          role_title: name,
+          client_name: saveRoleClient.trim() || null,
+          job_description: jd,
+          assessment_mode: mode,
+          employment_type: employmentType || null,
+          context_answers: Object.keys(serialized).length > 0 ? serialized : contextAnswers,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setSaveRoleError(data?.message || data?.error || 'Could not save role.')
+        return
+      }
+      if (data?.saved_role) {
+        setSavedRoles(prev => [data.saved_role, ...prev])
+      }
+      setShowSaveRoleModal(false)
+      setSavedRolesToast('Role saved as a draft.')
+      setTimeout(() => setSavedRolesToast(''), 3200)
+    } catch (_) {
+      setSaveRoleError('Could not save role. Please try again.')
+    } finally {
+      setSavingRole(false)
+    }
+  }
 
   function applyTemplate(templateId) {
     const tmpl = templates.find(t => t.id === templateId)
@@ -770,6 +889,129 @@ export default function NewAssessmentPage() {
           }}>
             Defaulting to {employmentType === 'permanent' ? 'Permanent Hire' : 'Temporary and Contract Placement'} based on your settings.{' '}
             <a href="/settings" style={{ color: '#00BFA5', fontWeight: 600, textDecoration: 'none' }}>Change</a>
+          </div>
+        )}
+
+        {/* Saved role drafts. First thing visible on mobile so recruiters can
+            re-send for a known role in two taps. Placed above the template
+            library so it takes precedence. */}
+        {savedRoles.length > 0 && (
+          <div style={{
+            background: '#fff', borderRadius: 14, border: '1.5px solid #80DFD2',
+            padding: isMobile ? '20px 16px' : '24px 28px', marginBottom: 20,
+            boxShadow: '0 2px 10px rgba(0,191,165,0.08)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 8 }}>
+              <div>
+                <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? 16 : 16.5, fontWeight: 800, color: '#0f2137', fontFamily: F }}>
+                  Saved Roles
+                </h2>
+                <p style={{ margin: 0, fontSize: 12.5, color: '#5e6b7f', fontFamily: F }}>
+                  Pick a saved role, then just enter candidate name and email.
+                </p>
+              </div>
+              <span style={{
+                fontSize: 11, fontWeight: 700, color: '#009688', fontFamily: FM,
+                background: '#e0f2f0', padding: '4px 10px', borderRadius: 20, flexShrink: 0,
+              }}>
+                {savedRoles.length}/{SAVED_ROLES_LIMIT}
+              </span>
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: 12,
+            }}>
+              {savedRoles.map(sr => {
+                const modeLabel = sr.assessment_mode === 'rapid' ? 'Rapid Screen'
+                  : sr.assessment_mode === 'quick' ? 'Speed-Fit'
+                  : sr.assessment_mode === 'advanced' ? 'Strategy-Fit'
+                  : 'Depth-Fit'
+                const partyLabel = accountType === 'agency' ? 'Client' : 'Department'
+                return (
+                  <div key={sr.id} style={{
+                    display: 'flex', flexDirection: 'column',
+                    background: '#f8fafc', border: '1px solid #e4e9f0',
+                    borderRadius: 12, padding: isMobile ? '14px 14px' : '16px 16px',
+                    fontFamily: F, gap: 10,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: '#0f2137', lineHeight: 1.3, marginBottom: 4, wordBreak: 'break-word' }}>
+                          {sr.role_title || 'Untitled role'}
+                        </div>
+                        {sr.client_name && (
+                          <div style={{ fontSize: 12, color: '#5e6b7f', fontFamily: F }}>
+                            {partyLabel}: <span style={{ color: '#0f2137', fontWeight: 600 }}>{sr.client_name}</span>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Delete saved role"
+                        onClick={() => {
+                          if (confirm(`Delete saved role "${sr.role_title || 'Untitled role'}"?`)) {
+                            handleDeleteSavedRole(sr.id)
+                          }
+                        }}
+                        style={{
+                          width: 32, height: 32, borderRadius: 8,
+                          border: '1px solid #e4e9f0', background: '#fff',
+                          color: '#94a1b3', cursor: 'pointer', flexShrink: 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                          <path d="M10 11v6" />
+                          <path d="M14 11v6" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      <span style={{
+                        fontSize: 10.5, fontWeight: 800, padding: '3px 10px', borderRadius: 20,
+                        background: '#0f2137', color: '#fff', letterSpacing: '0.03em',
+                      }}>
+                        {modeLabel}
+                      </span>
+                      {sr.employment_type && (
+                        <span style={{
+                          fontSize: 10.5, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                          background: sr.employment_type === 'permanent' ? '#f0f4f8' : '#e0f2f0',
+                          color: sr.employment_type === 'permanent' ? '#0f2137' : '#009688',
+                        }}>
+                          {sr.employment_type === 'permanent' ? 'Permanent' : 'Temp/Contract'}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => applySavedRole(sr)}
+                      style={{
+                        width: '100%', padding: isMobile ? '14px 0' : '12px 0',
+                        borderRadius: 10, border: 'none',
+                        background: '#00BFA5', color: '#0f2137',
+                        fontSize: isMobile ? 15 : 14, fontWeight: 800, fontFamily: F,
+                        cursor: 'pointer', marginTop: 2,
+                      }}
+                    >
+                      Use this role
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+            {savedRolesToast && (
+              <div style={{
+                marginTop: 14, padding: '10px 14px', borderRadius: 8,
+                background: '#e0f2f0', border: '1px solid #80DFD2',
+                color: '#009688', fontSize: 13, fontWeight: 700, fontFamily: F,
+              }}>
+                {savedRolesToast}
+              </div>
+            )}
           </div>
         )}
 
@@ -1788,37 +2030,65 @@ export default function NewAssessmentPage() {
               </div>
 
               {!sentResult && !loading && !modeConfirmed && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: 12, flexWrap: 'wrap', marginBottom: 20,
-                  padding: '12px 16px', borderRadius: 10,
-                  background: '#f8fafc', border: '1px solid #e4e9f0',
-                }}>
-                  <span style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', lineHeight: 1.55 }}>
+                <>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    gap: 12, flexWrap: 'wrap', marginBottom: 12,
+                    padding: '12px 16px', borderRadius: 10,
+                    background: '#f8fafc', border: '1px solid #e4e9f0',
+                  }}>
+                    <span style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', lineHeight: 1.55 }}>
  Review the <strong style={{ color: '#0f2137' }}>Assessment depth</strong> above. Change it if you want, otherwise confirm to continue to candidate details.
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setModeConfirmed(true)
-                      if (typeof window !== 'undefined') {
-                        requestAnimationFrame(() => {
-                          const el = document.getElementById('candidate-details')
-                          el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                          el?.parentElement?.querySelector('input')?.focus()
-                        })
-                      }
-                    }}
-                    style={{
-                      fontFamily: F, fontSize: 13, fontWeight: 800, color: '#0f2137',
-                      background: '#00BFA5', border: 'none',
-                      padding: '8px 18px', borderRadius: 7, cursor: 'pointer',
-                      flexShrink: 0,
-                    }}
-                  >
-                    Looks good
-                  </button>
-                </div>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModeConfirmed(true)
+                        if (typeof window !== 'undefined') {
+                          requestAnimationFrame(() => {
+                            const el = document.getElementById('candidate-details')
+                            el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                            el?.parentElement?.querySelector('input')?.focus()
+                          })
+                        }
+                      }}
+                      style={{
+                        fontFamily: F, fontSize: 13, fontWeight: 800, color: '#0f2137',
+                        background: '#00BFA5', border: 'none',
+                        padding: '8px 18px', borderRadius: 7, cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    >
+                      Looks good
+                    </button>
+                  </div>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    gap: 12, flexWrap: 'wrap', marginBottom: 20,
+                    padding: '12px 16px', borderRadius: 10,
+                    background: '#fff', border: '1.5px dashed #80DFD2',
+                  }}>
+                    <span style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', lineHeight: 1.55 }}>
+                      Reuse this setup for future candidates. Save as a named draft, then only enter candidate name and email.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={openSaveRoleModal}
+                      disabled={savedRoles.length >= SAVED_ROLES_LIMIT}
+                      style={{
+                        fontFamily: F, fontSize: 13, fontWeight: 800,
+                        color: savedRoles.length >= SAVED_ROLES_LIMIT ? '#94a1b3' : '#0f2137',
+                        background: savedRoles.length >= SAVED_ROLES_LIMIT ? '#f1f5f9' : '#fff',
+                        border: `1.5px solid ${savedRoles.length >= SAVED_ROLES_LIMIT ? '#e4e9f0' : '#00BFA5'}`,
+                        padding: '8px 18px', borderRadius: 7,
+                        cursor: savedRoles.length >= SAVED_ROLES_LIMIT ? 'not-allowed' : 'pointer',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {savedRoles.length >= SAVED_ROLES_LIMIT ? `Limit reached (${SAVED_ROLES_LIMIT})` : 'Save this role'}
+                    </button>
+                  </div>
+                </>
               )}
 
  {/* Inline candidate details, only after the user has confirmed
@@ -2105,6 +2375,105 @@ export default function NewAssessmentPage() {
           toType={upgradeModal.to}
           onClose={() => setUpgradeModal(null)}
         />
+      )}
+
+      {showSaveRoleModal && (
+        <div
+          onClick={() => !savingRole && setShowSaveRoleModal(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)',
+            zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 16, fontFamily: F,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: 16, padding: isMobile ? '24px 20px' : '28px 28px',
+              maxWidth: 460, width: '100%', boxShadow: '0 24px 72px rgba(0,0,0,0.3)',
+            }}
+          >
+            <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 800, color: '#0f2137' }}>
+              Save this role as a draft
+            </h3>
+            <p style={{ margin: '0 0 20px', fontSize: 13, color: '#5e6b7f', lineHeight: 1.55 }}>
+              Reuse this setup later. Candidate name and email will stay blank so you can just fill those in and send.
+            </p>
+
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#0f2137', marginBottom: 6 }}>
+              Role title
+            </label>
+            <input
+              type="text"
+              value={saveRoleName}
+              onChange={e => setSaveRoleName(e.target.value)}
+              placeholder="e.g. Senior Account Manager"
+              style={{
+                width: '100%', boxSizing: 'border-box', padding: '11px 14px',
+                borderRadius: 8, border: '1.5px solid #e4e9f0', fontSize: 14,
+                color: '#0f172a', fontFamily: F, outline: 'none', marginBottom: 14,
+              }}
+              onFocus={e => e.target.style.borderColor = '#00BFA5'}
+              onBlur={e => e.target.style.borderColor = '#e4e9f0'}
+            />
+
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#0f2137', marginBottom: 6 }}>
+              {accountType === 'agency' ? 'Client name' : 'Department'} <span style={{ color: '#94a1b3', fontWeight: 500 }}>(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={saveRoleClient}
+              onChange={e => setSaveRoleClient(e.target.value)}
+              placeholder={accountType === 'agency' ? 'e.g. Globex Ltd' : 'e.g. Customer Success'}
+              style={{
+                width: '100%', boxSizing: 'border-box', padding: '11px 14px',
+                borderRadius: 8, border: '1.5px solid #e4e9f0', fontSize: 14,
+                color: '#0f172a', fontFamily: F, outline: 'none', marginBottom: 14,
+              }}
+              onFocus={e => e.target.style.borderColor = '#00BFA5'}
+              onBlur={e => e.target.style.borderColor = '#e4e9f0'}
+            />
+
+            {saveRoleError && (
+              <div style={{
+                marginBottom: 14, padding: '10px 14px', borderRadius: 8,
+                background: '#fef2f2', border: '1px solid #fecaca',
+                color: '#dc2626', fontSize: 13,
+              }}>
+                {saveRoleError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, flexDirection: isMobile ? 'column-reverse' : 'row', justifyContent: 'flex-end', marginTop: 4 }}>
+              <button
+                type="button"
+                onClick={() => setShowSaveRoleModal(false)}
+                disabled={savingRole}
+                style={{
+                  padding: '11px 18px', borderRadius: 9, border: '1.5px solid #e4e9f0',
+                  background: '#fff', color: '#5e6b7f',
+                  fontFamily: F, fontSize: 13.5, fontWeight: 700,
+                  cursor: savingRole ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveRole}
+                disabled={savingRole}
+                style={{
+                  padding: '11px 20px', borderRadius: 9, border: 'none',
+                  background: savingRole ? '#80DFD2' : '#00BFA5',
+                  color: '#0f2137', fontFamily: F, fontSize: 13.5, fontWeight: 800,
+                  cursor: savingRole ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {savingRole ? 'Saving…' : 'Save role'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

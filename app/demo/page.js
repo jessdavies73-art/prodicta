@@ -883,6 +883,112 @@ function DemoDashboardInner() {
           </div>
         </div>
 
+        {/* ── Saved Role drafts (both account types) ── */}
+        {(() => {
+          const demoSavedRoles = isAgency ? [
+            { id: 'sr-demo-1', role_title: 'Senior Account Manager', client_name: 'Globex Ltd', assessment_mode: 'standard', employment_type: 'permanent' },
+            { id: 'sr-demo-2', role_title: 'Temp Warehouse Operative', client_name: 'NorthPack Logistics', assessment_mode: 'rapid', employment_type: 'temporary' },
+            { id: 'sr-demo-3', role_title: 'Head of Customer Success', client_name: 'Initech', assessment_mode: 'advanced', employment_type: 'permanent' },
+          ] : [
+            { id: 'sr-demo-1', role_title: 'Customer Success Manager', client_name: 'Customer Success', assessment_mode: 'quick', employment_type: 'permanent' },
+            { id: 'sr-demo-2', role_title: 'Office Administrator', client_name: 'Operations', assessment_mode: 'quick', employment_type: 'permanent' },
+            { id: 'sr-demo-3', role_title: 'Sales Executive', client_name: 'Commercial', assessment_mode: 'standard', employment_type: 'permanent' },
+          ]
+          const modeLabel = m => m === 'rapid' ? 'Rapid Screen' : m === 'quick' ? 'Speed-Fit' : m === 'advanced' ? 'Strategy-Fit' : 'Depth-Fit'
+          const partyLabel = isAgency ? 'Client' : 'Department'
+          return (
+            <div style={{
+              order: 1,
+              background: CARD, border: `1.5px solid ${TEAL}55`, borderRadius: 14,
+              padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 24,
+              boxShadow: '0 2px 10px rgba(0,191,165,0.08)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 8, flexWrap: 'wrap' }}>
+                <div>
+                  <h2 style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: NAVY, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    Saved Roles
+                    <InfoTooltip text="Save a role setup once, then just enter candidate name and email to send. Ten draft roles max." />
+                  </h2>
+                  <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '4px 0 0' }}>
+                    Re-send for a known role in two taps. Candidate name and email stay blank until you are ready.
+                  </p>
+                </div>
+                <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, background: TEALLT, padding: '4px 10px', borderRadius: 20 }}>
+                  {demoSavedRoles.length}/10
+                </span>
+              </div>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
+                gap: 12,
+              }}>
+                {demoSavedRoles.map(sr => (
+                  <div key={sr.id} style={{
+                    display: 'flex', flexDirection: 'column',
+                    background: BG, border: `1px solid ${BD}`,
+                    borderRadius: 12, padding: isMobile ? '14px 14px' : '16px 16px',
+                    fontFamily: F, gap: 10,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: NAVY, lineHeight: 1.3, marginBottom: 4, wordBreak: 'break-word' }}>
+                          {sr.role_title}
+                        </div>
+                        <div style={{ fontSize: 12, color: TX2 }}>
+                          {partyLabel}: <span style={{ color: NAVY, fontWeight: 600 }}>{sr.client_name}</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Delete saved role"
+                        onClick={() => setModal(true)}
+                        style={{
+                          width: 32, height: 32, borderRadius: 8,
+                          border: `1px solid ${BD}`, background: CARD,
+                          color: TX3, cursor: 'pointer', flexShrink: 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                          <path d="M10 11v6" />
+                          <path d="M14 11v6" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 800, padding: '3px 10px', borderRadius: 20, background: NAVY, color: '#fff', letterSpacing: '0.03em' }}>
+                        {modeLabel(sr.assessment_mode)}
+                      </span>
+                      <span style={{
+                        fontSize: 10.5, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                        background: sr.employment_type === 'permanent' ? '#f0f4f8' : TEALLT,
+                        color: sr.employment_type === 'permanent' ? NAVY : TEALD,
+                      }}>
+                        {sr.employment_type === 'permanent' ? 'Permanent' : 'Temp/Contract'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setModal(true)}
+                      style={{
+                        width: '100%', padding: isMobile ? '14px 0' : '12px 0',
+                        borderRadius: 10, border: 'none',
+                        background: TEAL, color: NAVY,
+                        fontSize: isMobile ? 15 : 14, fontWeight: 800, fontFamily: F,
+                        cursor: 'pointer', marginTop: 2,
+                      }}
+                    >
+                      Use this role
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* ── Today's Actions (all account types) ── */}
         {(() => {
           const demoActions = isAgency ? [
