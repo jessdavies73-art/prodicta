@@ -11,49 +11,44 @@ const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
 function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
-// Flat navigation per account/employment type, with dividers marking
-// logical groupings. `accountType` is 'agency' | 'employer'. `showTemp` and
-// `showPerm` pick which employment slices the account has in use. SSP,
-// Holiday pay and EDI surface for every account under Compliance; Documents
-// stays gated to agency temp/both only.
-function buildNav({ accountType, showTemp, showPerm }) {
+// Grouped nav with uppercase group labels. Candidate Feedback and Assignment
+// Reviews are agency-only. Documents is agency + temp/both only. Everything
+// else shows for every account type and every employment type.
+function buildNav({ accountType, showTemp }) {
   const isAgency = accountType === 'agency'
-  const items = []
+  const groups = []
 
-  items.push({ key: 'dashboard',       label: 'Dashboard',          icon: 'grid',    href: '/dashboard' })
-  items.push({ key: 'assessment',      label: 'New assessment',     icon: 'plus',    href: '/assessment/new' })
-  items.push({ key: 'all-candidates',  label: 'All candidates',     icon: 'users',   href: '/dashboard' })
-  items.push({ key: 'compare',         label: 'Compare candidates', icon: 'sliders', href: '/compare' })
+  const main = [
+    { key: 'dashboard',  label: 'Dashboard',      icon: 'grid', href: '/dashboard' },
+    { key: 'assessment', label: 'New assessment', icon: 'plus', href: '/assessment/new' },
+  ]
   if (isAgency) {
-    items.push({ key: 'feedback',      label: 'Candidate feedback', icon: 'mail',    href: '/candidate-feedback' })
+    main.push({ key: 'feedback',    label: 'Candidate feedback', icon: 'mail', href: '/candidate-feedback' })
+    main.push({ key: 'assignments', label: 'Assignment reviews', icon: 'file', href: '/assignment-reviews' })
   }
+  groups.push({ label: 'Main', items: main })
 
-  items.push({ divider: true })
+  groups.push({ label: 'Placement', items: [
+    { key: 'compare',  label: 'Compare',  icon: 'sliders', href: '/compare' },
+    { key: 'archive',  label: 'Archive',  icon: 'archive', href: '/archive' },
+    { key: 'outcomes', label: 'Outcomes', icon: 'award',   href: '/outcomes' },
+  ]})
 
-  if (isAgency) {
-    items.push({ key: 'placements',    label: 'Placements',          icon: 'shield', href: '/dashboard#post-placement' })
-    items.push({ key: 'assignments',   label: 'Assignment reviews',  icon: 'file',   href: '/assignment-reviews' })
-  } else {
-    if (showTemp) {
-      items.push({ key: 'placement-health', label: 'Placement health', icon: 'shield', href: '/dashboard#post-placement' })
-    }
-    if (showPerm) {
-      items.push({ key: 'probation',   label: 'Probation tracker',   icon: 'shield', href: '/dashboard#post-placement' })
-    }
-  }
-  items.push({ key: 'outcomes',        label: 'Outcomes',            icon: 'award',  href: '/outcomes' })
-
-  items.push({ divider: true })
-
-  items.push({ key: 'ssp',             label: 'SSP',                 icon: 'shield',   href: '/ssp' })
-  items.push({ key: 'holiday',         label: 'Holiday pay',         icon: 'calendar', href: '/holiday' })
+  const compliance = [
+    { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/ssp' },
+    { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/holiday' },
+  ]
   if (isAgency && showTemp) {
-    items.push({ key: 'documents',     label: 'Documents',           icon: 'file',     href: '/documents' })
+    compliance.push({ key: 'documents', label: 'Documents', icon: 'file', href: '/documents' })
   }
-  items.push({ key: 'edi',             label: 'EDI monitor',         icon: 'shield',   href: '/edi' })
-  items.push({ key: 'settings',        label: 'Settings',            icon: 'settings', href: '/settings' })
+  compliance.push({ key: 'edi', label: 'EDI', icon: 'shield', href: '/edi' })
+  groups.push({ label: 'Compliance', items: compliance })
 
-  return items
+  groups.push({ label: 'Account', items: [
+    { key: 'settings', label: 'Settings', icon: 'settings', href: '/settings' },
+  ]})
+
+  return groups
 }
 
 export default function Sidebar({ active, companyName }) {
@@ -64,7 +59,6 @@ export default function Sidebar({ active, companyName }) {
   const [logoutHover, setLogoutHover] = useState(false)
   const [accountType, setAccountType] = useState('employer')
   const [showTemp, setShowTemp] = useState(false)
-  const [showPerm, setShowPerm] = useState(true)
 
   useEffect(() => { setMobileOpen(false) }, [active])
 
@@ -85,28 +79,17 @@ export default function Sidebar({ active, companyName }) {
       setAccountType(acct)
 
       const defaultType = prof?.default_employment_type
-      // 'both' and 'ask' fall through to assessments lookup so the sidebar
-      // mirrors actual use rather than the requested default.
-      if (defaultType === 'temporary') {
-        setShowTemp(true); setShowPerm(false)
-        return
-      }
-      if (defaultType === 'permanent') {
-        setShowTemp(false); setShowPerm(true)
-        return
-      }
+      // 'both' and 'ask' fall through to assessments lookup so Documents only
+      // appears once an agency actually has a temporary assessment on file.
+      if (defaultType === 'temporary') { setShowTemp(true); return }
+      if (defaultType === 'permanent') { setShowTemp(false); return }
 
       const { data: assess } = await supabase.from('assessments')
         .select('employment_type')
         .eq('user_id', user.id)
       if (cancelled) return
-      const rows = assess || []
-      const hasTemp = rows.some(r => r.employment_type === 'temporary')
-      const hasPerm = rows.some(r => r.employment_type !== 'temporary')
-      // Empty account defaults to perm so a new user does not see temp-only
-      // items until they actually create a temp assessment.
+      const hasTemp = (assess || []).some(r => r.employment_type === 'temporary')
       setShowTemp(hasTemp)
-      setShowPerm(hasPerm || (!hasTemp && !hasPerm))
     }
     loadProfile()
     return () => { cancelled = true }
@@ -123,7 +106,7 @@ export default function Sidebar({ active, companyName }) {
     setMobileOpen(false)
   }
 
-  const items = buildNav({ accountType, showTemp, showPerm })
+  const groups = buildNav({ accountType, showTemp })
 
   function NavButton({ itemKey, label, icon, href }) {
     const isActive = active === itemKey
@@ -168,12 +151,18 @@ export default function Sidebar({ active, companyName }) {
     )
   }
 
-  const Divider = () => (
+  const GroupLabel = ({ children }) => (
     <div style={{
-      height: 1,
-      background: 'rgba(255,255,255,0.07)',
-      margin: '8px 4px',
-    }} />
+      fontFamily: F,
+      fontSize: 10.5,
+      fontWeight: 700,
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      color: 'rgba(255,255,255,0.4)',
+      padding: '10px 12px 4px',
+    }}>
+      {children}
+    </div>
   )
 
   const sidebarContent = (
@@ -201,7 +190,7 @@ export default function Sidebar({ active, companyName }) {
       <nav
         className="prodicta-sidebar-nav"
         style={{
-          padding: '10px 12px 8px',
+          padding: '6px 12px 8px',
           display: 'flex',
           flexDirection: 'column',
           gap: 1,
@@ -209,18 +198,20 @@ export default function Sidebar({ active, companyName }) {
           overflowY: 'auto',
         }}
       >
-        {items.map((item, i) => item.divider
-          ? <Divider key={`divider-${i}`} />
-          : (
-            <NavButton
-              key={item.key}
-              itemKey={item.key}
-              label={item.label}
-              icon={item.icon}
-              href={item.href}
-            />
-          )
-        )}
+        {groups.map(group => (
+          <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: 1, marginBottom: 6 }}>
+            <GroupLabel>{group.label}</GroupLabel>
+            {group.items.map(item => (
+              <NavButton
+                key={item.key}
+                itemKey={item.key}
+                label={item.label}
+                icon={item.icon}
+                href={item.href}
+              />
+            ))}
+          </div>
+        ))}
       </nav>
 
       {/* Pinned sign-out */}
