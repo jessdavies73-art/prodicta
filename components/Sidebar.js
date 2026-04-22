@@ -23,7 +23,6 @@ function buildNav({ accountType, showTemp }) {
     { key: 'assessment', label: 'New assessment', icon: 'plus', href: '/assessment/new' },
   ]
   if (isAgency) {
-    main.push({ key: 'feedback',    label: 'Candidate feedback', icon: 'mail', href: '/candidate-feedback' })
     main.push({ key: 'assignments', label: 'Assignment reviews', icon: 'file', href: '/assignment-reviews' })
   }
   groups.push({ label: 'Main', items: main })
