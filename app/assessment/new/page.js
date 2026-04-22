@@ -1828,6 +1828,19 @@ export default function NewAssessmentPage() {
                 <GeneratingLoader />
               ) : (
                 <>
+                  <div style={{
+                    borderLeft: '4px solid #B91C1C',
+                    background: '#FEF2F2',
+                    color: '#B91C1C',
+                    padding: '12px 16px',
+                    borderRadius: 8,
+                    marginBottom: 16,
+                    fontFamily: F,
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                  }}>
+                    Please review your job description carefully before sending. Once an assessment is sent you cannot edit the job description, change the assessment type, or retract the invitation. Each assessment sent counts towards your monthly usage.
+                  </div>
                   {/* Candidate details */}
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 12 }}>
                     <div>
