@@ -2406,9 +2406,6 @@ function DashboardPageInner() {
           number={4}
           title="Compliance"
           description="Compliance and legal documentation. SSP, holiday pay, Fair Work Agency records."
-          visible={
-            (isAgencyAccount && sspAlerts.filter(a => a.employment_type === 'temporary').length > 0)
-          }
         />
         <SectionHeader
           order={60}
