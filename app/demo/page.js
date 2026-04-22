@@ -3305,7 +3305,15 @@ function DemoDashboardInner() {
                 <span style={{ fontSize: 11.5, fontWeight: 700, color: TEALD, background: TEALLT, borderRadius: 6, padding: '2px 8px' }}>{DEMO_ASSESSMENTS.length}</span>
               </div>
               <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {DEMO_ASSESSMENTS.map(a => {
+                {DEMO_ASSESSMENTS
+                  .slice()
+                  .sort((a, b) => {
+                    const aCount = a.candidate_count || 0;
+                    const bCount = b.candidate_count || 0;
+                    if (bCount !== aCount) return bCount - aCount;
+                    return new Date(b.created_at) - new Date(a.created_at);
+                  })
+                  .map(a => {
                   const forA = activeCandidates.filter(c => c.assessments?.id === a.id)
                   const doneCount = forA.filter(c => c.status === 'completed').length
                   const isActive = filterAssessmentId === a.id

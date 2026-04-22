@@ -6231,7 +6231,15 @@ function DashboardPageInner() {
                 </div>
               ) : (
                 <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {assessments.map(a => {
+                  {assessments
+                    .slice()
+                    .sort((a, b) => {
+                      const aCount = a.candidate_count || 0;
+                      const bCount = b.candidate_count || 0;
+                      if (bCount !== aCount) return bCount - aCount;
+                      return new Date(b.created_at) - new Date(a.created_at);
+                    })
+                    .map(a => {
                     const candidatesForAssessment = candidates.filter(
                       c => c.assessments?.id === a.id
                     )
