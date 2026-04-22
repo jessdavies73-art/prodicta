@@ -11,21 +11,17 @@ const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
 function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
-// Grouped nav with uppercase group labels. Candidate Feedback and Assignment
-// Reviews are agency-only. Documents is agency + temp/both only. Everything
-// else shows for every account type and every employment type.
+// Grouped nav with uppercase group labels. Documents is agency + temp/both
+// only; everything else shows for every account type and every employment
+// type.
 function buildNav({ accountType, showTemp }) {
   const isAgency = accountType === 'agency'
   const groups = []
 
-  const main = [
+  groups.push({ label: 'Main', items: [
     { key: 'dashboard',  label: 'Dashboard',      icon: 'grid', href: '/dashboard' },
     { key: 'assessment', label: 'New assessment', icon: 'plus', href: '/assessment/new' },
-  ]
-  if (isAgency) {
-    main.push({ key: 'assignments', label: 'Assignment reviews', icon: 'file', href: '/assignment-reviews' })
-  }
-  groups.push({ label: 'Main', items: main })
+  ]})
 
   groups.push({ label: 'Placement', items: [
     { key: 'compare',  label: 'Compare',  icon: 'sliders', href: '/compare' },
