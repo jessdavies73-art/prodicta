@@ -224,12 +224,13 @@ create index if not exists idx_candidate_documents_user_id on public.candidate_d
 create table if not exists public.saved_roles (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references public.users(id) on delete cascade,
-  role_title text,
+  role_title text not null,
   client_name text,
   job_description text,
   assessment_mode text,
   employment_type text,
   context_answers jsonb,
+  is_example boolean default false,
   created_at timestamptz default now()
 );
 alter table public.saved_roles enable row level security;

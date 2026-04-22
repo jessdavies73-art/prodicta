@@ -6,7 +6,6 @@ import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
 import { useToast } from '@/components/ToastProvider'
 import UpgradeAssessmentModal from '@/components/UpgradeAssessmentModal'
-import { PERMANENT_TEMPLATES, TEMPORARY_TEMPLATES } from '@/lib/role-templates'
 
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
 const _mSnap = () => window.innerWidth <= 768
@@ -67,6 +66,76 @@ const EMPLOYER_QUESTIONS = [
     text: 'What has gone wrong with previous hires in this role?',
     type: 'multi-select',
     options: ["Didn't adapt quickly", 'Poor communication', "Couldn't prioritise", 'Culture misfit', 'Burned out'],
+  },
+]
+
+// Client-side example saved roles for new accounts. Shown in place of the
+// Saved Roles section when the user has not saved any of their own roles yet.
+// These are never persisted to the database, they disappear as soon as the
+// user saves their first real role.
+const EXAMPLE_SAVED_ROLES_AGENCY = [
+  {
+    id: 'example-agency-1',
+    is_example: true,
+    role_title: 'Customer Service Advisor',
+    client_name: 'Example Client',
+    assessment_mode: 'quick',
+    employment_type: 'temporary',
+    job_description: 'We are looking for a Customer Service Advisor to join our client’s team on a temporary basis. You will handle inbound customer enquiries by phone, email, and webchat, resolve complaints, and keep the CRM up to date. Target-driven environment with a focus on first-call resolution and customer satisfaction scores.',
+    context_answers: {
+      q0: 'Hit the ground running, pick up the CRM inside a week, keep call volume and CSAT on target without needing to escalate everything.',
+      q1: ['High workload/pressure', 'Tight deadlines', 'Conflict/difficult conversations'],
+      q2: ['Highly organised', 'Strong communicator', 'Detail-oriented'],
+      q3: ['Poor communication', "Couldn't prioritise", 'Burned out'],
+    },
+  },
+  {
+    id: 'example-agency-2',
+    is_example: true,
+    role_title: 'Account Manager',
+    client_name: 'Example Client',
+    assessment_mode: 'standard',
+    employment_type: 'permanent',
+    job_description: 'Our client is hiring an Account Manager to own a portfolio of mid-market accounts. You will be responsible for retention, cross-sell, commercial negotiation, and running quarterly business reviews. The right person is commercial, confident with senior stakeholders, and comfortable owning a number.',
+    context_answers: {
+      q0: 'Own the portfolio, retain existing revenue, and grow at least two accounts in the first quarter.',
+      q1: ['Managing stakeholders', 'Tight deadlines', 'Conflict/difficult conversations'],
+      q2: ['Commercial thinker', 'Proactive/self-starter', 'Strong communicator'],
+      q3: ['Culture misfit', "Didn't adapt quickly", 'Poor communication'],
+    },
+  },
+]
+
+const EXAMPLE_SAVED_ROLES_EMPLOYER = [
+  {
+    id: 'example-employer-1',
+    is_example: true,
+    role_title: 'Operations Manager',
+    client_name: 'Operations',
+    assessment_mode: 'standard',
+    employment_type: 'permanent',
+    job_description: 'We are hiring an Operations Manager to oversee day-to-day running of our service delivery team. You will own the rota, manage a team of eight, report on SLAs, and drive process improvement. You will work closely with the Finance and People teams to keep us audit-ready.',
+    context_answers: {
+      q0: 'Stabilise the rota, hit SLAs consistently, and bring one process improvement to board level inside the first 90 days.',
+      q1: ['Managing stakeholders', 'High workload/pressure', 'Ambiguity'],
+      q2: ['Highly organised', 'Proactive/self-starter', 'Detail-oriented'],
+      q3: ["Couldn't prioritise", 'Poor communication', "Didn't adapt quickly"],
+    },
+  },
+  {
+    id: 'example-employer-2',
+    is_example: true,
+    role_title: 'Customer Service Team Lead',
+    client_name: 'Customer Success',
+    assessment_mode: 'quick',
+    employment_type: 'permanent',
+    job_description: 'We are hiring a Customer Service Team Lead to look after a team of six advisors. You will run daily standups, coach on calls, handle escalated complaints, and report weekly on team performance. You will be the first point of contact for your direct reports and a role model for customer handling.',
+    context_answers: {
+      q0: 'Steady the team, drive up CSAT, and keep attrition below the current benchmark through consistent coaching.',
+      q1: ['Managing stakeholders', 'High workload/pressure', 'Conflict/difficult conversations'],
+      q2: ['Strong communicator', 'Proactive/self-starter', 'Highly organised'],
+      q3: ['Poor communication', 'Burned out', 'Culture misfit'],
+    },
   },
 ]
 
@@ -175,14 +244,6 @@ export default function NewAssessmentPage() {
   const [atLimit, setAtLimit] = useState(false)
   const [limitInfo, setLimitInfo] = useState({ used: 0, limit: 10 })
 
-  // Templates
-  const [templates, setTemplates] = useState([])
-  const [userTemplates, setUserTemplates] = useState([])
-  const [selectedTemplate, setSelectedTemplate] = useState('')
-  const [selectedRoleTemplateId, setSelectedRoleTemplateId] = useState('')
-  const [saveAsTemplate, setSaveAsTemplate] = useState(false)
-  const [templateName, setTemplateName] = useState('')
-  const [templateLoaded, setTemplateLoaded] = useState(false)
   const confirmationRef = useRef(null)
   const modeSelectorRef = useRef(null)
   const prevAnalysedRef = useRef(false)
@@ -231,12 +292,12 @@ export default function NewAssessmentPage() {
 
   // Saved role drafts
   const [savedRoles, setSavedRoles] = useState([])
-  const [showSaveRoleModal, setShowSaveRoleModal] = useState(false)
+  const [showSaveRoleInline, setShowSaveRoleInline] = useState(false)
   const [saveRoleName, setSaveRoleName] = useState('')
   const [saveRoleClient, setSaveRoleClient] = useState('')
   const [savingRole, setSavingRole] = useState(false)
   const [saveRoleError, setSaveRoleError] = useState('')
-  const [savedRolesToast, setSavedRolesToast] = useState('')
+  const [savedRoleConfirmation, setSavedRoleConfirmation] = useState('')
   const SAVED_ROLES_LIMIT = 10
 
   const handleBuyAddOn = async (creditType) => {
@@ -343,8 +404,7 @@ export default function NewAssessmentPage() {
 
  // When analysis first completes, scroll to the mode selector, NOT past it
  // to the confirmation card, so the user can review / change depth before
-  // the candidate details form reveals. If the user explicitly clicks "Looks
-  // good" to confirm the depth, scrollToConfirmation handles that jump.
+  // the candidate details form reveals.
   useEffect(() => {
     if (analysed && !prevAnalysedRef.current) {
       if (typeof window !== 'undefined') {
@@ -404,25 +464,6 @@ export default function NewAssessmentPage() {
       }
       setIsPaygUser(isPaygUser)
 
-      // Load saved templates (from assessments)
-      const { data: tmpl } = await supabase
-        .from('assessments')
-        .select('id, template_name, role_title, job_description, skill_weights')
-        .eq('user_id', user.id)
-        .eq('is_template', true)
-        .order('created_at', { ascending: false })
-      setTemplates(tmpl || [])
-
-      // Load user-saved role templates
-      try {
-        const { data: ut } = await supabase
-          .from('user_templates')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-        setUserTemplates(ut || [])
-      } catch (_) {}
-
       // Load saved role drafts
       try {
         const res = await fetch('/api/saved-roles', { credentials: 'include' })
@@ -439,7 +480,6 @@ export default function NewAssessmentPage() {
     setCreatedAssessmentId(null)
     setSentResult(null)
     setSendError('')
-    setSelectedRoleTemplateId('')
     setFirstName('')
     setLastName('')
     setCandidateEmail('')
@@ -483,11 +523,12 @@ export default function NewAssessmentPage() {
     }
   }
 
-  function openSaveRoleModal() {
+  function openSaveRoleInline() {
     setSaveRoleError('')
+    setSavedRoleConfirmation('')
     setSaveRoleName(roleTitle.trim())
     setSaveRoleClient('')
-    setShowSaveRoleModal(true)
+    setShowSaveRoleInline(true)
   }
 
   async function handleSaveRole() {
@@ -525,9 +566,9 @@ export default function NewAssessmentPage() {
       if (data?.saved_role) {
         setSavedRoles(prev => [data.saved_role, ...prev])
       }
-      setShowSaveRoleModal(false)
-      setSavedRolesToast('Role saved as a draft.')
-      setTimeout(() => setSavedRolesToast(''), 3200)
+      setShowSaveRoleInline(false)
+      setSavedRoleConfirmation('Role saved. You can use this next time from the top of this page.')
+      setTimeout(() => setSavedRoleConfirmation(''), 5000)
     } catch (_) {
       setSaveRoleError('Could not save role. Please try again.')
     } finally {
@@ -535,76 +576,18 @@ export default function NewAssessmentPage() {
     }
   }
 
-  function applyTemplate(templateId) {
-    const tmpl = templates.find(t => t.id === templateId)
-    if (!tmpl) return
-    setRoleTitle(tmpl.role_title || '')
-    setJd(tmpl.job_description || '')
-    if (tmpl.skill_weights) setWeights(tmpl.skill_weights)
-    setSelectedTemplate(templateId)
-  }
-
-  function applyRoleTemplate(tpl) {
-    // Picking a different template means a different assessment. Reset the
-    // cached id + any previous send confirmation.
-    setCreatedAssessmentId(null)
-    setSentResult(null)
-    setSendError('')
-    setSelectedRoleTemplateId(tpl.id)
-    setRoleTitle(tpl.role_title)
-    const jdParts = [
-      `Role: ${tpl.role_title}`,
-      '',
-      'Key responsibilities:',
-      ...tpl.key_responsibilities.map(r => `- ${r}`),
-      '',
-      `Key challenges: ${tpl.pressure_points}`,
-      '',
-      `What success looks like: ${tpl.success_looks_like}`,
-    ]
-    const builtJd = jdParts.join('\n')
-    setJd(builtJd)
-    const modeMap = { 'rapid': 'rapid', 'speed-fit': 'quick', 'depth-fit': 'standard', 'strategy-fit': 'advanced' }
-    setMode(modeMap[tpl.recommended_mode] || 'standard')
-    setModeOverridden(true)
-    if (tpl.context_prefill) setContextAnswers(tpl.context_prefill)
-    // Skip to confirmation and surface it to the user
-    runAutoAnalyse(tpl.role_title, builtJd)
-    scrollToConfirmation()
-  }
-
-  function applyUserTemplate(ut) {
-    setCreatedAssessmentId(null)
-    setSentResult(null)
-    setSendError('')
-    setSelectedRoleTemplateId('')
-    setRoleTitle(ut.role_title || '')
-    if (ut.jd_text) setJd(ut.jd_text)
-    if (ut.recommended_mode) {
-      const modeMap = { 'rapid': 'rapid', 'speed-fit': 'quick', 'depth-fit': 'standard', 'strategy-fit': 'advanced' }
-      setMode(modeMap[ut.recommended_mode] || ut.recommended_mode || 'standard')
-      setModeOverridden(true)
-    }
-    if (ut.context_answers) setContextAnswers(ut.context_answers)
-    // Skip to confirmation
-    runAutoAnalyse(ut.role_title || '', ut.jd_text || '')
-    scrollToConfirmation()
-  }
-
-  function scrollToConfirmation() {
-    // Wait a tick so the confirmation card mounts, then scroll it into view.
-    if (typeof window === 'undefined') return
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        confirmationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      })
-    })
-  }
 
   const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0)
   const words = wordCount(jd)
   const roleType = jd.length > 0 ? detectRoleType(jd) : null
   const canGenerate = roleTitle.trim().length > 0 && jd.length >= 50 && totalWeight === 100
+
+  // Show real saved roles when the user has any, otherwise fall back to
+  // client-side examples so the section is never empty for new accounts.
+  // Limit counting excludes examples.
+  const exampleSavedRoles = accountType === 'agency' ? EXAMPLE_SAVED_ROLES_AGENCY : EXAMPLE_SAVED_ROLES_EMPLOYER
+  const displayedSavedRoles = savedRoles.length > 0 ? savedRoles : exampleSavedRoles
+  const showingExamples = savedRoles.length === 0
 
   // Detect seniority from role title and JD
   const detectedSeniority = (() => {
@@ -692,8 +675,6 @@ export default function NewAssessmentPage() {
           role_title: roleTitle,
           job_description: jd,
           skill_weights: weights,
-          save_as_template: saveAsTemplate,
-          template_name: saveAsTemplate ? (templateName.trim() || roleTitle.trim()) : undefined,
           context_answers: Object.keys(serialized).length > 0 ? serialized : undefined,
           assessment_mode: mode,
           employment_type: employmentType || undefined,
@@ -706,25 +687,6 @@ export default function NewAssessmentPage() {
         else if (data.error === 'no_credits' || data.error === 'limit_reached') setError(data.message || 'No credits remaining.')
         else setError(data.error || 'Failed to generate')
         return null
-      }
-      if (saveAsTemplate) {
-        try {
-          const supabase = createClient()
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user) {
-            const contextQsSave = smartQuestions && smartQuestions.length > 0
-              ? smartQuestions
-              : (accountType === 'agency' ? AGENCY_QUESTIONS : EMPLOYER_QUESTIONS)
-            await supabase.from('user_templates').insert({
-              user_id: user.id,
-              role_title: templateName.trim() || roleTitle.trim(),
-              role_level: null,
-              recommended_mode: mode === 'rapid' ? 'rapid' : mode === 'quick' ? 'speed-fit' : mode === 'advanced' ? 'strategy-fit' : 'depth-fit',
-              jd_text: jd,
-              context_answers: serializeContextAnswers(contextQsSave, contextAnswers),
-            })
-          }
-        } catch (_) {}
       }
       setCreatedAssessmentId(data.id)
       return data.id
@@ -879,73 +841,75 @@ export default function NewAssessmentPage() {
           </h1>
         </div>
 
-        {employmentType && employmentTypeDefaulted && (
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            fontFamily: F, fontSize: 12, color: '#94a1b3',
-            background: '#f8fafc', border: '1px solid #e4e9f0',
-            borderRadius: 999, padding: '4px 12px',
-            marginBottom: 20,
-          }}>
-            Defaulting to {employmentType === 'permanent' ? 'Permanent Hire' : 'Temporary and Contract Placement'} based on your settings.{' '}
-            <a href="/settings" style={{ color: '#00BFA5', fontWeight: 600, textDecoration: 'none' }}>Change</a>
-          </div>
-        )}
-
-        {/* Saved role drafts. First thing visible on mobile so recruiters can
-            re-send for a known role in two taps. Placed above the template
-            library so it takes precedence. */}
-        {savedRoles.length > 0 && (
-          <div style={{
-            background: '#fff', borderRadius: 14, border: '1.5px solid #80DFD2',
-            padding: isMobile ? '20px 16px' : '24px 28px', marginBottom: 20,
-            boxShadow: '0 2px 10px rgba(0,191,165,0.08)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 8 }}>
-              <div>
-                <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? 16 : 16.5, fontWeight: 800, color: '#0f2137', fontFamily: F }}>
-                  Saved Roles
-                </h2>
-                <p style={{ margin: 0, fontSize: 12.5, color: '#5e6b7f', fontFamily: F }}>
-                  Pick a saved role, then just enter candidate name and email.
-                </p>
-              </div>
+        {/* Saved Roles. First visible element on mobile so recruiters can
+            re-send for a known role in two taps. Sits above everything else
+            on the page including the JD paste area and employment-type picker. */}
+        <div style={{
+          background: '#fff', borderRadius: 14, border: '1.5px solid #80DFD2',
+          padding: isMobile ? '20px 16px' : '24px 28px', marginBottom: 20,
+          boxShadow: '0 2px 10px rgba(0,191,165,0.08)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 8 }}>
+            <div>
+              <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? 16 : 16.5, fontWeight: 800, color: '#0F2137', fontFamily: F }}>
+                Saved Roles
+              </h2>
+              <p style={{ margin: 0, fontSize: 12.5, color: '#5e6b7f', fontFamily: F }}>
+                {showingExamples
+                  ? 'Examples to get you started. Save your own roles below to replace these.'
+                  : 'Pick a saved role, then just enter candidate name and email.'}
+              </p>
+            </div>
+            {!showingExamples && (
               <span style={{
                 fontSize: 11, fontWeight: 700, color: '#009688', fontFamily: FM,
                 background: '#e0f2f0', padding: '4px 10px', borderRadius: 20, flexShrink: 0,
               }}>
                 {savedRoles.length}/{SAVED_ROLES_LIMIT}
               </span>
-            </div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
-              gap: 12,
-            }}>
-              {savedRoles.map(sr => {
-                const modeLabel = sr.assessment_mode === 'rapid' ? 'Rapid Screen'
-                  : sr.assessment_mode === 'quick' ? 'Speed-Fit'
-                  : sr.assessment_mode === 'advanced' ? 'Strategy-Fit'
-                  : 'Depth-Fit'
-                const partyLabel = accountType === 'agency' ? 'Client' : 'Department'
-                return (
-                  <div key={sr.id} style={{
-                    display: 'flex', flexDirection: 'column',
-                    background: '#f8fafc', border: '1px solid #e4e9f0',
-                    borderRadius: 12, padding: isMobile ? '14px 14px' : '16px 16px',
-                    fontFamily: F, gap: 10,
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: '#0f2137', lineHeight: 1.3, marginBottom: 4, wordBreak: 'break-word' }}>
-                          {sr.role_title || 'Untitled role'}
-                        </div>
-                        {sr.client_name && (
-                          <div style={{ fontSize: 12, color: '#5e6b7f', fontFamily: F }}>
-                            {partyLabel}: <span style={{ color: '#0f2137', fontWeight: 600 }}>{sr.client_name}</span>
-                          </div>
-                        )}
+            )}
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
+            gap: 12,
+          }}>
+            {displayedSavedRoles.map(sr => {
+              const modeLabel = sr.assessment_mode === 'rapid' ? 'Rapid Screen'
+                : sr.assessment_mode === 'quick' ? 'Speed-Fit'
+                : sr.assessment_mode === 'advanced' ? 'Strategy-Fit'
+                : 'Depth-Fit'
+              const partyLabel = accountType === 'agency' ? 'Client' : 'Department'
+              const isExample = !!sr.is_example
+              return (
+                <div key={sr.id} style={{
+                  display: 'flex', flexDirection: 'column',
+                  background: '#f8fafc', border: '1px solid #e4e9f0',
+                  borderRadius: 12, padding: isMobile ? '14px 14px' : '16px 16px',
+                  fontFamily: F, gap: 10,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      {isExample && (
+                        <span style={{
+                          display: 'inline-block', fontSize: 10, fontWeight: 700,
+                          padding: '2px 8px', borderRadius: 20,
+                          background: '#f1f5f9', color: '#5e6b7f',
+                          letterSpacing: '0.03em', marginBottom: 6,
+                        }}>
+                          Example
+                        </span>
+                      )}
+                      <div style={{ fontSize: 15, fontWeight: 800, color: '#0F2137', lineHeight: 1.3, marginBottom: 4, wordBreak: 'break-word' }}>
+                        {sr.role_title || 'Untitled role'}
                       </div>
+                      {sr.client_name && (
+                        <div style={{ fontSize: 12, color: '#5e6b7f', fontFamily: F }}>
+                          {partyLabel}: <span style={{ color: '#0F2137', fontWeight: 600 }}>{sr.client_name}</span>
+                        </div>
+                      )}
+                    </div>
+                    {!isExample && (
                       <button
                         type="button"
                         aria-label="Delete saved role"
@@ -968,50 +932,71 @@ export default function NewAssessmentPage() {
                           <path d="M14 11v6" />
                         </svg>
                       </button>
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      <span style={{
-                        fontSize: 10.5, fontWeight: 800, padding: '3px 10px', borderRadius: 20,
-                        background: '#0f2137', color: '#fff', letterSpacing: '0.03em',
-                      }}>
-                        {modeLabel}
-                      </span>
-                      {sr.employment_type && (
-                        <span style={{
-                          fontSize: 10.5, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
-                          background: sr.employment_type === 'permanent' ? '#f0f4f8' : '#e0f2f0',
-                          color: sr.employment_type === 'permanent' ? '#0f2137' : '#009688',
-                        }}>
-                          {sr.employment_type === 'permanent' ? 'Permanent' : 'Temp/Contract'}
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => applySavedRole(sr)}
-                      style={{
-                        width: '100%', padding: isMobile ? '14px 0' : '12px 0',
-                        borderRadius: 10, border: 'none',
-                        background: '#00BFA5', color: '#0f2137',
-                        fontSize: isMobile ? 15 : 14, fontWeight: 800, fontFamily: F,
-                        cursor: 'pointer', marginTop: 2,
-                      }}
-                    >
-                      Use this role
-                    </button>
+                    )}
                   </div>
-                )
-              })}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    <span style={{
+                      fontSize: 10.5, fontWeight: 800, padding: '3px 10px', borderRadius: 20,
+                      background: '#00BFA5', color: '#0F2137', letterSpacing: '0.03em',
+                    }}>
+                      {modeLabel}
+                    </span>
+                    {sr.employment_type && (
+                      <span style={{
+                        fontSize: 10.5, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                        background: sr.employment_type === 'permanent' ? '#0F2137' : '#64748b',
+                        color: '#fff', letterSpacing: '0.03em',
+                      }}>
+                        {sr.employment_type === 'permanent' ? 'PERM' : 'TEMP'}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => applySavedRole(sr)}
+                    style={{
+                      width: '100%', padding: isMobile ? '14px 0' : '12px 0',
+                      borderRadius: 10, border: 'none',
+                      background: '#00BFA5', color: '#0F2137',
+                      fontSize: isMobile ? 15 : 14, fontWeight: 800, fontFamily: F,
+                      cursor: 'pointer', marginTop: 2,
+                    }}
+                  >
+                    Use this role
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+          {showingExamples && displayedSavedRoles.length === 0 && (
+            <p style={{
+              margin: '14px 0 0', padding: '14px 16px', fontSize: 13, color: '#5e6b7f',
+              fontFamily: F, background: '#f8fafc', border: '1px dashed #e4e9f0', borderRadius: 10, lineHeight: 1.55,
+            }}>
+              Save a role after filling in your first assessment and it will appear here for one-tap reuse.
+            </p>
+          )}
+          {savedRoleConfirmation && (
+            <div style={{
+              marginTop: 14, padding: '10px 14px', borderRadius: 8,
+              background: '#e0f2f0', border: '1px solid #80DFD2',
+              color: '#009688', fontSize: 13, fontWeight: 700, fontFamily: F,
+            }}>
+              {savedRoleConfirmation}
             </div>
-            {savedRolesToast && (
-              <div style={{
-                marginTop: 14, padding: '10px 14px', borderRadius: 8,
-                background: '#e0f2f0', border: '1px solid #80DFD2',
-                color: '#009688', fontSize: 13, fontWeight: 700, fontFamily: F,
-              }}>
-                {savedRolesToast}
-              </div>
-            )}
+          )}
+        </div>
+
+        {employmentType && employmentTypeDefaulted && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            fontFamily: F, fontSize: 12, color: '#94a1b3',
+            background: '#f8fafc', border: '1px solid #e4e9f0',
+            borderRadius: 999, padding: '4px 12px',
+            marginBottom: 20,
+          }}>
+            Defaulting to {employmentType === 'permanent' ? 'Permanent Hire' : 'Temporary and Contract Placement'} based on your settings.{' '}
+            <a href="/settings" style={{ color: '#00BFA5', fontWeight: 600, textDecoration: 'none' }}>Change</a>
           </div>
         )}
 
@@ -1119,155 +1104,6 @@ export default function NewAssessmentPage() {
             </button>
           </div>
         )}
-        {/* Templates dropdown */}
-        {employmentType !== 'permanent' && templates.length > 0 && (
-          <div style={{
-            background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
-            padding: '20px 28px', marginBottom: 20,
-            display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Ic name="file" size={16} color="#009688" />
-              <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a' }}>
-                Start from a template
-              </span>
-            </div>
-            <select
-              value={selectedTemplate}
-              onChange={e => applyTemplate(e.target.value)}
-              style={{
-                flex: 1, minWidth: 200, padding: '9px 13px',
-                borderRadius: 8, border: '1px solid #e4e9f0',
-                fontSize: 14, fontFamily: F, color: '#0f172a',
-                background: '#fff', outline: 'none', cursor: 'pointer',
-              }}
-            >
-              <option value="">Choose a saved template…</option>
-              {templates.map(t => (
-                <option key={t.id} value={t.id}>
-                  {t.template_name || t.role_title}
-                </option>
-              ))}
-            </select>
-            {selectedTemplate && (
-              <button
-                onClick={() => {
-                  setSelectedTemplate('')
-                  setRoleTitle('')
-                  setJd('')
-                  resetEqual()
-                }}
-                style={{
-                  fontSize: 12, fontWeight: 600, color: '#94a1b3',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  padding: '4px 8px', fontFamily: F,
-                }}
-              >
-                Clear
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Template library */}
-        {employmentType !== 'permanent' && <div style={{
-          background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
-          padding: '28px 32px', marginBottom: 24,
-        }}>
-          <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: '#0f172a', fontFamily: F }}>
-            Start from a template
-          </h2>
-          <p style={{ margin: '0 0 18px', fontSize: 13, color: '#94a1b3', fontFamily: F }}>
-            Common roles ready to go in one click.
-          </p>
-
-          {/* User's own templates */}
-          {userTemplates.length > 0 && (
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10, fontFamily: F }}>
-                Your templates
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
-                {userTemplates.map(ut => (
-                  <button
-                    key={ut.id}
-                    type="button"
-                    onClick={() => applyUserTemplate(ut)}
-                    style={{
-                      textAlign: 'left', background: '#f8fafc', border: '1px solid #e4e9f0',
-                      borderRadius: 10, padding: '14px 16px', cursor: 'pointer', fontFamily: F,
-                      transition: 'border-color 0.15s, box-shadow 0.15s',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#00BFA5'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,191,165,0.1)' }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e4e9f0'; e.currentTarget.style.boxShadow = 'none' }}
-                  >
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{ut.role_title}</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#009688' }}>Use template</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Template list */}
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
-            {(employmentType === 'temporary' ? TEMPORARY_TEMPLATES : PERMANENT_TEMPLATES).map(tpl => {
-              const modeLabel = tpl.recommended_mode === 'rapid' ? 'Rapid Screen' : tpl.recommended_mode === 'speed-fit' ? 'Speed-Fit' : tpl.recommended_mode === 'depth-fit' ? 'Depth-Fit' : 'Strategy-Fit'
-              const levelLabel = tpl.role_level === 'OPERATIONAL' ? 'Entry level' : tpl.role_level === 'LEADERSHIP' ? 'Leadership' : 'Senior'
-              const isSelected = selectedRoleTemplateId === tpl.id
-              return (
-                <button
-                  key={tpl.id}
-                  type="button"
-                  onClick={() => applyRoleTemplate(tpl)}
-                  style={{
-                    textAlign: 'left',
-                    background: isSelected ? '#e0f2f0' : '#fff',
-                    border: `${isSelected ? 2 : 1}px solid ${isSelected ? '#00BFA5' : '#e4e9f0'}`,
-                    borderRadius: 10,
-                    padding: isSelected ? '13px 15px' : '14px 16px',
-                    cursor: 'pointer', fontFamily: F,
-                    transition: 'border-color 0.15s, box-shadow 0.15s, background 0.15s',
-                    boxShadow: isSelected ? '0 2px 8px rgba(0,191,165,0.2)' : 'none',
-                  }}
-                  onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.borderColor = '#00BFA5'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,191,165,0.1)' } }}
-                  onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.borderColor = '#e4e9f0'; e.currentTarget.style.boxShadow = 'none' } }}
-                >
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{tpl.role_title}</div>
-                  <div style={{ fontSize: 11, color: '#94a1b3', fontWeight: 600, marginBottom: 8, fontFamily: F }}>{levelLabel}</div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
-                    background: tpl.recommended_mode === 'rapid' ? '#fffbeb' : '#e0f2f0',
-                    color: tpl.recommended_mode === 'rapid' ? '#d97706' : '#009688',
-                    fontFamily: F,
-                  }}>
-                    {modeLabel}
-                  </span>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#009688', marginTop: 8 }}>
- {isSelected ? 'Selected, see details below' : 'Use template'}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Rapid Screen note for temporary and contract placements */}
-          {employmentType === 'temporary' && (
-            <div style={{
-              borderLeft: '4px solid #00BFA5', background: '#e0f2f0', borderRadius: '0 8px 8px 0',
-              padding: '10px 14px', marginTop: 14,
-            }}>
-              <p style={{ fontFamily: F, fontSize: 12.5, color: '#5e6b7f', margin: 0, lineHeight: 1.5 }}>
-                Rapid Screen recommended for temporary and contract placements. Full assessment also available.
-              </p>
-            </div>
-          )}
-
-          <p style={{ margin: '16px 0 0', fontSize: 13, color: '#94a1b3', fontFamily: F }}>
-            Don't see your role? Paste your own job description below.
-          </p>
-        </div>}
-
         {/* Analysing indicator */}
         {employmentType && analysing && !analysed && jd.length >= 50 && (
           <div style={{
@@ -1525,6 +1361,112 @@ export default function NewAssessmentPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Save this role for next time. Inline form appears after the
+                    context questions. Excludes candidate name/email on purpose. */}
+                {roleTitle.trim().length > 0 && jd.length >= 50 && (
+                  <div style={{ marginTop: 22, paddingTop: 18, borderTop: '1px dashed #e4e9f0' }}>
+                    {!showSaveRoleInline ? (
+                      <button
+                        type="button"
+                        onClick={openSaveRoleInline}
+                        disabled={savedRoles.length >= SAVED_ROLES_LIMIT}
+                        style={{
+                          background: 'none', border: 'none', padding: 0,
+                          fontFamily: F, fontSize: 13.5, fontWeight: 700,
+                          color: savedRoles.length >= SAVED_ROLES_LIMIT ? '#94a1b3' : '#00BFA5',
+                          cursor: savedRoles.length >= SAVED_ROLES_LIMIT ? 'not-allowed' : 'pointer',
+                          textDecoration: 'underline', textUnderlineOffset: 3,
+                        }}
+                      >
+                        {savedRoles.length >= SAVED_ROLES_LIMIT
+                          ? `Saved Roles limit reached (${SAVED_ROLES_LIMIT}). Delete one to save another.`
+                          : 'Save this role for next time'}
+                      </button>
+                    ) : (
+                      <div style={{
+                        background: '#f8fafc', borderRadius: 10, border: '1.5px solid #80DFD2',
+                        padding: isMobile ? '16px 14px' : '18px 20px',
+                      }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F2137', fontFamily: F, marginBottom: 4 }}>
+                          Save this role for next time
+                        </div>
+                        <p style={{ margin: '0 0 14px', fontSize: 12.5, color: '#5e6b7f', fontFamily: F, lineHeight: 1.5 }}>
+                          Candidate name and email will stay blank so you can just fill those in and send.
+                        </p>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#0F2137', fontFamily: F, marginBottom: 6 }}>
+                          Role title
+                        </label>
+                        <input
+                          type="text"
+                          value={saveRoleName}
+                          onChange={e => setSaveRoleName(e.target.value)}
+                          placeholder="e.g. Senior Account Manager"
+                          style={{
+                            width: '100%', boxSizing: 'border-box', padding: '11px 14px',
+                            borderRadius: 8, border: '1.5px solid #e4e9f0', fontSize: 14,
+                            color: '#0f172a', fontFamily: F, outline: 'none', marginBottom: 12,
+                          }}
+                          onFocus={e => e.target.style.borderColor = '#00BFA5'}
+                          onBlur={e => e.target.style.borderColor = '#e4e9f0'}
+                        />
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#0F2137', fontFamily: F, marginBottom: 6 }}>
+                          {accountType === 'agency' ? 'Client name' : 'Department'} <span style={{ color: '#94a1b3', fontWeight: 500 }}>(optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={saveRoleClient}
+                          onChange={e => setSaveRoleClient(e.target.value)}
+                          placeholder={accountType === 'agency' ? 'e.g. Globex Ltd' : 'e.g. Customer Success'}
+                          style={{
+                            width: '100%', boxSizing: 'border-box', padding: '11px 14px',
+                            borderRadius: 8, border: '1.5px solid #e4e9f0', fontSize: 14,
+                            color: '#0f172a', fontFamily: F, outline: 'none', marginBottom: 12,
+                          }}
+                          onFocus={e => e.target.style.borderColor = '#00BFA5'}
+                          onBlur={e => e.target.style.borderColor = '#e4e9f0'}
+                        />
+                        {saveRoleError && (
+                          <div style={{
+                            marginBottom: 12, padding: '10px 12px', borderRadius: 8,
+                            background: '#fef2f2', border: '1px solid #fecaca',
+                            color: '#dc2626', fontSize: 13, fontFamily: F,
+                          }}>
+                            {saveRoleError}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: 10, flexDirection: isMobile ? 'column-reverse' : 'row', justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            onClick={() => setShowSaveRoleInline(false)}
+                            disabled={savingRole}
+                            style={{
+                              padding: '10px 16px', borderRadius: 8, border: '1.5px solid #e4e9f0',
+                              background: '#fff', color: '#5e6b7f',
+                              fontFamily: F, fontSize: 13, fontWeight: 700,
+                              cursor: savingRole ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveRole}
+                            disabled={savingRole}
+                            style={{
+                              padding: '10px 18px', borderRadius: 8, border: 'none',
+                              background: savingRole ? '#80DFD2' : '#00BFA5',
+                              color: '#0F2137', fontFamily: F, fontSize: 13, fontWeight: 800,
+                              cursor: savingRole ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            {savingRole ? 'Saving…' : 'Save role'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )
           })()}
@@ -1604,48 +1546,6 @@ export default function NewAssessmentPage() {
           </div>
         </div>
         )}
-
-        {/* Save as template */}
-        <div style={{
-          background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
-          padding: '20px 28px', marginBottom: 20,
-        }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={saveAsTemplate}
-              onChange={e => setSaveAsTemplate(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#00BFA5', cursor: 'pointer' }}
-            />
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', fontFamily: F }}>
-              Save this role as a template
-            </span>
-            <span style={{ fontSize: 13, color: '#94a1b3' }}>
-              Appears in your templates for one-click reuse
-            </span>
-          </label>
-
-          {saveAsTemplate && (
-            <div style={{ marginTop: 14 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#0f172a', marginBottom: 6 }}>
-                Template name (optional)
-              </label>
-              <input
-                type="text"
-                value={templateName}
-                onChange={e => setTemplateName(e.target.value)}
-                placeholder={roleTitle.trim() || 'e.g. Standard Sales Manager template'}
-                style={{
-                  width: '100%', maxWidth: 400, boxSizing: 'border-box',
-                  padding: '9px 13px', borderRadius: 8, border: '1px solid #e4e9f0',
-                  fontSize: 14, fontFamily: F, color: '#0f172a', outline: 'none',
-                }}
-                onFocus={e => e.target.style.borderColor = '#00BFA5'}
-                onBlur={e => e.target.style.borderColor = '#e4e9f0'}
-              />
-            </div>
-          )}
-        </div>
 
         {/* PAYG upgrade prompt is now a modal (UpgradeAssessmentModal, rendered
             at the end of this page) triggered from the mode-card onClick.
@@ -2030,65 +1930,37 @@ export default function NewAssessmentPage() {
               </div>
 
               {!sentResult && !loading && !modeConfirmed && (
-                <>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    gap: 12, flexWrap: 'wrap', marginBottom: 12,
-                    padding: '12px 16px', borderRadius: 10,
-                    background: '#f8fafc', border: '1px solid #e4e9f0',
-                  }}>
-                    <span style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', lineHeight: 1.55 }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 12, flexWrap: 'wrap', marginBottom: 20,
+                  padding: '12px 16px', borderRadius: 10,
+                  background: '#f8fafc', border: '1px solid #e4e9f0',
+                }}>
+                  <span style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', lineHeight: 1.55 }}>
  Review the <strong style={{ color: '#0f2137' }}>Assessment depth</strong> above. Change it if you want, otherwise confirm to continue to candidate details.
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setModeConfirmed(true)
-                        if (typeof window !== 'undefined') {
-                          requestAnimationFrame(() => {
-                            const el = document.getElementById('candidate-details')
-                            el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                            el?.parentElement?.querySelector('input')?.focus()
-                          })
-                        }
-                      }}
-                      style={{
-                        fontFamily: F, fontSize: 13, fontWeight: 800, color: '#0f2137',
-                        background: '#00BFA5', border: 'none',
-                        padding: '8px 18px', borderRadius: 7, cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                    >
-                      Looks good
-                    </button>
-                  </div>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    gap: 12, flexWrap: 'wrap', marginBottom: 20,
-                    padding: '12px 16px', borderRadius: 10,
-                    background: '#fff', border: '1.5px dashed #80DFD2',
-                  }}>
-                    <span style={{ fontFamily: F, fontSize: 13, color: '#5e6b7f', lineHeight: 1.55 }}>
-                      Reuse this setup for future candidates. Save as a named draft, then only enter candidate name and email.
-                    </span>
-                    <button
-                      type="button"
-                      onClick={openSaveRoleModal}
-                      disabled={savedRoles.length >= SAVED_ROLES_LIMIT}
-                      style={{
-                        fontFamily: F, fontSize: 13, fontWeight: 800,
-                        color: savedRoles.length >= SAVED_ROLES_LIMIT ? '#94a1b3' : '#0f2137',
-                        background: savedRoles.length >= SAVED_ROLES_LIMIT ? '#f1f5f9' : '#fff',
-                        border: `1.5px solid ${savedRoles.length >= SAVED_ROLES_LIMIT ? '#e4e9f0' : '#00BFA5'}`,
-                        padding: '8px 18px', borderRadius: 7,
-                        cursor: savedRoles.length >= SAVED_ROLES_LIMIT ? 'not-allowed' : 'pointer',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {savedRoles.length >= SAVED_ROLES_LIMIT ? `Limit reached (${SAVED_ROLES_LIMIT})` : 'Save this role'}
-                    </button>
-                  </div>
-                </>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModeConfirmed(true)
+                      if (typeof window !== 'undefined') {
+                        requestAnimationFrame(() => {
+                          const el = document.getElementById('candidate-details')
+                          el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                          el?.parentElement?.querySelector('input')?.focus()
+                        })
+                      }
+                    }}
+                    style={{
+                      fontFamily: F, fontSize: 13, fontWeight: 800, color: '#0f2137',
+                      background: '#00BFA5', border: 'none',
+                      padding: '8px 18px', borderRadius: 7, cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                  >
+                    Looks good
+                  </button>
+                </div>
               )}
 
  {/* Inline candidate details, only after the user has confirmed
@@ -2377,104 +2249,6 @@ export default function NewAssessmentPage() {
         />
       )}
 
-      {showSaveRoleModal && (
-        <div
-          onClick={() => !savingRole && setShowSaveRoleModal(false)}
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)',
-            zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 16, fontFamily: F,
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: '#fff', borderRadius: 16, padding: isMobile ? '24px 20px' : '28px 28px',
-              maxWidth: 460, width: '100%', boxShadow: '0 24px 72px rgba(0,0,0,0.3)',
-            }}
-          >
-            <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 800, color: '#0f2137' }}>
-              Save this role as a draft
-            </h3>
-            <p style={{ margin: '0 0 20px', fontSize: 13, color: '#5e6b7f', lineHeight: 1.55 }}>
-              Reuse this setup later. Candidate name and email will stay blank so you can just fill those in and send.
-            </p>
-
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#0f2137', marginBottom: 6 }}>
-              Role title
-            </label>
-            <input
-              type="text"
-              value={saveRoleName}
-              onChange={e => setSaveRoleName(e.target.value)}
-              placeholder="e.g. Senior Account Manager"
-              style={{
-                width: '100%', boxSizing: 'border-box', padding: '11px 14px',
-                borderRadius: 8, border: '1.5px solid #e4e9f0', fontSize: 14,
-                color: '#0f172a', fontFamily: F, outline: 'none', marginBottom: 14,
-              }}
-              onFocus={e => e.target.style.borderColor = '#00BFA5'}
-              onBlur={e => e.target.style.borderColor = '#e4e9f0'}
-            />
-
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#0f2137', marginBottom: 6 }}>
-              {accountType === 'agency' ? 'Client name' : 'Department'} <span style={{ color: '#94a1b3', fontWeight: 500 }}>(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={saveRoleClient}
-              onChange={e => setSaveRoleClient(e.target.value)}
-              placeholder={accountType === 'agency' ? 'e.g. Globex Ltd' : 'e.g. Customer Success'}
-              style={{
-                width: '100%', boxSizing: 'border-box', padding: '11px 14px',
-                borderRadius: 8, border: '1.5px solid #e4e9f0', fontSize: 14,
-                color: '#0f172a', fontFamily: F, outline: 'none', marginBottom: 14,
-              }}
-              onFocus={e => e.target.style.borderColor = '#00BFA5'}
-              onBlur={e => e.target.style.borderColor = '#e4e9f0'}
-            />
-
-            {saveRoleError && (
-              <div style={{
-                marginBottom: 14, padding: '10px 14px', borderRadius: 8,
-                background: '#fef2f2', border: '1px solid #fecaca',
-                color: '#dc2626', fontSize: 13,
-              }}>
-                {saveRoleError}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: 10, flexDirection: isMobile ? 'column-reverse' : 'row', justifyContent: 'flex-end', marginTop: 4 }}>
-              <button
-                type="button"
-                onClick={() => setShowSaveRoleModal(false)}
-                disabled={savingRole}
-                style={{
-                  padding: '11px 18px', borderRadius: 9, border: '1.5px solid #e4e9f0',
-                  background: '#fff', color: '#5e6b7f',
-                  fontFamily: F, fontSize: 13.5, fontWeight: 700,
-                  cursor: savingRole ? 'not-allowed' : 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveRole}
-                disabled={savingRole}
-                style={{
-                  padding: '11px 20px', borderRadius: 9, border: 'none',
-                  background: savingRole ? '#80DFD2' : '#00BFA5',
-                  color: '#0f2137', fontFamily: F, fontSize: 13.5, fontWeight: 800,
-                  cursor: savingRole ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {savingRole ? 'Saving…' : 'Save role'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
