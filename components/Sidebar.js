@@ -13,8 +13,9 @@ function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
 // Flat navigation per account/employment type, with dividers marking
 // logical groupings. `accountType` is 'agency' | 'employer'. `showTemp` and
-// `showPerm` pick which employment slices the account has in use, so temp-only
-// items (SSP, holiday pay, documents) hide for perm-only accounts.
+// `showPerm` pick which employment slices the account has in use. SSP,
+// Holiday pay and EDI surface for every account under Compliance; Documents
+// stays gated to agency temp/both only.
 function buildNav({ accountType, showTemp, showPerm }) {
   const isAgency = accountType === 'agency'
   const items = []
@@ -41,16 +42,14 @@ function buildNav({ accountType, showTemp, showPerm }) {
     }
   }
   items.push({ key: 'outcomes',        label: 'Outcomes',            icon: 'award',  href: '/outcomes' })
-  if (showTemp) {
-    items.push({ key: 'ssp',           label: 'SSP',                 icon: 'shield',   href: '/ssp' })
-    items.push({ key: 'holiday',       label: 'Holiday pay',         icon: 'calendar', href: '/holiday' })
-    if (isAgency) {
-      items.push({ key: 'documents',   label: 'Documents',           icon: 'file',     href: '/documents' })
-    }
-  }
 
   items.push({ divider: true })
 
+  items.push({ key: 'ssp',             label: 'SSP',                 icon: 'shield',   href: '/ssp' })
+  items.push({ key: 'holiday',         label: 'Holiday pay',         icon: 'calendar', href: '/holiday' })
+  if (isAgency && showTemp) {
+    items.push({ key: 'documents',     label: 'Documents',           icon: 'file',     href: '/documents' })
+  }
   items.push({ key: 'edi',             label: 'EDI monitor',         icon: 'shield',   href: '/edi' })
   items.push({ key: 'settings',        label: 'Settings',            icon: 'settings', href: '/settings' })
 
