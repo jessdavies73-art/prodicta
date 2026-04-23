@@ -127,6 +127,228 @@ function DemoValidationLayer({ isMobile, candidateId, scenarioCount, expanded, o
   )
 }
 
+// Hardcoded demo panels for the new report additions. All content is
+// authored per-candidate so the demo tells a clear story without calling the
+// API. Kept local to this file so the demo remains self-contained.
+const DEMO_TOP_DRIVERS = {
+  'demo-c1': [
+    'Strong strategic communication across all four scenarios, referenced specific stakeholder alignment approach.',
+    'Consistent commercial thinking, connected every decision to revenue or client retention outcomes.',
+    'Over-planning tendency noted, may slow early output in fast-paced environments, not disqualifying.',
+    'Overall hiring confidence: High.',
+  ],
+  'demo-c2': [
+    'Reliable stakeholder management, named the right people to involve in the update.',
+    'Steady communication style, made sure nothing was decided without alignment.',
+    'Decision commitment noted, defers the final call rather than offering a recommendation, may slow the first 30 days.',
+    'Overall hiring confidence: Medium.',
+  ],
+}
+const DEMO_WCCP = {
+  'demo-c1': [
+    'This prediction assumes the role allows some structured adjustment time in the first 30 days. In a highly reactive environment where immediate visible output is required from day one, the over-planning tendency may surface earlier than predicted.',
+    'The counter-offer resilience score of 82% is strong. Standard Pre-Start Risk Check recommended if more than 10 days elapse between offer and start.',
+  ],
+  'demo-c2': [
+    'This prediction assumes regular feedback channels are in place. If the role involves isolated working or limited manager contact, the decision-commitment gap may become more visible than the score suggests.',
+    'Some dimensions were scored with moderate confidence due to response depth. A structured interview using the questions below will help verify the predictions marked Verify at Interview.',
+  ],
+}
+const DEMO_FTD = {
+  'demo-c1': [
+    'You should see proactive stakeholder communication visible within the first two weeks.',
+    'By day 14: written audit of current marketing activity completed and shared with line manager.',
+    'By day 30: clear 60-day priority plan presented to the team.',
+    'If over-planning is not visible by day 30 the prediction is on track. If you see delayed output without shipped work, intervene using the Week 1 plan above.',
+    'The Probation Co-pilot will flag automatically if performance deviates from this prediction.',
+  ],
+  'demo-c2': [
+    'You should see careful stakeholder alignment visible within the first two weeks.',
+    'By day 14: named stakeholder map and first round of one-to-one introductions completed.',
+    'By day 30: one owned initiative moved to plan with a clear recommended path.',
+    'If decision deferral persists past day 30, intervene using the Week 1 plan above and run a structured recommendation exercise with the line manager.',
+    'The Probation Co-pilot will flag automatically if performance deviates from this prediction.',
+  ],
+}
+
+function DemoTopDrivers({ candidateId }) {
+  const lines = DEMO_TOP_DRIVERS[candidateId] || []
+  if (lines.length === 0) return null
+  return (
+    <div className="no-print" style={{
+      background: '#fff', border: '1px solid #e4e9f0', borderRadius: 12,
+      padding: '18px 22px', marginBottom: 20,
+    }}>
+      <div style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: NAVY, marginBottom: 12 }}>
+        What drove this result
+      </div>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {lines.map((line, i) => (
+          <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: TEAL, flexShrink: 0, marginTop: 8 }} />
+            <span style={{ fontFamily: F, fontSize: 13.5, color: NAVY, lineHeight: 1.6 }}>{line}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function DemoWhatCouldChange({ candidateId, expanded, onToggle }) {
+  const paras = DEMO_WCCP[candidateId] || []
+  return (
+    <div className="no-print" style={{
+      background: '#fff', border: '1px solid #e4e9f0', borderRadius: 12,
+      padding: '14px 20px', marginBottom: 20,
+    }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        style={{
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          fontFamily: F, fontSize: 13, fontWeight: 700, color: '#00897B',
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+        }}
+      >
+        {expanded ? 'Hide this' : 'What could change this?'}
+        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s', transform: expanded ? 'rotate(180deg)' : 'none' }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      <div style={{ overflow: 'hidden', maxHeight: expanded ? 600 : 0, transition: 'max-height 0.3s ease' }}>
+        <div style={{ paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {paras.map((p, i) => (
+            <p key={i} style={{ fontFamily: F, fontSize: 13.5, color: NAVY, margin: 0, lineHeight: 1.65 }}>{p}</p>
+          ))}
+          <p style={{ fontFamily: F, fontSize: 11.5, color: TX3, fontStyle: 'italic', margin: '6px 0 0', lineHeight: 1.55 }}>
+            These are predicted outcomes based on assessment behaviour. PRODICTA predictions are directional, not guaranteed. They are not legal advice.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DemoFirstThirtyDays({ candidateId }) {
+  const points = DEMO_FTD[candidateId] || []
+  if (points.length === 0) return null
+  return (
+    <div style={{
+      background: CARD, border: `1px solid ${BD}`, borderRadius: 12,
+      padding: '18px 22px', marginBottom: 20,
+    }}>
+      <div style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: NAVY, marginBottom: 4 }}>
+        Signs this hire is on track at day 30
+      </div>
+      <div style={{ fontFamily: F, fontSize: 12.5, color: TX3, fontStyle: 'italic', marginBottom: 14 }}>
+        Use these as your early management checkpoints.
+      </div>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {points.map((p, i) => (
+          <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span style={{ fontFamily: F, fontSize: 13.5, color: NAVY, lineHeight: 1.6 }}>{p}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function DemoFactPredPill({ level }) {
+  const map = {
+    observed:    { label: 'Observed',    bg: '#00BFA5', color: '#fff',    bd: '#00897B' },
+    interpreted: { label: 'Interpreted', bg: '#0f2137', color: '#fff',    bd: '#0f2137' },
+    predicted:   { label: 'Predicted',   bg: '#E8B84B', color: '#0f2137', bd: '#b98616' },
+  }
+  const s = map[level] || map.interpreted
+  return (
+    <span style={{
+      display: 'inline-block', padding: '1px 8px', borderRadius: 999,
+      background: s.bg, color: s.color, border: `1px solid ${s.bd}`,
+      fontFamily: F, fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
+    }}>
+      {s.label}
+    </span>
+  )
+}
+
+function DemoFactPredKey() {
+  return (
+    <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, marginTop: -6, marginBottom: 12, lineHeight: 1.55 }}>
+      Observed, directly from responses. Interpreted, inferred from behaviour. Predicted, expected based on patterns.
+    </div>
+  )
+}
+
+function DemoManagerActions({ candidateId }) {
+  const sophieActions = {
+    week1: [
+      'Define what a visible quick win looks like for this role and communicate it on day one.',
+      'Set clear expectations around pace and the bias to ship rather than plan in the first week.',
+      'Watch for early signs of over-planning and have a brief check-in conversation by day 5.',
+    ],
+    week4: [
+      'Review progress against the day 30 proof points listed in this report.',
+      'Provide structured feedback using specific examples not general impressions.',
+      'Confirm a 60-day priority plan has been shared with the team.',
+    ],
+    week8: [
+      'Assess whether the day 60 milestones from this report are materialising.',
+      'If over-planning has surfaced, apply the intervention plan from this report before week 10.',
+      'Begin planning the probation review conversation using the evidence pack generator.',
+    ],
+  }
+  const marcusActions = {
+    week1: [
+      'Define what a visible quick win looks like for this role and communicate it on day one.',
+      'Set clear expectations that recommendations, not just options, are expected by week two.',
+      'Watch for early signs of decision deferral and have a brief check-in conversation by day 5.',
+    ],
+    week4: [
+      'Review progress against the day 30 proof points listed in this report.',
+      'Provide structured feedback with specific examples of owned decisions.',
+      'Check task completion consistency, ask for a weekly summary of what was delivered versus planned.',
+    ],
+    week8: [
+      'Assess whether the day 60 milestones from this report are materialising.',
+      'If decision deferral has surfaced, apply the intervention plan before week 10.',
+      'Begin planning the probation review conversation using the evidence pack generator.',
+    ],
+  }
+  const src = candidateId === 'demo-c2' ? marcusActions : sophieActions
+  const blocks = [
+    { label: 'Week 1', items: src.week1 },
+    { label: 'Week 4', items: src.week4 },
+    { label: 'Week 8', items: src.week8 },
+  ]
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {blocks.map(b => (
+        <div key={b.label} style={{
+          background: '#f7f9fb', border: `1px solid ${BD}`, borderRadius: 10,
+          padding: '14px 16px',
+        }}>
+          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+            {b.label}
+          </div>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {b.items.map((item, i) => (
+              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: NAVY, flexShrink: 0, marginTop: 7 }} />
+                <span style={{ fontFamily: F, fontSize: 12.5, color: NAVY, lineHeight: 1.6 }}>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // Small pill used by the demo page to show evidence strength on each insight.
 // Kept local so the demo can render without importing the live page helpers.
 function DemoEvidencePill({ level }) {
@@ -833,6 +1055,7 @@ function DemoCandidateInner({ params }) {
   const [pushbackCopied, setPushbackCopied] = useState(false)
   const [whyOpen, setWhyOpen] = useState(null)
   const [validationOpen, setValidationOpen] = useState(false)
+  const [whatCouldChangeOpen, setWhatCouldChangeOpen] = useState(false)
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
 
@@ -1874,6 +2097,18 @@ function DemoCandidateInner({ params }) {
           )
         })()}
 
+        {/* ── TOP DRIVERS + WHAT COULD CHANGE (demo hardcoded) ── */}
+        {(params.candidateId === 'demo-c1' || params.candidateId === 'demo-c2') && (
+          <DemoTopDrivers candidateId={params.candidateId} />
+        )}
+        {(params.candidateId === 'demo-c1' || params.candidateId === 'demo-c2') && (
+          <DemoWhatCouldChange
+            candidateId={params.candidateId}
+            expanded={whatCouldChangeOpen}
+            onToggle={() => setWhatCouldChangeOpen(v => !v)}
+          />
+        )}
+
         {/* ── RAPID SCREEN SIMPLIFIED REPORT ── */}
         {results && candidate?.assessments?.assessment_mode === 'rapid' && (
           <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
@@ -2351,6 +2586,11 @@ function DemoCandidateInner({ params }) {
               </Card>
             </ScrollReveal>
 
+            {/* ── FIRST 30 DAYS PROOF POINTS (demo hardcoded) ── */}
+            {(params.candidateId === 'demo-c1' || params.candidateId === 'demo-c2') && (
+              <DemoFirstThirtyDays candidateId={params.candidateId} />
+            )}
+
             {/* ── COUNTER-OFFER RESILIENCE ── */}
             <ScrollReveal id="counter-offer" delay={70}>
               <Card style={{ marginBottom: 20 }}>
@@ -2719,6 +2959,7 @@ function DemoCandidateInner({ params }) {
               <ScrollReveal id="strengths" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
                   <SectionHeading tooltip="Key strengths identified with direct quotes from the candidate's responses as evidence.">Strengths</SectionHeading>
+                  <DemoFactPredKey />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {results.strengths.map((s, i) => {
                       const title = typeof s === 'object' ? (s.strength || s.title || s.text) : s
@@ -2730,9 +2971,10 @@ function DemoCandidateInner({ params }) {
                             <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, marginTop: 1, background: `${GRN}20`, border: `1px solid ${GRNBD}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Ic name="check" size={13} color={GRN} />
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                               <svg width={14} height={14} viewBox="0 0 24 24" fill={GRN} style={{ flexShrink: 0 }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                               <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: 0, lineHeight: 1.4 }}>{title}</p>
+                              <DemoFactPredPill level={params.candidateId === 'demo-c1' ? (i === 0 ? 'observed' : 'interpreted') : (i === 0 ? 'observed' : 'interpreted')} />
                             </div>
                           </div>
                           <div style={{ paddingLeft: 34, marginBottom: 8 }}>
@@ -2753,6 +2995,7 @@ function DemoCandidateInner({ params }) {
               <ScrollReveal id="watchouts" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
                   <SectionHeading tooltip="Concerns flagged by severity with evidence from the candidate's responses.">Watch-outs</SectionHeading>
+                  <DemoFactPredKey />
                   {(() => {
                     const counts = { High: 0, Medium: 0, Low: 0 }
                     results.watchouts.forEach(w => {
@@ -2784,7 +3027,12 @@ function DemoCandidateInner({ params }) {
                       const sev = sevStyle(severity)
                       return (
                         <div key={i} style={{ background: sev.bg, border: `1px solid ${sev.border}`, borderLeft: `4px solid ${sev.color}`, borderRadius: '0 10px 10px 0', padding: '16px 18px' }}>
-                          {severity && <div style={{ marginBottom: 10 }}><Badge label={`${severity} severity`} bg={sev.bg} color={sev.color} border={sev.border} /></div>}
+                          {severity && (
+                            <div style={{ marginBottom: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                              <Badge label={`${severity} severity`} bg={sev.bg} color={sev.color} border={sev.border} />
+                              <DemoFactPredPill level="predicted" />
+                            </div>
+                          )}
                           <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 8px' }}>{title}</p>
                           <div style={{ marginBottom: 8 }}>
                             <DemoEvidencePill level={params.candidateId === 'demo-c2' && i === 0 ? 'strong' : 'moderate'} />
@@ -2912,6 +3160,18 @@ function DemoCandidateInner({ params }) {
                   <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
                     Tailored to this candidate's specific gaps. Designed to be handed directly to the line manager.
                   </p>
+                  <div style={{
+                    display: isAgency ? 'grid' : 'flex',
+                    gridTemplateColumns: isAgency ? (isMobile ? '1fr' : 'minmax(0, 1fr) minmax(0, 1fr)') : undefined,
+                    flexDirection: isAgency ? undefined : 'column',
+                    gap: isAgency ? 20 : 16,
+                  }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {isAgency && (
+                    <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                      Candidate goals
+                    </div>
+                  )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {results.onboarding_plan.map((item, i) => {
                       const isStructured = typeof item === 'object' && item !== null && item.objective
@@ -2999,6 +3259,16 @@ function DemoCandidateInner({ params }) {
                         </div>
                       )
                     })}
+                  </div>
+                  </div>
+                  {isAgency && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                        Manager actions
+                      </div>
+                      <DemoManagerActions candidateId={params.candidateId} />
+                    </div>
+                  )}
                   </div>
                   </>}
                 </Card>

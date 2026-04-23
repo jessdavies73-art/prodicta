@@ -1020,6 +1020,7 @@ export default function CandidateReportPage({ params }) {
   const [whyOpen, setWhyOpen] = useState(null) // skill name of currently expanded Why this score panel
   const [reviewBannerDismissed, setReviewBannerDismissed] = useState(false)
   const [validationOpen, setValidationOpen] = useState(false)
+  const [whatCouldChangeOpen, setWhatCouldChangeOpen] = useState(false)
   const [outcomeDate, setOutcomeDate] = useState('')
   const [outcomeNoteText, setOutcomeNoteText] = useState('')
   const [outcomeClientName, setOutcomeClientName] = useState('')
@@ -2394,6 +2395,25 @@ export default function CandidateReportPage({ params }) {
             })()}
 
             {/* ══════════════════════════════════════════════════
+                TOP DRIVERS OF THE VERDICT (derived)
+            ══════════════════════════════════════════════════ */}
+            {results && candidate?.assessments?.assessment_mode !== 'rapid' && (
+              <TopDriversPanel results={results} />
+            )}
+
+            {/* ══════════════════════════════════════════════════
+                WHAT COULD CHANGE THIS PREDICTION (derived)
+            ══════════════════════════════════════════════════ */}
+            {results && candidate?.assessments?.assessment_mode !== 'rapid' && (
+              <WhatCouldChangePanel
+                results={results}
+                scenarioCount={candidate?.assessments?.scenarios?.length || 0}
+                expanded={whatCouldChangeOpen}
+                onToggle={() => setWhatCouldChangeOpen(v => !v)}
+              />
+            )}
+
+            {/* ══════════════════════════════════════════════════
                 RAPID SCREEN SIMPLIFIED REPORT
             ══════════════════════════════════════════════════ */}
             {results && candidate?.assessments?.assessment_mode === 'rapid' && (
@@ -2809,6 +2829,13 @@ export default function CandidateReportPage({ params }) {
                     </ScrollReveal>
                   )
                 })()}
+
+                {/* ══════════════════════════════════════════════════
+                    SIGNS THIS HIRE IS ON TRACK AT DAY 30 (derived)
+                ══════════════════════════════════════════════════ */}
+                {results && (
+                  <FirstThirtyDaysPanel results={results} />
+                )}
 
                 {/* ══════════════════════════════════════════════════
                     WHY THEY MIGHT LEAVE
@@ -4573,11 +4600,13 @@ export default function CandidateReportPage({ params }) {
                     <SectionHeading tooltip="Key strengths identified with direct quotes from the candidate's responses as evidence.">
                       Strengths
                     </SectionHeading>
+                    <FactPredKey />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                       {results.strengths.map((s, i) => {
                         const title = typeof s === 'object' ? (s.strength || s.title || s.text) : s
                         const explanation = typeof s === 'object' ? s.explanation : null
                         const evidence = typeof s === 'object' ? s.evidence : null
+                        const factType = classifyFactPred({ title, explanation, evidence })
                         return (
                           <div key={i} style={{
                             background: GRNBG,
@@ -4594,11 +4623,12 @@ export default function CandidateReportPage({ params }) {
                               }}>
                                 <Ic name="check" size={13} color={GRN} />
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                 <svg width={14} height={14} viewBox="0 0 24 24" fill={GRN} style={{ flexShrink: 0 }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                                 <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: 0, lineHeight: 1.4 }}>
                                   {title}
                                 </p>
+                                <FactPredPill level={factType} />
                               </div>
                             </div>
                             <div style={{ paddingLeft: 34, marginBottom: explanation || evidence ? 8 : 0 }}>
@@ -4637,6 +4667,7 @@ export default function CandidateReportPage({ params }) {
                     <SectionHeading tooltip="Concerns flagged by severity with evidence, recommended actions, and consequence predictions if ignored.">
                       Watch-outs
                     </SectionHeading>
+                    <FactPredKey />
                     {/* Severity count summary strip */}
                     {(() => {
                       const counts = { High: 0, Medium: 0, Low: 0 }
@@ -4683,8 +4714,14 @@ export default function CandidateReportPage({ params }) {
                             padding: '16px 18px',
                           }}>
                             {severity && (
-                              <div style={{ marginBottom: 10 }}>
+                              <div style={{ marginBottom: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                                 <Badge label={`${severity} severity`} bg={sev.bg} color={sev.color} border={sev.border} />
+                                <FactPredPill level={classifyFactPred({ title, explanation, evidence })} />
+                              </div>
+                            )}
+                            {!severity && (
+                              <div style={{ marginBottom: 8 }}>
+                                <FactPredPill level={classifyFactPred({ title, explanation, evidence })} />
                               </div>
                             )}
                             <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 8px' }}>
@@ -4939,7 +4976,19 @@ export default function CandidateReportPage({ params }) {
                       </div>
                     )}
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div style={{
+                      display: profile?.account_type === 'agency' ? 'grid' : 'flex',
+                      gridTemplateColumns: profile?.account_type === 'agency' ? (isMobile ? '1fr' : 'minmax(0, 1fr) minmax(0, 1fr)') : undefined,
+                      flexDirection: profile?.account_type === 'agency' ? undefined : 'column',
+                      gap: profile?.account_type === 'agency' ? 20 : 16,
+                    }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {profile?.account_type === 'agency' && (
+                        <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                          Candidate goals
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                       {results.onboarding_plan.map((item, i) => {
                         // Support both new structured objects and legacy plain strings
                         const isStructured = typeof item === 'object' && item !== null && item.objective
@@ -5082,6 +5131,16 @@ export default function CandidateReportPage({ params }) {
                           </div>
                         )
                       })}
+                      </div>
+                    </div>
+                    {profile?.account_type === 'agency' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                          Manager actions
+                        </div>
+                        <ManagerActionsColumn results={results} onboardingPlan={results.onboarding_plan} />
+                      </div>
+                    )}
                     </div>
                   </Card>
                   </ScrollReveal>
@@ -7053,6 +7112,326 @@ function ValidationBlock({ title, body }) {
       <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, color: '#4a5568', margin: 0, lineHeight: 1.6 }}>
         {body}
       </p>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Report panels derived from existing results data (no extra Claude calls).
+// ─────────────────────────────────────────────────────────────────────────────
+
+function firstSentence(text) {
+  if (!text || typeof text !== 'string') return ''
+  const m = text.match(/[^.!?]+[.!?]?/)
+  return m ? m[0].trim() : text.trim()
+}
+
+function shortPhrase(text, max = 90) {
+  const s = firstSentence(text)
+  if (s.length <= max) return s.replace(/\.$/, '').trim()
+  return s.slice(0, max).replace(/[,;:\s]+\S*$/, '').trim()
+}
+
+function topDriversFrom(results) {
+  if (!results || !results.scores) return []
+  const lines = []
+  const scoreEntries = Object.entries(results.scores || {})
+    .filter(([, v]) => typeof v === 'number')
+    .sort((a, b) => b[1] - a[1])
+  const topDim = scoreEntries[0]
+  const secondDim = scoreEntries[1]
+
+  const strengths = Array.isArray(results.strengths) ? results.strengths : []
+  const topStrength = strengths[0]
+  const secondStrength = strengths[1]
+
+  const watchouts = Array.isArray(results.watchouts) ? results.watchouts : []
+  const sevRank = { High: 3, Medium: 2, Low: 1 }
+  const topWatchout = [...watchouts].sort((a, b) => {
+    const sa = typeof a === 'object' ? (sevRank[a.severity] || 0) : 0
+    const sb = typeof b === 'object' ? (sevRank[b.severity] || 0) : 0
+    return sb - sa
+  })[0]
+
+  const overall = typeof results.overall_score === 'number' ? results.overall_score : null
+
+  function strengthPhrase(s) {
+    if (!s) return ''
+    if (typeof s === 'string') return shortPhrase(s)
+    return shortPhrase(s.evidence || s.explanation || s.strength || s.title || s.text || '')
+  }
+
+  if (topDim && topStrength) {
+    const dim = topDim[0]
+    const phrase = strengthPhrase(topStrength)
+    lines.push(`Strong ${dim.toLowerCase()} across all scenarios, ${phrase || 'consistent evidence across responses'}.`)
+  }
+  if (secondDim && secondStrength) {
+    const dim = secondDim[0]
+    const phrase = strengthPhrase(secondStrength)
+    lines.push(`Consistent ${dim.toLowerCase()}, ${phrase || 'reinforced by the second strongest dimension'}.`)
+  }
+  if (topWatchout) {
+    const title = typeof topWatchout === 'object' ? (topWatchout.watchout || topWatchout.title || topWatchout.text || 'Watch-out') : topWatchout
+    const consequence = shortPhrase(
+      (typeof topWatchout === 'object' ? (topWatchout.if_ignored || topWatchout.explanation || topWatchout.evidence || '') : '') || 'may surface in the first 60 days'
+    )
+    if (overall != null && overall >= 70) {
+      lines.push(`${title} noted, ${consequence}, not disqualifying.`)
+    } else {
+      lines.push(`Significant ${title.toLowerCase()}, ${consequence}.`)
+    }
+  }
+
+  const hc = results.hiring_confidence
+  if (hc) {
+    const level = typeof hc === 'object' ? (hc.label || hc.level || (typeof hc.score === 'number' ? (hc.score >= 75 ? 'High' : hc.score >= 55 ? 'Medium' : 'Low') : null)) : String(hc)
+    if (level) lines.push(`Overall hiring confidence: ${level}.`)
+  }
+
+  return lines.slice(0, 4)
+}
+
+function TopDriversPanel({ results }) {
+  const lines = topDriversFrom(results)
+  if (lines.length === 0) return null
+  return (
+    <div className="no-print" style={{
+      background: '#fff', border: '1px solid #e4e9f0', borderRadius: 12,
+      padding: '18px 22px', marginBottom: 20,
+    }}>
+      <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 15, fontWeight: 800, color: '#0f2137', marginBottom: 12 }}>
+        What drove this result
+      </div>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {lines.map((line, i) => (
+          <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00BFA5', flexShrink: 0, marginTop: 8 }} />
+            <span style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13.5, color: '#0f2137', lineHeight: 1.6 }}>
+              {line}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function WhatCouldChangePanel({ results, scenarioCount = 0, expanded, onToggle }) {
+  const watchouts = Array.isArray(results?.watchouts) ? results.watchouts : []
+  const topWatchout = watchouts[0]
+  const topTitle = typeof topWatchout === 'object' ? (topWatchout?.watchout || topWatchout?.title || topWatchout?.text || '') : (topWatchout || '')
+  const topText = [typeof topWatchout === 'object' ? topWatchout?.explanation : '', typeof topWatchout === 'object' ? topWatchout?.evidence : ''].join(' ').toLowerCase()
+
+  const isPacePressure = /pace|pressure|workload|speed|deadline|overload|rush|time|urgent/.test(topTitle.toLowerCase() + ' ' + topText)
+  const isComms = /communic|stakeholder|relationship|manager|team|escalat|isolat/.test(topTitle.toLowerCase() + ' ' + topText)
+
+  let p1
+  if (topTitle && isPacePressure) {
+    p1 = `This prediction assumes the role allows some structured adjustment time in the first 30 days. In a highly reactive environment where immediate visible output is required from day one, ${topTitle.toLowerCase()} may surface earlier than predicted.`
+  } else if (topTitle && isComms) {
+    p1 = `This prediction assumes regular feedback channels are in place. If the role involves isolated working or limited manager contact, ${topTitle.toLowerCase()} may become more visible than the score suggests.`
+  } else {
+    p1 = `This prediction is based on responses to ${scenarioCount || 'the'} role-specific scenarios. If the actual role differs significantly from the job description provided, some predictions may need revisiting.`
+  }
+
+  const cor = results?.counter_offer_resilience
+  const corScore = typeof cor === 'number' ? cor : (cor && typeof cor === 'object' ? (cor.score ?? null) : null)
+  const p2 = (typeof corScore === 'number' && corScore < 75)
+    ? `The counter-offer resilience score of ${corScore}% suggests this candidate may be susceptible to a competing offer between acceptance and start date. Run the Pre-Start Risk Check if more than 10 days elapse between offer and start.`
+    : null
+
+  const confLevel = String(results?.scoring_confidence?.level || '').toLowerCase()
+  const p3 = (confLevel === 'medium' || confLevel === 'low')
+    ? 'Some dimensions were scored with moderate confidence due to response depth. A structured interview using the questions below will help verify the predictions marked Verify at Interview.'
+    : null
+
+  return (
+    <div className="no-print" style={{
+      background: '#fff', border: '1px solid #e4e9f0', borderRadius: 12,
+      padding: '14px 20px', marginBottom: 20,
+    }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        style={{
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13, fontWeight: 700,
+          color: '#00897B', display: 'inline-flex', alignItems: 'center', gap: 6,
+        }}
+      >
+        {expanded ? 'Hide this' : 'What could change this?'}
+        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s', transform: expanded ? 'rotate(180deg)' : 'none' }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      <div style={{ overflow: 'hidden', maxHeight: expanded ? 600 : 0, transition: 'max-height 0.3s ease' }}>
+        <div style={{ paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13.5, color: '#0f2137', margin: 0, lineHeight: 1.65 }}>{p1}</p>
+          {p2 && <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13.5, color: '#0f2137', margin: 0, lineHeight: 1.65 }}>{p2}</p>}
+          {p3 && <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13.5, color: '#0f2137', margin: 0, lineHeight: 1.65 }}>{p3}</p>}
+          <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 11.5, color: '#94a1b3', fontStyle: 'italic', margin: '6px 0 0', lineHeight: 1.55 }}>
+            These are predicted outcomes based on assessment behaviour. PRODICTA predictions are directional, not guaranteed. They are not legal advice.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FirstThirtyDaysPanel({ results }) {
+  const strengths = Array.isArray(results?.strengths) ? results.strengths : []
+  const watchouts = Array.isArray(results?.watchouts) ? results.watchouts : []
+  const onboarding = Array.isArray(results?.onboarding_plan) ? results.onboarding_plan : []
+
+  const topStrength = strengths[0]
+  const topStrengthTitle = typeof topStrength === 'object' ? (topStrength?.strength || topStrength?.title || '') : (topStrength || '')
+  const topWatchout = watchouts[0]
+  const topWatchoutTitle = typeof topWatchout === 'object' ? (topWatchout?.watchout || topWatchout?.title || '') : (topWatchout || '')
+  const consequence = shortPhrase(typeof topWatchout === 'object' ? (topWatchout?.if_ignored || topWatchout?.explanation || '') : '') || 'the predicted pattern surfacing'
+
+  function firstActivity(weekN) {
+    const week = onboarding.find(item => typeof item === 'object' && (item.week === weekN || Number(item.week) === weekN))
+    if (week && Array.isArray(week.activities) && week.activities.length > 0) return week.activities[0]
+    if (week && week.checkpoint) return week.checkpoint
+    if (week && week.objective) return week.objective
+    return null
+  }
+  const day14 = firstActivity(2) || firstActivity(1)
+  const day30 = firstActivity(4) || firstActivity(5) || firstActivity(6)
+
+  const points = []
+  if (topStrengthTitle) {
+    points.push(`You should see ${topStrengthTitle.toLowerCase()} visible within the first two weeks.`)
+  }
+  if (day14) points.push(`By day 14: ${String(day14).replace(/\.$/, '')}.`)
+  if (day30) points.push(`By day 30: ${String(day30).replace(/\.$/, '')}.`)
+  if (topWatchoutTitle) {
+    points.push(`If ${topWatchoutTitle.toLowerCase()} is not visible by day 30 the prediction is on track. If you see ${consequence}, intervene using the Week 1 plan above.`)
+  }
+  points.push('The Probation Co-pilot will flag automatically if performance deviates from this prediction.')
+
+  if (points.length === 0) return null
+
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid #e4e9f0', borderRadius: 12,
+      padding: '18px 22px', marginBottom: 20,
+    }}>
+      <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 15, fontWeight: 800, color: '#0f2137', marginBottom: 4 }}>
+        Signs this hire is on track at day 30
+      </div>
+      <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, color: '#94a1b3', fontStyle: 'italic', marginBottom: 14 }}>
+        Use these as your early management checkpoints.
+      </div>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {points.map((p, i) => (
+          <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#00BFA5" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13.5, color: '#0f2137', lineHeight: 1.6 }}>{p}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+// Manager actions per week, derived from existing results data.
+// Agency accounts only. Employer accounts get the separate Alchemy coaching plan.
+function ManagerActionsColumn({ results, onboardingPlan = [] }) {
+  const watchouts = Array.isArray(results?.watchouts) ? results.watchouts : []
+  const topWatchoutTitle = typeof watchouts[0] === 'object' ? (watchouts[0]?.watchout || watchouts[0]?.title || '') : (watchouts[0] || '')
+  const exec = typeof results?.execution_reliability === 'number' ? results.execution_reliability : null
+
+  const weeksPresent = Array.isArray(onboardingPlan)
+    ? onboardingPlan.map(item => typeof item === 'object' ? Number(item.week) : null).filter(Boolean)
+    : []
+  const includesLate = weeksPresent.some(w => w >= 8)
+
+  const week1 = [
+    'Define what a visible quick win looks like for this role and communicate it on day one.',
+    'Set clear expectations around pace, communication, and decision-making in the first week.',
+    ...(topWatchoutTitle ? [`Watch for early signs of ${topWatchoutTitle.toLowerCase()} and have a brief check-in conversation by day 5.`] : []),
+  ]
+  const week4 = [
+    'Review progress against the day 30 proof points listed in this report.',
+    'Provide structured feedback using specific examples not general impressions.',
+    ...((exec != null && exec < 70) ? ['Check task completion consistency, ask for a weekly summary of what was delivered versus planned.'] : []),
+  ]
+  const week8 = [
+    'Assess whether the day 60 milestones from this report are materialising.',
+    'If any watch-outs have surfaced, apply the intervention plan from this report before week 10.',
+    'Begin planning the probation review conversation using the evidence pack generator.',
+  ]
+
+  const blocks = [
+    { label: 'Week 1', items: week1 },
+    { label: 'Week 4', items: week4 },
+    ...(includesLate || weeksPresent.length === 0 ? [{ label: 'Week 8', items: week8 }] : []),
+  ]
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {blocks.map(b => (
+        <div key={b.label} style={{
+          background: '#f7f9fb', border: '1px solid #e4e9f0', borderRadius: 10,
+          padding: '14px 16px',
+        }}>
+          <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 11, fontWeight: 800, color: '#0f2137', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+            {b.label}
+          </div>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {b.items.map((item, i) => (
+              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0f2137', flexShrink: 0, marginTop: 7 }} />
+                <span style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, color: '#0f2137', lineHeight: 1.6 }}>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Fact vs Interpretation vs Prediction classification on each insight card.
+function classifyFactPred({ title, explanation, evidence }) {
+  const text = [title, explanation, evidence].filter(Boolean).join(' ').toLowerCase()
+  if (!text) return 'interpreted'
+  const hasQuote = /["“].+?["”]/.test([title, explanation, evidence].filter(Boolean).join(' '))
+  const hasPrediction = /\b(likely|may|will|predicted|expected|risk of|could|tend to|is going to|would)\b/.test(text)
+  const hasSpecificAction = /\b(proposed|referenced|identified|wrote|called|scheduled|suggested|drafted|sequenced|chose|raised|flagged|escalated|asked|listed|built|set up)\b/.test(text)
+  if (hasQuote || hasSpecificAction) return 'observed'
+  if (hasPrediction) return 'predicted'
+  return 'interpreted'
+}
+
+function FactPredPill({ level }) {
+  const map = {
+    observed:    { label: 'Observed',    bg: '#00BFA5', color: '#fff',    bd: '#00897B' },
+    interpreted: { label: 'Interpreted', bg: '#0f2137', color: '#fff',    bd: '#0f2137' },
+    predicted:   { label: 'Predicted',   bg: '#E8B84B', color: '#0f2137', bd: '#b98616' },
+  }
+  const s = map[level] || map.interpreted
+  return (
+    <span style={{
+      display: 'inline-block', padding: '1px 8px', borderRadius: 999,
+      background: s.bg, color: s.color, border: `1px solid ${s.bd}`,
+      fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 10, fontWeight: 800,
+      letterSpacing: '0.04em',
+    }}>
+      {s.label}
+    </span>
+  )
+}
+
+function FactPredKey() {
+  return (
+    <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 11.5, color: '#94a1b3', marginTop: -6, marginBottom: 12, lineHeight: 1.55 }}>
+      Observed, directly from responses. Interpreted, inferred from behaviour. Predicted, expected based on patterns.
     </div>
   )
 }
