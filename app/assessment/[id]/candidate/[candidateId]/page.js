@@ -5147,64 +5147,12 @@ export default function CandidateReportPage({ params }) {
                 )}
 
                 {/* ══════════════════════════════════════════════════
-                    INTERVIEW QUESTIONS
+                    INTERVIEW VERIFICATION QUESTIONS
                 ══════════════════════════════════════════════════ */}
                 {results.interview_questions?.length > 0 && (
                   <ScrollReveal id="questions" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
-                    <SectionHeading tooltip="Targeted questions designed to probe the specific gaps identified in this assessment. Each includes a follow-up probe.">Suggested Interview Questions</SectionHeading>
-                    <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
-                      Designed to probe the specific gaps identified in this assessment. Each includes a follow-up probe.
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      {results.interview_questions.map((q, i) => {
-                        const text = typeof q === 'object' ? (q.question || q.text || JSON.stringify(q)) : q
-                        // Parse (Follow-up probe: ...) or [Follow-up: ...]
-                        const followUpMatch = text.match(/\(Follow-up probe:\s*([\s\S]*?)\)\s*$/) || text.match(/\[Follow-up:\s*([\s\S]*?)\]\s*$/)
-                        const followUp = followUpMatch ? followUpMatch[1].trim() : null
-                        const mainQ = followUpMatch ? text.slice(0, followUpMatch.index).trim() : text
-                        return (
-                          <div key={i} style={{
-                            background: CARD,
-                            border: `1px solid ${BD}`,
-                            borderRadius: 10,
-                            padding: '18px 20px',
-                            boxShadow: '0 1px 4px rgba(15,33,55,0.05)',
-                          }}>
-                            <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                              <div style={{
-                                width: 30, height: 30, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-                                background: TEALLT, border: `1.5px solid ${TEAL}55`,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontFamily: FM, fontSize: 13, fontWeight: 800, color: TEALD,
-                              }}>
-                                {i + 1}
-                              </div>
-                              <div style={{ flex: 1 }}>
-                                <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 (followUp ? 12 : 0)', lineHeight: 1.65 }}>
-                                  {mainQ}
-                                </p>
-                                {followUp && (
-                                  <div style={{
-                                    marginTop: 12,
-                                    background: '#f8fafc',
-                                    border: `1px solid ${BD}`,
-                                    borderLeft: `3px solid ${AMB}`,
-                                    borderRadius: '0 8px 8px 0',
-                                    padding: '9px 14px',
-                                  }}>
-                                    <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.6 }}>
-                                      <span style={{ fontWeight: 700, color: AMB }}>Follow-up probe: </span>
-                                      {followUp}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
+                    <InterviewVerificationMode questions={results.interview_questions} isMobile={isMobile} />
                   </Card>
                   </ScrollReveal>
                 )}
@@ -7614,6 +7562,250 @@ function HumanReviewBanner({ reasons, onDismiss }) {
           <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
       </button>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Interview Verification Mode: each question is linked to a specific report
+// finding (watch-out, confidence gap, prediction, or strength) and includes a
+// reassuring-answer and concerning-answer guide. Also supports legacy interview
+// questions stored as plain strings (no breaking change for older reports).
+// ─────────────────────────────────────────────────────────────────────────────
+const IVM_INDIGO = '#6366F1'
+
+const IVM_TAG = {
+  watch_out:             { label: 'Verify Watch-out',   bg: '#fffbeb', color: '#92400E', bd: '#f59e0b66' },
+  confidence_gap:        { label: 'Fill Evidence Gap',  bg: '#eef2ff', color: '#0f2137', bd: '#0f213722' },
+  prediction:            { label: 'Test Prediction',    bg: '#eef0ff', color: IVM_INDIGO, bd: `${IVM_INDIGO}55` },
+  strength_confirmation: { label: 'Confirm Strength',   bg: '#e0f7f1', color: '#00897B', bd: '#00BFA555' },
+}
+
+function ivmOrder(q) {
+  const isCritical = q.confidence_level === 'high'
+  const typeRank = { watch_out: 0, confidence_gap: 1, prediction: 2, strength_confirmation: 3 }[q.verification_type] ?? 4
+  return [typeRank === 0 && isCritical ? -1 : typeRank, isCritical ? 0 : 1]
+}
+
+function InterviewVerificationMode({ questions = [], isMobile }) {
+  // Accept legacy shape: array of plain strings. Wrap them so the new UI can
+  // still render something sensible without forcing a re-run of older reports.
+  const normalised = (questions || []).map((q) => {
+    if (typeof q === 'string') {
+      return {
+        question: q.replace(/\(Follow-up probe:.*?\)\s*$/i, '').trim(),
+        verification_type: 'confidence_gap',
+        linked_to: '',
+        reassuring_answer: '',
+        concerning_answer: '',
+        confidence_level: 'medium',
+        _legacy: true,
+      }
+    }
+    return q
+  }).filter(q => q && q.question)
+
+  const ordered = [...normalised].sort((a, b) => {
+    const [ra, ca] = ivmOrder(a)
+    const [rb, cb] = ivmOrder(b)
+    if (ra !== rb) return ra - rb
+    return ca - cb
+  })
+
+  const critical = ordered.filter(q => q.confidence_level === 'high').length
+  const [askedIds, setAskedIds] = useState(new Set())
+  const [expanded, setExpanded] = useState({}) // { `${i}-reassuring` | `${i}-concerning`: true }
+  const [copied, setCopied] = useState(false)
+
+  function toggleExpand(key) {
+    setExpanded(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+  function toggleAsked(i) {
+    setAskedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i)
+      else next.add(i)
+      return next
+    })
+  }
+  async function copyAll() {
+    const text = ordered.map((q, i) => `${i + 1}. ${q.question}`).join('\n\n')
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {}
+  }
+
+  const summary = ordered.length === 0
+    ? null
+    : `${ordered.length} question${ordered.length === 1 ? '' : 's'} linked to findings in this report. ${critical} critical, use ${critical === 1 ? 'this' : 'these'} if time is limited.`
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 4 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: NAVY, letterSpacing: '-0.2px', marginBottom: 4 }}>
+            Interview Verification Questions
+          </div>
+          <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.55 }}>
+            These questions are linked to specific findings in this report. Use them to verify predictions before making your final decision.
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={copyAll}
+          className="no-print"
+          style={{
+            flexShrink: 0,
+            padding: '8px 14px', borderRadius: 8,
+            background: copied ? TEAL : NAVY, color: copied ? NAVY : '#fff', border: 'none',
+            fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+          }}
+        >
+          {copied ? 'Copied' : 'Copy all questions'}
+        </button>
+      </div>
+
+      {summary && (
+        <div style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '12px 0 16px' }}>
+          {summary}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {ordered.map((q, i) => {
+          const tag = IVM_TAG[q.verification_type] || IVM_TAG.confidence_gap
+          const isAsked = askedIds.has(i)
+          const reExpanded = !!expanded[`${i}-reassuring`]
+          const cnExpanded = !!expanded[`${i}-concerning`]
+          return (
+            <div key={i} style={{
+              position: 'relative',
+              background: CARD, border: `1px solid ${BD}`, borderRadius: 12,
+              padding: '18px 20px',
+              opacity: isAsked ? 0.68 : 1,
+              transition: 'opacity 0.2s',
+            }}>
+              {isAsked && (
+                <div aria-hidden="true" style={{
+                  position: 'absolute', inset: 0, background: 'rgba(148, 161, 179, 0.08)',
+                  borderRadius: 12, pointerEvents: 'none',
+                }} />
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+                <span style={{
+                  display: 'inline-block', padding: '3px 10px', borderRadius: 999,
+                  background: tag.bg, color: tag.color, border: `1px solid ${tag.bd}`,
+                  fontFamily: F, fontSize: 10.5, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase',
+                }}>
+                  {tag.label}
+                </span>
+                {q.linked_to && (
+                  <span style={{ fontFamily: F, fontSize: 12, color: TX3 }}>
+                    Re: {q.linked_to}
+                  </span>
+                )}
+                {q.confidence_level === 'high' && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: F, fontSize: 11, fontWeight: 800, color: RED, textTransform: 'uppercase', letterSpacing: '0.06em', marginLeft: 'auto' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: RED, display: 'inline-block' }} />
+                    Critical
+                  </span>
+                )}
+                {isAsked && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: F, fontSize: 11, fontWeight: 800, color: TEALD }}>
+                    <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    Asked
+                  </span>
+                )}
+              </div>
+
+              <p style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: NAVY, margin: '0 0 14px', lineHeight: 1.6 }}>
+                {q.question}
+              </p>
+
+              {(q.reassuring_answer || q.concerning_answer) && (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) minmax(0, 1fr)',
+                  gap: 10,
+                }}>
+                  {q.reassuring_answer && (
+                    <IvmAnswerPanel
+                      title="Reassuring answer"
+                      accent={TEAL}
+                      body={q.reassuring_answer}
+                      expanded={reExpanded}
+                      onToggle={() => toggleExpand(`${i}-reassuring`)}
+                    />
+                  )}
+                  {q.concerning_answer && (
+                    <IvmAnswerPanel
+                      title="Concerning answer"
+                      accent={AMB}
+                      body={q.concerning_answer}
+                      expanded={cnExpanded}
+                      onToggle={() => toggleExpand(`${i}-concerning`)}
+                    />
+                  )}
+                </div>
+              )}
+
+              <div style={{ marginTop: 12, position: 'relative', zIndex: 1 }}>
+                <button
+                  type="button"
+                  onClick={() => toggleAsked(i)}
+                  style={{
+                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                    fontFamily: F, fontSize: 12, fontWeight: 700, color: isAsked ? TX3 : TEALD,
+                  }}
+                >
+                  {isAsked ? 'Mark as unasked' : 'Mark as asked'}
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function IvmAnswerPanel({ title, accent, body, expanded, onToggle }) {
+  return (
+    <div style={{
+      background: '#fff', border: `1px solid #e4e9f0`, borderLeft: `3px solid ${accent}`,
+      borderRadius: 10, overflow: 'hidden',
+    }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'none', border: 'none', cursor: 'pointer',
+          padding: '10px 14px',
+          fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, fontWeight: 800,
+          color: '#0f2137', textAlign: 'left',
+        }}
+      >
+        <span>{title}</span>
+        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#0f2137" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s', transform: expanded ? 'rotate(180deg)' : 'none' }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      <div style={{
+        overflow: 'hidden',
+        maxHeight: expanded ? 400 : 0,
+        transition: 'max-height 0.25s ease',
+      }}>
+        <div style={{
+          padding: '0 14px 12px',
+          fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13, color: '#4a5568', lineHeight: 1.65,
+        }}>
+          {body}
+        </div>
+      </div>
     </div>
   )
 }

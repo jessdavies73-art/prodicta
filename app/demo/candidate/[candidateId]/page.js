@@ -349,6 +349,259 @@ function DemoManagerActions({ candidateId }) {
   )
 }
 
+// Interview Verification Mode demo data for Sophie + Marcus.
+const DEMO_IVM = {
+  'demo-c1': [
+    {
+      question: 'Tell me about a time when you had to deliver a major project with incomplete information or a moving brief. How did you decide when you had enough to proceed?',
+      verification_type: 'watch_out',
+      linked_to: 'Over-planning tendency',
+      reassuring_answer: 'Gives a specific example with a named project. Explains what information they had, what was missing, and the conscious decision they made to proceed. Takes ownership of the outcome.',
+      concerning_answer: 'Gives a vague answer about always doing thorough research. Cannot name a specific situation. Or describes waiting until everything was perfect before acting.',
+      confidence_level: 'high',
+    },
+    {
+      question: 'Walk me through how you have managed a situation where a senior stakeholder disagreed with your recommended approach. What did you do and what was the outcome?',
+      verification_type: 'confidence_gap',
+      linked_to: 'Stakeholder Management',
+      reassuring_answer: 'Names the stakeholder and the specific disagreement. Explains how they adapted their communication style. Shows they held their position where appropriate or changed it with clear reasoning.',
+      concerning_answer: 'Says they always defer to senior stakeholders. Cannot give a specific example. Or gives an example where they avoided the conflict entirely.',
+      confidence_level: 'high',
+    },
+    {
+      question: 'You scored strongly on commercial thinking in this assessment. Give me a specific example from your current role where you connected a marketing decision directly to a revenue or retention outcome.',
+      verification_type: 'strength_confirmation',
+      linked_to: 'Commercial Thinking',
+      reassuring_answer: 'Cites a specific campaign or decision with measurable outcomes. Uses real numbers. Explains the commercial logic clearly.',
+      concerning_answer: 'Gives a generic answer about always thinking commercially. Cannot cite specific numbers or outcomes. Or describes activity without connecting it to a result.',
+      confidence_level: 'medium',
+    },
+    {
+      question: 'If you received a better offer from another company in the two weeks after accepting this role, what would you do?',
+      verification_type: 'prediction',
+      linked_to: 'Counter-Offer Resilience',
+      reassuring_answer: 'Gives a clear, considered answer about why they are committed to this role specifically. References specific things about the role or company that matter to them.',
+      concerning_answer: 'Hesitates. Gives a non-committal answer. Or says something like "it would depend on the offer."',
+      confidence_level: 'medium',
+    },
+  ],
+  'demo-c2': [
+    {
+      question: 'Describe a situation where you had to deliver results under significant time pressure with limited resources. What did you prioritise and what did you let slip?',
+      verification_type: 'watch_out',
+      linked_to: 'Execution Under Pressure',
+      reassuring_answer: 'Names a specific situation. Explains the prioritisation logic clearly. Acknowledges what was deprioritised and why that was the right call.',
+      concerning_answer: 'Describes trying to do everything. Cannot explain what was consciously deprioritised. Or suggests the pressure was caused by others rather than taking ownership.',
+      confidence_level: 'high',
+    },
+    {
+      question: 'Tell me about a time you had to communicate difficult news to a client or senior stakeholder. How did you prepare and what happened?',
+      verification_type: 'confidence_gap',
+      linked_to: 'Communication',
+      reassuring_answer: 'Gives a specific example. Explains the preparation, the conversation, and the outcome. Shows ownership of the message.',
+      concerning_answer: 'Gives a vague answer or describes delegating the communication upward. Cannot name a specific situation.',
+      confidence_level: 'high',
+    },
+    {
+      question: 'What would need to be true about this role for you to still be here in 18 months?',
+      verification_type: 'prediction',
+      linked_to: 'Retention Risk',
+      reassuring_answer: 'Gives specific, thoughtful criteria that align with what this role actually offers. Shows they have thought carefully about fit.',
+      concerning_answer: 'Gives generic answers about career progression and salary. Or lists criteria that do not match what this role provides.',
+      confidence_level: 'medium',
+    },
+    {
+      question: 'Give me an example of a piece of work you delivered that you were genuinely proud of. What made it good?',
+      verification_type: 'strength_confirmation',
+      linked_to: 'Quality of Output',
+      reassuring_answer: 'Names a specific piece of work with context. Explains their contribution clearly. The standards they describe match what is needed in this role.',
+      concerning_answer: 'Gives a vague or generic example. Cannot articulate what specifically made it good beyond general effort.',
+      confidence_level: 'medium',
+    },
+  ],
+}
+
+const DEMO_IVM_INDIGO = '#6366F1'
+const DEMO_IVM_TAG = {
+  watch_out:             { label: 'Verify Watch-out',   bg: '#fffbeb', color: '#92400E',       bd: '#f59e0b66' },
+  confidence_gap:        { label: 'Fill Evidence Gap',  bg: '#eef2ff', color: '#0f2137',       bd: '#0f213722' },
+  prediction:            { label: 'Test Prediction',    bg: '#eef0ff', color: DEMO_IVM_INDIGO, bd: `${DEMO_IVM_INDIGO}55` },
+  strength_confirmation: { label: 'Confirm Strength',   bg: '#e0f7f1', color: '#00897B',       bd: '#00BFA555' },
+}
+
+function DemoIvmAnswerPanel({ title, accent, body, expanded, onToggle }) {
+  return (
+    <div style={{
+      background: '#fff', border: `1px solid ${BD}`, borderLeft: `3px solid ${accent}`,
+      borderRadius: 10, overflow: 'hidden',
+    }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'none', border: 'none', cursor: 'pointer',
+          padding: '10px 14px',
+          fontFamily: F, fontSize: 12.5, fontWeight: 800, color: NAVY, textAlign: 'left',
+        }}
+      >
+        <span>{title}</span>
+        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s', transform: expanded ? 'rotate(180deg)' : 'none' }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      <div style={{ overflow: 'hidden', maxHeight: expanded ? 400 : 0, transition: 'max-height 0.25s ease' }}>
+        <div style={{ padding: '0 14px 12px', fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.65 }}>
+          {body}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DemoInterviewVerification({ candidateId, isMobile }) {
+  const questions = DEMO_IVM[candidateId] || []
+  const [askedIds, setAskedIds] = useState(new Set())
+  const [expanded, setExpanded] = useState({})
+  const [copied, setCopied] = useState(false)
+
+  function toggleAsked(i) {
+    setAskedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i)
+      else next.add(i)
+      return next
+    })
+  }
+  function toggleExpand(key) {
+    setExpanded(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+  async function copyAll() {
+    const text = questions.map((q, i) => `${i + 1}. ${q.question}`).join('\n\n')
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {}
+  }
+
+  const critical = questions.filter(q => q.confidence_level === 'high').length
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 4 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: NAVY, letterSpacing: '-0.2px', marginBottom: 4 }}>
+            Interview Verification Questions
+          </div>
+          <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.55 }}>
+            These questions are linked to specific findings in this report. Use them to verify predictions before making your final decision.
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={copyAll}
+          className="no-print"
+          style={{
+            flexShrink: 0,
+            padding: '8px 14px', borderRadius: 8,
+            background: copied ? TEAL : NAVY, color: copied ? NAVY : '#fff', border: 'none',
+            fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+          }}
+        >
+          {copied ? 'Copied' : 'Copy all questions'}
+        </button>
+      </div>
+
+      <div style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '12px 0 16px' }}>
+        {questions.length} questions linked to findings in this report. {critical} critical, use these if time is limited.
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {questions.map((q, i) => {
+          const tag = DEMO_IVM_TAG[q.verification_type] || DEMO_IVM_TAG.confidence_gap
+          const isAsked = askedIds.has(i)
+          const reExpanded = !!expanded[`${i}-reassuring`]
+          const cnExpanded = !!expanded[`${i}-concerning`]
+          return (
+            <div key={i} style={{
+              position: 'relative',
+              background: CARD, border: `1px solid ${BD}`, borderRadius: 12,
+              padding: '18px 20px',
+              opacity: isAsked ? 0.68 : 1,
+              transition: 'opacity 0.2s',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+                <span style={{
+                  display: 'inline-block', padding: '3px 10px', borderRadius: 999,
+                  background: tag.bg, color: tag.color, border: `1px solid ${tag.bd}`,
+                  fontFamily: F, fontSize: 10.5, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase',
+                }}>
+                  {tag.label}
+                </span>
+                {q.linked_to && (
+                  <span style={{ fontFamily: F, fontSize: 12, color: TX3 }}>Re: {q.linked_to}</span>
+                )}
+                {q.confidence_level === 'high' && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: F, fontSize: 11, fontWeight: 800, color: RED, textTransform: 'uppercase', letterSpacing: '0.06em', marginLeft: 'auto' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: RED, display: 'inline-block' }} />
+                    Critical
+                  </span>
+                )}
+                {isAsked && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: F, fontSize: 11, fontWeight: 800, color: TEALD }}>
+                    <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    Asked
+                  </span>
+                )}
+              </div>
+
+              <p style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: NAVY, margin: '0 0 14px', lineHeight: 1.6 }}>
+                {q.question}
+              </p>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) minmax(0, 1fr)',
+                gap: 10,
+              }}>
+                <DemoIvmAnswerPanel
+                  title="Reassuring answer"
+                  accent={TEAL}
+                  body={q.reassuring_answer}
+                  expanded={reExpanded}
+                  onToggle={() => toggleExpand(`${i}-reassuring`)}
+                />
+                <DemoIvmAnswerPanel
+                  title="Concerning answer"
+                  accent={AMB}
+                  body={q.concerning_answer}
+                  expanded={cnExpanded}
+                  onToggle={() => toggleExpand(`${i}-concerning`)}
+                />
+              </div>
+
+              <div style={{ marginTop: 12, position: 'relative', zIndex: 1 }}>
+                <button
+                  type="button"
+                  onClick={() => toggleAsked(i)}
+                  style={{
+                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                    fontFamily: F, fontSize: 12, fontWeight: 700, color: isAsked ? TX3 : TEALD,
+                  }}
+                >
+                  {isAsked ? 'Mark as unasked' : 'Mark as asked'}
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // Small pill used by the demo page to show evidence strength on each insight.
 // Kept local so the demo can render without importing the live page helpers.
 function DemoEvidencePill({ level }) {
@@ -3284,39 +3537,11 @@ function DemoCandidateInner({ params }) {
               onToggle={() => setValidationOpen(v => !v)}
             />
 
-            {/* ── INTERVIEW QUESTIONS ── */}
-            {results.interview_questions?.length > 0 && (
+            {/* ── INTERVIEW VERIFICATION QUESTIONS (demo hardcoded) ── */}
+            {(params.candidateId === 'demo-c1' || params.candidateId === 'demo-c2') && (
               <ScrollReveal id="questions" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
-                  <SectionHeading tooltip="Targeted questions designed to probe the specific gaps identified in this assessment. Each includes a follow-up probe.">Suggested Interview Questions</SectionHeading>
-                  <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '-6px 0 20px', lineHeight: 1.55 }}>
-                    Designed to probe the specific gaps identified in this assessment. Each includes a follow-up probe.
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {results.interview_questions.map((q, i) => {
-                      const text = typeof q === 'object' ? (q.question || q.text || JSON.stringify(q)) : q
-                      const followUpMatch = text.match(/\(Follow-up probe:\s*([\s\S]*?)\)\s*$/)
-                      const followUp = followUpMatch ? followUpMatch[1].trim() : null
-                      const mainQ = followUpMatch ? text.slice(0, followUpMatch.index).trim() : text
-                      return (
-                        <div key={i} style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 10, padding: '18px 20px', boxShadow: '0 1px 4px rgba(15,33,55,0.05)' }}>
-                          <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                            <div style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, marginTop: 1, background: TEALLT, border: `1.5px solid ${TEAL}55`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FM, fontSize: 13, fontWeight: 800, color: TEALD }}>{i + 1}</div>
-                            <div style={{ flex: 1 }}>
-                              <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: 0, lineHeight: 1.65 }}>{mainQ}</p>
-                              {followUp && (
-                                <div style={{ marginTop: 12, background: '#f8fafc', border: `1px solid ${BD}`, borderLeft: `3px solid ${AMB}`, borderRadius: '0 8px 8px 0', padding: '9px 14px' }}>
-                                  <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.6 }}>
-                                    <span style={{ fontWeight: 700, color: AMB }}>Follow-up probe: </span>{followUp}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+                  <DemoInterviewVerification candidateId={params.candidateId} isMobile={isMobile} />
                 </Card>
               </ScrollReveal>
             )}
