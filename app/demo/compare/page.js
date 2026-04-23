@@ -260,10 +260,11 @@ export default function DemoComparePage() {
           </div>
 
           {/* Tabs */}
-          <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: `1px solid ${BD}` }}>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: `1px solid ${BD}`, flexWrap: 'wrap' }}>
             {[
               { key: 'overview', label: 'Overview' },
               { key: 'replay', label: 'Scenario Replay' },
+              { key: 'simulator', label: 'Outcome Simulator' },
             ].map(t => {
               const active = activeTab === t.key
               return (
@@ -286,6 +287,8 @@ export default function DemoComparePage() {
 
           {activeTab === 'replay' ? (
             <DemoScenarioReplay isMobile={isMobile} />
+          ) : activeTab === 'simulator' ? (
+            <DemoOutcomeSimulator isMobile={isMobile} />
           ) : (
           <>
 
@@ -435,6 +438,245 @@ function DemoScenarioReplay({ isMobile }) {
             </div>
           )
         })}
+      </div>
+    </div>
+  )
+}
+
+// Outcome Simulator demo data: Sophie vs Marcus. Values mirror the brief.
+const DEMO_SIMULATOR = [
+  {
+    id: 'demo-sophie',
+    name: 'Sophie Chen',
+    employment_type: 'permanent',
+    overall_score: 87,
+    curve: { d1: 77, d30: 84, d60: 92, d90: 96 },
+    productivity: 35,
+    replacement_risk: 8,
+    survival: 92,
+    verdict: 'Strongest Outcome',
+    milestones: [
+      { day: 30, text: 'Likely to be operating independently by end of month one.' },
+      { day: 60, text: 'Client relationships and internal processes fully understood.' },
+      { day: 90, text: 'Delivering at or above expectations. Strong retention probability.' },
+    ],
+  },
+  {
+    id: 'demo-marcus',
+    name: 'Marcus Williams',
+    employment_type: 'permanent',
+    overall_score: 72,
+    curve: { d1: 59, d30: 66, d60: 74, d90: 79 },
+    productivity: 55,
+    replacement_risk: 26,
+    survival: 74,
+    verdict: 'Solid Choice',
+    milestones: [
+      { day: 30, text: 'Will need structured support through month one before finding their feet.' },
+      { day: 60, text: 'Performance stabilising. Watch-outs from assessment likely to surface here.' },
+      { day: 90, text: 'Performing adequately. Development plan recommended to reach full potential.' },
+    ],
+  },
+]
+
+const DEMO_SLATE = '#64748B'
+const DEMO_CURVE_COLORS = [TEAL, NAVY, DEMO_SLATE]
+
+function DemoChart({ rows, isMobile }) {
+  const width = isMobile ? 320 : 680
+  const height = 220
+  const pad = { top: 18, right: 18, bottom: 30, left: 32 }
+  const plotW = width - pad.left - pad.right
+  const plotH = height - pad.top - pad.bottom
+  const xs = [1, 30, 60, 90]
+  const xScale = day => pad.left + ((day - 1) / 89) * plotW
+  const yScale = score => pad.top + (1 - score / 100) * plotH
+  const yTicks = [0, 25, 50, 75, 100]
+  return (
+    <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ maxWidth: '100%', display: 'block' }}>
+      {yTicks.map(t => (
+        <g key={t}>
+          <line x1={pad.left} x2={pad.left + plotW} y1={yScale(t)} y2={yScale(t)} stroke={BD} strokeWidth={1} strokeDasharray={t === 0 ? '0' : '2 4'} />
+          <text x={pad.left - 8} y={yScale(t) + 4} textAnchor="end" fontFamily={F} fontSize={10} fill={TX3}>{t}</text>
+        </g>
+      ))}
+      {xs.map(day => (
+        <text key={day} x={xScale(day)} y={height - 8} textAnchor="middle" fontFamily={F} fontSize={10} fill={TX3}>Day {day}</text>
+      ))}
+      {rows.map((s, i) => {
+        const color = DEMO_CURVE_COLORS[i] || DEMO_SLATE
+        const points = [
+          { x: xScale(1), y: yScale(s.curve.d1) },
+          { x: xScale(30), y: yScale(s.curve.d30) },
+          { x: xScale(60), y: yScale(s.curve.d60) },
+          { x: xScale(90), y: yScale(s.curve.d90) },
+        ]
+        const path = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
+        const area = `${path} L ${points[points.length - 1].x.toFixed(1)} ${yScale(0).toFixed(1)} L ${points[0].x.toFixed(1)} ${yScale(0).toFixed(1)} Z`
+        return (
+          <g key={s.id}>
+            <path d={area} fill={color} opacity={0.12} />
+            <path d={path} fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+            {points.map((p, idx) => <circle key={idx} cx={p.x} cy={p.y} r={3.2} fill={color} />)}
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function DemoTimeline({ items }) {
+  return (
+    <div style={{ position: 'relative', paddingLeft: 18 }}>
+      <div style={{ position: 'absolute', left: 5, top: 6, bottom: 6, width: 2, background: BD }} />
+      {items.map((it, i) => (
+        <div key={i} style={{ position: 'relative', marginBottom: i < items.length - 1 ? 14 : 0 }}>
+          <div style={{ position: 'absolute', left: -18, top: 4, width: 12, height: 12, borderRadius: '50%', background: TEAL, border: `2px solid ${CARD}`, boxShadow: `0 0 0 2px ${TEAL}33` }} />
+          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>
+            Day {it.day}
+          </div>
+          <div style={{ fontFamily: F, fontSize: 12.5, color: TX, lineHeight: 1.55 }}>
+            {it.text}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function DemoOutcomeSimulator({ isMobile }) {
+  const rows = DEMO_SIMULATOR
+  const minProductivity = Math.min(...rows.map(r => r.productivity))
+  const cols = isMobile ? 1 : 2
+  const gridCols = `repeat(${cols}, minmax(0, 1fr))`
+  const verdictStyle = label => {
+    if (label === 'Strongest Outcome') return { bg: TEALLT, color: TEAL, bd: `${TEAL}55` }
+    if (label === 'Solid Choice') return { bg: NAVY, color: '#fff', bd: NAVY }
+    return { bg: AMBBG, color: '#92400E', bd: AMBBD }
+  }
+
+  return (
+    <div>
+      {/* Candidate headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 14, marginBottom: 18 }}>
+        {rows.map((r, i) => (
+          <div key={r.id} style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '14px 16px', borderTop: `3px solid ${DEMO_CURVE_COLORS[i] || DEMO_SLATE}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <Avatar name={r.name} size={28} />
+              <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {r.name}
+              </div>
+              <span style={{
+                fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
+                padding: '1px 6px', borderRadius: 4, flexShrink: 0,
+                background: r.employment_type === 'temporary' ? TEAL : NAVY, color: '#fff',
+              }}>
+                {r.employment_type === 'temporary' ? 'TEMP' : 'PERM'}
+              </span>
+            </div>
+            <span style={{
+              display: 'inline-block', fontFamily: FM, fontSize: 11, fontWeight: 800,
+              padding: '2px 8px', borderRadius: 999,
+              background: sbg(r.overall_score), color: sc(r.overall_score),
+              border: `1px solid ${sc(r.overall_score)}33`,
+            }}>
+              Overall {r.overall_score}/100
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* 90-day curve */}
+      <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '18px 20px', marginBottom: 16 }}>
+        <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, marginBottom: 4 }}>90-day performance curve</div>
+        <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 14 }}>
+          Predicted trajectory from Day 1 through the probation window.
+        </div>
+        <DemoChart rows={rows} isMobile={isMobile} />
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 12 }}>
+          {rows.map((r, i) => (
+            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: DEMO_CURVE_COLORS[i] || DEMO_SLATE }} />
+              <span style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX }}>{r.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Key outcomes */}
+      <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '18px 20px', marginBottom: 16 }}>
+        <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, marginBottom: 14 }}>Key outcome predictions</div>
+
+        <div style={{ paddingBottom: 14, marginBottom: 14, borderBottom: `1px solid ${BD}` }}>
+          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+            Estimated days to full productivity
+          </div>
+          <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginBottom: 10 }}>Lower is better</div>
+          <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 14 }}>
+            {rows.map(r => {
+              const best = r.productivity === minProductivity
+              return (
+                <div key={r.id}>
+                  <span style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color: best ? TEAL : TX }}>{r.productivity}</span>
+                  <span style={{ fontFamily: F, fontSize: 12, color: TX3, marginLeft: 6 }}>days</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+            Probability of early exit
+          </div>
+          <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginBottom: 10 }}>Replacement risk across the placement</div>
+          <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 14 }}>
+            {rows.map(r => {
+              const color = r.replacement_risk > 30 ? RED : r.replacement_risk >= 15 ? AMB : TEAL
+              return (
+                <div key={r.id} style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color }}>{r.replacement_risk}%</div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Milestones */}
+      <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '18px 20px', marginBottom: 16 }}>
+        <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, marginBottom: 14 }}>90-day milestone predictions</div>
+        <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 18 }}>
+          {rows.map(r => (
+            <div key={r.id}>
+              <div style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX, marginBottom: 10 }}>{r.name}</div>
+              <DemoTimeline items={r.milestones} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recommendation */}
+      <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '18px 20px' }}>
+        <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, marginBottom: 14 }}>Hiring recommendation</div>
+        <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 14 }}>
+          {rows.map(r => {
+            const v = verdictStyle(r.verdict)
+            return (
+              <div key={r.id}>
+                <span style={{
+                  display: 'inline-block', padding: '4px 10px', borderRadius: 999,
+                  fontFamily: F, fontSize: 11, fontWeight: 800, letterSpacing: '0.03em',
+                  background: v.bg, color: v.color, border: `1px solid ${v.bd}`,
+                  marginBottom: 8,
+                }}>
+                  {r.verdict}
+                </span>
+                <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>
+                  Based on assessment data {r.name} is predicted to reach full productivity in {r.productivity} days with a {r.survival}% chance of completing the full placement.
+                </p>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )

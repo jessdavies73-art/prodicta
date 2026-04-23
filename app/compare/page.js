@@ -10,6 +10,7 @@ import {
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
   F, FM, scolor, sbg, slabel, dL, dC, cs, bs, ps,
 } from '@/lib/constants'
+import { calculateSurvivalScore } from '@/lib/survival-score'
 
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
 const _mSnap = () => window.innerWidth <= 768
@@ -44,11 +45,12 @@ function CompareContent() {
 
   const [loading, setLoading] = useState(true)
   const [companyName, setCompanyName] = useState('')
+  const [profile, setProfile] = useState(null)
   const [assessment, setAssessment] = useState(null)
   const [candidates, setCandidates] = useState([])
   const [allCandidates, setAllCandidates] = useState([])
   const [selectedIds, setSelectedIds] = useState(new Set())
-  const [activeTab, setActiveTab] = useState('overview') // 'overview' | 'replay'
+  const [activeTab, setActiveTab] = useState('overview') // 'overview' | 'replay' | 'simulator'
   const [replayData, setReplayData] = useState(null)
   const [replayLoading, setReplayLoading] = useState(false)
   const [replayError, setReplayError] = useState('')
@@ -59,7 +61,8 @@ function CompareContent() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: prof } = await supabase.from('users').select('company_name').eq('id', user.id).single()
+      const { data: prof } = await supabase.from('users').select('*').eq('id', user.id).single()
+      setProfile(prof || null)
       if (prof?.company_name) setCompanyName(prof.company_name)
 
       const assessmentId = searchParams.get('assessmentId')
@@ -72,7 +75,7 @@ function CompareContent() {
 
       const { data: allCands } = await supabase
         .from('candidates')
-        .select('id, name, email, status, assessments(employment_type, role_title), results(overall_score, scores, score_narratives, strengths, watchouts, risk_level, hiring_confidence, candidate_type)')
+        .select('id, name, email, status, assessments(employment_type, role_title), results(overall_score, scores, score_narratives, strengths, watchouts, risk_level, hiring_confidence, candidate_type, execution_reliability, training_potential, pressure_fit_score)')
         .eq('assessment_id', assessmentId)
         .eq('status', 'scored')
         .order('name')
@@ -235,10 +238,11 @@ function CompareContent() {
           ) : (
             <>
               {/* Tabs */}
-              <div style={{ display: 'flex', gap: 4, marginBottom: 18, borderBottom: `1px solid ${BD}` }}>
+              <div style={{ display: 'flex', gap: 4, marginBottom: 18, borderBottom: `1px solid ${BD}`, flexWrap: 'wrap' }}>
                 {[
                   { key: 'overview', label: 'Overview' },
                   { key: 'replay', label: 'Scenario Replay' },
+                  { key: 'simulator', label: 'Outcome Simulator' },
                 ].map(t => {
                   const active = activeTab === t.key
                   return (
@@ -269,6 +273,13 @@ function CompareContent() {
                   setIndex={setReplayIndex}
                   cols={cols}
                   isMobile={isMobile}
+                />
+              ) : activeTab === 'simulator' ? (
+                <OutcomeSimulatorView
+                  candidates={candidates}
+                  isMobile={isMobile}
+                  isAgency={profile?.account_type === 'agency'}
+                  averageFee={Number(profile?.average_placement_fee) > 0 ? Number(profile.average_placement_fee) : 15000}
                 />
               ) : (
                 <>
@@ -628,6 +639,331 @@ function ScenarioReplayView({ replayData, loading, error, candidates, index, set
           )
         })}
       </div>
+    </div>
+  )
+}
+
+// Outcome Simulator: 90-day performance curves and predicted milestones
+// Slate is used for the third candidate's line when 3 are selected.
+const SLATE = '#64748B'
+const CURVE_COLORS = [TEAL, NAVY, SLATE]
+
+function clampCurve(v) { return Math.max(20, Math.min(100, Math.round(v))) }
+
+function buildCurve(c) {
+  const r = c.results?.[0] || {}
+  const s = typeof r.overall_score === 'number' ? r.overall_score : 50
+  const er = typeof r.execution_reliability === 'number' ? r.execution_reliability : 50
+  return {
+    d1: clampCurve(s - 15),
+    d30: clampCurve(s - 8),
+    d60: clampCurve(s),
+    d90: clampCurve(s + er / 10),
+  }
+}
+
+function milestoneFor(score, day) {
+  if (day === 30) {
+    if (score >= 80) return 'Likely to be operating independently by end of month one.'
+    if (score >= 60) return 'Will need structured support through month one before finding their feet.'
+    return 'Month one will be challenging. Close management recommended.'
+  }
+  if (day === 60) {
+    if (score >= 80) return 'Client relationships and internal processes fully understood.'
+    if (score >= 60) return 'Performance stabilising. Watch-outs from assessment likely to surface here.'
+    return 'Risk of early exit increases if watch-outs are not actively managed.'
+  }
+  if (score >= 80) return 'Delivering at or above expectations. Strong retention probability.'
+  if (score >= 60) return 'Performing adequately. Development plan recommended to reach full potential.'
+  return 'Probation review recommended. Intervention plan should be in place.'
+}
+
+function verdictFor(score) {
+  if (score >= 80) return { label: 'Strongest Outcome', color: TEAL, bg: TEALLT, bd: `${TEAL}55` }
+  if (score >= 65) return { label: 'Solid Choice', color: '#fff', bg: NAVY, bd: NAVY }
+  return { label: 'Higher Risk', color: '#92400E', bg: AMBBG, bd: AMBBD }
+}
+
+function formatPounds(n) {
+  const v = Math.round(Number(n) || 0)
+  return `£${v.toLocaleString('en-GB')}`
+}
+
+function ChartLegendDot({ color }) {
+  return <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: color, flexShrink: 0 }} />
+}
+
+// Simple multi-series SVG line chart for the 90-day performance curves.
+// All series drawn on a single chart so the comparison is glance-readable.
+function PerformanceCurveChart({ series, isMobile }) {
+  const width = isMobile ? 320 : 680
+  const height = 220
+  const pad = { top: 18, right: 18, bottom: 30, left: 32 }
+  const plotW = width - pad.left - pad.right
+  const plotH = height - pad.top - pad.bottom
+  const xs = [1, 30, 60, 90]
+  const xScale = day => pad.left + ((day - 1) / 89) * plotW
+  const yScale = score => pad.top + (1 - (score - 0) / 100) * plotH
+  const yTicks = [0, 25, 50, 75, 100]
+  return (
+    <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ maxWidth: '100%', display: 'block' }}>
+      {/* Y gridlines */}
+      {yTicks.map(t => (
+        <g key={t}>
+          <line x1={pad.left} x2={pad.left + plotW} y1={yScale(t)} y2={yScale(t)} stroke={BD} strokeWidth={1} strokeDasharray={t === 0 ? '0' : '2 4'} />
+          <text x={pad.left - 8} y={yScale(t) + 4} textAnchor="end" fontFamily={F} fontSize={10} fill={TX3}>{t}</text>
+        </g>
+      ))}
+      {/* X labels */}
+      {xs.map(day => (
+        <text key={day} x={xScale(day)} y={height - 8} textAnchor="middle" fontFamily={F} fontSize={10} fill={TX3}>
+          Day {day}
+        </text>
+      ))}
+      {/* Series */}
+      {series.map((s, i) => {
+        const points = [
+          { x: xScale(1), y: yScale(s.curve.d1) },
+          { x: xScale(30), y: yScale(s.curve.d30) },
+          { x: xScale(60), y: yScale(s.curve.d60) },
+          { x: xScale(90), y: yScale(s.curve.d90) },
+        ]
+        const path = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
+        const area = `${path} L ${points[points.length - 1].x.toFixed(1)} ${yScale(0).toFixed(1)} L ${points[0].x.toFixed(1)} ${yScale(0).toFixed(1)} Z`
+        return (
+          <g key={s.id}>
+            <path d={area} fill={s.color} opacity={0.12} />
+            <path d={path} fill="none" stroke={s.color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+            {points.map((p, idx) => (
+              <circle key={idx} cx={p.x} cy={p.y} r={3.2} fill={s.color} />
+            ))}
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function OutcomeSimulatorView({ candidates, isMobile, isAgency, averageFee }) {
+  const selected = candidates.slice(0, 3)
+  if (selected.length < 2) {
+    return (
+      <div style={{ ...cs, textAlign: 'center', padding: '48px 24px' }}>
+        <p style={{ fontFamily: F, fontSize: 14, color: TX3, margin: 0 }}>
+          Select at least 2 candidates to run the Outcome Simulator.
+        </p>
+      </div>
+    )
+  }
+
+  // Build enriched rows: compute curve, productivity, survival, replacement risk, revenue.
+  const rows = selected.map((c, i) => {
+    const r = c.results?.[0] || {}
+    const score = typeof r.overall_score === 'number' ? r.overall_score : 0
+    const curve = buildCurve(c)
+    const productivity = Math.max(5, Math.round((90 - score / 2) / 5) * 5)
+    const survival = calculateSurvivalScore({
+      overallScore: score,
+      hiringConfidence: r.hiring_confidence,
+      watchouts: r.watchouts || [],
+      executionReliability: r.execution_reliability,
+      trainingPotential: r.training_potential,
+    })
+    const replacementRisk = Math.max(0, Math.min(100, 100 - survival))
+    const revenue = Math.round((survival * averageFee) / 100)
+    const verdict = verdictFor(score)
+    return { c, i, score, curve, productivity, survival, replacementRisk, revenue, verdict, color: CURVE_COLORS[i] || SLATE }
+  })
+
+  const minProductivity = Math.min(...rows.map(r => r.productivity))
+  const cols = Math.min(rows.length, isMobile ? 1 : 3)
+  const gridCols = `repeat(${cols}, minmax(0, 1fr))`
+
+  return (
+    <div>
+      {/* Header row of candidates */}
+      <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 14, marginBottom: 18 }}>
+        {rows.map(({ c, score, color }) => {
+          const empType = c.assessments?.employment_type
+          return (
+            <div key={c.id} style={{ ...cs, padding: '14px 16px', borderTop: `3px solid ${color}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <Avatar name={c.name} size={28} />
+                <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {c.name}
+                </div>
+                {empType && (
+                  <span style={{
+                    fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
+                    padding: '1px 6px', borderRadius: 4, flexShrink: 0,
+                    background: empType === 'temporary' ? TEAL : NAVY, color: '#fff',
+                  }}>
+                    {empType === 'temporary' ? 'TEMP' : 'PERM'}
+                  </span>
+                )}
+              </div>
+              <span style={{
+                display: 'inline-block', fontFamily: FM, fontSize: 11, fontWeight: 800,
+                padding: '2px 8px', borderRadius: 999,
+                background: sbg(score), color: scolor(score),
+                border: `1px solid ${scolor(score)}33`,
+              }}>
+                Overall {score}/100
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Section 1: 90-day performance curve */}
+      <div style={{ ...cs, padding: '18px 20px', marginBottom: 16 }}>
+        <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, marginBottom: 4 }}>
+          90-day performance curve
+        </div>
+        <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 14 }}>
+          Predicted trajectory from Day 1 through the probation window.
+        </div>
+        <PerformanceCurveChart
+          series={rows.map(r => ({ id: r.c.id, name: r.c.name, color: r.color, curve: r.curve }))}
+          isMobile={isMobile}
+        />
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 12 }}>
+          {rows.map(r => (
+            <div key={r.c.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <ChartLegendDot color={r.color} />
+              <span style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX }}>{r.c.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Section 2: Key outcome predictions */}
+      <div style={{ ...cs, padding: '18px 20px', marginBottom: 16 }}>
+        <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, marginBottom: 14 }}>
+          Key outcome predictions
+        </div>
+
+        <MetricRow label="Estimated days to full productivity" helper="Lower is better">
+          <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 14 }}>
+            {rows.map(r => {
+              const best = r.productivity === minProductivity
+              return (
+                <div key={r.c.id} style={{ textAlign: 'left' }}>
+                  <span style={{
+                    fontFamily: FM, fontSize: 22, fontWeight: 800,
+                    color: best ? TEAL : TX,
+                  }}>
+                    {r.productivity}
+                  </span>
+                  <span style={{ fontFamily: F, fontSize: 12, color: TX3, marginLeft: 6 }}>days</span>
+                </div>
+              )
+            })}
+          </div>
+        </MetricRow>
+
+        {isAgency && (
+          <MetricRow label="Estimated fee protection value" helper="Based on survival probability">
+            <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 14 }}>
+              {rows.map(r => (
+                <div key={r.c.id} style={{ fontFamily: FM, fontSize: 20, fontWeight: 800, color: TEAL }}>
+                  {formatPounds(r.revenue)}
+                </div>
+              ))}
+            </div>
+          </MetricRow>
+        )}
+
+        <MetricRow label="Probability of early exit" helper="Replacement risk across the placement" last>
+          <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 14 }}>
+            {rows.map(r => {
+              const risk = r.replacementRisk
+              const color = risk > 30 ? RED : risk >= 15 ? AMB : TEAL
+              return (
+                <div key={r.c.id} style={{ fontFamily: FM, fontSize: 22, fontWeight: 800, color }}>
+                  {risk}%
+                </div>
+              )
+            })}
+          </div>
+        </MetricRow>
+      </div>
+
+      {/* Section 3: 90-day milestone predictions */}
+      <div style={{ ...cs, padding: '18px 20px', marginBottom: 16 }}>
+        <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, marginBottom: 14 }}>
+          90-day milestone predictions
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 18 }}>
+          {rows.map(r => (
+            <div key={r.c.id}>
+              <div style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX, marginBottom: 10 }}>{r.c.name}</div>
+              <Timeline items={[
+                { day: 30, text: milestoneFor(r.score, 30) },
+                { day: 60, text: milestoneFor(r.score, 60) },
+                { day: 90, text: milestoneFor(r.score, 90) },
+              ]} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Section 4: Hiring recommendation */}
+      <div style={{ ...cs, padding: '18px 20px' }}>
+        <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, marginBottom: 14 }}>
+          Hiring recommendation
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 14 }}>
+          {rows.map(r => (
+            <div key={r.c.id}>
+              <span style={{
+                display: 'inline-block', padding: '4px 10px', borderRadius: 999,
+                fontFamily: F, fontSize: 11, fontWeight: 800, letterSpacing: '0.03em',
+                background: r.verdict.bg, color: r.verdict.color, border: `1px solid ${r.verdict.bd}`,
+                marginBottom: 8,
+              }}>
+                {r.verdict.label}
+              </span>
+              <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>
+                Based on assessment data {r.c.name} is predicted to reach full productivity in {r.productivity} days with a {r.survival}% chance of completing the full placement.
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MetricRow({ label, helper, children, last }) {
+  return (
+    <div style={{ paddingBottom: last ? 0 : 14, marginBottom: last ? 0 : 14, borderBottom: last ? 'none' : `1px solid ${BD}` }}>
+      <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+        {label}
+      </div>
+      {helper && (
+        <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginBottom: 10 }}>{helper}</div>
+      )}
+      {children}
+    </div>
+  )
+}
+
+function Timeline({ items }) {
+  return (
+    <div style={{ position: 'relative', paddingLeft: 18 }}>
+      <div style={{ position: 'absolute', left: 5, top: 6, bottom: 6, width: 2, background: BD }} />
+      {items.map((it, i) => (
+        <div key={i} style={{ position: 'relative', marginBottom: i < items.length - 1 ? 14 : 0 }}>
+          <div style={{ position: 'absolute', left: -18, top: 4, width: 12, height: 12, borderRadius: '50%', background: TEAL, border: `2px solid ${CARD}`, boxShadow: `0 0 0 2px ${TEAL}33` }} />
+          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 800, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>
+            Day {it.day}
+          </div>
+          <div style={{ fontFamily: F, fontSize: 12.5, color: TX, lineHeight: 1.55 }}>
+            {it.text}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
