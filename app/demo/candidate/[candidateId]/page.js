@@ -602,6 +602,113 @@ function DemoInterviewVerification({ candidateId, isMobile }) {
   )
 }
 
+// Behavioural consistency panel for the demo. Hardcoded per candidate to
+// mirror what the live pipeline would store on the results row.
+const DEMO_CONSISTENCY = {
+  'demo-c1': {
+    flag: false,
+    summary: {
+      prioritisation:        'consistent_high',
+      ownership:             'consistent_high',
+      communication:         'consistent_high',
+      quality_under_pressure: 'holds_up',
+      decision_speed_quality: 'no_degradation',
+    },
+  },
+  'demo-c2': {
+    flag: true,
+    summary: {
+      prioritisation:        'inconsistent',
+      ownership:             'consistent_high',
+      communication:         'inconsistent',
+      quality_under_pressure: 'drops_significantly',
+      decision_speed_quality: 'no_degradation',
+    },
+  },
+}
+
+const DEMO_CONSISTENCY_PATTERNS = [
+  { key: 'prioritisation',        label: 'Prioritisation' },
+  { key: 'ownership',             label: 'Ownership' },
+  { key: 'communication',         label: 'Communication' },
+  { key: 'quality_under_pressure', label: 'Quality under pressure' },
+  { key: 'decision_speed_quality', label: 'Decision speed' },
+]
+
+function demoConsistencyBadge(value) {
+  if (!value) return { label: 'Not scored', bg: '#f1f5f9', color: '#64748B', bd: '#cbd5e1' }
+  if (value === 'consistent_high' || value === 'holds_up' || value === 'no_degradation') {
+    return { label: 'Consistent', bg: '#e0f7f1', color: '#00897B', bd: '#00BFA555' }
+  }
+  if (value === 'consistent_low') {
+    return { label: 'Consistently Low', bg: '#fffbeb', color: '#92400E', bd: '#fde68a' }
+  }
+  return { label: 'Variable', bg: '#fee2e2', color: '#991B1B', bd: '#fecaca' }
+}
+
+function DemoConsistencyPanel({ candidateId }) {
+  const data = DEMO_CONSISTENCY[candidateId]
+  const [open, setOpen] = useState(false)
+  if (!data) return null
+  const { flag, summary } = data
+  return (
+    <div className="no-print" style={{ marginTop: 16, borderTop: `1px solid ${BD}`, paddingTop: 14 }}>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        style={{
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          fontFamily: F, fontSize: 12.5, fontWeight: 700, color: '#00897B',
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+        }}
+      >
+        {open ? 'Hide consistency' : 'View consistency across scenarios'}
+        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'none' }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      <div style={{ overflow: 'hidden', maxHeight: open ? 600 : 0, transition: 'max-height 0.3s ease' }}>
+        <div style={{ paddingTop: 12 }}>
+          <div style={{ fontFamily: F, fontSize: 12.5, color: TX3, fontStyle: 'italic', marginBottom: 12, lineHeight: 1.55 }}>
+            Consistency across scenarios is a stronger predictor of placement success than any single response.
+          </div>
+          {flag && (
+            <div style={{
+              background: AMBBG, border: `1px solid ${AMBBD}`, borderLeft: `3px solid ${AMB}`,
+              borderRadius: 8, padding: '8px 12px', marginBottom: 12,
+              fontFamily: F, fontSize: 12.5, color: '#92400E',
+            }}>
+              Variable performance detected across two or more patterns. See the watch-out above for details.
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {DEMO_CONSISTENCY_PATTERNS.map((p, i) => {
+              const badge = demoConsistencyBadge(summary[p.key])
+              return (
+                <div key={p.key} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 0', gap: 12,
+                  borderTop: i === 0 ? 'none' : `1px solid #f1f5f9`,
+                }}>
+                  <span style={{ fontFamily: F, fontSize: 13, color: NAVY }}>{p.label}</span>
+                  <span style={{
+                    display: 'inline-block', padding: '2px 10px', borderRadius: 999,
+                    background: badge.bg, color: badge.color, border: `1px solid ${badge.bd}`,
+                    fontFamily: F, fontSize: 11, fontWeight: 800, letterSpacing: '0.03em',
+                  }}>
+                    {badge.label}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Slim navy summary bar listing failure patterns detected across scenarios.
 // Mirrors FailurePatternBar on the live report page. Only shown on Marcus in
 // the demo so prospects see the feature on a mid-scoring candidate.
@@ -3093,6 +3200,7 @@ function DemoCandidateInner({ params }) {
                       </p>
                     </div>
                   </div>
+                  <DemoConsistencyPanel candidateId={params.candidateId} />
                 </Card>
               </ScrollReveal>
             )}

@@ -4113,6 +4113,10 @@ export default function CandidateReportPage({ params }) {
                           </p>
                         </div>
                       </div>
+                      <ConsistencyPanel
+                        summary={results.consistency_summary}
+                        flag={results.consistency_flag}
+                      />
                     </Card>
                   </ScrollReveal>
                 )}
@@ -7404,6 +7408,95 @@ function EvidenceStrengthPill({ level }) {
     }}>
       {s.label}
     </span>
+  )
+}
+
+// Behavioural consistency panel. Collapsed by default. Reads
+// consistency_summary + consistency_flag from the results row. Silent when
+// consistency_summary is missing (older reports render unchanged).
+const CONSISTENCY_PATTERNS = [
+  { key: 'prioritisation',        label: 'Prioritisation' },
+  { key: 'ownership',             label: 'Ownership' },
+  { key: 'communication',         label: 'Communication' },
+  { key: 'quality_under_pressure', label: 'Quality under pressure' },
+  { key: 'decision_speed_quality', label: 'Decision speed' },
+]
+
+function consistencyBadge(value) {
+  // Returns { label, bg, color, bd } for the result badge.
+  if (!value) return { label: 'Not scored', bg: '#f1f5f9', color: '#64748B', bd: '#cbd5e1' }
+  if (value === 'consistent_high' || value === 'holds_up' || value === 'no_degradation') {
+    return { label: 'Consistent', bg: '#e0f7f1', color: '#00897B', bd: '#00BFA555' }
+  }
+  if (value === 'consistent_low') {
+    return { label: 'Consistently Low', bg: '#fffbeb', color: '#92400E', bd: '#fde68a' }
+  }
+  // inconsistent, drops_significantly, degrades_under_pressure
+  return { label: 'Variable', bg: '#fee2e2', color: '#991B1B', bd: '#fecaca' }
+}
+
+function ConsistencyPanel({ summary, flag }) {
+  const [open, setOpen] = useState(false)
+  if (!summary || typeof summary !== 'object') return null
+  const hasAnyValue = CONSISTENCY_PATTERNS.some(p => summary[p.key])
+  if (!hasAnyValue) return null
+  return (
+    <div className="no-print" style={{ marginTop: 16, borderTop: '1px solid #e4e9f0', paddingTop: 14 }}>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        style={{
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, fontWeight: 700,
+          color: '#00897B', display: 'inline-flex', alignItems: 'center', gap: 6,
+        }}
+      >
+        {open ? 'Hide consistency' : 'View consistency across scenarios'}
+        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'none' }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      <div style={{ overflow: 'hidden', maxHeight: open ? 600 : 0, transition: 'max-height 0.3s ease' }}>
+        <div style={{ paddingTop: 12 }}>
+          <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, color: '#64748b', fontStyle: 'italic', marginBottom: 12, lineHeight: 1.55 }}>
+            Consistency across scenarios is a stronger predictor of placement success than any single response.
+          </div>
+          {flag && (
+            <div style={{
+              background: '#fffbeb', border: '1px solid #fde68a', borderLeft: '3px solid #E8B84B',
+              borderRadius: 8, padding: '8px 12px', marginBottom: 12,
+              fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, color: '#92400E',
+            }}>
+              Variable performance detected across two or more patterns. See the watch-out above for details.
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {CONSISTENCY_PATTERNS.map((p, i) => {
+              const badge = consistencyBadge(summary[p.key])
+              return (
+                <div key={p.key} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 0', gap: 12,
+                  borderTop: i === 0 ? 'none' : '1px solid #f1f5f9',
+                }}>
+                  <span style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13, color: '#0f2137' }}>
+                    {p.label}
+                  </span>
+                  <span style={{
+                    display: 'inline-block', padding: '2px 10px', borderRadius: 999,
+                    background: badge.bg, color: badge.color, border: `1px solid ${badge.bd}`,
+                    fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 11, fontWeight: 800, letterSpacing: '0.03em',
+                  }}>
+                    {badge.label}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
