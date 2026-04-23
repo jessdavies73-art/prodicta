@@ -1019,6 +1019,7 @@ export default function CandidateReportPage({ params }) {
   const [pushbackCopied, setPushbackCopied] = useState(false)
   const [whyOpen, setWhyOpen] = useState(null) // skill name of currently expanded Why this score panel
   const [reviewBannerDismissed, setReviewBannerDismissed] = useState(false)
+  const [validationOpen, setValidationOpen] = useState(false)
   const [outcomeDate, setOutcomeDate] = useState('')
   const [outcomeNoteText, setOutcomeNoteText] = useState('')
   const [outcomeClientName, setOutcomeClientName] = useState('')
@@ -4600,6 +4601,15 @@ export default function CandidateReportPage({ params }) {
                                 </p>
                               </div>
                             </div>
+                            <div style={{ paddingLeft: 34, marginBottom: explanation || evidence ? 8 : 0 }}>
+                              <EvidenceStrengthPill
+                                level={deriveEvidenceStrength({
+                                  insight: { title, explanation, evidence },
+                                  scoringConfidence: results.scoring_confidence,
+                                  hasDimensionEvidence: !!results.dimension_evidence,
+                                })}
+                              />
+                            </div>
                             {explanation && (
                               <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 6px', lineHeight: 1.7, paddingLeft: 34 }}>
                                 {explanation}
@@ -4680,6 +4690,15 @@ export default function CandidateReportPage({ params }) {
                             <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 8px' }}>
                               {title}
                             </p>
+                            <div style={{ marginBottom: 8 }}>
+                              <EvidenceStrengthPill
+                                level={deriveEvidenceStrength({
+                                  insight: { title, explanation, evidence },
+                                  scoringConfidence: results.scoring_confidence,
+                                  hasDimensionEvidence: !!results.dimension_evidence,
+                                })}
+                              />
+                            </div>
                             {explanation && (
                               <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 6px', lineHeight: 1.7 }}>
                                 {explanation}
@@ -5469,6 +5488,21 @@ export default function CandidateReportPage({ params }) {
                   </Card>
                   </ScrollReveal>
                 )}
+
+                {/* ══════════════════════════════════════════════════
+                    VALIDATION LAYER, "How this report was produced"
+                ══════════════════════════════════════════════════ */}
+                <ValidationLayer
+                  scenarioCount={candidate?.assessments?.scenarios?.length || 0}
+                  scoringConfidence={results?.scoring_confidence}
+                  integrityPassed={
+                    results?.response_quality === 'Genuine'
+                    || results?.response_quality === 'Likely Genuine'
+                  }
+                  expanded={validationOpen}
+                  onToggle={() => setValidationOpen(v => !v)}
+                  isMobile={isMobile}
+                />
 
                 {/* ══════════════════════════════════════════════════
                     TEAM NOTES
@@ -6905,6 +6939,142 @@ export default function CandidateReportPage({ params }) {
 // Explainability + review UI helpers. Defined at module scope so they can be
 // reused by other candidate-like views later without duplicating the styling.
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Evidence strength heuristic for each insight card. Looks at whether the AI
+// produced per-dimension evidence and how confident the overall scoring was,
+// then checks whether the insight itself references specific details such as
+// numbers, timescales, or direct quotes.
+function hasSpecificDetail(insight) {
+  if (!insight) return false
+  const txt = [insight.title, insight.explanation, insight.evidence]
+    .filter(Boolean)
+    .join(' ')
+  if (!txt) return false
+  // Direct quote is the strongest signal. Numbers or time references also count.
+  if (/["“].+?["”]/.test(txt)) return true
+  if (/\b\d+(\.\d+)?%?\b/.test(txt)) return true
+  if (/\b(day|days|week|weeks|hour|hours|minute|minutes|month|months)\b/i.test(txt)) return true
+  return false
+}
+
+function deriveEvidenceStrength({ insight, scoringConfidence, hasDimensionEvidence }) {
+  const level = String(scoringConfidence?.level || '').toLowerCase()
+  if (level === 'low' || !hasDimensionEvidence) return 'limited'
+  if (hasDimensionEvidence && level === 'high' && hasSpecificDetail(insight)) return 'strong'
+  return 'moderate'
+}
+
+// Collapsible Validation Layer section shown at the bottom of the report.
+// Explains in plain English how the report was produced. Four blocks plus a
+// PRODICTA Placement Intelligence band. Uses maxHeight transition for smoothness.
+function ValidationLayer({ scenarioCount = 0, scoringConfidence, integrityPassed = true, expanded, onToggle, isMobile }) {
+  const level = String(scoringConfidence?.level || '').toLowerCase()
+  const confBody = level === 'high'
+    ? 'Response depth and specificity were sufficient to score all dimensions with high confidence. This verdict is based on strong evidence.'
+    : level === 'low'
+    ? 'Response depth was limited. This report should be treated as directional. A structured interview is strongly recommended before making a final decision.'
+    : 'Response depth was adequate but some dimensions would benefit from interview verification. See the Verify at Interview guidance above.'
+  const integrityBody = integrityPassed
+    ? 'All responses were analysed for AI assistance, copy-paste patterns, response timing anomalies, and consistency signals. Verified Human badge confirmed.'
+    : 'All responses were analysed for AI assistance, copy-paste patterns, response timing anomalies, and consistency signals. Integrity signals were mixed. Review the integrity section above.'
+  const simBody = `This candidate completed ${scenarioCount || 'a set of'} role-specific scenarios built from the job description. Scenarios reflect the actual situations this person would face in their first 90 days. Responses were not timed against a generic question bank.`
+
+  return (
+    <div className="no-print" style={{ marginBottom: 40 }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: '#0f2137', color: '#fff', border: 'none', borderRadius: expanded ? '10px 10px 0 0' : 10,
+          padding: '14px 20px', cursor: 'pointer',
+          fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 14, fontWeight: 800, letterSpacing: '-0.1px',
+        }}
+      >
+        <span>How this report was produced</span>
+        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.25s', transform: expanded ? 'rotate(180deg)' : 'none' }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      <div style={{
+        overflow: 'hidden',
+        maxHeight: expanded ? 900 : 0,
+        transition: 'max-height 0.35s ease',
+        background: '#fff',
+        border: '1px solid #e4e9f0',
+        borderTop: 'none',
+        borderRadius: '0 0 10px 10px',
+      }}>
+        <div style={{ padding: '20px 22px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+            gap: 14,
+            marginBottom: 16,
+          }}>
+            <ValidationBlock title="Real Work Simulation" body={simBody} />
+            <ValidationBlock
+              title="Anchored Behavioural Scoring"
+              body="Every dimension was scored against predefined behavioural anchors, not a holistic AI judgment. Each anchor defines exactly what high, medium, and low performance looks like for this specific skill. Scores are consistent across similar responses."
+            />
+            <ValidationBlock title="Response Integrity Check" body={integrityBody} />
+            <ValidationBlock title="Scoring Confidence" body={confBody} />
+          </div>
+          <div style={{
+            background: 'rgba(0,191,165,0.06)',
+            border: '1px solid rgba(0,191,165,0.35)',
+            borderLeft: '3px solid #00BFA5',
+            borderRadius: 10,
+            padding: '14px 18px',
+          }}>
+            <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12, fontWeight: 800, color: '#00897B', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+              PRODICTA Placement Intelligence
+            </div>
+            <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13, color: '#0f2137', margin: 0, lineHeight: 1.6 }}>
+              This report was generated by the PRODICTA Placement Intelligence Model, which combines role-specific behavioural simulation, anchored rubric scoring, integrity verification, and role-calibrated weighting. Every insight is traceable to candidate behaviour, not AI assumption.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ValidationBlock({ title, body }) {
+  return (
+    <div style={{
+      background: '#f7f9fb', border: '1px solid #e4e9f0', borderRadius: 10,
+      padding: '14px 16px',
+    }}>
+      <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13, fontWeight: 800, color: '#0f2137', marginBottom: 6 }}>
+        {title}
+      </div>
+      <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, color: '#4a5568', margin: 0, lineHeight: 1.6 }}>
+        {body}
+      </p>
+    </div>
+  )
+}
+
+function EvidenceStrengthPill({ level }) {
+  const map = {
+    strong:   { label: 'Strong Evidence',   bg: '#00BFA5', color: '#fff',     bd: '#00897B' },
+    moderate: { label: 'Moderate Evidence', bg: '#E8B84B', color: '#0f2137',  bd: '#b98616' },
+    limited:  { label: 'Limited Evidence',  bg: '#64748B', color: '#fff',     bd: '#475569' },
+  }
+  const s = map[level] || map.moderate
+  return (
+    <span style={{
+      display: 'inline-block', padding: '2px 10px', borderRadius: 999,
+      background: s.bg, color: s.color, border: `1px solid ${s.bd}`,
+      fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 11, fontWeight: 800,
+      letterSpacing: '0.03em',
+    }}>
+      {s.label}
+    </span>
+  )
+}
 
 // Confidence indicator shown on the verdict card. Reads the scoring_confidence
 // JSONB from results. Falls back to nothing if the field is missing.

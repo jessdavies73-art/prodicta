@@ -1235,6 +1235,84 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
+          HOW PRODICTA WORKS (PRODICTA Placement Intelligence Model)
+      ════════════════════════════════════════════════════════════════════ */}
+      <section id="placement-intelligence" style={{ background: '#fff', padding: '72px 24px' }}>
+        <style>{`
+          .ppim-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 20px;
+          }
+          @media (max-width: 960px) {
+            .ppim-grid { grid-template-columns: 1fr; gap: 14px; }
+          }
+          .ppim-step {
+            background: #f8fafb;
+            border: 1px solid #e4e9f0;
+            border-radius: 14px;
+            padding: 24px 22px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+          }
+          .ppim-step:hover {
+            transform: translateY(-3px);
+            border-color: ${TEAL}55;
+          }
+          .ppim-num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; border-radius: 10px;
+            background: ${TEAL}; color: ${NAVY};
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 15px; font-weight: 800;
+            margin-bottom: 14px;
+          }
+        `}</style>
+        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: 44 }}>
+              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
+                How PRODICTA Works
+              </div>
+              <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15, marginBottom: 14 }}>
+                The PRODICTA Placement Intelligence Model
+              </h2>
+              <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7, maxWidth: 720, margin: '0 auto' }}>
+                Four layers that turn a candidate response into an evidence-based hiring decision.
+              </p>
+            </div>
+          </Reveal>
+          <Reveal>
+            <div className="ppim-grid">
+              {[
+                { n: '1', title: 'Behavioural Simulation', body: 'Candidates complete role-specific work simulations built from your job description. Every scenario reflects a real situation they will face in their first 90 days.' },
+                { n: '2', title: 'Anchored Scoring',       body: 'Responses are scored against predefined behavioural anchors, not AI opinion. Each dimension has a fixed standard for high, medium, and low performance.' },
+                { n: '3', title: 'Role Calibration',       body: 'Scores are weighted for your specific role family. A warehouse operative and a finance director are not measured against the same model.' },
+                { n: '4', title: 'Placement Intelligence', body: 'Every insight is traceable to something the candidate actually did. Watch-outs come with evidence. Strengths come with proof. The verdict comes with a confidence level.' },
+              ].map(step => (
+                <div key={step.n} className="ppim-step">
+                  <div className="ppim-num">{step.n}</div>
+                  <h3 style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: NAVY, margin: '0 0 8px' }}>
+                    {step.title}
+                  </h3>
+                  <p style={{ fontFamily: F, fontSize: 14, color: '#4a5568', margin: 0, lineHeight: 1.65 }}>
+                    {step.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+          <Reveal>
+            <p style={{
+              fontFamily: F, fontSize: 16, color: TEAL, fontStyle: 'italic',
+              textAlign: 'center', marginTop: 36, marginBottom: 0, fontWeight: 600,
+            }}>
+              This is not AI guesswork. This is evidence-based placement intelligence.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
           PRICING
       ════════════════════════════════════════════════════════════════════ */}
       <section id="pricing" style={{ background: '#fff', padding: '72px 24px' }}>
