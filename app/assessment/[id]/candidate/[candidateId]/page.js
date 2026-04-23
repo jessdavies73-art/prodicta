@@ -1662,15 +1662,28 @@ export default function CandidateReportPage({ params }) {
                     <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TEAL, marginTop: 8 }}>
                       {slbl(score)}
                     </div>
-                    {results.percentile && (
-                      <div style={{
-                        marginTop: 6, fontFamily: F, fontSize: 11.5, fontWeight: 600,
-                        color: TEALD, background: TEALLT, border: `1px solid ${TEAL}55`,
-                        borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap', display: 'inline-block',
-                      }}>
-                        {results.percentile} of candidates
-                      </div>
-                    )}
+                    {results.percentile && (() => {
+                      const basis = results.percentile_basis || 'candidates assessed on PRODICTA'
+                      return (
+                        <>
+                          <div
+                            title={`${results.percentile} of ${basis}`}
+                            style={{
+                              marginTop: 6, fontFamily: F, fontSize: 11.5, fontWeight: 600,
+                              color: TEALD, background: TEALLT, border: `1px solid ${TEAL}55`,
+                              borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap', display: 'inline-block',
+                            }}
+                          >
+                            {results.percentile} of candidates
+                          </div>
+                          <div style={{
+                            marginTop: 4, fontFamily: F, fontSize: 10.5, color: TX3, fontStyle: 'italic', maxWidth: 340, lineHeight: 1.4,
+                          }}>
+                            {basis}
+                          </div>
+                        </>
+                      )
+                    })()}
                     {(() => {
                       const stored = candidate?.assessments?.detected_role_type
                       const roleType = (stored && ROLE_BENCHMARKS[stored])
@@ -2705,6 +2718,14 @@ export default function CandidateReportPage({ params }) {
                           {typeExplanation && (
                             <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '6px 0 0', lineHeight: 1.55 }}>{typeExplanation}</p>
                           )}
+                          {(() => {
+                            const basis = buildAssessmentBasis(candidate?.assessments, results)
+                            return basis ? (
+                              <div style={{ fontFamily: F, fontSize: 11, color: 'rgba(255,255,255,0.32)', fontStyle: 'italic', marginTop: 8, lineHeight: 1.5 }}>
+                                Assessment basis: {basis}
+                              </div>
+                            ) : null
+                          })()}
                         </div>
                       )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -7414,6 +7435,41 @@ function EvidenceStrengthPill({ level }) {
       {s.label}
     </span>
   )
+}
+
+// Build the "role family, seniority level, assessment mode" comparator basis
+// string for the candidate type subtitle. Returns null if the three factors
+// can't be resolved from the assessment record.
+function buildAssessmentBasis(assessment, results) {
+  if (!assessment) return null
+  const mode = (assessment.assessment_mode || '').toLowerCase()
+  const level = assessment.role_level
+  const detected = (assessment.detected_role_type || '').toLowerCase()
+
+  let family = null
+  if (level === 'OPERATIONAL') family = 'Operational'
+  else if (level === 'LEADERSHIP') family = 'Management'
+  else if (level === 'MID_LEVEL') family = 'Professional'
+  // Fall back to keyword heuristics on the detected role type
+  if (!family && detected) {
+    if (/care|warehouse|driver|operations|customer_service|admin|reception/.test(detected)) family = 'Operational'
+    else if (/management|director|head/.test(detected)) family = 'Management'
+    else family = 'Professional'
+  }
+
+  const seniority = level === 'OPERATIONAL' ? 'operational'
+    : level === 'LEADERSHIP' ? 'leadership'
+    : level === 'MID_LEVEL' ? 'mid-level'
+    : null
+
+  const modeLabel = mode === 'rapid' ? 'rapid'
+    : mode === 'quick' ? 'quick'
+    : mode === 'standard' ? 'standard'
+    : mode === 'advanced' ? 'advanced'
+    : null
+
+  if (!family || !seniority || !modeLabel) return null
+  return `${family} roles, ${seniority}, ${modeLabel} assessment`
 }
 
 // Engagement Signals panel: descriptive, non-judgmental per-scenario view of

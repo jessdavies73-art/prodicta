@@ -3932,7 +3932,10 @@ function DashboardPageInner() {
                   <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: TX3 }}>
                     {BENCHMARK_DAYS.toFixed(1)}
                   </span>
-                  <span style={{ fontSize: 12, color: TX3 }}>days avg industry benchmark</span>
+                  <span style={{ fontSize: 12, color: TX3 }}>days, UK average across all roles</span>
+                </div>
+                <div style={{ fontSize: 10.5, color: TX3, fontStyle: 'italic', marginTop: 2 }}>
+                  vs platform average for all roles
                 </div>
               </div>
               {speedToOfferPctFaster != null && speedToOfferPctFaster > 0 && (

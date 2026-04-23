@@ -2033,11 +2033,29 @@ function DemoCandidateInner({ params }) {
                 <div style={{ fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>Overall Score <InfoTooltip text="Comprehensive performance score across all scenarios. 50 is average, 75+ is strong." /></div>
                 <ScoreRing score={score} size={130} strokeWidth={9} />
                 <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TEAL, marginTop: 8 }}>{slbl(score)}</div>
-                {results.percentile && (
-                  <div style={{ marginTop: 6, fontFamily: F, fontSize: 11.5, fontWeight: 600, color: TEALD, background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap', display: 'inline-block' }}>
-                    {results.percentile} of candidates
-                  </div>
-                )}
+                {results.percentile && (() => {
+                  const basisByCandidate = {
+                    'demo-c1': 'Top 4% of professional-level marketing candidates assessed via standard on PRODICTA',
+                    'demo-c2': 'Top 22% of professional-level marketing candidates assessed via standard on PRODICTA',
+                  }
+                  const basisLine = basisByCandidate[params.candidateId] || `${results.percentile} of candidates assessed on PRODICTA`
+                  const pillLabel = basisByCandidate[params.candidateId]
+                    ? basisLine.replace(/\s+assessed via.*/i, '')
+                    : `${results.percentile} of candidates`
+                  return (
+                    <>
+                      <div
+                        title={basisLine}
+                        style={{ marginTop: 6, fontFamily: F, fontSize: 11.5, fontWeight: 600, color: TEALD, background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap', display: 'inline-block' }}
+                      >
+                        {results.percentile} of candidates
+                      </div>
+                      <div style={{ marginTop: 4, fontFamily: F, fontSize: 10.5, color: TX3, fontStyle: 'italic', lineHeight: 1.4 }}>
+                        {basisLine.replace(/^Top \d+%\s*of\s*/i, '')}
+                      </div>
+                    </>
+                  )
+                })()}
                 {(() => {
                   const roleType = detectRoleCategory(candidate?.assessments?.role_title, candidate?.assessments?.job_description)
                   const bm = ROLE_BENCHMARKS[roleType] || ROLE_BENCHMARKS.general
@@ -2784,6 +2802,11 @@ function DemoCandidateInner({ params }) {
                     <p style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.42)', margin: '10px 0 0', lineHeight: 1.55 }}>
                       {typeExplanation}
                     </p>
+                  )}
+                  {(params.candidateId === 'demo-c1' || params.candidateId === 'demo-c2') && (
+                    <div style={{ fontFamily: F, fontSize: 11, color: 'rgba(255,255,255,0.32)', fontStyle: 'italic', marginTop: 10, lineHeight: 1.5 }}>
+                      Assessment basis: Professional roles, mid-level, standard assessment
+                    </div>
                   )}
                 </div>
                 </ScrollReveal>
