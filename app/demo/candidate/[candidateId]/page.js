@@ -35,6 +35,22 @@ const dBg = s => s >= 80 ? GRNBG : s >= 70 ? TEALLT : s >= 55 ? AMBBG : REDBG
 const SHADOW = '0 2px 12px rgba(15,33,55,0.08), 0 1px 3px rgba(15,33,55,0.05)'
 const SHADOW_LG = '0 4px 24px rgba(15,33,55,0.10), 0 1px 4px rgba(15,33,55,0.06)'
 
+// Hardcoded dimension evidence for the demo candidate report, keyed by demo
+// candidate id, then by skill name. Keys match the skill labels used in
+// DEMO_RESULTS.scores so the evidence maps straight onto the skill cards.
+const DEMO_DIMENSION_EVIDENCE = {
+  'demo-c1': {
+    'Strategic Communication': 'Wrote a three-option note to the CEO ranked by revenue and reputational risk, with a clear primary recommendation rather than an open question.',
+    'Stakeholder Management':  'Called the PR agency before drafting the CEO update so the written note contained a plan, not a problem. Reserved two tier-one exclusives for the actual product reveal.',
+    'Data & Analytics':        'Anchored the measurement framework around pipeline contribution and cost-per-acquisition rather than vanity metrics, with a specific 90-day target and weekly cadence.',
+    'Campaign Strategy':       'Proposed holding the launch date and converting the first ten days into a narrative teaser built around the founder story and two signed-off beta customer interviews.',
+    'Execution Reliability':   'Completed every scenario in full and maintained a consistent, structured response format across all four tasks.',
+  },
+  'demo-c2': {
+    'Strategic Communication': 'Focused on alignment and keeping everyone informed. Did not specify what decisions were being asked for, or by when.',
+  },
+}
+
 /* ── Reusable primitives ──────────────────────────────────────────────────── */
 const Card = ({ children, style = {}, topColor }) => (
   <div className="card-hover" style={{
@@ -705,6 +721,7 @@ function DemoCandidateInner({ params }) {
   const [pushbackLoading, setPushbackLoading] = useState(false)
   const [pushbackScript, setPushbackScript] = useState('')
   const [pushbackCopied, setPushbackCopied] = useState(false)
+  const [whyOpen, setWhyOpen] = useState(null)
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
 
@@ -1677,6 +1694,31 @@ function DemoCandidateInner({ params }) {
                     return null
                   }
                 })()}
+                {/* Scoring confidence indicator (demo hardcoded) */}
+                {params.candidateId === 'demo-c1' && (
+                  <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center' }}>
+                    <span title="Responses were detailed enough for reliable scoring." style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '4px 10px', borderRadius: 999,
+                      fontFamily: F, fontSize: 11, fontWeight: 800, letterSpacing: '0.03em',
+                      background: 'rgba(0,191,165,0.18)', color: '#7ef4d8', border: '1px solid rgba(0,191,165,0.5)',
+                    }}>
+                      High Confidence
+                    </span>
+                  </div>
+                )}
+                {params.candidateId === 'demo-c2' && (
+                  <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center' }}>
+                    <span title="Response depth suggests some dimensions may benefit from interview verification." style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '4px 10px', borderRadius: 999,
+                      fontFamily: F, fontSize: 11, fontWeight: 800, letterSpacing: '0.03em',
+                      background: 'rgba(232,184,75,0.18)', color: '#fde68a', border: '1px solid rgba(232,184,75,0.5)',
+                    }}>
+                      Verify at Interview
+                    </span>
+                  </div>
+                )}
               </div>
               {/* White content (non-rapid only) */}
               {!isRapidScreen && (
@@ -2300,6 +2342,16 @@ function DemoCandidateInner({ params }) {
                     {Object.entries(results.scores).map(([skill, skillScore]) => {
                       const displaySkill = skill === 'Execution Reliability' ? 'Will they deliver consistently?' : skill
                       const narrative = results.score_narratives?.[skill]
+                      const evidence = DEMO_DIMENSION_EVIDENCE[params.candidateId]?.[skill]
+                      const showWhy = params.candidateId === 'demo-c1' ? !!evidence : (params.candidateId === 'demo-c2' && skill === Object.keys(results.scores)[0] && !!evidence)
+                      const expanded = whyOpen === skill
+                      const band = skillScore >= 80 ? 'high' : skillScore >= 50 ? 'mid' : 'low'
+                      const anchorLabel = band === 'high' ? 'High (8-10)' : band === 'mid' ? 'Mid (5-7)' : 'Low (1-4)'
+                      const anchorCopy = band === 'high'
+                        ? 'Candidate met the high-band anchor for this dimension. Specific, structured, and consistent with the role standard.'
+                        : band === 'mid'
+                        ? 'Candidate met the mid-band anchor. Competent but with gaps in depth, specificity, or sequencing.'
+                        : 'Candidate scored against the low-band anchor. Evidence of significant gaps relative to the role standard.'
                       return (
                         <div key={skill} style={{ background: BG, border: `1.5px solid ${BD}`, borderRadius: 10, padding: '18px 20px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
@@ -2310,6 +2362,25 @@ function DemoCandidateInner({ params }) {
                             </div>
                           </div>
                           <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.7 }}>{narrative || 'Assessment based on scenario responses.'}</p>
+                          {showWhy && evidence && (
+                            <div style={{ marginTop: 10 }}>
+                              <button
+                                type="button"
+                                onClick={() => setWhyOpen(prev => prev === skill ? null : skill)}
+                                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: F, fontSize: 12, fontWeight: 700, color: '#00897B' }}
+                              >
+                                {expanded ? 'Hide details' : 'Why this score?'}
+                              </button>
+                              <div style={{ overflow: 'hidden', maxHeight: expanded ? 320 : 0, transition: 'max-height 0.25s ease' }}>
+                                <div style={{ marginTop: 8, background: '#fff', border: `1px solid ${BD}`, borderLeft: `3px solid ${TEAL}`, borderRadius: 8, padding: '12px 14px' }}>
+                                  <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>What the candidate did</div>
+                                  <p style={{ fontFamily: F, fontSize: 12.5, color: NAVY, margin: '0 0 10px', lineHeight: 1.6 }}>{evidence}</p>
+                                  <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Anchor matched</div>
+                                  <p style={{ fontFamily: F, fontSize: 12.5, color: NAVY, margin: 0, lineHeight: 1.6 }}><strong>{anchorLabel}:</strong> {anchorCopy}</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )
                     })}

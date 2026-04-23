@@ -1017,6 +1017,8 @@ export default function CandidateReportPage({ params }) {
   const [pushbackScript, setPushbackScript] = useState('')
   const [pushbackError, setPushbackError] = useState('')
   const [pushbackCopied, setPushbackCopied] = useState(false)
+  const [whyOpen, setWhyOpen] = useState(null) // skill name of currently expanded Why this score panel
+  const [reviewBannerDismissed, setReviewBannerDismissed] = useState(false)
   const [outcomeDate, setOutcomeDate] = useState('')
   const [outcomeNoteText, setOutcomeNoteText] = useState('')
   const [outcomeClientName, setOutcomeClientName] = useState('')
@@ -2234,6 +2236,16 @@ export default function CandidateReportPage({ params }) {
             </Card>
 
             {/* ══════════════════════════════════════════════════
+                HUMAN REVIEW RECOMMENDED BANNER
+            ══════════════════════════════════════════════════ */}
+            {results?.human_review_triggered && !reviewBannerDismissed && (
+              <HumanReviewBanner
+                reasons={results.human_review_reasons}
+                onDismiss={() => setReviewBannerDismissed(true)}
+              />
+            )}
+
+            {/* ══════════════════════════════════════════════════
                 UNIFIED VERDICT + LAYER 1 CARD
             ══════════════════════════════════════════════════ */}
             {results && (() => {
@@ -2334,6 +2346,8 @@ export default function CandidateReportPage({ params }) {
                         return null
                       }
                     })()}
+                    {/* Scoring confidence indicator */}
+                    <ConfidenceIndicator confidence={results.scoring_confidence} />
                   </div>
                   {/* White content */}
                   <div style={{ background: '#fff', padding: isMobile ? '20px 20px' : '24px 36px' }}>
@@ -4029,6 +4043,13 @@ export default function CandidateReportPage({ params }) {
                             <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.7 }}>
                               {narrative || 'Assessment based on scenario responses.'}
                             </p>
+                            <WhyThisScore
+                              skill={skill}
+                              score={skillScore}
+                              evidence={results.dimension_evidence}
+                              expanded={whyOpen === skill}
+                              onToggle={() => setWhyOpen(prev => prev === skill ? null : skill)}
+                            />
                           </div>
                         )
                       })}
@@ -6876,6 +6897,174 @@ export default function CandidateReportPage({ params }) {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Explainability + review UI helpers. Defined at module scope so they can be
+// reused by other candidate-like views later without duplicating the styling.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Confidence indicator shown on the verdict card. Reads the scoring_confidence
+// JSONB from results. Falls back to nothing if the field is missing.
+function ConfidenceIndicator({ confidence }) {
+  if (!confidence || !confidence.level) return null
+  const level = String(confidence.level).toLowerCase()
+  const map = {
+    high:   { label: 'High Confidence',              bg: 'rgba(0,191,165,0.18)', color: '#7ef4d8', bd: 'rgba(0,191,165,0.5)', tip: 'Responses were detailed enough for reliable scoring.' },
+    medium: { label: 'Verify at Interview',          bg: 'rgba(232,184,75,0.18)', color: '#fde68a', bd: 'rgba(232,184,75,0.5)', tip: 'Response depth suggests some dimensions may benefit from interview verification.' },
+    low:    { label: 'Additional Verification Recommended', bg: 'rgba(248,113,113,0.18)', color: '#fecaca', bd: 'rgba(248,113,113,0.5)', tip: 'Responses were brief. We recommend a structured interview before making a final decision.' },
+  }
+  const s = map[level] || map.medium
+  return (
+    <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center' }}>
+      <span title={confidence.reason || s.tip} style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '4px 10px', borderRadius: 999,
+        fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 11, fontWeight: 800, letterSpacing: '0.03em',
+        background: s.bg, color: s.color, border: `1px solid ${s.bd}`,
+      }}>
+        {s.label}
+      </span>
+    </div>
+  )
+}
+
+// "Why this score?" expandable panel on each skill card. Shows the one-sentence
+// observation from dimension_evidence plus the anchor level the score matched.
+// Uses maxHeight transition for a smooth open/close.
+function WhyThisScore({ skill, score, evidence, expanded, onToggle }) {
+  // Evidence keys from the prompt: prioritisation, communication, ownership, adaptability, commercial.
+  // Match loosely against the skill name so copy survives skill_weights rename.
+  function evidenceFor(skillName, ev) {
+    if (!ev || typeof ev !== 'object') return null
+    const lc = String(skillName || '').toLowerCase()
+    const direct = ev[skillName] || ev[lc] || ev[lc.replace(/\s+/g, '_')]
+    if (direct) return direct
+    if (/priorit/i.test(lc)) return ev.prioritisation || ev.prioritization || null
+    if (/communic|stakeholder/i.test(lc)) return ev.communication || null
+    if (/ownership|account/i.test(lc)) return ev.ownership || null
+    if (/adapt|resil|pressure|composure/i.test(lc)) return ev.adaptability || null
+    if (/commercial|business/i.test(lc)) return ev.commercial || null
+    return null
+  }
+  const obs = evidenceFor(skill, evidence)
+  if (!obs) return null
+
+  const band = score >= 80 ? 'high' : score >= 50 ? 'mid' : 'low'
+  const anchorLabel = band === 'high' ? 'High (8-10)' : band === 'mid' ? 'Mid (5-7)' : 'Low (1-4)'
+  const anchorCopy = band === 'high'
+    ? 'Candidate met the high-band anchor for this dimension. Specific, structured, and consistent with the role standard.'
+    : band === 'mid'
+    ? 'Candidate met the mid-band anchor. Competent but with gaps in depth, specificity, or sequencing.'
+    : 'Candidate scored against the low-band anchor. Evidence of significant gaps relative to the role standard.'
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12, fontWeight: 700,
+          color: '#00897B',
+        }}
+      >
+        {expanded ? 'Hide details' : 'Why this score?'}
+      </button>
+      <div style={{
+        overflow: 'hidden',
+        maxHeight: expanded ? 320 : 0,
+        transition: 'max-height 0.25s ease',
+      }}>
+        <div style={{
+          marginTop: 8, background: '#fff', border: '1px solid #e4e9f0',
+          borderLeft: '3px solid #00BFA5', borderRadius: 8, padding: '12px 14px',
+        }}>
+          <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 10.5, fontWeight: 800, color: '#5e6b7f', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+            What the candidate did
+          </div>
+          <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, color: '#0f2137', margin: '0 0 10px', lineHeight: 1.6 }}>
+            {obs}
+          </p>
+          <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 10.5, fontWeight: 800, color: '#5e6b7f', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+            Anchor matched
+          </div>
+          <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, color: '#0f2137', margin: 0, lineHeight: 1.6 }}>
+            <strong>{anchorLabel}:</strong> {anchorCopy}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Human review banner shown at the very top of the candidate report when
+// human_review_triggered is true. Dismissable via React state only, so it
+// reappears on refresh.
+const HUMAN_REVIEW_COPY = {
+  borderline_score:       "This candidate's score sits close to a key threshold. We recommend reviewing their responses directly before making a final decision.",
+  conflicting_dimensions: 'This candidate scored significantly differently across skill dimensions. The interview brief below will help probe the inconsistency.',
+  integrity_concern:      'Integrity signals were mixed. Review the Response Integrity section carefully.',
+  sparse_responses:       "Response depth was limited. Scores may not fully reflect this candidate's capability.",
+  senior_role:            'For a senior role at this score level, additional assessment or interview verification is recommended.',
+}
+function HumanReviewBanner({ reasons, onDismiss }) {
+  const list = Array.isArray(reasons) ? reasons : []
+  const items = list.map(r => HUMAN_REVIEW_COPY[r] || null).filter(Boolean)
+  if (items.length === 0) return null
+  return (
+    <div className="no-print" style={{
+      background: '#fffbeb', border: '1px solid #fde68a', borderLeft: '4px solid #E8B84B',
+      borderRadius: 12, padding: '16px 20px', marginBottom: 16,
+      display: 'flex', gap: 14, alignItems: 'flex-start',
+    }}>
+      <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#92400E" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 14, fontWeight: 800, color: '#92400E', marginBottom: 6 }}>
+          Human Review Recommended
+        </div>
+        <ul style={{ margin: 0, paddingLeft: 18, color: '#0f2137' }}>
+          {items.map((copy, i) => (
+            <li key={i} style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, lineHeight: 1.6, marginBottom: 4 }}>
+              {copy}
+            </li>
+          ))}
+        </ul>
+        <button
+          type="button"
+          onClick={() => {
+            const el = document.getElementById('responses') || document.getElementById('candidate-responses')
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }}
+          style={{
+            marginTop: 10, background: '#00BFA5', color: '#0f2137', border: 'none',
+            borderRadius: 8, padding: '7px 14px', cursor: 'pointer',
+            fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, fontWeight: 800,
+          }}
+        >
+          View Responses
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Dismiss"
+        style={{
+          background: 'none', border: 'none', padding: 4, cursor: 'pointer',
+          color: '#92400E', lineHeight: 0,
+        }}
+      >
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
     </div>
   )
 }
