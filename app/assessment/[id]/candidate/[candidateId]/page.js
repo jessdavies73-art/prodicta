@@ -1034,6 +1034,20 @@ export default function CandidateReportPage({ params }) {
   const [customProbationInput, setCustomProbationInput] = useState('')
   const [savingOutcome, setSavingOutcome] = useState(false)
   const [outcomeError, setOutcomeError] = useState(null)
+  // Outcome form v2 state, one field per new column. All optional.
+  const [outcomeSaved, setOutcomeSaved] = useState(false)  // drives success banner
+  const [watchOutsMaterialised, setWatchOutsMaterialised] = useState([])
+  const [interventionsApplied, setInterventionsApplied] = useState('')         // '', 'yes', 'partially', 'no'
+  const [counterOfferOccurred, setCounterOfferOccurred] = useState(null)       // null, true, false
+  const [consistencyMatched, setConsistencyMatched] = useState('')             // '', 'yes', 'mostly', 'no'
+  const [confidenceGapShowed, setConfidenceGapShowed] = useState(null)         // null, true, false
+  const [proofPointsAchieved, setProofPointsAchieved] = useState([])
+  const [managerSatisfaction30, setManagerSatisfaction30] = useState(0)
+  const [managerSatisfaction90, setManagerSatisfaction90] = useState(0)
+  const [attendanceReliability, setAttendanceReliability] = useState(90)
+  const [sspTriggered, setSspTriggered] = useState(null)
+  const [replacementNeeded, setReplacementNeeded] = useState(null)
+  const [assignmentEndDate, setAssignmentEndDate] = useState('')
   const [existingOutcome, setExistingOutcome] = useState(null)
   const [simpleView, setSimpleView] = useState(false)
   // Development feedback (employer, rejected candidates)
@@ -1149,6 +1163,19 @@ export default function CandidateReportPage({ params }) {
               setCustomProbationInput(String(outcome.probation_months))
             }
           }
+          // Rehydrate v2 outcome fields so returning users see what they logged.
+          if (Array.isArray(outcome.watch_outs_materialised)) setWatchOutsMaterialised(outcome.watch_outs_materialised)
+          if (outcome.interventions_applied) setInterventionsApplied(outcome.interventions_applied)
+          if (typeof outcome.counter_offer_occurred === 'boolean') setCounterOfferOccurred(outcome.counter_offer_occurred)
+          if (typeof outcome.consistency_matched === 'string') setConsistencyMatched(outcome.consistency_matched)
+          if (typeof outcome.confidence_gap_showed === 'boolean') setConfidenceGapShowed(outcome.confidence_gap_showed)
+          if (Array.isArray(outcome.proof_points_achieved)) setProofPointsAchieved(outcome.proof_points_achieved)
+          if (typeof outcome.manager_satisfaction_30 === 'number') setManagerSatisfaction30(outcome.manager_satisfaction_30)
+          if (typeof outcome.manager_satisfaction_90 === 'number') setManagerSatisfaction90(outcome.manager_satisfaction_90)
+          if (typeof outcome.attendance_reliability === 'number') setAttendanceReliability(outcome.attendance_reliability)
+          if (typeof outcome.ssp_triggered === 'boolean') setSspTriggered(outcome.ssp_triggered)
+          if (typeof outcome.replacement_needed === 'boolean') setReplacementNeeded(outcome.replacement_needed)
+          if (outcome.assignment_end_date) setAssignmentEndDate(outcome.assignment_end_date)
         }
         setAccountRecord(acRec || null)
         if (acRec?.shared_with_client_at) setRecordSharedDate(acRec.shared_with_client_at)
@@ -1365,11 +1392,51 @@ export default function CandidateReportPage({ params }) {
     const supabase = createClient()
     const overrideWarning = !existingOutcome && results
       && (results.overall_score < 55 || results.risk_level === 'High')
-    const payload = {
+
+    // v2 fields. Include only when meaningfully set so older rows stay tidy.
+    const v2Patch = {}
+    if (watchOutsMaterialised.length > 0) v2Patch.watch_outs_materialised = watchOutsMaterialised
+    if (interventionsApplied) v2Patch.interventions_applied = interventionsApplied
+    if (counterOfferOccurred != null) v2Patch.counter_offer_occurred = counterOfferOccurred
+    if (consistencyMatched) v2Patch.consistency_matched = consistencyMatched
+    if (confidenceGapShowed != null) v2Patch.confidence_gap_showed = confidenceGapShowed
+    if (proofPointsAchieved.length > 0) v2Patch.proof_points_achieved = proofPointsAchieved
+    if (managerSatisfaction30 > 0) v2Patch.manager_satisfaction_30 = managerSatisfaction30
+    if (managerSatisfaction90 > 0) v2Patch.manager_satisfaction_90 = managerSatisfaction90
+    if (attendanceReliability != null) v2Patch.attendance_reliability = attendanceReliability
+    if (sspTriggered != null) v2Patch.ssp_triggered = sspTriggered
+    if (replacementNeeded != null) v2Patch.replacement_needed = replacementNeeded
+    if (assignmentEndDate) v2Patch.assignment_end_date = assignmentEndDate
+
+    // Map the new verbose result code to the legacy outcome enum so the
+    // existing placement health, probation tracker, dashboard and reminder
+    // flows (which all branch on specific legacy values) keep working.
+    const LEGACY_OUTCOME_MAP = {
+      placed_thriving:      'passed_probation',
+      placed_on_track:      'still_in_probation',
+      left_in_rebate:       'left_probation',
+      left_after_rebate:    'left_early',
+      never_started:        'left_early',
+      completed_success:    'passed_probation',
+      extended:             'still_employed',
+      ended_early_client:   'dismissed',
+      ended_early_worker:   'left_early',
+      ended_early_employer: 'dismissed',
+      worker_did_not_return: 'left_early',
+      no_show:              'left_early',
+      // Employer perm values are already the legacy enum
+      passed_probation:     'passed_probation',
+      still_probation:      'still_probation',
+      failed_probation:     'failed_probation',
+      left_probation:       'left_probation',
+    }
+    const outcomeForDb = LEGACY_OUTCOME_MAP[selectedOutcome] || selectedOutcome
+
+    const basePayload = {
       override_warning: overrideWarning || undefined,
       candidate_id: params.candidateId,
       user_id: user.id,
-      outcome: selectedOutcome,
+      outcome: outcomeForDb,
       outcome_date: outcomeDate || null,
       notes: outcomeNoteText.trim() || null,
       client_name: profile?.account_type === 'agency' ? (outcomeClientName.trim() || null) : null,
@@ -1382,20 +1449,31 @@ export default function CandidateReportPage({ params }) {
         : null,
       probation_months: profile?.account_type === 'employer' && placementDate ? probationMonths : null,
     }
-    let saved, dbError
-    if (existingOutcome) {
-      const { data, error } = await supabase.from('candidate_outcomes').update(payload).eq('id', existingOutcome.id).select().single()
-      saved = data; dbError = error
-    } else {
-      const { data, error } = await supabase.from('candidate_outcomes').insert(payload).select().single()
-      saved = data; dbError = error
+    const payload = { ...basePayload, ...v2Patch }
+
+    async function runSave(p) {
+      if (existingOutcome) {
+        return await supabase.from('candidate_outcomes').update(p).eq('id', existingOutcome.id).select().single()
+      }
+      return await supabase.from('candidate_outcomes').insert(p).select().single()
     }
+
+    let { data: saved, error: dbError } = await runSave(payload)
+    // If the new columns have not been migrated yet, retry with only the legacy payload.
+    if (dbError && /watch_outs_materialised|interventions_applied|counter_offer_occurred|consistency_matched|confidence_gap_showed|proof_points_achieved|manager_satisfaction_30|manager_satisfaction_90|attendance_reliability|ssp_triggered|replacement_needed|assignment_end_date/i.test(dbError.message || '')) {
+      console.warn('[outcome] v2 columns missing, retrying without them.')
+      const retry = await runSave(basePayload)
+      saved = retry.data
+      dbError = retry.error
+    }
+
     if (dbError) {
       setOutcomeError(dbError.message || 'Failed to save outcome. Please check the database schema.')
     } else if (saved) {
       setExistingOutcome(saved)
-      setOutcomeModal(false)
       setConfirmHireModal(false)
+      setOutcomeSaved(true)
+      setTimeout(() => { setOutcomeModal(false); setOutcomeSaved(false) }, 2200)
     }
     setSavingOutcome(false)
   }
@@ -5852,51 +5930,396 @@ export default function CandidateReportPage({ params }) {
         />
       )}
 
-      {outcomeModal && (
+      {outcomeModal && (() => {
+        const isAgency = profile?.account_type === 'agency'
+        const isEmployer = profile?.account_type === 'employer'
+        const isTemp = candidate?.assessments?.employment_type === 'temporary'
+        const variant = isAgency ? (isTemp ? 'agencyTemp' : 'agencyPerm')
+                      : isEmployer ? (isTemp ? 'employerTemp' : 'employerPerm')
+                      : 'employerPerm'
+
+        const RESULT_OPTIONS = {
+          agencyPerm: [
+            { value: 'placed_thriving',   label: 'Placed and thriving',        legacy: 'passed_probation',   color: GRN, bg: GRNBG, bd: GRNBD,   completes: true },
+            { value: 'placed_on_track',   label: 'Placed and on track',        legacy: 'still_in_probation', color: TEAL, bg: TEALLT, bd: `${TEAL}55`, completes: false },
+            { value: 'left_in_rebate',    label: 'Left within rebate period',  legacy: 'left_probation',     color: RED, bg: REDBG, bd: REDBD,   completes: true },
+            { value: 'left_after_rebate', label: 'Left after rebate period',   legacy: 'left_early',         color: AMB, bg: AMBBG, bd: AMBBD,   completes: true },
+            { value: 'never_started',     label: 'Never started',              legacy: 'left_early',         color: '#64748B', bg: '#f1f5f9', bd: '#cbd5e1', completes: true },
+          ],
+          agencyTemp: [
+            { value: 'completed_success',   label: 'Completed successfully',  legacy: 'passed_probation', color: GRN, bg: GRNBG, bd: GRNBD, completes: true },
+            { value: 'extended',            label: 'Extended',                legacy: 'still_employed',   color: TEAL, bg: TEALLT, bd: `${TEAL}55`, completes: false },
+            { value: 'ended_early_client',  label: 'Ended early by client',   legacy: 'dismissed',        color: RED, bg: REDBG, bd: REDBD, completes: true },
+            { value: 'ended_early_worker',  label: 'Ended early by worker',   legacy: 'left_early',       color: AMB, bg: AMBBG, bd: AMBBD, completes: true },
+            { value: 'no_show',             label: 'No show',                 legacy: 'left_early',       color: '#64748B', bg: '#f1f5f9', bd: '#cbd5e1', completes: true },
+          ],
+          employerPerm: [
+            { value: 'passed_probation', label: 'Passed probation',       legacy: 'passed_probation',  color: GRN, bg: GRNBG, bd: GRNBD, completes: true },
+            { value: 'still_probation',  label: 'Still in probation',     legacy: 'still_probation',   color: TEAL, bg: TEALLT, bd: `${TEAL}55`, completes: false },
+            { value: 'failed_probation', label: 'Failed probation',       legacy: 'failed_probation',  color: RED, bg: REDBG, bd: REDBD, completes: true },
+            { value: 'left_probation',   label: 'Left during probation',  legacy: 'left_probation',    color: AMB, bg: AMBBG, bd: AMBBD, completes: true },
+          ],
+          employerTemp: [
+            { value: 'completed_success',    label: 'Completed successfully',   legacy: 'passed_probation', color: GRN, bg: GRNBG, bd: GRNBD, completes: true },
+            { value: 'extended',             label: 'Extended',                 legacy: 'still_employed',   color: TEAL, bg: TEALLT, bd: `${TEAL}55`, completes: false },
+            { value: 'ended_early_employer', label: 'Ended early by employer',  legacy: 'dismissed',        color: RED, bg: REDBG, bd: REDBD, completes: true },
+            { value: 'worker_did_not_return', label: 'Worker did not return',   legacy: 'left_early',       color: AMB, bg: AMBBG, bd: AMBBD, completes: true },
+            { value: 'no_show',              label: 'No show',                  legacy: 'left_early',       color: '#64748B', bg: '#f1f5f9', bd: '#cbd5e1', completes: true },
+          ],
+        }
+        const options = RESULT_OPTIONS[variant] || RESULT_OPTIONS.employerPerm
+        // If stored selectedOutcome matches a legacy value, pick the first option whose legacy matches so the UI lights up.
+        const matchedOption = options.find(o => o.value === selectedOutcome) || options.find(o => o.legacy === selectedOutcome)
+        const activeValue = matchedOption?.value || selectedOutcome
+        const activeCompletes = matchedOption?.completes !== false
+        const titleMap = {
+          agencyPerm: 'Log Placement Outcome',
+          agencyTemp: 'Log Assignment Outcome',
+          employerPerm: 'Log Probation Outcome',
+          employerTemp: 'Log Assignment Outcome',
+        }
+
+        const scenarioWatchouts = Array.isArray(results?.watchouts)
+          ? results.watchouts.map(w => typeof w === 'object' ? (w.watchout || w.title || w.text || '') : String(w || '')).filter(Boolean)
+          : []
+        const proofPointDefaults = [
+          'Quick win delivered in first two weeks',
+          'Key relationships established by day 14',
+          'Clear priority plan presented by day 30',
+        ]
+
+        const Asterisk = () => <span style={{ color: RED, marginLeft: 3 }}>*</span>
+        return (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,33,55,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
-          onClick={() => setOutcomeModal(false)}
+          onClick={() => { if (!outcomeSaved) setOutcomeModal(false) }}
         >
           <div onClick={e => e.stopPropagation()} style={{
             background: CARD, borderRadius: 16,
-            maxWidth: 520, width: '100%', boxShadow: '0 16px 48px rgba(15,33,55,0.22)',
-            display: 'flex', flexDirection: 'column', maxHeight: '85vh',
+            maxWidth: 560, width: '100%', boxShadow: '0 16px 48px rgba(15,33,55,0.22)',
+            display: 'flex', flexDirection: 'column', maxHeight: '88vh', position: 'relative',
           }}>
+            {outcomeSaved && (
+              <div style={{
+                position: 'absolute', top: 16, left: 16, right: 16,
+                background: TEAL, color: NAVY, padding: '10px 14px',
+                borderRadius: 10, fontFamily: F, fontSize: 13, fontWeight: 800,
+                zIndex: 2, boxShadow: '0 4px 16px rgba(0,191,165,0.35)',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                Outcome logged. Your prediction accuracy tracking has been updated.
+              </div>
+            )}
             <div style={{ padding: '28px 32px 0', overflowY: 'auto', flex: 1 }}>
             <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 6px' }}>
-              Log Hire Outcome
+              {titleMap[variant]}
             </h3>
             <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 22px', lineHeight: 1.6 }}>
               Record how {candidate?.name || 'this candidate'} performed after being hired. This builds your predictive accuracy over time.
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
-              {[
-                { value: 'passed_probation',  label: 'Passed probation',          color: GRN,  bg: GRNBG,  bd: GRNBD },
-                { value: 'still_probation',   label: 'Still in probation',         color: TEAL, bg: TEALLT, bd: `${TEAL}55` },
-                { value: 'failed_probation',  label: 'Failed probation',           color: RED,  bg: REDBG,  bd: REDBD },
-                { value: 'left_probation',    label: 'Left during probation',      color: AMB,  bg: AMBBG,  bd: AMBBD },
-              ].map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setSelectedOutcome(opt.value)}
-                  style={{
-                    padding: '11px 16px', borderRadius: 9, cursor: 'pointer',
-                    border: `1.5px solid ${selectedOutcome === opt.value ? opt.bd : BD}`,
-                    background: selectedOutcome === opt.value ? opt.bg : BG,
-                    color: selectedOutcome === opt.value ? opt.color : TX2,
-                    fontFamily: F, fontSize: 14, fontWeight: selectedOutcome === opt.value ? 700 : 500,
-                    textAlign: 'left', transition: 'all 0.12s',
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                {variant === 'agencyPerm' ? 'Placement result' : variant === 'employerPerm' ? 'Probation result' : 'Assignment result'}
+                <Asterisk />
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {options.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setSelectedOutcome(opt.value)}
+                    style={{
+                      padding: '10px 14px', borderRadius: 9, cursor: 'pointer',
+                      border: `1.5px solid ${activeValue === opt.value ? opt.bd : BD}`,
+                      background: activeValue === opt.value ? opt.bg : BG,
+                      color: activeValue === opt.value ? opt.color : TX2,
+                      fontFamily: F, fontSize: 14, fontWeight: activeValue === opt.value ? 700 : 500,
+                      textAlign: 'left', transition: 'all 0.12s',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Agency fields */}
-            {profile?.account_type === 'agency' && (<>
+            {/* Dates, per-variant labels */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>
+                {variant === 'agencyPerm' ? 'Placement start date' : variant === 'employerPerm' ? 'Hire start date' : 'Assignment start date'}
+                <Asterisk />
+              </label>
+              <input
+                type="date"
+                value={placementDate}
+                onChange={e => setPlacementDate(e.target.value)}
+                style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            {/* Temp variants get an end date */}
+            {(variant === 'agencyTemp' || variant === 'employerTemp') && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Assignment end date</label>
+                <input
+                  type="date"
+                  value={assignmentEndDate}
+                  onChange={e => setAssignmentEndDate(e.target.value)}
+                  style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+            )}
+
+            {/* Outcome date for non-ongoing outcomes */}
+            {(variant === 'agencyPerm' || variant === 'employerPerm') && activeCompletes && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Outcome date</label>
+                <input
+                  type="date"
+                  value={outcomeDate}
+                  onChange={e => setOutcomeDate(e.target.value)}
+                  style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+            )}
+
+            {/* Agency perm only: client name */}
+            {variant === 'agencyPerm' && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Client name (optional)</label>
+                <input
+                  type="text"
+                  value={outcomeClientName}
+                  onChange={e => setOutcomeClientName(e.target.value)}
+                  placeholder="e.g. Acme Ltd"
+                  style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+            )}
+
+            {/* Attendance reliability slider for temp variants */}
+            {(variant === 'agencyTemp' || variant === 'employerTemp') && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                  Attendance reliability
+                  <span style={{ fontWeight: 400, color: TX3, marginLeft: 6 }}>What percentage of shifts did they complete?</span>
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <input
+                    type="range" min={0} max={100}
+                    value={attendanceReliability}
+                    onChange={e => setAttendanceReliability(parseInt(e.target.value, 10))}
+                    style={{ flex: 1, accentColor: TEAL }}
+                  />
+                  <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 800, color: NAVY, minWidth: 48, textAlign: 'right' }}>{attendanceReliability}%</span>
+                </div>
+              </div>
+            )}
+
+            {/* Watch-outs checklist (all variants, when watchouts exist) */}
+            {scenarioWatchouts.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                  Which watch-outs materialised?
+                  <span style={{ fontWeight: 400, color: TX3, marginLeft: 6 }}>Select any that showed up</span>
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {scenarioWatchouts.map((w) => {
+                    const on = watchOutsMaterialised.includes(w)
+                    return (
+                      <label key={w} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 12px', background: on ? TEALLT : BG, border: `1px solid ${on ? TEAL : BD}`, borderRadius: 8, cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={on}
+                          onChange={() => setWatchOutsMaterialised(prev => on ? prev.filter(x => x !== w) : [...prev, w])}
+                          style={{ accentColor: TEAL, marginTop: 2 }}
+                        />
+                        <span style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.5 }}>{w}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Proof points checklist (employer perm only) */}
+            {variant === 'employerPerm' && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                  Were the first 30 days proof points achieved?
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {proofPointDefaults.map((p) => {
+                    const on = proofPointsAchieved.includes(p)
+                    return (
+                      <label key={p} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 12px', background: on ? TEALLT : BG, border: `1px solid ${on ? TEAL : BD}`, borderRadius: 8, cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={on}
+                          onChange={() => setProofPointsAchieved(prev => on ? prev.filter(x => x !== p) : [...prev, p])}
+                          style={{ accentColor: TEAL, marginTop: 2 }}
+                        />
+                        <span style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.5 }}>{p}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Week 1 interventions applied: agency perm + agency temp (not employer) */}
+            {isAgency && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                  Were Week 1 interventions applied?
+                </label>
+                <select
+                  value={interventionsApplied}
+                  onChange={e => setInterventionsApplied(e.target.value)}
+                  style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+                >
+                  <option value="">Select...</option>
+                  <option value="yes">Yes</option>
+                  <option value="partially">Partially</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+            )}
+
+            {/* Counter-offer attempt (agency perm, only when resilience score exists) */}
+            {variant === 'agencyPerm' && (results?.counter_offer_resilience_score != null || results?.counter_offer_resilience != null) && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                  Was there a counter-offer attempt?
+                </label>
+                <YesNoPicker value={counterOfferOccurred} onChange={setCounterOfferOccurred} />
+              </div>
+            )}
+
+            {/* Consistency match (agency perm + employer perm when consistency_flag exists) */}
+            {(variant === 'agencyPerm' || variant === 'employerPerm') && (typeof results?.consistency_flag === 'boolean') && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                  Did consistency patterns from the report match reality?
+                </label>
+                <select
+                  value={consistencyMatched}
+                  onChange={e => setConsistencyMatched(e.target.value)}
+                  style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+                >
+                  <option value="">Select...</option>
+                  <option value="yes">Yes</option>
+                  <option value="mostly">Mostly</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+            )}
+
+            {/* Confidence-competence gap verification (employer perm only, only if flagged) */}
+            {variant === 'employerPerm' && results?.confidence_competence_gap === true && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                  Did the confidence competence gap show up in practice?
+                </label>
+                <YesNoPicker value={confidenceGapShowed} onChange={setConfidenceGapShowed} />
+              </div>
+            )}
+
+            {/* Manager satisfaction (employer perm only) */}
+            {variant === 'employerPerm' && (
+              <>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                    Manager satisfaction at 30 days
+                  </label>
+                  <StarRating value={managerSatisfaction30} onChange={setManagerSatisfaction30} />
+                </div>
+                {activeCompletes && (
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                      Manager satisfaction at 90 days
+                    </label>
+                    <StarRating value={managerSatisfaction90} onChange={setManagerSatisfaction90} />
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* SSP + replacement (both temp variants) */}
+            {(variant === 'agencyTemp' || variant === 'employerTemp') && (
+              <>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                    SSP triggered{variant === 'agencyTemp' ? ' during assignment' : ''}?
+                  </label>
+                  <YesNoPicker value={sspTriggered} onChange={setSspTriggered} />
+                </div>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                    Replacement needed?
+                  </label>
+                  <YesNoPicker value={replacementNeeded} onChange={setReplacementNeeded} />
+                </div>
+              </>
+            )}
+
+            {/* Employer perm: probation length selector kept from existing form */}
+            {variant === 'employerPerm' && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 8 }}>Probation length</label>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[3, 6, 9, 12].map(m => (
+                    <button key={m} type="button"
+                      onClick={() => { setProbationMonths(m); setUseCustomProbation(false) }}
+                      style={{
+                        padding: '7px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 600,
+                        border: `1.5px solid ${!useCustomProbation && probationMonths === m ? TEAL : BD}`,
+                        background: !useCustomProbation && probationMonths === m ? TEALLT : BG,
+                        color: !useCustomProbation && probationMonths === m ? TEALD : TX2,
+                      }}>
+                      {m} months
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Agency perm: rebate preset kept from existing form */}
+            {variant === 'agencyPerm' && placementDate && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 8 }}>Rebate period</label>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[4, 6, 8].map(w => (
+                    <button key={w} type="button"
+                      onClick={() => { setRebateWeeks(w); setUseCustomRebate(false); setRebateSchedule(defaultRebateSchedule(w)) }}
+                      style={{
+                        padding: '7px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 600,
+                        border: `1.5px solid ${!useCustomRebate && rebateWeeks === w ? TEAL : BD}`,
+                        background: !useCustomRebate && rebateWeeks === w ? TEALLT : BG,
+                        color: !useCustomRebate && rebateWeeks === w ? TEALD : TX2,
+                      }}>
+                      {w} weeks
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginBottom: 22 }}>
+              <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Notes (optional)</label>
+              <textarea
+                rows={3}
+                value={outcomeNoteText}
+                onChange={e => setOutcomeNoteText(e.target.value)}
+                placeholder="Any context about this outcome..."
+                style={{ width: '100%', boxSizing: 'border-box', padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13.5, color: TX, resize: 'vertical', outline: 'none', background: CARD }}
+              />
+            </div>
+
+            {/* legacy duplicate form body removed */}
+            {false && profile?.account_type === 'agency' && (<>
               <div style={{ marginBottom: 14 }}>
                 <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Client name (optional)</label>
                 <input
@@ -5995,81 +6418,6 @@ export default function CandidateReportPage({ params }) {
               )}
             </>)}
 
-            {/* Employer fields */}
-            {profile?.account_type === 'employer' && (<>
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Start date</label>
-                <input
-                  type="date"
-                  value={placementDate}
-                  onChange={e => setPlacementDate(e.target.value)}
-                  style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
-                  onFocus={e => e.target.style.borderColor = TEAL}
-                  onBlur={e => e.target.style.borderColor = BD}
-                />
-              </div>
-              <div style={{ marginBottom: 18 }}>
-                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 8 }}>Probation length</label>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {[3, 6, 9, 12].map(m => (
-                    <button key={m} type="button"
-                      onClick={() => { setProbationMonths(m); setUseCustomProbation(false) }}
-                      style={{
-                        padding: '7px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 600,
-                        border: `1.5px solid ${!useCustomProbation && probationMonths === m ? TEAL : BD}`,
-                        background: !useCustomProbation && probationMonths === m ? TEALLT : BG,
-                        color: !useCustomProbation && probationMonths === m ? TEALD : TX2,
-                        transition: 'all 0.1s',
-                      }}>
-                      {m} months
-                    </button>
-                  ))}
-                  <button type="button"
-                    onClick={() => setUseCustomProbation(true)}
-                    style={{
-                      padding: '7px 14px', borderRadius: 7, cursor: 'pointer', fontFamily: F, fontSize: 13, fontWeight: 600,
-                      border: `1.5px solid ${useCustomProbation ? TEAL : BD}`,
-                      background: useCustomProbation ? TEALLT : BG,
-                      color: useCustomProbation ? TEALD : TX2,
-                      transition: 'all 0.1s',
-                    }}>
-                    Custom
-                  </button>
-                </div>
-                {useCustomProbation && (
-                  <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input
-                      type="number"
-                      min={1}
-                      max={24}
-                      value={customProbationInput}
-                      onChange={e => {
-                        setCustomProbationInput(e.target.value)
-                        const v = parseInt(e.target.value)
-                        if (!isNaN(v) && v > 0) setProbationMonths(v)
-                      }}
-                      placeholder="e.g. 18"
-                      style={{ width: 90, padding: '7px 12px', borderRadius: 7, border: `1.5px solid ${TEAL}`, fontFamily: F, fontSize: 13, color: TX, background: BG, outline: 'none' }}
-                    />
-                    <span style={{ fontFamily: F, fontSize: 13, color: TX2 }}>months</span>
-                  </div>
-                )}
-              </div>
-            </>)}
-
-            <div style={{ marginBottom: 22 }}>
-              <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Notes (optional)</label>
-              <textarea
-                rows={2}
-                value={outcomeNoteText}
-                onChange={e => setOutcomeNoteText(e.target.value)}
-                placeholder="e.g. Exceeded targets in first 3 months"
-                style={{ width: '100%', boxSizing: 'border-box', padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13.5, color: TX, resize: 'vertical', outline: 'none', background: CARD }}
-                onFocus={e => e.target.style.borderColor = TEAL}
-                onBlur={e => e.target.style.borderColor = BD}
-              />
-            </div>
-
             {outcomeError && (
               <p style={{ fontSize: 13, color: RED, margin: '0 0 12px', lineHeight: 1.5 }}>{outcomeError}</p>
             )}
@@ -6101,7 +6449,8 @@ export default function CandidateReportPage({ params }) {
             </div>
           </div>
         </div>
-      )}
+        )
+      })()}
 
       {/* ── REANALYSE MODAL ── */}
       {reanalyseModal && (
@@ -7434,6 +7783,58 @@ function EvidenceStrengthPill({ level }) {
     }}>
       {s.label}
     </span>
+  )
+}
+
+// Simple star rating (1-5) used in outcome logging for manager satisfaction.
+function StarRating({ value, onChange, max = 5 }) {
+  return (
+    <div style={{ display: 'inline-flex', gap: 6 }}>
+      {Array.from({ length: max }, (_, i) => i + 1).map(n => {
+        const filled = value >= n
+        return (
+          <button
+            key={n}
+            type="button"
+            aria-label={`${n} of ${max} stars`}
+            onClick={() => onChange(value === n ? 0 : n)}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 0 }}
+          >
+            <svg width={22} height={22} viewBox="0 0 24 24" fill={filled ? '#00BFA5' : '#fff'} stroke="#00BFA5" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// Minimal Yes/No picker for tristate outcome fields (null = unset).
+function YesNoPicker({ value, onChange }) {
+  const btn = (v, label) => {
+    const active = value === v
+    return (
+      <button
+        type="button"
+        onClick={() => onChange(active ? null : v)}
+        style={{
+          padding: '7px 14px', borderRadius: 7, cursor: 'pointer',
+          fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13, fontWeight: 700,
+          border: `1.5px solid ${active ? '#00BFA5' : '#e4e9f0'}`,
+          background: active ? '#e0f7f1' : '#fff',
+          color: active ? '#00897B' : '#0f2137',
+        }}
+      >
+        {label}
+      </button>
+    )
+  }
+  return (
+    <div style={{ display: 'flex', gap: 8 }}>
+      {btn(true, 'Yes')}
+      {btn(false, 'No')}
+    </div>
   )
 }
 

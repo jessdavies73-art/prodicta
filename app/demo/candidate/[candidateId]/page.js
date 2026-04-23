@@ -843,6 +843,292 @@ function DemoFailurePatternBar({ patterns = [] }) {
   )
 }
 
+// Fully interactive demo outcome logging form. Mirrors the live agency perm
+// variant exactly. Nothing is submitted to Supabase, a jade success banner
+// appears for three seconds then the modal closes.
+function DemoStarRating({ value, onChange, max = 5 }) {
+  return (
+    <div style={{ display: 'inline-flex', gap: 6 }}>
+      {Array.from({ length: max }, (_, i) => i + 1).map(n => {
+        const filled = value >= n
+        return (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onChange(value === n ? 0 : n)}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 0 }}
+          >
+            <svg width={22} height={22} viewBox="0 0 24 24" fill={filled ? TEAL : '#fff'} stroke={TEAL} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function DemoOutcomeLogModal({ candidateId, candidateName, watchouts, onClose }) {
+  // Agency perm only for the demo, per brief. Sophie is the default demo candidate.
+  const OPTIONS = [
+    { value: 'placed_thriving',   label: 'Placed and thriving',        color: GRN, bg: GRNBG, bd: GRNBD,   completes: true },
+    { value: 'placed_on_track',   label: 'Placed and on track',        color: TEAL, bg: TEALLT, bd: `${TEAL}55`, completes: false },
+    { value: 'left_in_rebate',    label: 'Left within rebate period',  color: RED, bg: REDBG, bd: REDBD,   completes: true },
+    { value: 'left_after_rebate', label: 'Left after rebate period',   color: AMB, bg: AMBBG, bd: AMBBD,   completes: true },
+    { value: 'never_started',     label: 'Never started',              color: '#64748B', bg: '#f1f5f9', bd: '#cbd5e1', completes: true },
+  ]
+  const sophieWatchouts = candidateId === 'demo-c1'
+    ? ['Tendency to over-plan before committing to action']
+    : candidateId === 'demo-c2'
+      ? ['Defers decisions that should be owned']
+      : []
+  const effectiveWatchouts = watchouts && watchouts.length > 0 ? watchouts : sophieWatchouts
+  const [result, setResult] = useState('placed_thriving')
+  const [startDate, setStartDate] = useState(() => new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10))
+  const [outcomeDate, setOutcomeDate] = useState('')
+  const [clientName, setClientName] = useState('Sage Consulting')
+  const [rebateWeeks, setRebateWeeks] = useState(6)
+  const [watchOutsMaterialised, setWatchOutsMaterialised] = useState([])
+  const [interventionsApplied, setInterventionsApplied] = useState('yes')
+  const [counterOfferOccurred, setCounterOfferOccurred] = useState(false)
+  const [consistencyMatched, setConsistencyMatched] = useState('yes')
+  const [notes, setNotes] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  const activeOption = OPTIONS.find(o => o.value === result)
+  const activeCompletes = activeOption?.completes !== false
+  const requiredMet = !!result && !!startDate
+
+  const Asterisk = () => <span style={{ color: RED, marginLeft: 3 }}>*</span>
+
+  function handleSave() {
+    setSaved(true)
+    setTimeout(() => { setSaved(false); onClose() }, 3000)
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => { if (!saved) onClose() }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: CARD, borderRadius: 16,
+        maxWidth: 560, width: '100%', boxShadow: '0 24px 64px rgba(15,33,55,0.22)',
+        display: 'flex', flexDirection: 'column', maxHeight: '88vh', position: 'relative',
+      }}>
+        {saved && (
+          <div style={{
+            position: 'absolute', top: 16, left: 16, right: 16,
+            background: TEAL, color: NAVY, padding: '10px 14px',
+            borderRadius: 10, fontFamily: F, fontSize: 13, fontWeight: 800,
+            zIndex: 2, boxShadow: '0 4px 16px rgba(0,191,165,0.35)',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            Outcome logged. Your prediction accuracy tracking has been updated.
+          </div>
+        )}
+        <button onClick={() => { if (!saved) onClose() }} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: TX3, padding: 4, display: 'flex', alignItems: 'center', zIndex: 1 }}>
+          <Ic name="x" size={18} color={TX3} />
+        </button>
+        <div style={{ padding: '28px 32px 0', overflowY: 'auto', flex: 1 }}>
+          <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 6px' }}>
+            Log Placement Outcome
+          </h3>
+          <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 22px', lineHeight: 1.6 }}>
+            Record how {candidateName} performed after being hired. This builds your prediction accuracy tracking.
+          </p>
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+              Placement result<Asterisk />
+            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {OPTIONS.map(opt => {
+                const active = result === opt.value
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setResult(opt.value)}
+                    style={{
+                      padding: '10px 14px', borderRadius: 9, cursor: 'pointer',
+                      border: `1.5px solid ${active ? opt.bd : BD}`,
+                      background: active ? opt.bg : BG,
+                      color: active ? opt.color : TX2,
+                      fontFamily: F, fontSize: 14, fontWeight: active ? 700 : 500,
+                      textAlign: 'left', transition: 'all 0.12s',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>
+              Placement start date<Asterisk />
+            </label>
+            <input
+              type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+              style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+
+          {activeCompletes && (
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Outcome date</label>
+              <input
+                type="date" value={outcomeDate} onChange={e => setOutcomeDate(e.target.value)}
+                style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: FM, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+          )}
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Client name (optional)</label>
+            <input
+              type="text" value={clientName} onChange={e => setClientName(e.target.value)}
+              style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 8 }}>Rebate period</label>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {[4, 6, 8].map(w => (
+                <button key={w} type="button" onClick={() => setRebateWeeks(w)}
+                  style={{
+                    padding: '7px 14px', borderRadius: 7, cursor: 'pointer',
+                    fontFamily: F, fontSize: 13, fontWeight: 600,
+                    border: `1.5px solid ${rebateWeeks === w ? TEAL : BD}`,
+                    background: rebateWeeks === w ? TEALLT : BG,
+                    color: rebateWeeks === w ? TEALD : TX2,
+                  }}>
+                  {w} weeks
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {effectiveWatchouts.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+                Which watch-outs materialised?
+                <span style={{ fontWeight: 400, color: TX3, marginLeft: 6 }}>Select any that showed up in the placement</span>
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {effectiveWatchouts.map(w => {
+                  const on = watchOutsMaterialised.includes(w)
+                  return (
+                    <label key={w} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 12px', background: on ? TEALLT : BG, border: `1px solid ${on ? TEAL : BD}`, borderRadius: 8, cursor: 'pointer' }}>
+                      <input
+                        type="checkbox" checked={on}
+                        onChange={() => setWatchOutsMaterialised(prev => on ? prev.filter(x => x !== w) : [...prev, w])}
+                        style={{ accentColor: TEAL, marginTop: 2 }}
+                      />
+                      <span style={{ fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.5 }}>{w}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+              Were Week 1 interventions applied?
+            </label>
+            <select
+              value={interventionsApplied}
+              onChange={e => setInterventionsApplied(e.target.value)}
+              style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+            >
+              <option value="">Select...</option>
+              <option value="yes">Yes</option>
+              <option value="partially">Partially</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+              Was there a counter-offer attempt?
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[[true, 'Yes'], [false, 'No']].map(([v, label]) => {
+                const active = counterOfferOccurred === v
+                return (
+                  <button key={String(v)} type="button"
+                    onClick={() => setCounterOfferOccurred(active ? null : v)}
+                    style={{
+                      padding: '7px 14px', borderRadius: 7, cursor: 'pointer',
+                      fontFamily: F, fontSize: 13, fontWeight: 700,
+                      border: `1.5px solid ${active ? TEAL : BD}`,
+                      background: active ? TEALLT : '#fff',
+                      color: active ? TEALD : NAVY,
+                    }}>
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
+              Did consistency patterns from the report match reality?
+            </label>
+            <select
+              value={consistencyMatched}
+              onChange={e => setConsistencyMatched(e.target.value)}
+              style={{ padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, outline: 'none', background: CARD, width: '100%', boxSizing: 'border-box' }}
+            >
+              <option value="">Select...</option>
+              <option value="yes">Yes</option>
+              <option value="mostly">Mostly</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: 22 }}>
+            <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Notes (optional)</label>
+            <textarea
+              rows={3} value={notes} onChange={e => setNotes(e.target.value)}
+              placeholder="Any context about this outcome..."
+              style={{ width: '100%', boxSizing: 'border-box', padding: '9px 13px', borderRadius: 8, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13.5, color: TX, resize: 'vertical', outline: 'none', background: CARD }}
+            />
+          </div>
+        </div>
+        <div style={{ padding: '16px 32px 24px', borderTop: `1px solid ${BD}`, flexShrink: 0, display: 'flex', gap: 10 }}>
+          <button
+            onClick={handleSave}
+            disabled={!requiredMet || saved}
+            style={{
+              flex: 1, padding: '11px 0', borderRadius: 9, border: 'none',
+              background: requiredMet && !saved ? TEAL : BD,
+              color: requiredMet && !saved ? NAVY : TX3,
+              fontFamily: F, fontSize: 14, fontWeight: 700,
+              cursor: requiredMet && !saved ? 'pointer' : 'not-allowed',
+            }}
+          >
+            {saved ? 'Saved' : 'Save outcome'}
+          </button>
+          <button
+            onClick={() => { if (!saved) onClose() }}
+            style={{
+              flex: 1, padding: '11px 0', borderRadius: 9,
+              border: `1.5px solid ${BD}`, background: 'transparent',
+              color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Hardcoded confidence-competence gap watch-out card, shown on Marcus only to
 // illustrate the feature on a mid-scoring candidate. Visually identical to the
 // live version in app/assessment/[id]/candidate/[candidateId]/page.js.
@@ -4282,70 +4568,14 @@ function DemoCandidateInner({ params }) {
           </>
         )}
 
-        {/* ── LOG OUTCOME MODAL ── */}
+        {/* ── LOG OUTCOME MODAL (demo, fully interactive, no DB write) ── */}
         {outcomeModal && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setOutcomeModal(false)}>
-            <div style={{ background: CARD, borderRadius: 16, padding: '32px 32px 28px', maxWidth: 480, width: '100%', boxShadow: '0 24px 64px rgba(15,33,55,0.22)', position: 'relative' }} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setOutcomeModal(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: TX3, padding: 4, display: 'flex', alignItems: 'center' }}><Ic name="x" size={18} color={TX3} /></button>
-              <h2 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 6px' }}>Log Hire Outcome</h2>
-              <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '0 0 20px', lineHeight: 1.5 }}>Track what happened after this candidate was hired. Used for ROI reporting and benchmarking.</p>
-              {/* Demo banner */}
-              <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Ic name="info" size={14} color={AMB} />
-                <span style={{ fontFamily: F, fontSize: 12.5, color: '#92400e' }}>Demo data. Sign up to log real outcomes and track hiring ROI.</span>
-              </div>
-              {/* Outcome options */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-                {[
-                  { value: 'passed_probation',  label: 'Passed probation',        color: GRN,  bg: GRNBG,  bd: GRNBD },
-                  { value: 'still_in_probation', label: 'Still in probation',      color: TEAL, bg: TEALLT, bd: `${TEAL}55` },
-                  { value: 'failed_probation',   label: 'Failed probation',        color: RED,  bg: REDBG,  bd: REDBD },
-                  { value: 'left_probation',     label: 'Left during probation',   color: AMB,  bg: AMBBG,  bd: AMBBD },
-                ].map(({ value, label, color, bg, bd }) => (
-                  <button
-                    key={value}
-                    onClick={() => setDemoOutcome(value)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, border: `2px solid ${demoOutcome === value ? color : BD}`, background: demoOutcome === value ? bg : CARD, cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s' }}
-                  >
-                    <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${demoOutcome === value ? color : BD}`, background: demoOutcome === value ? color : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {demoOutcome === value && <Ic name="check" size={10} color="#fff" />}
-                    </div>
-                    <span style={{ fontFamily: F, fontSize: 14, fontWeight: demoOutcome === value ? 700 : 500, color: demoOutcome === value ? color : TX }}>{label}</span>
-                  </button>
-                ))}
-              </div>
-              {/* Placement / hire start date */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>
-                  {isAgency ? 'Placement start date' : 'Start date'}
-                </label>
-                <input
-                  type="date"
-                  value={demoPlacementDate}
-                  onChange={e => setDemoPlacementDate(e.target.value)}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: F, fontSize: 14, color: TX, background: BG, outline: 'none', boxSizing: 'border-box' }}
-                />
-              </div>
-              {/* Outcome date */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>Outcome date (optional)</label>
-                <input type="date" defaultValue={new Date().toISOString().slice(0,10)} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: F, fontSize: 14, color: TX, background: BG, outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-              {/* Notes */}
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 6 }}>Notes (optional)</label>
-                <textarea rows={2} placeholder="Any context about this outcome..." style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, background: BG, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
-              </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => router.push('/login')} style={{ flex: 1, padding: '11px 0', borderRadius: 8, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
-                  Sign up to save →
-                </button>
-                <button onClick={() => setOutcomeModal(false)} style={{ padding: '11px 20px', borderRadius: 8, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
+          <DemoOutcomeLogModal
+            candidateId={params.candidateId}
+            candidateName={candidate?.name || 'this candidate'}
+            watchouts={(results?.watchouts || []).map(w => typeof w === 'object' ? (w.watchout || w.title || w.text || '') : String(w || '')).filter(Boolean)}
+            onClose={() => setOutcomeModal(false)}
+          />
         )}
       </main>
 
