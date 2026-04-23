@@ -3192,15 +3192,16 @@ function DemoDashboardInner() {
                 </div>
               </div>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+              <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: isMobile ? 720 : 880 }}>
                 <colgroup>
-                  <col style={{ width: isMobile ? '8%' : '4%' }} />
-                  <col style={{ width: isMobile ? '45%' : '24%' }} />
+                  <col style={{ width: isMobile ? '8%' : '3%' }} />
+                  <col style={{ width: isMobile ? '40%' : '29%' }} />
                   <col style={{ width: '18%', display: isMobile ? 'none' : undefined }} />
-                  <col style={{ width: isMobile ? '25%' : '11%' }} />
-                  <col style={{ width: isMobile ? '30%' : '8%' }} />
-                  <col style={{ width: '8%', display: isMobile ? 'none' : undefined }} />
+                  <col style={{ width: isMobile ? '22%' : '12%' }} />
+                  <col style={{ width: isMobile ? '30%' : '10%' }} />
                   <col style={{ width: '9%', display: isMobile ? 'none' : undefined }} />
+                  <col style={{ width: '10%', display: isMobile ? 'none' : undefined }} />
                   <col style={{ width: '9%', display: isMobile ? 'none' : undefined }} />
                 </colgroup>
                 <thead>
@@ -3261,10 +3262,10 @@ function DemoDashboardInner() {
                           />
                         </td>
                         <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                             <Avatar name={c.name} size={28} />
                             <div style={{ minWidth: 0, flex: 1 }}>
-                              <div style={{ fontSize: 12.5, fontWeight: 600, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div style={{ fontSize: 12.5, fontWeight: 600, color: TX, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                                 {isAgency && (() => {
                                   const h = DEMO_PLACEMENT_HEALTH[c.id]
                                   const palette = h?.health_status === 'GREEN' ? '#16a34a'
@@ -3295,7 +3296,15 @@ function DemoDashboardInner() {
                                     </span>
                                   )
                                 })()}
-                                {c.name}
+                                <span style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                                <span style={{
+                                  fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
+                                  padding: '1px 6px', borderRadius: 4, flexShrink: 0,
+                                  background: c.assessments?.employment_type === 'temporary' ? TEAL : NAVY,
+                                  color: '#fff',
+                                }}>
+                                  {c.assessments?.employment_type === 'temporary' ? 'TEMP' : 'PERM'}
+                                </span>
                                 <StagePill stage={c.stage} />
                               </div>
                               <div style={{ fontSize: 11, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div>
@@ -3305,7 +3314,7 @@ function DemoDashboardInner() {
                         <td style={{ padding: '10px 8px', overflow: 'hidden', display: isMobile ? 'none' : 'table-cell' }}>
                           <span style={{ fontSize: 12, color: TX2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{c.assessments?.role_title || '-'}</span>
                         </td>
-                        <td style={{ padding: '10px 8px' }}><StatusBadge status={c.status} /></td>
+                        <td style={{ padding: '10px 8px', whiteSpace: 'nowrap' }}><StatusBadge status={c.status} /></td>
                         <td style={{ padding: '10px 8px' }}>
                           {isCompleted && score !== null ? (
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
@@ -3333,6 +3342,7 @@ function DemoDashboardInner() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
 

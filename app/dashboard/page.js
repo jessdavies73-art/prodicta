@@ -5889,16 +5889,16 @@ function DashboardPageInner() {
                 <EmptyState />
               ) : (
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: isMobile ? 700 : undefined }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: 980 }}>
                     <colgroup>
                       <col style={{ width: '4%' }} />
-                      <col style={{ width: '21%' }} />
+                      <col style={{ width: '28%' }} />
                       <col style={{ width: '16%' }} />
-                      <col style={{ width: '10%' }} />
-                      <col style={{ width: '8%' }} />
+                      <col style={{ width: '11%' }} />
                       <col style={{ width: '8%' }} />
                       <col style={{ width: '8%' }} />
                       <col style={{ width: '9%' }} />
+                      <col style={{ width: '8%' }} />
                       <col style={{ width: '8%' }} />
                     </colgroup>
                     <thead>
@@ -5983,13 +5983,13 @@ function DashboardPageInner() {
                             </td>
                             {/* Candidate name + email */}
                             <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                                 <Avatar name={c.name} size={28} />
                                 <div style={{ minWidth: 0, flex: 1 }}>
                                   <div style={{
                                     fontSize: 12.5, fontWeight: 600, color: TX,
-                                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                     display: 'flex', alignItems: 'center', gap: 6,
+                                    minWidth: 0,
                                   }}>
                                     {isAgencyAccount && (
                                       <HealthDot
@@ -6001,7 +6001,12 @@ function DashboardPageInner() {
                                         }}
                                       />
                                     )}
-                                    {c.name}
+                                    <span style={{
+                                      flex: '1 1 auto', minWidth: 0,
+                                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                    }}>
+                                      {c.name}
+                                    </span>
                                     <span style={{
                                       fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
                                       padding: '1px 6px', borderRadius: 4, flexShrink: 0,
@@ -6087,7 +6092,7 @@ function DashboardPageInner() {
                             </td>
 
                             {/* Status */}
-                            <td style={{ padding: '10px 8px', overflow: 'hidden' }}>
+                            <td style={{ padding: '10px 8px', whiteSpace: 'nowrap' }}>
                               <StatusBadge status={c.status} />
                             </td>
 
