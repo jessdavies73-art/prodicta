@@ -474,6 +474,43 @@ Test 5, Behaviour check: The scenario tests what someone does, not what they kno
 
 ---
 
+FORCED CHOICE MECHANIC (include on exactly ONE scenario in the assessment)
+
+Attach a forced_choice object to EXACTLY ONE of the three scenarios. Preferably the Pressure Test (Scenario 2). The other two scenarios must NOT have a forced_choice field.
+
+The forced_choice is a structured decision task the candidate completes before writing their open text response. It must reflect a real decision they would face in this role. Never use generic options like "communicate with stakeholders" or "prioritise urgent tasks". Use the actual tasks, people, and decisions from that scenario's context.
+
+Choose one of these mechanic types based on what best fits the scenario:
+
+TYPE 1, PRIORITY RANKING (5 to 7 items):
+{
+  "type": "ranking",
+  "instruction": "Rank these actions in the order you would tackle them. Drag to reorder.",
+  "items": ["Action 1", "Action 2", "Action 3", "Action 4", "Action 5"]
+}
+
+TYPE 2, SELECT AND EXCLUDE (6 to 8 options):
+{
+  "type": "select_exclude",
+  "instruction": "Select the 3 actions you would take first. Then identify 1 you would not do at this stage.",
+  "items": ["Option 1", "Option 2", "Option 3", "Option 4", "Option 5", "Option 6"],
+  "select_count": 3,
+  "exclude_count": 1
+}
+
+TYPE 3, FORCED TRADE-OFF (exactly 3 pairs, every option has a downside):
+{
+  "type": "trade_off",
+  "instruction": "For each situation, choose one option. There is no perfect answer, both have trade-offs.",
+  "pairs": [
+    {"a": "Option A", "b": "Option B"},
+    {"a": "Option C", "b": "Option D"},
+    {"a": "Option E", "b": "Option F"}
+  ]
+}
+
+---
+
 OUTPUT FORMAT
 
 Return ONLY a JSON array with exactly 3 objects. No preamble, no explanation, no markdown.
@@ -487,9 +524,12 @@ Return ONLY a JSON array with exactly 3 objects. No preamble, no explanation, no
     "context": "The full situation in present tense. At least 130 words. Named characters, specific numbers. Must feel like a real working day.",
     "task": "Exactly what the candidate must produce. One specific deliverable.",
     "timeMinutes": 9,
-    "skills": ["Communication", "Problem solving"]
+    "skills": ["Communication", "Problem solving"],
+    "forced_choice": null
   }
 ]
+
+Exactly one of the three scenario objects (preferably Scenario 2) must carry a populated forced_choice object in place of null. The other two must have "forced_choice": null.
 
 The three scenario types must be: "Core Task", "Pressure Test", "Judgment Call".
 
@@ -882,6 +922,43 @@ Strong responses show genuine competence with the actual work, maintain composur
 
 ---
 
+FORCED CHOICE MECHANIC (include on exactly ONE scenario in the assessment)
+
+Attach a forced_choice object to EXACTLY ONE of the four scenarios. Preferably the Pressure Test (Scenario 2). The other three scenarios must NOT have a forced_choice field.
+
+The forced_choice is a structured decision task the candidate completes before writing their open text response. It must reflect a real decision they would face in this role. Never use generic options like "communicate with stakeholders" or "prioritise urgent tasks". Use the actual tasks, people, and decisions from that scenario's context.
+
+Choose one of these mechanic types based on what best fits the scenario:
+
+TYPE 1, PRIORITY RANKING (5 to 7 items):
+{
+  "type": "ranking",
+  "instruction": "Rank these actions in the order you would tackle them. Drag to reorder.",
+  "items": ["Action 1", "Action 2", "Action 3", "Action 4", "Action 5"]
+}
+
+TYPE 2, SELECT AND EXCLUDE (6 to 8 options):
+{
+  "type": "select_exclude",
+  "instruction": "Select the 3 actions you would take first. Then identify 1 you would not do at this stage.",
+  "items": ["Option 1", "Option 2", "Option 3", "Option 4", "Option 5", "Option 6"],
+  "select_count": 3,
+  "exclude_count": 1
+}
+
+TYPE 3, FORCED TRADE-OFF (exactly 3 pairs, every option has a downside):
+{
+  "type": "trade_off",
+  "instruction": "For each situation, choose one option. There is no perfect answer, both have trade-offs.",
+  "pairs": [
+    {"a": "Option A", "b": "Option B"},
+    {"a": "Option C", "b": "Option D"},
+    {"a": "Option E", "b": "Option F"}
+  ]
+}
+
+---
+
 OUTPUT FORMAT
 
 Return ONLY a JSON array with exactly 4 objects. No preamble, no explanation, no markdown.
@@ -895,9 +972,12 @@ Return ONLY a JSON array with exactly 4 objects. No preamble, no explanation, no
     "context": "The full situation in present tense. Must be at least 150 words. Include named characters, specific numbers, and the full email thread, data, or briefing the candidate must work with. Must feel like a real working day at a real UK company in this specific sector.",
     "task": "Exactly what the candidate must produce. One specific deliverable. Tell them the format, the recipient, and any constraints. Do not hint at the right approach.",
     "timeMinutes": 12,
-    "skills": ["Communication", "Negotiation"]
+    "skills": ["Communication", "Negotiation"],
+    "forced_choice": null
   }
 ]
+
+Exactly one of the four scenario objects (preferably Scenario 2) must carry a populated forced_choice object in place of null. The other three must have "forced_choice": null.
 
 The four scenario types must be: "Core Task", "Pressure Test", "Judgment Call", "Staying Power".
 

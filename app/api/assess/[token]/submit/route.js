@@ -76,18 +76,32 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Already completed' }, { status: 400 })
     }
 
-    const { error: respError } = await adminClient
+    // -- ALTER TABLE responses ADD COLUMN IF NOT EXISTS forced_choice_response JSONB;
+    const baseRows = responses.map(r => ({
+      candidate_id: candidate.id,
+      scenario_index: r.scenario_index,
+      response_text: r.response_text,
+      time_taken_seconds: r.time_taken_seconds || 0,
+      audio_url: r.audio_url || null,
+      input_mode: r.input_mode || 'type',
+    }))
+    const rowsWithForcedChoice = baseRows.map((row, i) => (
+      responses[i]?.forced_choice_response
+        ? { ...row, forced_choice_response: responses[i].forced_choice_response }
+        : row
+    ))
+
+    let { error: respError } = await adminClient
       .from('responses')
-      .insert(
-        responses.map(r => ({
-          candidate_id: candidate.id,
-          scenario_index: r.scenario_index,
-          response_text: r.response_text,
-          time_taken_seconds: r.time_taken_seconds || 0,
-          audio_url: r.audio_url || null,
-          input_mode: r.input_mode || 'type',
-        }))
-      )
+      .insert(rowsWithForcedChoice)
+
+    // Retry without the new column if the migration has not been applied yet.
+    // Keeps submissions working when the DB schema is behind the code.
+    if (respError && /forced_choice_response/i.test(respError.message || '')) {
+      console.warn('[submit] forced_choice_response column missing, retrying without it.')
+      const retry = await adminClient.from('responses').insert(baseRows)
+      respError = retry.error
+    }
 
     if (respError) throw respError
 

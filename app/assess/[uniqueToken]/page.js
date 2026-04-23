@@ -384,6 +384,11 @@ function ActivePage({ candidate, assessment, onSubmit }) {
   const [responses, setResponses] = useState(scenarios.map(() => ''))
   const [timeLefts, setTimeLefts] = useState(scenarios.map(s => (s.timeMinutes || 10) * 60))
   const [timeTakens, setTimeTakens] = useState(scenarios.map(() => 0))
+  // Forced choice state, keyed by scenario index. Shape depends on forced_choice.type:
+  //   ranking:        { type: 'ranking',        response: { ranked: [...strings] } }
+  //   select_exclude: { type: 'select_exclude', response: { selected: [...], excluded: '...', excluded_reason: '...' } }
+  //   trade_off:      { type: 'trade_off',      response: { choices: [...strings] } }
+  const [forcedChoiceResponses, setForcedChoiceResponses] = useState({})
 
   // Role level and voice recording state
   const mode = (assessment.assessment_mode || 'standard').toLowerCase()
@@ -550,6 +555,7 @@ function ActivePage({ candidate, assessment, onSubmit }) {
         interruption_response: interruptionResponse[i] || null,
         interruption_reply: interruptionReply[i] || null,
         inbox_note: inboxNotes[i] || null,
+        forced_choice_response: forcedChoiceResponses[i] || null,
       }))
       onSubmit(payload)
     } else {
@@ -821,6 +827,16 @@ function ActivePage({ candidate, assessment, onSubmit }) {
               </p>
             </div>
 
+            {/* Forced choice mechanic (Step 1) */}
+            {scenario.forced_choice && (
+              <ForcedChoiceBlock
+                scenarioIndex={scenarioIndex}
+                spec={scenario.forced_choice}
+                value={forcedChoiceResponses[scenarioIndex]}
+                onChange={(next) => setForcedChoiceResponses(prev => ({ ...prev, [scenarioIndex]: next }))}
+              />
+            )}
+
             {/* Textarea */}
             <div>
               <label style={{
@@ -831,8 +847,13 @@ function ActivePage({ candidate, assessment, onSubmit }) {
                 display: 'block',
                 marginBottom: 8,
               }}>
-                Your Response
+                {scenario.forced_choice ? 'Step 2: Explain your thinking' : 'Your Response'}
               </label>
+              {scenario.forced_choice && (
+                <div style={{ fontFamily: F, fontSize: 13, color: TX2, marginBottom: 10, lineHeight: 1.55 }}>
+                  Now explain the reasoning behind your decisions above. What factors drove your choices?
+                </div>
+              )}
 
               {/* Voice recording toggle */}
               {showRecordToggle && (
@@ -2365,4 +2386,319 @@ export default function AssessPage({ params }) {
   }
 
   return null
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Forced Choice UI: three interactive decision mechanics that render before
+// the open text response. State is lifted to ActivePage and written back via
+// `onChange`. If `spec` is null the block is not rendered (the parent already
+// guards on `scenario.forced_choice`).
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FC_SLATE = '#64748B'
+const FC_RED = '#dc2626'
+
+function ForcedChoiceBlock({ scenarioIndex, spec, value, onChange }) {
+  const wrapper = (children) => (
+    <div style={{
+      marginBottom: 20, padding: '16px 18px',
+      background: '#f8fafb', border: `1px solid #e4e9f0`, borderRadius: 12,
+      borderLeft: `4px solid ${NAVY}`,
+    }}>
+      <div style={{
+        fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY,
+        marginBottom: 6, letterSpacing: '-0.1px',
+      }}>
+        Step 1: Make your decisions
+      </div>
+      <div style={{ fontFamily: F, fontSize: 13, color: '#4a5568', marginBottom: 14, lineHeight: 1.55 }}>
+        {spec.instruction}
+      </div>
+      {children}
+    </div>
+  )
+
+  if (spec.type === 'ranking') {
+    return wrapper(
+      <RankingChoice
+        key={`rank-${scenarioIndex}`}
+        items={spec.items || []}
+        value={value}
+        onChange={(order) => onChange({ type: 'ranking', response: { ranked: order } })}
+      />
+    )
+  }
+  if (spec.type === 'select_exclude') {
+    return wrapper(
+      <SelectExcludeChoice
+        key={`se-${scenarioIndex}`}
+        items={spec.items || []}
+        selectCount={spec.select_count || 3}
+        value={value}
+        onChange={(v) => onChange({ type: 'select_exclude', response: v })}
+      />
+    )
+  }
+  if (spec.type === 'trade_off') {
+    return wrapper(
+      <TradeOffChoice
+        key={`to-${scenarioIndex}`}
+        pairs={spec.pairs || []}
+        value={value}
+        onChange={(choices) => onChange({ type: 'trade_off', response: { choices } })}
+      />
+    )
+  }
+  return null
+}
+
+function RankingChoice({ items, value, onChange }) {
+  // Initial order: preserve existing response if present, otherwise the prompt order.
+  const initial = Array.isArray(value?.response?.ranked) && value.response.ranked.length === items.length
+    ? value.response.ranked
+    : items
+  const [order, setOrder] = useState(initial)
+  const [dragIndex, setDragIndex] = useState(null)
+
+  function commit(next) {
+    setOrder(next)
+    onChange(next)
+  }
+  function move(i, dir) {
+    const j = i + dir
+    if (j < 0 || j >= order.length) return
+    const next = [...order]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    commit(next)
+  }
+  function handleDrop(targetIndex) {
+    if (dragIndex == null || dragIndex === targetIndex) return
+    const next = [...order]
+    const [moved] = next.splice(dragIndex, 1)
+    next.splice(targetIndex, 0, moved)
+    setDragIndex(null)
+    commit(next)
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {order.map((item, i) => (
+          <div
+            key={item}
+            draggable
+            onDragStart={() => setDragIndex(i)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => handleDrop(i)}
+            onDragEnd={() => setDragIndex(null)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              background: '#fff', border: `1px solid ${NAVY}22`, borderRadius: 10,
+              padding: '12px 14px',
+              cursor: 'grab',
+              opacity: dragIndex === i ? 0.6 : 1,
+              transition: 'opacity 0.15s, border-color 0.15s',
+            }}
+          >
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={FC_SLATE} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
+              <circle cx="9" cy="6" r="1.2" /><circle cx="9" cy="12" r="1.2" /><circle cx="9" cy="18" r="1.2" />
+              <circle cx="15" cy="6" r="1.2" /><circle cx="15" cy="12" r="1.2" /><circle cx="15" cy="18" r="1.2" />
+            </svg>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 26, height: 26, borderRadius: 999, flexShrink: 0,
+              background: TEAL, color: NAVY, fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, fontWeight: 800,
+            }}>
+              {i + 1}
+            </span>
+            <span style={{ fontFamily: F, fontSize: 13.5, color: '#0f2137', flex: 1, lineHeight: 1.5 }}>{item}</span>
+            <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+              <button
+                type="button"
+                onClick={() => move(i, -1)}
+                disabled={i === 0}
+                aria-label="Move up"
+                style={{
+                  width: 30, height: 30, borderRadius: 7, border: `1px solid #e4e9f0`, background: '#fff',
+                  cursor: i === 0 ? 'not-allowed' : 'pointer', opacity: i === 0 ? 0.35 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#0f2137" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => move(i, 1)}
+                disabled={i === order.length - 1}
+                aria-label="Move down"
+                style={{
+                  width: 30, height: 30, borderRadius: 7, border: `1px solid #e4e9f0`, background: '#fff',
+                  cursor: i === order.length - 1 ? 'not-allowed' : 'pointer', opacity: i === order.length - 1 ? 0.35 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#0f2137" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontFamily: F, fontSize: 12, color: '#64748b', marginTop: 10 }}>
+        Your ranking is saved automatically as you reorder.
+      </div>
+    </div>
+  )
+}
+
+function SelectExcludeChoice({ items, selectCount, value, onChange }) {
+  const initial = value?.response || { selected: [], excluded: null, excluded_reason: '' }
+  const [state, setState] = useState(initial)
+
+  function commit(next) {
+    setState(next)
+    onChange(next)
+  }
+  function toggleSelect(item) {
+    if (state.excluded) return // locked once moved to exclude phase
+    const has = state.selected.includes(item)
+    let next
+    if (has) {
+      next = { ...state, selected: state.selected.filter(s => s !== item) }
+    } else {
+      if (state.selected.length >= selectCount) return
+      next = { ...state, selected: [...state.selected, item] }
+    }
+    commit(next)
+  }
+  function toggleExclude(item) {
+    if (state.selected.includes(item)) return
+    const next = { ...state, excluded: state.excluded === item ? null : item }
+    commit(next)
+  }
+
+  const phase = state.selected.length < selectCount ? 'select' : 'exclude'
+  const selectedSet = new Set(state.selected)
+
+  return (
+    <div>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: 10,
+      }}>
+        {items.map((item) => {
+          const isSelected = selectedSet.has(item)
+          const isExcluded = state.excluded === item
+          const disabled = !isSelected && !isExcluded && phase === 'exclude' ? false : (!isSelected && phase === 'select' && state.selected.length >= selectCount)
+          const onClick = () => phase === 'select' ? toggleSelect(item) : toggleExclude(item)
+          const border = isSelected ? TEAL : isExcluded ? FC_RED : `${NAVY}22`
+          const bg = isSelected ? TEALLT : isExcluded ? '#fef2f2' : '#fff'
+          const greyed = phase === 'exclude' && !isSelected && !isExcluded
+          return (
+            <button
+              key={item}
+              type="button"
+              onClick={onClick}
+              style={{
+                textAlign: 'left', padding: '12px 14px',
+                background: bg, border: `1.5px solid ${border}`, borderRadius: 10,
+                cursor: 'pointer', opacity: greyed ? 0.7 : 1,
+                fontFamily: F, fontSize: 13.5, color: '#0f2137', lineHeight: 1.5,
+                display: 'flex', alignItems: 'flex-start', gap: 10,
+              }}
+            >
+              <span style={{
+                width: 22, height: 22, borderRadius: 999, flexShrink: 0,
+                background: isSelected ? TEAL : isExcluded ? FC_RED : '#fff',
+                border: `1.5px solid ${isSelected ? TEAL : isExcluded ? FC_RED : '#e4e9f0'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', marginTop: 1,
+              }}>
+                {isSelected && (
+                  <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                )}
+                {isExcluded && (
+                  <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                )}
+              </span>
+              <span style={{ flex: 1 }}>{item}</span>
+            </button>
+          )
+        })}
+      </div>
+      <div style={{ fontFamily: F, fontSize: 12.5, color: '#64748b', marginTop: 12 }}>
+        {phase === 'select'
+          ? `Selected ${state.selected.length} of ${selectCount}.`
+          : state.excluded
+            ? 'One action excluded. You can change your excluded action by clicking another option.'
+            : 'Now identify one action you would NOT take at this stage.'}
+      </div>
+    </div>
+  )
+}
+
+function TradeOffChoice({ pairs, value, onChange }) {
+  const initial = Array.isArray(value?.response?.choices) ? value.response.choices : pairs.map(() => null)
+  const [choices, setChoices] = useState(initial)
+
+  function pick(i, side) {
+    const next = [...choices]
+    next[i] = pairs[i][side]
+    setChoices(next)
+    onChange(next)
+  }
+
+  const made = choices.filter(Boolean).length
+  return (
+    <div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {pairs.map((pair, i) => {
+          const chosen = choices[i]
+          return (
+            <div key={i} style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+              gap: 10,
+              alignItems: 'stretch',
+            }}>
+              {['a', 'b'].map((side) => {
+                const isChosen = chosen === pair[side]
+                const other = side === 'a' ? 'b' : 'a'
+                const isRejected = chosen === pair[other]
+                return (
+                  <button
+                    key={side}
+                    type="button"
+                    onClick={() => pick(i, side)}
+                    style={{
+                      textAlign: 'left', padding: '14px 16px',
+                      background: isChosen ? TEALLT : '#fff',
+                      border: `1.5px solid ${isChosen ? TEAL : `${NAVY}22`}`,
+                      borderRadius: 10, cursor: 'pointer',
+                      opacity: isRejected ? 0.45 : 1,
+                      fontFamily: F, fontSize: 13.5, color: '#0f2137', lineHeight: 1.55,
+                      transition: 'background 0.15s, border-color 0.15s, opacity 0.15s',
+                    }}
+                  >
+                    {pair[side]}
+                  </button>
+                )
+              })}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: F, fontSize: 11, fontWeight: 800, color: FC_SLATE,
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                gridColumn: '2 / 3', gridRow: '1 / 2',
+              }}>
+                or
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <div style={{ fontFamily: F, fontSize: 12.5, color: '#64748b', marginTop: 12 }}>
+        {made} of {pairs.length} decisions made.
+      </div>
+    </div>
+  )
 }
