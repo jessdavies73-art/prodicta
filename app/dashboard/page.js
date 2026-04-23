@@ -727,6 +727,8 @@ function DashboardPageInner() {
   const [shareByCandidate, setShareByCandidate] = useState({})
   const [upcomingStarts, setUpcomingStarts] = useState([])
   const [placementHealth, setPlacementHealth] = useState(null) // { placements, counts, total_active, rebate_ending_this_month }
+  const [revenueProtection, setRevenueProtection] = useState(null)
+  const [revenueProtectionLoading, setRevenueProtectionLoading] = useState(false)
   const [engagementSequences, setEngagementSequences] = useState([])
   const [ediCertifiedAssessments, setEdiCertifiedAssessments] = useState(new Set())
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
@@ -910,6 +912,19 @@ function DashboardPageInner() {
               setPlacementHealth(data)
             }
           } catch (_) {}
+
+          // Fetch revenue protection summary (agency only)
+          try {
+            setRevenueProtectionLoading(true)
+            const rp = await fetch('/api/dashboard/revenue-protection')
+            if (rp.ok) {
+              const rpData = await rp.json()
+              setRevenueProtection(rpData)
+            }
+          } catch (_) {
+          } finally {
+            setRevenueProtectionLoading(false)
+          }
         }
 
         // Load candidate outcomes (for cost saved calculator)
@@ -3755,6 +3770,14 @@ function DashboardPageInner() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {/* ── Revenue Protection (Insights section 5, agency only) ── */}
+        {isAgencyAccount && (
+          <RevenueProtectionCard
+            data={revenueProtection}
+            loading={revenueProtectionLoading}
+          />
         )}
 
         {/* ── Speed to Offer (Insights section 5) ── */}
@@ -6977,6 +7000,195 @@ function AssessmentCard({ assessment, completed, total, onClick }) {
           </span>
         )}
       </div>
+    </div>
+  )
+}
+
+// Revenue Protection Card (Insights section 5, agency only)
+// Shows quarter-to-date estimated fees protected, placements pulled back
+// from risk, SSP claims handled correctly, and replacements surfaced
+// before the client complained. Data source: /api/dashboard/revenue-protection.
+const INDIGO = '#6366F1'
+const JADE = '#00BFA5'
+
+function formatPoundsRP(value) {
+  const n = Number(value) || 0
+  return `£${Math.round(n).toLocaleString('en-GB')}`
+}
+
+function currentQuarterLabelRP() {
+  const now = new Date()
+  const q = Math.floor(now.getMonth() / 3) + 1
+  return `Q${q} ${now.getFullYear()}`
+}
+
+function RPArrow() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }} aria-hidden="true">
+      <path d="M12 19V5M5 12l7-7 7 7" stroke={JADE} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function RPTile({ value, label, isMoney = false }) {
+  const display = isMoney ? formatPoundsRP(value) : (Number(value) || 0).toLocaleString('en-GB')
+  const positive = Number(value) > 0
+  return (
+    <div style={{
+      background: CARD,
+      border: `1px solid ${BD}`,
+      borderRadius: 10,
+      padding: '16px 18px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 6,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: JADE, lineHeight: 1.1 }}>
+          {display}
+        </span>
+        {positive && <RPArrow />}
+      </div>
+      <div style={{ fontFamily: F, fontSize: 12, color: TX3, lineHeight: 1.4 }}>
+        {label}
+      </div>
+    </div>
+  )
+}
+
+function RPTileSkeleton() {
+  return (
+    <div style={{
+      background: BG,
+      border: `1px solid ${BD}`,
+      borderRadius: 10,
+      padding: '16px 18px',
+      minHeight: 72,
+    }}>
+      <div style={{ height: 22, width: '55%', background: BD, borderRadius: 4, marginBottom: 10 }} />
+      <div style={{ height: 10, width: '80%', background: BD, borderRadius: 3, opacity: 0.6 }} />
+    </div>
+  )
+}
+
+function RevenueProtectionCard({ data, loading }) {
+  const quarterLabel = data?.quarter_label || currentQuarterLabelRP()
+  const feesProtected = Number(data?.fees_protected) || 0
+  const placementsSaved = Number(data?.placements_saved) || 0
+  const sspClaims = Number(data?.ssp_claims) || 0
+  const replacementsFound = Number(data?.replacements_found) || 0
+
+  const allZero = !loading
+    && feesProtected === 0
+    && placementsSaved === 0
+    && sspClaims === 0
+    && replacementsFound === 0
+
+  return (
+    <div style={{
+      ...cs,
+      order: 62,
+      padding: '24px 28px',
+      borderLeft: `4px solid ${INDIGO}`,
+      marginBottom: 20,
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 16,
+        flexWrap: 'wrap',
+        marginBottom: 20,
+      }}>
+        <div>
+          <h2 style={{
+            margin: 0,
+            fontSize: 20,
+            fontWeight: 800,
+            color: NAVY,
+            letterSpacing: '-0.2px',
+          }}>
+            Revenue Protection
+          </h2>
+          <div style={{ fontFamily: F, fontSize: 13, color: TX3, marginTop: 4 }}>
+            What PRODICTA has protected this quarter
+          </div>
+        </div>
+        <div style={{
+          fontFamily: F,
+          fontSize: 11.5,
+          fontWeight: 700,
+          color: '#4338CA',
+          background: '#E0E7FF',
+          borderRadius: 999,
+          padding: '5px 12px',
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase',
+          whiteSpace: 'nowrap',
+        }}>
+          {quarterLabel}
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 12,
+        }}>
+          <RPTileSkeleton />
+          <RPTileSkeleton />
+          <RPTileSkeleton />
+          <RPTileSkeleton />
+        </div>
+      ) : allZero ? (
+        <div style={{
+          background: BG,
+          border: `1px dashed ${BD}`,
+          borderRadius: 10,
+          padding: '22px 20px',
+          fontFamily: F,
+          fontSize: 13.5,
+          color: TX2,
+          lineHeight: 1.6,
+        }}>
+          Your Revenue Protection summary will build as you use PRODICTA. Check back after your first placements are tracked.
+        </div>
+      ) : (
+        <>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: 12,
+          }}>
+            <RPTile value={feesProtected} label="Estimated fees protected" isMoney />
+            <RPTile value={placementsSaved} label="Placements pulled back from risk" />
+            <RPTile value={sspClaims} label="SSP claims handled correctly" />
+            <RPTile value={replacementsFound} label="Replacements found before client complained" />
+          </div>
+          <p style={{
+            fontFamily: F,
+            fontSize: 12,
+            color: TX3,
+            fontStyle: 'italic',
+            margin: '16px 0 0',
+            lineHeight: 1.55,
+          }}>
+            Fees protected is an estimate based on your average placement fee. Figures cover completed placements and interventions this quarter.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+            <span style={{
+              fontFamily: F,
+              fontSize: 12.5,
+              fontWeight: 700,
+              color: JADE,
+              cursor: 'default',
+            }}>
+              View detail
+            </span>
+          </div>
+        </>
+      )}
     </div>
   )
 }

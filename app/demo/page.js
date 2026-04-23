@@ -1249,6 +1249,45 @@ function DemoDashboardInner() {
           </div>
         </div>
 
+        {/* Revenue Protection (Insights section 5, agency only) */}
+        {isAgency && (
+          <div style={{ order: 62, background: CARD, border: `1px solid ${BD}`, borderLeft: '4px solid #6366F1', borderRadius: 14, padding: '24px 28px', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 20 }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: NAVY, letterSpacing: '-0.2px' }}>Revenue Protection</h2>
+                <div style={{ fontFamily: F, fontSize: 13, color: TX3, marginTop: 4 }}>What PRODICTA has protected this quarter</div>
+              </div>
+              <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: '#4338CA', background: '#E0E7FF', borderRadius: 999, padding: '5px 12px', letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                {(() => { const n = new Date(); return `Q${Math.floor(n.getMonth() / 3) + 1} ${n.getFullYear()}` })()}
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+              {[
+                { value: '£84,000', label: 'Estimated fees protected' },
+                { value: '5', label: 'Placements pulled back from risk' },
+                { value: '7', label: 'SSP claims handled correctly' },
+                { value: '3', label: 'Replacements found before client complained' },
+              ].map(t => (
+                <div key={t.label} style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 10, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, color: '#00BFA5', lineHeight: 1.1 }}>{t.value}</span>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 19V5M5 12l7-7 7 7" stroke="#00BFA5" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <div style={{ fontFamily: F, fontSize: 12, color: TX3, lineHeight: 1.4 }}>{t.label}</div>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontFamily: F, fontSize: 12, color: TX3, fontStyle: 'italic', margin: '16px 0 0', lineHeight: 1.55 }}>
+              Fees protected is an estimate based on your average placement fee. Figures cover completed placements and interventions this quarter.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+              <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: '#00BFA5', cursor: 'default' }}>View detail</span>
+            </div>
+          </div>
+        )}
+
         {/* Speed to Offer (Insights section 5) */}
         <div style={{ order: 63, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>Speed to offer</div>
