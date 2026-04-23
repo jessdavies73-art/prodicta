@@ -4692,6 +4692,9 @@ export default function CandidateReportPage({ params }) {
                       )
                     })()}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      {results.confidence_competence_gap && (
+                        <ConfidenceCompetenceGapCard />
+                      )}
                       {results.watchouts.map((w, i) => {
                         const title = typeof w === 'object' ? (w.watchout || w.title || w.text) : w
                         const severity = typeof w === 'object' ? w.severity : null
@@ -7400,6 +7403,65 @@ function EvidenceStrengthPill({ level }) {
     }}>
       {s.label}
     </span>
+  )
+}
+
+// System-generated watch-out card shown at the top of the watch-outs list when
+// the scoring pipeline flagged a confidence-competence gap on this candidate.
+// Visually identical to AI-generated watch-out cards (amber severity, same
+// padding + border treatment), with the Observed pill to signal it came from
+// direct response analysis rather than AI interpretation.
+function ConfidenceCompetenceGapCard() {
+  const AMB = '#E8B84B'
+  const AMBBG = '#fffbeb'
+  const AMBBD = '#fde68a'
+  const TX = '#0f172a'
+  const TX2 = '#5e6b7f'
+  return (
+    <div style={{
+      background: AMBBG,
+      border: `1px solid ${AMBBD}`,
+      borderLeft: `4px solid ${AMB}`,
+      borderRadius: '0 10px 10px 0',
+      padding: '16px 18px',
+    }}>
+      <div style={{ marginBottom: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={{
+          display: 'inline-block', padding: '2px 7px', borderRadius: 50,
+          fontSize: 11, fontWeight: 700, fontFamily: 'Outfit, system-ui, sans-serif',
+          background: AMBBG, color: AMB, border: `1px solid ${AMBBD}`,
+        }}>
+          Medium severity
+        </span>
+        <EvidenceStrengthPill level="strong" />
+        <span style={{
+          display: 'inline-block', padding: '2px 8px', borderRadius: 999,
+          background: '#00BFA5', color: '#fff', border: '1px solid #00897B',
+          fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 10, fontWeight: 800,
+          letterSpacing: '0.04em',
+        }}>
+          Observed
+        </span>
+      </div>
+      <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 8px' }}>
+        Confidence and Competence Gap Detected
+      </p>
+      <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13, color: TX2, margin: '0 0 10px', lineHeight: 1.7 }}>
+        This candidate's responses showed a higher level of written confidence than decision quality. Specific actions and reasoning were sometimes absent behind assured language. Verify judgment quality directly in the interview using the verification questions below.
+      </p>
+      <div style={{
+        background: '#f7f9fb', border: '1px solid #e4e9f0',
+        borderLeft: `3px solid #00BFA5`,
+        borderRadius: '0 8px 8px 0', padding: '10px 14px',
+      }}>
+        <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 10.5, fontWeight: 800, color: '#5e6b7f', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+          Week 1 intervention
+        </div>
+        <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, color: TX, margin: 0, lineHeight: 1.6 }}>
+          In the first week, ask this person to walk you through their decision-making on a specific task rather than accepting confident-sounding updates at face value. Look for concrete sequencing and acknowledged trade-offs.
+        </p>
+      </div>
+    </div>
   )
 }
 

@@ -602,6 +602,57 @@ function DemoInterviewVerification({ candidateId, isMobile }) {
   )
 }
 
+// Hardcoded confidence-competence gap watch-out card, shown on Marcus only to
+// illustrate the feature on a mid-scoring candidate. Visually identical to the
+// live version in app/assessment/[id]/candidate/[candidateId]/page.js.
+function DemoConfidenceCompetenceGapCard() {
+  return (
+    <div style={{
+      background: AMBBG,
+      border: `1px solid ${AMBBD}`,
+      borderLeft: `4px solid ${AMB}`,
+      borderRadius: '0 10px 10px 0',
+      padding: '16px 18px',
+    }}>
+      <div style={{ marginBottom: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={{
+          display: 'inline-block', padding: '2px 7px', borderRadius: 50,
+          fontSize: 11, fontWeight: 700, fontFamily: F,
+          background: AMBBG, color: AMB, border: `1px solid ${AMBBD}`,
+        }}>
+          Medium severity
+        </span>
+        <DemoEvidencePill level="strong" />
+        <span style={{
+          display: 'inline-block', padding: '2px 8px', borderRadius: 999,
+          background: '#00BFA5', color: '#fff', border: '1px solid #00897B',
+          fontFamily: F, fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
+        }}>
+          Observed
+        </span>
+      </div>
+      <p style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX, margin: '0 0 8px' }}>
+        Confidence and Competence Gap Detected
+      </p>
+      <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 10px', lineHeight: 1.7 }}>
+        This candidate's responses showed a higher level of written confidence than decision quality. Specific actions and reasoning were sometimes absent behind assured language. Verify judgment quality directly in the interview using the verification questions below.
+      </p>
+      <div style={{
+        background: '#f7f9fb', border: `1px solid ${BD}`,
+        borderLeft: `3px solid ${TEAL}`,
+        borderRadius: '0 8px 8px 0', padding: '10px 14px',
+      }}>
+        <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+          Week 1 intervention
+        </div>
+        <p style={{ fontFamily: F, fontSize: 12.5, color: TX, margin: 0, lineHeight: 1.6 }}>
+          In the first week, ask this person to walk you through their decision-making on a specific task rather than accepting confident-sounding updates at face value. Look for concrete sequencing and acknowledged trade-offs.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 // Small pill used by the demo page to show evidence strength on each insight.
 // Kept local so the demo can render without importing the live page helpers.
 function DemoEvidencePill({ level }) {
@@ -3272,6 +3323,9 @@ function DemoCandidateInner({ params }) {
                     )
                   })()}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {params.candidateId === 'demo-c2' && (
+                      <DemoConfidenceCompetenceGapCard />
+                    )}
                     {results.watchouts.map((w, i) => {
                       const title = typeof w === 'object' ? (w.watchout || w.title || w.text) : w
                       const severity = typeof w === 'object' ? w.severity : null
