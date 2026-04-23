@@ -701,6 +701,10 @@ function DemoCandidateInner({ params }) {
   const [layer2Open, setLayer2Open] = useState(false)
   const [layer3Open, setLayer3Open] = useState(false)
   const [moreActionsOpen, setMoreActionsOpen] = useState(false)
+  const [pushbackModal, setPushbackModal] = useState(false)
+  const [pushbackLoading, setPushbackLoading] = useState(false)
+  const [pushbackScript, setPushbackScript] = useState('')
+  const [pushbackCopied, setPushbackCopied] = useState(false)
   function toggleSection(key) { setExpandedSections(prev => ({ ...prev, [key]: !prev[key] })) }
   const allExpanded = Object.values(expandedSections).every(Boolean)
 
@@ -1173,6 +1177,30 @@ function DemoCandidateInner({ params }) {
                   <Ic name="file" size={14} color={TEAL} />
                   Manager Brief PDF
                   <InfoTooltip text="A 2-page summary with QR code for line managers who will not read the full report" light />
+                </button>
+                )}
+                {isAgency && (
+                <button
+                  onClick={() => {
+                    setPushbackModal(true)
+                    setPushbackCopied(false)
+                    if (pushbackScript) return
+                    setPushbackLoading(true)
+                    const cName = candidate?.name || 'this candidate'
+                    const role = candidate?.assessments?.role_title || 'the role'
+                    const score = results?.overall_score ?? 78
+                    const rec = results?.hiring_recommendation || 'Strong Hire'
+                    const demoScript = `I hear you, and I trust your instinct on fit. Before we move on though, I want to share what the PRODICTA assessment is telling us, because I think it is worth a closer look.\n\n${cName} scored ${score} out of 100 overall for the ${role} position, with a ${rec} recommendation and an 84% placement survival score. What stood out were the three top strengths that showed up with real evidence in the scenarios, particularly around structured decision making under pressure and how they handle stakeholder communication.\n\nThe one watch-out the report flagged was early confidence with autonomy, which is something we can manage with a clear onboarding plan and a structured first 30 days. That is the sort of thing a good manager handles in week one.\n\nMy honest view, based on the data and the interview, is that this is a candidate worth another conversation. Would you be open to a short second-stage call with your line manager before we go back to market? If it is still not right after that, I am happy to run fresh candidates.`
+                    setTimeout(() => {
+                      setPushbackScript(demoScript)
+                      setPushbackLoading(false)
+                    }, 900)
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '10px 16px', cursor: 'pointer', width: '100%' }}
+                >
+                  <Ic name="shield" size={14} color={TEAL} />
+                  Client Pushback Script
+                  <InfoTooltip text="Generate a ready-to-use response script when a client questions this candidate." light />
                 </button>
                 )}
                 <a
@@ -3316,6 +3344,68 @@ function DemoCandidateInner({ params }) {
       </footer>
 
       {signupPrompt && <SignUpModal onClose={() => setSignupPrompt(false)} />}
+
+      {/* ── CLIENT PUSHBACK SCRIPT MODAL (agency only) ── */}
+      {pushbackModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1400, padding: 20 }}
+          onClick={() => setPushbackModal(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 14, maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(15,33,55,0.35)' }}
+          >
+            <div style={{ padding: '22px 28px 18px', background: NAVY, borderRadius: '14px 14px 0 0' }}>
+              <h2 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: '#fff', margin: 0 }}>
+                Client Pushback Script
+              </h2>
+              <p style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.65)', margin: '6px 0 0', lineHeight: 1.5 }}>
+                Use this if your client is pushing back on this candidate
+              </p>
+            </div>
+            <div style={{ padding: '22px 28px' }}>
+              {pushbackLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 0', gap: 16 }}>
+                  <div style={{ width: 32, height: 32, border: `3px solid ${BD}`, borderTopColor: TEAL, borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                  <div style={{ fontFamily: F, fontSize: 13.5, color: TX2, fontWeight: 600 }}>Generating your script...</div>
+                </div>
+              ) : (
+                <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '18px 20px', fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                  {pushbackScript}
+                </div>
+              )}
+            </div>
+            <div style={{ padding: '12px 28px 22px', borderTop: `1px solid ${BD}`, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                disabled={!pushbackScript || pushbackLoading}
+                onClick={async () => {
+                  if (!pushbackScript) return
+                  try {
+                    await navigator.clipboard.writeText(pushbackScript)
+                    setPushbackCopied(true)
+                    setTimeout(() => setPushbackCopied(false), 2000)
+                  } catch {}
+                }}
+                style={{
+                  flex: 1, minWidth: 140, padding: '11px 0', borderRadius: 9, border: 'none',
+                  background: pushbackScript && !pushbackLoading ? TEAL : BD,
+                  color: pushbackScript && !pushbackLoading ? NAVY : TX3,
+                  fontFamily: F, fontSize: 13.5, fontWeight: 800,
+                  cursor: pushbackScript && !pushbackLoading ? 'pointer' : 'not-allowed',
+                }}
+              >
+                {pushbackCopied ? 'Copied' : 'Copy Script'}
+              </button>
+              <button
+                onClick={() => setPushbackModal(false)}
+                style={{ flex: 1, minWidth: 140, padding: '11px 0', borderRadius: 9, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── EVIDENCE PACK MODAL (James O'Brien demo) ── */}
       {evidencePackModal && (

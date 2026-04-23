@@ -1012,6 +1012,11 @@ export default function CandidateReportPage({ params }) {
   const [briefEmail, setBriefEmail] = useState('')
   const [briefSending, setBriefSending] = useState(false)
   const [briefSent, setBriefSent] = useState(false)
+  const [pushbackModal, setPushbackModal] = useState(false)
+  const [pushbackLoading, setPushbackLoading] = useState(false)
+  const [pushbackScript, setPushbackScript] = useState('')
+  const [pushbackError, setPushbackError] = useState('')
+  const [pushbackCopied, setPushbackCopied] = useState(false)
   const [outcomeDate, setOutcomeDate] = useState('')
   const [outcomeNoteText, setOutcomeNoteText] = useState('')
   const [outcomeClientName, setOutcomeClientName] = useState('')
@@ -1709,6 +1714,36 @@ export default function CandidateReportPage({ params }) {
                         <Ic name="file" size={15} color={TEAL} />
                         Manager Brief PDF
                         <InfoTooltip text="A 2-page summary with QR code for line managers who will not read the full report" light />
+                      </button>
+                    )}
+                    {results && profile?.account_type === 'agency' && (
+                      <button
+                        onClick={async () => {
+                          setPushbackModal(true)
+                          setPushbackCopied(false)
+                          setPushbackError('')
+                          if (pushbackScript) return
+                          setPushbackLoading(true)
+                          try {
+                            const res = await fetch(`/api/candidate/${params.candidateId}/pushback-script`, { method: 'POST' })
+                            const data = await res.json()
+                            if (!res.ok) throw new Error(data?.error || 'Failed to generate script')
+                            setPushbackScript(data.script || '')
+                          } catch (err) {
+                            setPushbackError(err.message || 'Failed to generate script')
+                          } finally {
+                            setPushbackLoading(false)
+                          }
+                        }}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: NAVY, border: 'none', borderRadius: 8, cursor: 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '10px 16px', width: '100%',
+                        }}
+                      >
+                        <Ic name="shield" size={15} color={TEAL} />
+                        Client Pushback Script
+                        <InfoTooltip text="Generate a ready-to-use response script when a client questions this candidate." light />
                       </button>
                     )}
                     {results && (
@@ -6123,6 +6158,72 @@ export default function CandidateReportPage({ params }) {
             </div>
             <div style={{ padding: '12px 28px 20px', borderTop: `1px solid ${BD}` }}>
               <button onClick={() => { setBriefModal(false); setBriefSent(false); setBriefEmail('') }} style={{ width: '100%', padding: '10px 0', borderRadius: 9, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CLIENT PUSHBACK SCRIPT MODAL (agency only) ── */}
+      {pushbackModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 20 }}
+          onClick={() => setPushbackModal(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 14, maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(15,33,55,0.35)' }}
+          >
+            <div style={{ padding: '22px 28px 18px', background: NAVY, borderRadius: '14px 14px 0 0' }}>
+              <h2 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: '#fff', margin: 0 }}>
+                Client Pushback Script
+              </h2>
+              <p style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.65)', margin: '6px 0 0', lineHeight: 1.5 }}>
+                Use this if your client is pushing back on this candidate
+              </p>
+            </div>
+            <div style={{ padding: '22px 28px' }}>
+              {pushbackLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 0', gap: 16 }}>
+                  <div style={{ width: 32, height: 32, border: `3px solid ${BD}`, borderTopColor: TEAL, borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                  <div style={{ fontFamily: F, fontSize: 13.5, color: TX2, fontWeight: 600 }}>Generating your script...</div>
+                </div>
+              ) : pushbackError ? (
+                <div style={{ background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, padding: '12px 14px', fontFamily: F, fontSize: 13, color: RED, lineHeight: 1.55 }}>
+                  {pushbackError}
+                </div>
+              ) : (
+                <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '18px 20px', fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                  {pushbackScript}
+                </div>
+              )}
+            </div>
+            <div style={{ padding: '12px 28px 22px', borderTop: `1px solid ${BD}`, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                disabled={!pushbackScript || pushbackLoading}
+                onClick={async () => {
+                  if (!pushbackScript) return
+                  try {
+                    await navigator.clipboard.writeText(pushbackScript)
+                    setPushbackCopied(true)
+                    setTimeout(() => setPushbackCopied(false), 2000)
+                  } catch {}
+                }}
+                style={{
+                  flex: 1, minWidth: 140, padding: '11px 0', borderRadius: 9, border: 'none',
+                  background: pushbackScript && !pushbackLoading ? TEAL : BD,
+                  color: pushbackScript && !pushbackLoading ? NAVY : TX3,
+                  fontFamily: F, fontSize: 13.5, fontWeight: 800,
+                  cursor: pushbackScript && !pushbackLoading ? 'pointer' : 'not-allowed',
+                }}
+              >
+                {pushbackCopied ? 'Copied' : 'Copy Script'}
+              </button>
+              <button
+                onClick={() => setPushbackModal(false)}
+                style={{ flex: 1, minWidth: 140, padding: '11px 0', borderRadius: 9, border: `1.5px solid ${BD}`, background: 'transparent', color: TX2, fontFamily: F, fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}
+              >
                 Close
               </button>
             </div>
