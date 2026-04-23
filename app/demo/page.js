@@ -3192,8 +3192,83 @@ function DemoDashboardInner() {
                 </div>
               </div>
 
+              {isMobile ? (
+                <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {filtered.map(c => {
+                    const result = c.results?.[0]
+                    const score = result?.overall_score ?? null
+                    const risk = result?.risk_level ?? null
+                    const isCompleted = c.status === 'completed'
+                    const isClickable = isCompleted
+                    return (
+                      <div
+                        key={c.id}
+                        onClick={() => { if (isClickable) router.push(`/demo/candidate/${c.id}?type=${demoType}`) }}
+                        style={{
+                          background: CARD, border: `1px solid ${BD}`, borderRadius: 10,
+                          padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8,
+                          cursor: isClickable ? 'pointer' : 'default',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedCandidates.has(c.id)}
+                            onClick={e => e.stopPropagation()}
+                            onChange={() => {
+                              setSelectedCandidates(prev => {
+                                const next = new Set(prev)
+                                if (next.has(c.id)) next.delete(c.id)
+                                else next.add(c.id)
+                                return next
+                              })
+                            }}
+                            style={{ cursor: 'pointer', accentColor: TEAL, flexShrink: 0 }}
+                          />
+                          <Avatar name={c.name} size={32} />
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                              <span style={{ fontSize: 13.5, fontWeight: 700, color: TX, flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {c.name}
+                              </span>
+                              <span style={{
+                                fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
+                                padding: '1px 6px', borderRadius: 4, flexShrink: 0,
+                                background: c.assessments?.employment_type === 'temporary' ? TEAL : NAVY,
+                                color: '#fff',
+                              }}>
+                                {c.assessments?.employment_type === 'temporary' ? 'TEMP' : 'PERM'}
+                              </span>
+                              <StagePill stage={c.stage} />
+                            </div>
+                            <div style={{ fontSize: 11.5, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>
+                              {c.email}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 12, color: TX2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {c.assessments?.role_title || '-'}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                          <StatusBadge status={c.status} />
+                          {isCompleted && score !== null && (
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+                              <span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>{score}</span>
+                              <span style={{ fontSize: 10, color: TX3 }}>/100</span>
+                            </div>
+                          )}
+                          {isCompleted && <RiskBadge risk={risk} />}
+                          <span style={{ marginLeft: 'auto', fontSize: 11, color: TX3, whiteSpace: 'nowrap' }}>
+                            {isCompleted ? fmt(c.completed_at) : fmt(c.invited_at)}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
               <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: isMobile ? 720 : 880 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: 880 }}>
                 <colgroup>
                   <col style={{ width: isMobile ? '8%' : '3%' }} />
                   <col style={{ width: isMobile ? '40%' : '29%' }} />
@@ -3343,6 +3418,7 @@ function DemoDashboardInner() {
                 </tbody>
               </table>
               </div>
+              )}
             </div>
           </div>
 
