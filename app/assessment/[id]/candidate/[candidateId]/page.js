@@ -4668,6 +4668,7 @@ export default function CandidateReportPage({ params }) {
                       Watch-outs
                     </SectionHeading>
                     <FactPredKey />
+                    <FailurePatternBar patterns={results.failure_patterns_detected} />
                     {/* Severity count summary strip */}
                     {(() => {
                       const counts = { High: 0, Medium: 0, Low: 0 }
@@ -7403,6 +7404,29 @@ function EvidenceStrengthPill({ level }) {
     }}>
       {s.label}
     </span>
+  )
+}
+
+// Slim navy summary bar shown above the watch-out cards listing the failure
+// patterns detected across scenarios. Silent when the array is empty or
+// missing, so older reports without the field render unchanged.
+function FailurePatternBar({ patterns }) {
+  const list = Array.isArray(patterns) ? patterns.filter(Boolean) : []
+  if (list.length === 0) return null
+  return (
+    <div style={{
+      background: '#0f2137', color: '#fff',
+      borderRadius: 8, padding: '9px 14px',
+      marginBottom: 16,
+      fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, lineHeight: 1.55,
+    }}>
+      <span style={{ fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: 10.5, color: '#7ef4d8', marginRight: 8 }}>
+        Patterns detected
+      </span>
+      <span style={{ color: 'rgba(255,255,255,0.92)' }}>
+        {list.join(' · ')}
+      </span>
+    </div>
   )
 }
 

@@ -602,6 +602,29 @@ function DemoInterviewVerification({ candidateId, isMobile }) {
   )
 }
 
+// Slim navy summary bar listing failure patterns detected across scenarios.
+// Mirrors FailurePatternBar on the live report page. Only shown on Marcus in
+// the demo so prospects see the feature on a mid-scoring candidate.
+function DemoFailurePatternBar({ patterns = [] }) {
+  const list = (patterns || []).filter(Boolean)
+  if (list.length === 0) return null
+  return (
+    <div style={{
+      background: NAVY, color: '#fff',
+      borderRadius: 8, padding: '9px 14px',
+      marginBottom: 16,
+      fontFamily: F, fontSize: 12.5, lineHeight: 1.55,
+    }}>
+      <span style={{ fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: 10.5, color: '#7ef4d8', marginRight: 8 }}>
+        Patterns detected
+      </span>
+      <span style={{ color: 'rgba(255,255,255,0.92)' }}>
+        {list.join(' · ')}
+      </span>
+    </div>
+  )
+}
+
 // Hardcoded confidence-competence gap watch-out card, shown on Marcus only to
 // illustrate the feature on a mid-scoring candidate. Visually identical to the
 // live version in app/assessment/[id]/candidate/[candidateId]/page.js.
@@ -3300,6 +3323,9 @@ function DemoCandidateInner({ params }) {
                 <Card style={{ marginBottom: 20 }}>
                   <SectionHeading tooltip="Concerns flagged by severity with evidence from the candidate's responses.">Watch-outs</SectionHeading>
                   <DemoFactPredKey />
+                  {params.candidateId === 'demo-c2' && (
+                    <DemoFailurePatternBar patterns={['Delays action when speed matters', 'Routes around conflict']} />
+                  )}
                   {(() => {
                     const counts = { High: 0, Medium: 0, Low: 0 }
                     results.watchouts.forEach(w => {
