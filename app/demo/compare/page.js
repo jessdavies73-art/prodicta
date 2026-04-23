@@ -191,10 +191,46 @@ function Col({ candidateId, onClear, onViewReport }) {
   )
 }
 
+const DEMO_REPLAY_SCENARIO = {
+  type: 'Stakeholder management',
+  title: 'Flagship launch slipping by three weeks',
+  context: `You are the Marketing Manager for a consumer tech brand. The product team has just confirmed that the flagship Q4 launch will slip by three weeks. The CEO is expecting the campaign to go live on the original date, the PR agency has already pitched journalists, and paid media is booked from next Monday. You have 24 hours to decide how to handle it and send a single written update to the CEO and Head of Product.`,
+  task: 'Write your update. Set out the decision you are recommending, what you will do in the next 24 hours, and how you will hold the launch moment together.',
+  candidates: [
+    {
+      id: 'demo-sophie',
+      name: 'Sophie Chen',
+      employment_type: 'permanent',
+      overall_score: 87,
+      score_10: 9,
+      observation: 'Led with a clear recommendation, sequenced stakeholder actions, and protected the launch moment with a specific contingency plan.',
+      response_text: `My recommendation is that we do not slide the campaign by three weeks. We hold the launch date, pull paid media back by seven days, and convert the first ten days into a teaser phase built around the founder story and two beta customer interviews we already have signed off.
+
+In the next 24 hours I will do three things. First, I will call the PR agency personally and brief them that the embargo date holds but the product review units land three weeks later, so we move journalist briefings from demo-led to narrative-led and protect two exclusives for the actual product reveal. Second, I will draft a one-page note for the CEO with three options ranked by revenue impact and reputational risk, and recommend option one. Third, I will pause spend on the bottom-of-funnel creative and redirect the budget into the teaser phase.
+
+The risk I am managing for is a journalist feeling misled, so transparency with the two tier-one titles matters more than protecting the narrative.`,
+    },
+    {
+      id: 'demo-marcus',
+      name: 'Marcus Williams',
+      employment_type: 'permanent',
+      overall_score: 68,
+      score_10: 6,
+      observation: 'Identified the right stakeholders and the need to communicate, but the plan was general and the trade-offs were not owned.',
+      response_text: `This is a difficult situation and the most important thing is to make sure everyone is aligned. I would start by having a conversation with the product team to really understand why the three-week delay has happened and whether there is anything that can be done to pull the date back in.
+
+I would then speak to the PR agency and let them know what is going on so that we can work out the best way forward together. We might need to shift some of the paid media or talk to the publications about rescheduling. The CEO will obviously want to know, so I would put together an update explaining the situation and asking for a decision on the new timing.
+
+Throughout, the key is keeping communication clear and making sure we protect the brand. I would look at what other teams have done in similar situations and make sure we are taking a sensible approach. We can always adjust as more information comes in.`,
+    },
+  ],
+}
+
 export default function DemoComparePage() {
   const router = useRouter()
   const isMobile = useIsMobile()
   const [modal, setModal] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')
   // Six slots lets recruiters hold a full shortlist in view. The grid
    // uses auto-fit/minmax below, so it collapses gracefully on smaller screens.
   const [slots, setSlots] = useState([null, null, null, null, null, null])
@@ -222,6 +258,36 @@ export default function DemoComparePage() {
               Export comparison
             </button>
           </div>
+
+          {/* Tabs */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: `1px solid ${BD}` }}>
+            {[
+              { key: 'overview', label: 'Overview' },
+              { key: 'replay', label: 'Scenario Replay' },
+            ].map(t => {
+              const active = activeTab === t.key
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => setActiveTab(t.key)}
+                  style={{
+                    padding: '10px 16px', border: 'none', background: 'transparent',
+                    fontFamily: F, fontSize: 13, fontWeight: 700,
+                    color: active ? NAVY : TX3, cursor: 'pointer',
+                    borderBottom: `2px solid ${active ? TEAL : 'transparent'}`,
+                    marginBottom: -1,
+                  }}
+                >
+                  {t.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {activeTab === 'replay' ? (
+            <DemoScenarioReplay isMobile={isMobile} />
+          ) : (
+          <>
 
           {/* Selectors */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 16, marginBottom: 24 }}>
@@ -256,8 +322,120 @@ export default function DemoComparePage() {
               <p style={{ fontFamily: F, fontSize: 15, margin: '14px 0 0' }}>Choose candidates from the dropdowns above to start comparing</p>
             </div>
           )}
+          </>
+          )}
         </div>
       </main>
     </DemoLayout>
+  )
+}
+
+function DemoScenarioReplay({ isMobile }) {
+  const scenario = DEMO_REPLAY_SCENARIO
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2 }}>
+          Scenario 1 of 1 shared
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            disabled
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, border: `1px solid ${BD}`, background: CARD, fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, cursor: 'not-allowed', opacity: 0.5 }}
+          >
+            <Ic name="left" size={13} color={TX3} />
+            Previous
+          </button>
+          <button
+            disabled
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, border: `1px solid ${BD}`, background: CARD, fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, cursor: 'not-allowed', opacity: 0.5 }}
+          >
+            Next
+            <Ic name="right" size={13} color={TX3} />
+          </button>
+        </div>
+      </div>
+
+      <div style={{
+        background: BG, border: `1px solid ${BD}`, borderRadius: 12,
+        padding: '18px 22px', marginBottom: 16,
+        position: isMobile ? 'sticky' : 'static', top: isMobile ? 0 : undefined, zIndex: isMobile ? 2 : undefined,
+      }}>
+        <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+          {scenario.type}
+        </div>
+        <div style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: NAVY, marginBottom: 8 }}>
+          {scenario.title}
+        </div>
+        <p style={{ fontFamily: F, fontSize: 13, color: TX2, fontStyle: 'italic', margin: 0, lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
+          {scenario.context}
+        </p>
+        <div style={{ marginTop: 12, background: TEALLT, border: `1px solid ${TEAL}40`, borderRadius: 8, padding: '10px 14px' }}>
+          <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Task</div>
+          <p style={{ fontFamily: F, fontSize: 12.5, color: TEALD, fontWeight: 600, margin: 0, lineHeight: 1.55 }}>
+            {scenario.task}
+          </p>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 14 }}>
+        {scenario.candidates.map(c => {
+          const isStrong = c.score_10 >= 7
+          const isModerate = c.score_10 >= 5 && c.score_10 < 7
+          const accent = isStrong ? TEAL : isModerate ? AMB : TX3
+          return (
+            <div key={c.id} style={{
+              background: CARD, border: `1px solid ${BD}`, borderRadius: 12,
+              display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            }}>
+              <div style={{ padding: '14px 16px', borderBottom: `1px solid ${BD}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <Avatar name={c.name} size={28} />
+                  <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.name}
+                  </div>
+                  <span style={{
+                    fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
+                    padding: '1px 6px', borderRadius: 4, flexShrink: 0,
+                    background: c.employment_type === 'temporary' ? TEAL : NAVY, color: '#fff',
+                  }}>
+                    {c.employment_type === 'temporary' ? 'TEMP' : 'PERM'}
+                  </span>
+                </div>
+                <span style={{
+                  display: 'inline-block', fontFamily: FM, fontSize: 11, fontWeight: 800,
+                  padding: '2px 8px', borderRadius: 999,
+                  background: sc(c.overall_score) === GRN ? GRNBG : sc(c.overall_score) === TEAL ? TEALLT : sc(c.overall_score) === AMB ? AMBBG : REDBG,
+                  color: sc(c.overall_score),
+                  border: `1px solid ${sc(c.overall_score)}33`,
+                }}>
+                  Overall {c.overall_score}/100
+                </span>
+              </div>
+              <div style={{ padding: '16px 18px', flex: 1, background: BG }}>
+                <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0, lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+                  {c.response_text}
+                </p>
+              </div>
+              <div style={{ padding: '12px 16px', borderTop: `1px solid ${BD}`, background: CARD, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{
+                  alignSelf: 'flex-start', fontFamily: FM, fontSize: 11, fontWeight: 800,
+                  padding: '2px 8px', borderRadius: 999,
+                  background: isStrong ? GRNBG : isModerate ? AMBBG : BG,
+                  color: isStrong ? GRN : isModerate ? AMB : TX3,
+                  border: `1px solid ${isStrong ? GRNBD : isModerate ? AMBBD : BD}`,
+                }}>
+                  Scenario score {c.score_10}/10
+                </span>
+                <div style={{ fontFamily: F, fontSize: 12, color: TX2, lineHeight: 1.55 }}>
+                  {c.observation}
+                </div>
+              </div>
+              <div style={{ height: 4, background: accent }} />
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }

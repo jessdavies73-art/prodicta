@@ -48,6 +48,11 @@ function CompareContent() {
   const [candidates, setCandidates] = useState([])
   const [allCandidates, setAllCandidates] = useState([])
   const [selectedIds, setSelectedIds] = useState(new Set())
+  const [activeTab, setActiveTab] = useState('overview') // 'overview' | 'replay'
+  const [replayData, setReplayData] = useState(null)
+  const [replayLoading, setReplayLoading] = useState(false)
+  const [replayError, setReplayError] = useState('')
+  const [replayIndex, setReplayIndex] = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -89,6 +94,32 @@ function CompareContent() {
     }
     load()
   }, [])
+
+  useEffect(() => {
+    if (activeTab !== 'replay') return
+    if (!assessment?.id) return
+    if (selectedIds.size < 2) { setReplayData({ shared_scenarios: [] }); return }
+    let cancelled = false
+    async function fetchReplay() {
+      setReplayLoading(true)
+      setReplayError('')
+      try {
+        const ids = Array.from(selectedIds).join(',')
+        const res = await fetch(`/api/assessment/${assessment.id}/scenario-replay?candidateIds=${encodeURIComponent(ids)}`)
+        const data = await res.json()
+        if (!res.ok) throw new Error(data?.error || 'Failed to load scenario replay')
+        if (cancelled) return
+        setReplayData(data)
+        setReplayIndex(0)
+      } catch (err) {
+        if (!cancelled) setReplayError(err.message || 'Failed to load scenario replay')
+      } finally {
+        if (!cancelled) setReplayLoading(false)
+      }
+    }
+    fetchReplay()
+    return () => { cancelled = true }
+  }, [activeTab, assessment?.id, selectedIds])
 
   function toggleCandidate(id) {
     setSelectedIds(prev => {
@@ -203,6 +234,44 @@ function CompareContent() {
             </div>
           ) : (
             <>
+              {/* Tabs */}
+              <div style={{ display: 'flex', gap: 4, marginBottom: 18, borderBottom: `1px solid ${BD}` }}>
+                {[
+                  { key: 'overview', label: 'Overview' },
+                  { key: 'replay', label: 'Scenario Replay' },
+                ].map(t => {
+                  const active = activeTab === t.key
+                  return (
+                    <button
+                      key={t.key}
+                      onClick={() => setActiveTab(t.key)}
+                      style={{
+                        padding: '10px 16px', border: 'none', background: 'transparent',
+                        fontFamily: F, fontSize: 13, fontWeight: 700,
+                        color: active ? NAVY : TX3, cursor: 'pointer',
+                        borderBottom: `2px solid ${active ? TEAL : 'transparent'}`,
+                        marginBottom: -1,
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {activeTab === 'replay' ? (
+                <ScenarioReplayView
+                  replayData={replayData}
+                  loading={replayLoading}
+                  error={replayError}
+                  candidates={candidates}
+                  index={replayIndex}
+                  setIndex={setReplayIndex}
+                  cols={cols}
+                  isMobile={isMobile}
+                />
+              ) : (
+                <>
               {/* Score overview */}
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 14, marginBottom: 20 }}>
                 {candidates.map(c => {
@@ -341,10 +410,224 @@ function CompareContent() {
                   })}
                 </div>
               </div>
+                </>
+              )}
             </>
           )}
         </div>
       </main>
+    </div>
+  )
+}
+
+function ScenarioReplayView({ replayData, loading, error, candidates, index, setIndex, cols, isMobile }) {
+  if (loading) {
+    return (
+      <div style={{ ...cs, padding: '48px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+        <div style={{ width: 24, height: 24, border: `3px solid ${BD}`, borderTopColor: TEAL, borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+        <span style={{ fontFamily: F, fontSize: 13, color: TX2 }}>Loading responses...</span>
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div style={{ ...cs, padding: '24px', fontFamily: F, fontSize: 13, color: RED, background: REDBG, border: `1px solid ${REDBD}` }}>
+        {error}
+      </div>
+    )
+  }
+  if (candidates.length < 2) {
+    return (
+      <div style={{ ...cs, textAlign: 'center', padding: '48px 24px' }}>
+        <p style={{ fontFamily: F, fontSize: 14, color: TX3, margin: 0 }}>
+          Select at least 2 candidates to compare their responses side by side.
+        </p>
+      </div>
+    )
+  }
+  const shared = replayData?.shared_scenarios || []
+  if (shared.length === 0) {
+    return (
+      <div style={{ ...cs, textAlign: 'center', padding: '48px 24px' }}>
+        <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: 0, lineHeight: 1.6 }}>
+          No shared scenarios found. Scenario Replay works when candidates have completed the same assessment type.
+        </p>
+      </div>
+    )
+  }
+
+  const clamped = Math.min(Math.max(index, 0), shared.length - 1)
+  const scenario = shared[clamped]
+  const cardById = Object.fromEntries((scenario.responses || []).map(r => [r.candidate_id, r]))
+  const respondents = candidates.filter(c => cardById[c.id]?.has_response)
+  const respondentCols = Math.min(respondents.length || 1, isMobile ? 1 : cols)
+
+  return (
+    <div>
+      {shared.length > 1 && (
+        <div style={{ ...cs, padding: '14px 16px', marginBottom: 14 }}>
+          <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+            Shared scenarios
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {shared.map((s, i) => {
+              const active = i === clamped
+              return (
+                <button
+                  key={s.scenario_index}
+                  onClick={() => setIndex(i)}
+                  style={{
+                    padding: '6px 12px', borderRadius: 999,
+                    border: `1.5px solid ${active ? TEAL : BD}`,
+                    background: active ? TEALLT : CARD,
+                    fontFamily: F, fontSize: 12, fontWeight: 700,
+                    color: active ? TEALD : TX2, cursor: 'pointer',
+                  }}
+                >
+                  S{i + 1}. {s.title}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2 }}>
+          Scenario {clamped + 1} of {shared.length} shared
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => setIndex(Math.max(0, clamped - 1))}
+            disabled={clamped === 0}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              padding: '7px 12px', borderRadius: 8,
+              border: `1px solid ${BD}`, background: CARD,
+              fontFamily: F, fontSize: 12, fontWeight: 600,
+              color: clamped === 0 ? TX3 : TX, cursor: clamped === 0 ? 'not-allowed' : 'pointer',
+              opacity: clamped === 0 ? 0.5 : 1,
+            }}
+          >
+            <Ic name="left" size={13} color={clamped === 0 ? TX3 : TX2} />
+            Previous
+          </button>
+          <button
+            onClick={() => setIndex(Math.min(shared.length - 1, clamped + 1))}
+            disabled={clamped >= shared.length - 1}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              padding: '7px 12px', borderRadius: 8,
+              border: `1px solid ${BD}`, background: CARD,
+              fontFamily: F, fontSize: 12, fontWeight: 600,
+              color: clamped >= shared.length - 1 ? TX3 : TX,
+              cursor: clamped >= shared.length - 1 ? 'not-allowed' : 'pointer',
+              opacity: clamped >= shared.length - 1 ? 0.5 : 1,
+            }}
+          >
+            Next
+            <Ic name="right" size={13} color={clamped >= shared.length - 1 ? TX3 : TX2} />
+          </button>
+        </div>
+      </div>
+
+      <div style={{
+        background: BG, border: `1px solid ${BD}`, borderRadius: 12,
+        padding: '18px 22px', marginBottom: 16,
+        position: isMobile ? 'sticky' : 'static', top: isMobile ? 0 : undefined, zIndex: isMobile ? 2 : undefined,
+      }}>
+        {scenario.type && (
+          <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+            {scenario.type}
+          </div>
+        )}
+        <div style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: NAVY, marginBottom: 8 }}>
+          {scenario.title}
+        </div>
+        <p style={{ fontFamily: F, fontSize: 13, color: TX2, fontStyle: 'italic', margin: 0, lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
+          {scenario.context}
+        </p>
+        {scenario.task && (
+          <div style={{ marginTop: 12, background: TEALLT, border: `1px solid ${TEAL}40`, borderRadius: 8, padding: '10px 14px' }}>
+            <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Task</div>
+            <p style={{ fontFamily: F, fontSize: 12.5, color: TEALD, fontWeight: 600, margin: 0, lineHeight: 1.55 }}>
+              {scenario.task}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${respondentCols}, minmax(0, 1fr))`, gap: 14 }}>
+        {respondents.map(c => {
+          const card = cardById[c.id] || {}
+          const score10 = card.scenario_score_10
+          const isStrong = typeof score10 === 'number' && score10 >= 7
+          const isModerate = typeof score10 === 'number' && score10 >= 5 && score10 < 7
+          const accent = isStrong ? TEAL : isModerate ? AMB : TX3
+          const overall = c.results?.[0]?.overall_score
+          const empType = c.assessments?.employment_type
+          return (
+            <div key={c.id} style={{
+              background: CARD, border: `1px solid ${BD}`, borderRadius: 12,
+              display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            }}>
+              <div style={{ padding: '14px 16px', borderBottom: `1px solid ${BD}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <Avatar name={c.name} size={28} />
+                  <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.name}
+                  </div>
+                  {empType && (
+                    <span style={{
+                      fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
+                      padding: '1px 6px', borderRadius: 4, flexShrink: 0,
+                      background: empType === 'temporary' ? TEAL : NAVY, color: '#fff',
+                    }}>
+                      {empType === 'temporary' ? 'TEMP' : 'PERM'}
+                    </span>
+                  )}
+                </div>
+                {typeof overall === 'number' && (
+                  <span style={{
+                    display: 'inline-block', fontFamily: FM, fontSize: 11, fontWeight: 800,
+                    padding: '2px 8px', borderRadius: 999,
+                    background: sbg(overall), color: scolor(overall),
+                    border: `1px solid ${scolor(overall)}33`,
+                  }}>
+                    Overall {overall}/100
+                  </span>
+                )}
+              </div>
+              <div style={{ padding: '16px 18px', flex: 1, background: BG }}>
+                <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0, lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+                  {card.response_text}
+                </p>
+              </div>
+              {(typeof score10 === 'number' || card.observation) && (
+                <div style={{ padding: '12px 16px', borderTop: `1px solid ${BD}`, background: CARD, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {typeof score10 === 'number' && (
+                    <span style={{
+                      alignSelf: 'flex-start', fontFamily: FM, fontSize: 11, fontWeight: 800,
+                      padding: '2px 8px', borderRadius: 999,
+                      background: isStrong ? GRNBG : isModerate ? AMBBG : BG,
+                      color: isStrong ? GRN : isModerate ? AMB : TX3,
+                      border: `1px solid ${isStrong ? GRNBD : isModerate ? AMBBD : BD}`,
+                    }}>
+                      Scenario score {score10}/10
+                    </span>
+                  )}
+                  {card.observation && (
+                    <div style={{ fontFamily: F, fontSize: 12, color: TX2, lineHeight: 1.55 }}>
+                      {card.observation}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div style={{ height: 4, background: accent }} />
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
