@@ -333,6 +333,44 @@ function PlacementHealthPanel({ data, activeFilter, onFilter, isMobile }) {
   )
 }
 
+// Lightweight Section 4 compliance placeholder card. Renders a card with a
+// title, short description, empty-state copy, and a single jade action linking
+// to the feature's dedicated page. Used so every compliance feature has a
+// visible entry point on the dashboard regardless of whether data exists.
+function ComplianceStubCard({ order, title, description, emptyCopy, buttonLabel, href, iconName = 'shield' }) {
+  return (
+    <div style={{
+      order,
+      background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+      borderTop: `3px solid ${TEAL}`, padding: '20px 24px', marginBottom: 20,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <Ic name={iconName} size={14} color={TEAL} />
+        <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: TX }}>
+          {title}
+        </span>
+      </div>
+      <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 12px', lineHeight: 1.55 }}>
+        {description}
+      </p>
+      <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.55, marginBottom: 14 }}>
+        {emptyCopy}
+      </div>
+      <a
+        href={href}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '7px 14px', borderRadius: 8, border: 'none',
+          background: TEAL, color: NAVY,
+          fontFamily: F, fontSize: 12.5, fontWeight: 700, textDecoration: 'none',
+        }}
+      >
+        {buttonLabel}
+      </a>
+    </div>
+  )
+}
+
 function StatusBadge({ status }) {
   const map = {
     completed: { label: 'Completed', bg: GRNBG, color: GRN, bd: GRNBD },
@@ -2262,14 +2300,12 @@ function DashboardPageInner() {
           number={1}
           title="Assessment and Screening"
           description="Screen and rank your candidates. Send assessments, view scores, and build your shortlist."
-          visible={candidates.length > 0 || assessments.length > 0}
         />
         <SectionHeader
           order={20}
           number={2}
           title="Shortlisting and Progression"
           description="Decide who to progress, hold, or reject. Track your shortlist and notify candidates automatically."
-          visible={candidates.length > 0}
         />
         {(() => {
           const progressing = candidates.filter(c => c.stage === 'progress')
@@ -2410,11 +2446,6 @@ function DashboardPageInner() {
           number={3}
           title="Post-placement and Aftercare"
           description="Manage active placements and hires. Track performance, health, and aftercare."
-          visible={
-            isAgencyAccount ||
-            profile?.account_type === 'employer' ||
-            (placementHealth?.placements?.length || 0) > 0
-          }
         />
         <SectionHeader
           order={42}
@@ -2427,6 +2458,34 @@ function DashboardPageInner() {
           number={5}
           title="Insights"
           description="Your PRODICTA performance data and business impact numbers."
+        />
+
+        {/* ── Talent Funnel (Section 1 stub when no funnel analytics yet) ── */}
+        {candidates.length === 0 && (
+          <ComplianceStubCard
+            order={15}
+            title="Talent Funnel"
+            description="Track how candidates move through screening, interview, and offer."
+            emptyCopy="Your talent funnel will populate as candidates complete assessments."
+            buttonLabel="Send an assessment"
+            href="/assessment/new"
+            iconName="layers"
+          />
+        )}
+
+        {/* ── Candidate Comparison (Section 1) ── */}
+        <ComplianceStubCard
+          order={16}
+          title="Candidate Comparison"
+          description="Compare up to six completed candidates side by side across scores, scenarios, and 90-day outcomes."
+          emptyCopy={
+            candidates.filter(c => c.status === 'completed').length < 2
+              ? 'Select 2 or more completed candidates to compare them side by side.'
+              : 'Open the comparison tool to run a side-by-side review.'
+          }
+          buttonLabel="Open Compare"
+          href="/compare"
+          iconName="sliders"
         />
 
         {/* ── PWA Install Banner ── */}
@@ -3217,7 +3276,7 @@ function DashboardPageInner() {
         )}
 
         {/* ── Pre-Start Risk panel (agency, upcoming temp starts) ── */}
-        {isAgencyAccount && upcomingStarts.length > 0 && (
+        {isAgencyAccount && (
           <div style={{
             order: 31,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
@@ -3232,6 +3291,11 @@ function DashboardPageInner() {
                 {upcomingStarts.length}
               </span>
             </div>
+            {upcomingStarts.length === 0 ? (
+              <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.55 }}>
+                No upcoming starts to check. Pre-Start Checks appear here for temporary workers in the two weeks before their assignment start date.
+              </div>
+            ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {upcomingStarts.map(s => {
                 const risk = s.prestart_check?.overall_risk
@@ -3273,11 +3337,12 @@ function DashboardPageInner() {
                 )
               })}
             </div>
+            )}
           </div>
         )}
 
         {/* ── Pre-Start Engagement panel (agency + temp, active pulse sequences) ── */}
-        {isAgencyAccount && hasTemporaryCandidates && engagementSequences.length > 0 && (
+        {isAgencyAccount && (
           <div style={{
             order: 32,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
@@ -3293,6 +3358,11 @@ function DashboardPageInner() {
               </span>
               <InfoTooltip text="Tracks candidate engagement between offer and start date. Three automated pulses are sent to the candidate. Low engagement signals ghosting or counter-offer risk." />
             </div>
+            {engagementSequences.length === 0 ? (
+              <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.55 }}>
+                No active pre-start pulses. Sequences start automatically once a temporary worker has an assignment start date and continue until they begin.
+              </div>
+            ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {engagementSequences.map(seq => {
                 const grColor = seq.ghosting_risk === 'critical' ? RED : seq.ghosting_risk === 'high' ? RED : seq.ghosting_risk === 'medium' ? AMB : GRN
@@ -3372,11 +3442,12 @@ function DashboardPageInner() {
                 )
               })}
             </div>
+            )}
           </div>
         )}
 
         {/* ── SSP Alerts panel (agency + temporary only) ── Section 4 Compliance */}
-        {isAgencyAccount && hasTemporaryCandidates && sspAlerts.filter(a => a.employment_type === 'temporary').length > 0 && (
+        {isAgencyAccount && (
           <div style={{
             order: 43,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
@@ -3395,6 +3466,11 @@ function DashboardPageInner() {
                 {sspAlerts.length}
               </span>
             </div>
+            {sspAlerts.length === 0 ? (
+              <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.55 }}>
+                No active SSP alerts. Use Report Sickness in Quick Actions to log a new absence.
+              </div>
+            ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {sspAlerts.map(a => {
                 const daysSince = Math.floor((Date.now() - new Date(a.reported_at).getTime()) / 86400000)
@@ -3462,8 +3538,53 @@ function DashboardPageInner() {
                 )
               })}
             </div>
+            )}
           </div>
         )}
+
+        {/* ── Holiday Tracker (Section 4 Compliance) ── */}
+        <ComplianceStubCard
+          order={44}
+          title="Holiday Tracker"
+          description="Track accrued and taken holiday across your workforce."
+          emptyCopy="No holiday records yet. Add your first record to start tracking entitlement."
+          buttonLabel="Open Holiday Tracker"
+          href="/holiday"
+          iconName="calendar"
+        />
+
+        {/* ── EDI Monitor (Section 4 Compliance) ── */}
+        <ComplianceStubCard
+          order={45}
+          title="EDI Monitor"
+          description="Demographic self-report data, anonymised and aggregated."
+          emptyCopy="EDI data will build as candidates complete the demographic self-report form."
+          buttonLabel="View EDI Monitor"
+          href="/edi"
+          iconName="users"
+        />
+
+        {/* ── Document Templates (Section 4 Compliance) ── */}
+        <ComplianceStubCard
+          order={46}
+          title="Document Templates"
+          description="Offer letters, contracts, and compliance documents."
+          emptyCopy="Document templates are ready to use. Generate and send from any candidate report."
+          buttonLabel="Open Templates"
+          href="/documents"
+          iconName="file-text"
+        />
+
+        {/* ── Fair Work Agency Compliance (Section 4 Compliance) ── */}
+        <ComplianceStubCard
+          order={48}
+          title="Fair Work Agency Compliance"
+          description="Audit trail for Fair Work Agency requests."
+          emptyCopy="Your Fair Work Agency records will populate as placements are logged. Each placement generates a compliance record automatically."
+          buttonLabel="View Records"
+          href="/audit"
+          iconName="shield"
+        />
 
         {/* ── Assessment Credits (pay-per-assessment users + promo-granted Rapid Screens) ── */}
         {assessmentCredits.length > 0 && (!profile?.plan || assessmentCredits.some(c => c.credit_type === 'rapid-screen' && (c.credits_remaining || 0) > 0)) && (
@@ -4006,7 +4127,7 @@ function DashboardPageInner() {
         )}
 
  {/* ── Probation Co-pilot (employer only, live status on current hires) ── Section 3 */}
-        {profile?.account_type === 'employer' && probationHires.length > 0 && (
+        {profile?.account_type === 'employer' && (
           <div style={{ order: 38, ...cs, marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <Ic name="shield" size={14} color={TEAL} />
@@ -4017,6 +4138,11 @@ function DashboardPageInner() {
             <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 14px', lineHeight: 1.55 }}>
               Live status on your current probation hires.
             </p>
+            {probationHires.length === 0 ? (
+              <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.55 }}>
+                No hires currently in probation. Co-pilot status will appear here once you log a probation start date for a hire.
+              </div>
+            ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {probationHires.slice(0, 8).map(h => {
                 const cand = h.candidates
@@ -4052,11 +4178,12 @@ function DashboardPageInner() {
                 )
               })}
             </div>
+            )}
           </div>
         )}
 
         {/* ── Probation Review Generator (employer only) ── Section 3 */}
-        {profile?.account_type === 'employer' && probationHires.length > 0 && (
+        {profile?.account_type === 'employer' && (
           <div style={{ order: 39, ...cs, marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <Ic name="file" size={14} color={NAVY} />
@@ -4067,6 +4194,11 @@ function DashboardPageInner() {
             <p style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 14px', lineHeight: 1.55 }}>
               Generate a structured probation review document for any current hire.
             </p>
+            {probationHires.length === 0 ? (
+              <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.55 }}>
+                No probation reviews available yet. Reviews can be generated from any hire with a logged probation start date.
+              </div>
+            ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {probationHires.slice(0, 6).map(h => {
                 const cand = h.candidates
@@ -4099,6 +4231,7 @@ function DashboardPageInner() {
                 )
               })}
             </div>
+            )}
           </div>
         )}
 
@@ -4202,8 +4335,8 @@ function DashboardPageInner() {
 
         {/* ── Placement Health (all account types) ── Section 3 */}
         {isAgencyAccount ? (
-          placementHealth && (
-            placementHealth.total_active > 0 ? (
+          (
+            (placementHealth?.total_active || 0) > 0 ? (
               <div style={{ order: 35 }}>
                 <PlacementHealthPanel
                   data={placementHealth}
@@ -4294,7 +4427,9 @@ function DashboardPageInner() {
         ) : null}
 
         {/* ── Rebate Period Tracker (agency only) ── Section 3 */}
-        {isAgencyAccount && placementHealth?.placements?.some(p => p.placement_date && p.rebate_weeks) && (
+        {isAgencyAccount && (() => {
+          const rebatePlacements = (placementHealth?.placements || []).filter(p => p.placement_date && p.rebate_weeks)
+          return (
           <div style={{ order: 36, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
             <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -4303,11 +4438,13 @@ function DashboardPageInner() {
               </div>
               <p style={{ margin: '4px 0 0', fontSize: 12.5, color: TX3 }}>Active placements tracked through their rebate window</p>
             </div>
+            {rebatePlacements.length === 0 ? (
+              <div style={{ padding: '20px 24px', fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.55 }}>
+                No placements in a rebate window yet. Placements appear here once you log a placement date and rebate term on a completed candidate.
+              </div>
+            ) : (
             <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {placementHealth.placements
-                .filter(p => p.placement_date && p.rebate_weeks)
-                .slice(0, 8)
-                .map(p => {
+              {rebatePlacements.slice(0, 8).map(p => {
                   const elapsedDays = Math.max(0, Math.floor((Date.now() - new Date(p.placement_date).getTime()) / 86400000))
                   const totalDays = p.rebate_weeks * 7
                   const week = Math.min(p.rebate_weeks, Math.floor(elapsedDays / 7) + 1)
@@ -4336,8 +4473,10 @@ function DashboardPageInner() {
                   )
                 })}
             </div>
+            )}
           </div>
-        )}
+          )
+        })()}
 
         {/* ── Auto Shortlist (agency only): top-ranked completed candidates this month ── */}
         {isAgencyAccount && (() => {
