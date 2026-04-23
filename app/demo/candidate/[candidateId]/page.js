@@ -602,6 +602,117 @@ function DemoInterviewVerification({ candidateId, isMobile }) {
   )
 }
 
+// Engagement Signals demo data for Sophie + Marcus, three scenarios each.
+// Sophie shows a clean engagement pattern. Marcus shows signals that would
+// warrant interview verification without being alarming.
+const DEMO_MICRO_SIGNALS = {
+  'demo-c1': [
+    { time_to_first_keystroke_seconds: 34, total_time_seconds: 420, words_per_minute: 18, edit_ratio: 0.71, completion_pattern: 'considered' },
+    { time_to_first_keystroke_seconds: 28, total_time_seconds: 380, words_per_minute: 22, edit_ratio: 0.68, completion_pattern: 'considered' },
+    { time_to_first_keystroke_seconds: 45, total_time_seconds: 510, words_per_minute: 16, edit_ratio: 0.62, completion_pattern: 'considered' },
+  ],
+  'demo-c2': [
+    { time_to_first_keystroke_seconds: 8,  total_time_seconds: 180, words_per_minute: 31, edit_ratio: 0.91, completion_pattern: 'immediate' },
+    { time_to_first_keystroke_seconds: 12, total_time_seconds: 210, words_per_minute: 28, edit_ratio: 0.88, completion_pattern: 'immediate' },
+    { time_to_first_keystroke_seconds: 6,  total_time_seconds: 140, words_per_minute: 35, edit_ratio: 0.93, completion_pattern: 'immediate' },
+  ],
+}
+
+function demoEngagementPaceLabel(wpm) {
+  if (typeof wpm !== 'number') return 'No data'
+  if (wpm >= 80) return 'Very Fast'
+  if (wpm >= 41) return 'Fast'
+  if (wpm < 5) return 'Slow'
+  return 'Natural'
+}
+function demoEngagementEditingLabel(r) {
+  if (typeof r !== 'number') return 'No data'
+  if (r < 0.5) return 'Heavy editing'
+  if (r > 0.95) return 'Light editing'
+  return 'Moderate editing'
+}
+function demoEngagementTimeFmt(secs) {
+  if (typeof secs !== 'number') return 'No data'
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  if (m <= 0) return `${s}s`
+  return `${m}m ${s}s`
+}
+function demoEngagementPatternLabel(p) {
+  if (p === 'considered') return 'Considered'
+  if (p === 'immediate') return 'Immediate'
+  if (p === 'minimal') return 'Minimal response'
+  return 'Not recorded'
+}
+
+function DemoEngagementSignalsPanel({ candidateId }) {
+  const list = DEMO_MICRO_SIGNALS[candidateId] || []
+  const [open, setOpen] = useState(false)
+  if (list.length === 0) return null
+  return (
+    <div className="no-print" style={{
+      background: CARD, border: `1px solid ${BD}`, borderRadius: 12,
+      padding: '14px 18px', marginBottom: 20,
+    }}>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        style={{
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY,
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+        }}
+      >
+        Engagement Signals
+        <span style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#00897B' }}>
+          {open ? 'Hide' : 'View engagement signals'}
+        </span>
+        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#00897B" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'none' }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      <div style={{ overflow: 'hidden', maxHeight: open ? 1000 : 0, transition: 'max-height 0.3s ease' }}>
+        <div style={{ paddingTop: 12 }}>
+          <div style={{ fontFamily: F, fontSize: 12.5, color: TX3, fontStyle: 'italic', marginBottom: 12, lineHeight: 1.55 }}>
+            These signals reflect how the candidate engaged with the assessment, not what they wrote. They are one input alongside the full response analysis.
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: F }}>
+              <thead>
+                <tr style={{ textAlign: 'left' }}>
+                  {['Scenario', 'Time spent', 'Writing pace', 'Self-editing', 'Pattern'].map(h => (
+                    <th key={h} style={{ padding: '6px 10px', fontSize: 11, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `1px solid ${BD}` }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((s, i) => (
+                  <tr key={i} style={{ borderBottom: i < list.length - 1 ? `1px solid #f1f5f9` : 'none' }}>
+                    <td style={{ padding: '10px', fontSize: 13, fontWeight: 700, color: NAVY }}>{i + 1}</td>
+                    <td style={{ padding: '10px', fontSize: 13, color: NAVY }}>{demoEngagementTimeFmt(s.total_time_seconds)}</td>
+                    <td style={{ padding: '10px', fontSize: 13, color: NAVY }}>
+                      {s.words_per_minute} wpm
+                      <span style={{ color: TX3, marginLeft: 6 }}>({demoEngagementPaceLabel(s.words_per_minute)})</span>
+                    </td>
+                    <td style={{ padding: '10px', fontSize: 13, color: NAVY }}>
+                      {Math.round(s.edit_ratio * 100)}% kept
+                      <span style={{ color: TX3, marginLeft: 6 }}>({demoEngagementEditingLabel(s.edit_ratio)})</span>
+                    </td>
+                    <td style={{ padding: '10px', fontSize: 13, color: NAVY }}>{demoEngagementPatternLabel(s.completion_pattern)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Behavioural consistency panel for the demo. Hardcoded per candidate to
 // mirror what the live pipeline would store on the results row.
 const DEMO_CONSISTENCY = {
@@ -2847,6 +2958,9 @@ function DemoCandidateInner({ params }) {
                 </div>
               </div>
             </ScrollReveal>
+
+            {/* ── ENGAGEMENT SIGNALS (demo hardcoded) ── */}
+            <DemoEngagementSignalsPanel candidateId={params.candidateId} />
 
             {/* ── PRESSURE-FIT ── */}
             {pf != null && (

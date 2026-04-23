@@ -59,7 +59,7 @@ async function scoreAndNotify(candidateId, adminClient) {
 
 export async function POST(request, { params }) {
   try {
-    const { responses } = await request.json()
+    const { responses, micro_signals } = await request.json()
     const adminClient = createServiceClient()
 
     const { data: candidate, error: candError } = await adminClient
@@ -105,10 +105,26 @@ export async function POST(request, { params }) {
 
     if (respError) throw respError
 
-    const { error: updateError } = await adminClient
+    // -- ALTER TABLE candidates ADD COLUMN IF NOT EXISTS micro_signals JSONB;
+    // Include micro_signals in the same UPDATE so we do not issue a second
+    // round-trip. If the column is missing, retry with just the status fields.
+    const basePatch = { status: 'completed', completed_at: new Date().toISOString() }
+    const patchWithSignals = Array.isArray(micro_signals) && micro_signals.length > 0
+      ? { ...basePatch, micro_signals }
+      : basePatch
+    let { error: updateError } = await adminClient
       .from('candidates')
-      .update({ status: 'completed', completed_at: new Date().toISOString() })
+      .update(patchWithSignals)
       .eq('id', candidate.id)
+
+    if (updateError && /micro_signals/i.test(updateError.message || '')) {
+      console.warn('[submit] micro_signals column missing, retrying without it.')
+      const retry = await adminClient
+        .from('candidates')
+        .update(basePatch)
+        .eq('id', candidate.id)
+      updateError = retry.error
+    }
 
     if (updateError) throw updateError
 

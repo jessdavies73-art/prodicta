@@ -3616,6 +3616,11 @@ export default function CandidateReportPage({ params }) {
                 </ScrollReveal>
 
                 {/* ══════════════════════════════════════════════════
+                    ENGAGEMENT SIGNALS (micro-behaviour panel)
+                ══════════════════════════════════════════════════ */}
+                <EngagementSignalsPanel signals={candidate?.micro_signals} />
+
+                {/* ══════════════════════════════════════════════════
                     PRESSURE-FIT , dark navy, 2×2 grid
                 ══════════════════════════════════════════════════ */}
                 <ScrollReveal id="pressure-fit" delay={60}>
@@ -7408,6 +7413,139 @@ function EvidenceStrengthPill({ level }) {
     }}>
       {s.label}
     </span>
+  )
+}
+
+// Engagement Signals panel: descriptive, non-judgmental per-scenario view of
+// the micro-behaviour signals captured during the assessment. Silent when
+// candidate.micro_signals is missing, so older candidate records render
+// unchanged.
+function engagementPaceLabel(wpm) {
+  if (typeof wpm !== 'number') return 'No data'
+  if (wpm >= 80) return 'Very Fast'
+  if (wpm >= 41) return 'Fast'
+  if (wpm < 5) return 'Slow'
+  return 'Natural'
+}
+function engagementEditingLabel(editRatio) {
+  if (typeof editRatio !== 'number') return 'No data'
+  if (editRatio < 0.5) return 'Heavy editing'
+  if (editRatio > 0.95) return 'Light editing'
+  return 'Moderate editing'
+}
+function engagementTimeFmt(secs) {
+  if (typeof secs !== 'number') return 'No data'
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  if (m <= 0) return `${s}s`
+  return `${m}m ${s}s`
+}
+function engagementPatternLabel(p) {
+  if (p === 'considered') return 'Considered'
+  if (p === 'immediate') return 'Immediate'
+  if (p === 'minimal') return 'Minimal response'
+  return 'Not recorded'
+}
+
+function EngagementSignalsPanel({ signals }) {
+  const [open, setOpen] = useState(false)
+  const list = Array.isArray(signals) ? signals.filter(Boolean) : []
+  if (list.length === 0) return null
+  return (
+    <div className="no-print" style={{
+      background: '#fff', border: '1px solid #e4e9f0', borderRadius: 12,
+      padding: '14px 18px', marginBottom: 20,
+    }}>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        style={{
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13, fontWeight: 800,
+          color: '#0f2137',
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+        }}
+      >
+        Engagement Signals
+        <span style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12, fontWeight: 700, color: '#00897B' }}>
+          {open ? 'Hide' : 'View engagement signals'}
+        </span>
+        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#00897B" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'none' }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      <div style={{ overflow: 'hidden', maxHeight: open ? 1000 : 0, transition: 'max-height 0.3s ease' }}>
+        <div style={{ paddingTop: 12 }}>
+          <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, color: '#64748b', fontStyle: 'italic', marginBottom: 12, lineHeight: 1.55 }}>
+            These signals reflect how the candidate engaged with the assessment, not what they wrote. They are one input alongside the full response analysis.
+          </div>
+          <EngagementSignalsTable list={list} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function EngagementSignalsTable({ list }) {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 640
+  if (isMobile) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {list.map((s, i) => (
+          <div key={i} style={{ background: '#f7f9fb', border: '1px solid #e4e9f0', borderRadius: 10, padding: '12px 14px' }}>
+            <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 11, fontWeight: 800, color: '#0f2137', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
+              Scenario {i + 1}
+            </div>
+            <EngagementRowKV label="Time spent" value={engagementTimeFmt(s.total_time_seconds)} />
+            <EngagementRowKV label="Writing pace" value={`${s.words_per_minute ?? '-'} wpm (${engagementPaceLabel(s.words_per_minute)})`} />
+            <EngagementRowKV label="Self-editing" value={`${typeof s.edit_ratio === 'number' ? Math.round(s.edit_ratio * 100) + '% kept' : '-'} (${engagementEditingLabel(s.edit_ratio)})`} />
+            <EngagementRowKV label="Pattern" value={engagementPatternLabel(s.completion_pattern)} last />
+          </div>
+        ))}
+      </div>
+    )
+  }
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'Outfit, system-ui, sans-serif' }}>
+        <thead>
+          <tr style={{ textAlign: 'left' }}>
+            {['Scenario', 'Time spent', 'Writing pace', 'Self-editing', 'Pattern'].map(h => (
+              <th key={h} style={{ padding: '6px 10px', fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #e4e9f0' }}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {list.map((s, i) => (
+            <tr key={i} style={{ borderBottom: i < list.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+              <td style={{ padding: '10px', fontSize: 13, fontWeight: 700, color: '#0f2137' }}>{i + 1}</td>
+              <td style={{ padding: '10px', fontSize: 13, color: '#0f2137' }}>{engagementTimeFmt(s.total_time_seconds)}</td>
+              <td style={{ padding: '10px', fontSize: 13, color: '#0f2137' }}>
+                {typeof s.words_per_minute === 'number' ? `${s.words_per_minute} wpm` : '-'}
+                <span style={{ color: '#64748b', marginLeft: 6 }}>({engagementPaceLabel(s.words_per_minute)})</span>
+              </td>
+              <td style={{ padding: '10px', fontSize: 13, color: '#0f2137' }}>
+                {typeof s.edit_ratio === 'number' ? `${Math.round(s.edit_ratio * 100)}% kept` : '-'}
+                <span style={{ color: '#64748b', marginLeft: 6 }}>({engagementEditingLabel(s.edit_ratio)})</span>
+              </td>
+              <td style={{ padding: '10px', fontSize: 13, color: '#0f2137' }}>{engagementPatternLabel(s.completion_pattern)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function EngagementRowKV({ label, value, last }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '5px 0', borderBottom: last ? 'none' : '1px solid #e4e9f0', fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5 }}>
+      <span style={{ color: '#64748b', fontWeight: 700 }}>{label}</span>
+      <span style={{ color: '#0f2137', textAlign: 'right' }}>{value}</span>
+    </div>
   )
 }
 

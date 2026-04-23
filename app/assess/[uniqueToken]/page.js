@@ -390,6 +390,17 @@ function ActivePage({ candidate, assessment, onSubmit }) {
   //   trade_off:      { type: 'trade_off',      response: { choices: [...strings] } }
   const [forcedChoiceResponses, setForcedChoiceResponses] = useState({})
 
+  // Micro-behaviour signal tracking, one entry per scenario.
+  // Raw tracking state: captured as the candidate interacts with the scenario.
+  // Final computed signals are derived on scenario advance inside handleNext.
+  const [microRaw, setMicroRaw] = useState(() => scenarios.map(() => ({
+    scenario_shown_time: null,
+    first_keystroke_time: null,
+    total_chars_typed: 0,
+    reached_80_at: null,
+  })))
+  const [microSignals, setMicroSignals] = useState(() => scenarios.map(() => null))
+
   // Role level and voice recording state
   const mode = (assessment.assessment_mode || 'standard').toLowerCase()
   const roleLevel = assessment.role_level || 'MID_LEVEL'
@@ -491,6 +502,17 @@ function ActivePage({ candidate, assessment, onSubmit }) {
   useEffect(() => {
     startTimeRef.current = Date.now()
 
+    // Micro-signal: record when the scenario was first shown to the candidate.
+    // Only set once per scenario so revisits (if any) don't overwrite.
+    setMicroRaw(prev => {
+      const next = [...prev]
+      if (!next[scenarioIndex]) next[scenarioIndex] = { scenario_shown_time: null, first_keystroke_time: null, total_chars_typed: 0, reached_80_at: null }
+      if (!next[scenarioIndex].scenario_shown_time) {
+        next[scenarioIndex] = { ...next[scenarioIndex], scenario_shown_time: Date.now() }
+      }
+      return next
+    })
+
     if (intervalRef.current) clearInterval(intervalRef.current)
     intervalRef.current = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000)
@@ -518,6 +540,41 @@ function ActivePage({ candidate, assessment, onSubmit }) {
     setTimeTakens(prev => {
       const next = [...prev]
       next[scenarioIndex] = elapsed
+      return next
+    })
+
+    // Compute and freeze the micro-signals for the scenario we are leaving.
+    // Uses raw tracking state plus the final response text.
+    const nowTs = Date.now()
+    const rawCur = microRaw[scenarioIndex] || {}
+    const responseText = responses[scenarioIndex] || ''
+    const finalWords = (responseText.trim().match(/\S+/g) || []).length
+    const finalChars = responseText.length
+    const shownAt = rawCur.scenario_shown_time || startTimeRef.current || nowTs
+    const firstKeyAt = rawCur.first_keystroke_time || nowTs
+    const totalSecs = Math.max(1, Math.round((nowTs - shownAt) / 1000))
+    const timeToFirstKey = rawCur.first_keystroke_time
+      ? Math.max(0, Math.round((firstKeyAt - shownAt) / 1000))
+      : totalSecs
+    const wpm = finalWords > 0 ? Math.round((finalWords / (totalSecs / 60)) * 10) / 10 : 0
+    const typed = rawCur.total_chars_typed || 0
+    const editRatio = typed > 0 ? Math.round((finalChars / typed) * 100) / 100 : 1
+    let completionPattern = 'considered'
+    if (finalWords < 50) {
+      completionPattern = 'minimal'
+    } else if (rawCur.reached_80_at && (nowTs - rawCur.reached_80_at) < 10000) {
+      completionPattern = 'immediate'
+    }
+    const frozenSignals = {
+      time_to_first_keystroke_seconds: timeToFirstKey,
+      total_time_seconds: totalSecs,
+      words_per_minute: wpm,
+      edit_ratio: editRatio,
+      completion_pattern: completionPattern,
+    }
+    setMicroSignals(prev => {
+      const next = [...prev]
+      next[scenarioIndex] = frozenSignals
       return next
     })
 
@@ -557,7 +614,12 @@ function ActivePage({ candidate, assessment, onSubmit }) {
         inbox_note: inboxNotes[i] || null,
         forced_choice_response: forcedChoiceResponses[i] || null,
       }))
-      onSubmit(payload)
+      // Build the final micro_signals array. Include the signals we just froze
+      // for the last scenario even though setMicroSignals above is async.
+      const finalMicroSignals = microSignals.map((s, idx) =>
+        idx === scenarioIndex ? frozenSignals : s
+      )
+      onSubmit({ responses: payload, micro_signals: finalMicroSignals })
     } else {
       setScenarioIndex(i => i + 1)
     }
@@ -883,6 +945,20 @@ function ActivePage({ candidate, assessment, onSubmit }) {
                 <>
                   <textarea
                     value={responses[scenarioIndex]}
+                    onKeyDown={() => {
+                      // Record first keystroke time + increment total keystroke count.
+                      // Used for time-to-first-keystroke and edit-ratio micro-signals.
+                      setMicroRaw(prev => {
+                        const next = [...prev]
+                        const cur = next[scenarioIndex] || { scenario_shown_time: null, first_keystroke_time: null, total_chars_typed: 0, reached_80_at: null }
+                        next[scenarioIndex] = {
+                          ...cur,
+                          first_keystroke_time: cur.first_keystroke_time || Date.now(),
+                          total_chars_typed: (cur.total_chars_typed || 0) + 1,
+                        }
+                        return next
+                      })
+                    }}
                     onChange={e => {
                       const val = e.target.value
                       setResponses(prev => {
@@ -890,6 +966,18 @@ function ActivePage({ candidate, assessment, onSubmit }) {
                         next[scenarioIndex] = val
                         return next
                       })
+                      // Capture when the response first crosses 80 words, for completion_pattern.
+                      const words = (val.trim().match(/\S+/g) || []).length
+                      if (words >= 80) {
+                        setMicroRaw(prev => {
+                          const next = [...prev]
+                          const cur = next[scenarioIndex] || { scenario_shown_time: null, first_keystroke_time: null, total_chars_typed: 0, reached_80_at: null }
+                          if (!cur.reached_80_at) {
+                            next[scenarioIndex] = { ...cur, reached_80_at: Date.now() }
+                          }
+                          return next
+                        })
+                      }
                       e.target.style.height = 'auto'
                       e.target.style.height = Math.max(200, e.target.scrollHeight) + 'px'
                     }}
@@ -2197,28 +2285,34 @@ export default function AssessPage({ params }) {
     load()
   }, [uniqueToken])
 
-  function handleScenariosComplete(responses) {
-    setPendingResponses(responses)
+  function handleScenariosComplete(data) {
+    // ActivePage now passes { responses, micro_signals }. Keep a defensive
+    // shim so legacy callers that pass a bare array still work.
+    const payload = Array.isArray(data) ? { responses: data, micro_signals: null } : data
+    setPendingResponses(payload)
     const currentMode = (assessment?.assessment_mode || '').toLowerCase()
     // Rapid mode skips calendar, goes straight to submit
     if (currentMode === 'rapid') {
-      doSubmit(responses)
+      doSubmit(payload)
     } else if (assessment?.calendar_events) {
       setUiState('calendar')
     } else {
-      doSubmit(responses)
+      doSubmit(payload)
     }
   }
 
-  async function doSubmit(responses) {
+  async function doSubmit(data) {
     setUiState('submitting')
+    const { responses, micro_signals } = Array.isArray(data)
+      ? { responses: data, micro_signals: null }
+      : (data || {})
     // 1) Submit responses. Server kicks off scoring in the background via
     //    waitUntil and returns quickly, so this request itself is fast.
     try {
       const res = await fetch(`/api/assess/${uniqueToken}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ responses }),
+        body: JSON.stringify({ responses, micro_signals }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
