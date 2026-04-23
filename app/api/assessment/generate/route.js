@@ -387,27 +387,90 @@ ${Object.entries(context_answers).map(([, v]) => v?.trim()).filter(Boolean).map(
 Treat these answers as ground truth. Weave the environment, failure modes, and success criteria directly into every scenario.
 ` : ''}---
 
-STEP 1 - EXTRACT ROLE INTELLIGENCE
+STEP 1 - EXTRACT JOB DNA (do this before writing a single scenario)
 
-Read the job description and identify the specific tasks, tools, KPIs, stakeholders, seniority level, sector, and day-to-day pressures. Build the scenarios from this, not from generic templates for the job title.
+Read the job description and context answers. Extract and record the following as your scenario blueprint. Every scenario must trace back to at least one item from this blueprint.
+
+A. SUCCESS DEFINITION, top 3 outcomes this person must deliver in the first 90 days, what "brilliant hire" looks like at the 3-month review.
+B. FAILURE TRIGGERS, top 3 reasons someone fails in this role, what behaviours get people terminated early.
+C. DAILY DECISION MOMENTS, what decisions this person makes every day, competing priorities they face regularly.
+D. PRESSURE PROFILE, the biggest source of pressure in this role and whether it is time-based, stakeholder-based, volume-based, or ambiguity-based.
+E. ROLE SPECIFICS, tools, KPIs, named stakeholders, reporting lines, sector, pace.
+
+Use every item from A through E to shape the scenarios. If the context answers provide failure modes or success criteria, treat them as ground truth.
+
+---
+
+STEP 1B - MAP TO DECISION MOMENT TYPES
+
+Every scenario must be built around one of these decision moment types. Select three different types based on the Job DNA. Do not use the same type twice.
+
+- PRIORITISATION UNDER LOAD: Too many tasks, not enough time.
+- STAKEHOLDER CONFLICT: Two or more people want different things.
+- RESOURCE CONSTRAINT: Not enough budget, time, people, or information.
+- COMMUNICATION BREAKDOWN: Something has gone wrong and the right people do not know yet.
+- ERROR RECOVERY: A mistake has been made and must be fixed.
+- AMBIGUITY UNDER PRESSURE: Instructions are unclear or incomplete.
+- COMPLIANCE JUDGEMENT: Something feels wrong legally, ethically, or procedurally.
+- ESCALATION DECISION: Something is beyond the candidate's authority alone.
+
+---
+
+STEP 2 - BUILD EACH SCENARIO FROM FOUR LAYERS
+
+Every scenario must be constructed from all four of these layers. Do not skip any layer.
+
+LAYER A, CONTEXT (minimum 130 words). Specific time of day, specific week in role, named colleagues with job titles, a situation already in progress with history, tools relevant to this role, background pressure the candidate is already aware of.
+
+LAYER B, CONFLICT. A genuine dilemma where every option has a downside. No obviously correct answer.
+
+LAYER C, DECISION PRESSURE. At least one of: a specific deadline, a named person waiting, a consequence if nothing is done, incomplete information, or emotional charge.
+
+LAYER D, REQUIRED OUTPUT. A real work output (email or message, ranked prioritisation with reasoning, concrete decision with rationale, communication plan, or set of actions in order). Not a reflection or opinion.
+
+URGENCY LANGUAGE RULE:
+Every scenario must contain at least one urgency signal, emerging naturally from the context:
+- A specific clock time
+- A named person creating pressure
+- A countdown
+- An escalation risk
+
+PROGRESSIVE REALISM RULES (apply across the three scenarios in sequence):
+Scenario 1 (Core Task): One clear conflict, moderate time pressure, familiar work context. Tests basic competence.
+Scenario 2 (Pressure Test): Two competing priorities, tight deadline, a named stakeholder creating pressure. Tests resilience.
+Scenario 3 (Judgment Call): Ambiguous situation, incomplete information, significant consequence if wrong. Tests judgment.
+
+GLOBAL RULES: Built around actual JD tasks. Realistic UK names, company names, and monetary figures. Specific numbers for deadlines, budgets, team sizes. Written in present tense.
 
 ---
 
 SCENARIO 1 - "Can they do the job?" (Type: "Core Task", Time: 9 minutes)
-
-Take a core responsibility from the JD and give the candidate that actual work to do. Include realistic email content, data, or briefing material at least 80 words long. The output must reveal whether they can execute the fundamental work of this role competently.
+Take a core responsibility from the JD and give the candidate that actual work to do. Include realistic email content, data, or briefing material of at least 80 words.
 
 ---
 
 SCENARIO 2 - "Will they last under pressure?" (Type: "Pressure Test", Time: 8 minutes)
-
-Take another real task from the JD but add pressure: a competing deadline, a difficult stakeholder, a system that has gone down, or an unexpected problem mid-task. The candidate must complete real work while managing the pressure. Feeds the four Pressure-Fit sub-scores.
+Take another real task from the JD but add pressure: a competing deadline, a difficult stakeholder, a system that has gone down, or an unexpected problem mid-task. Feeds all four Pressure-Fit sub-scores.
 
 ---
 
 SCENARIO 3 - "Will they fit?" (Type: "Judgment Call", Time: 8 minutes)
-
 A scenario involving a colleague, manager, or competing team priorities, built around a real task from the JD. The candidate must navigate the relationship while still producing a concrete decision, response, or plan.
+
+INCOMPLETE INFORMATION RULE (Scenario 3 only):
+This scenario must contain one piece of missing information that is relevant but not provided. The candidate must decide whether to act without it or seek it out first. Do not tell the candidate the information is missing. Their response to ambiguity is part of what is being measured.
+
+---
+
+STEP 3 - VALIDATE EVERY SCENARIO BEFORE INCLUDING IT
+
+Before finalising each scenario check it passes all five of these tests. If it fails any test, rewrite it.
+
+Test 1, Reality check: A hiring manager for this role would recognise this as something that literally happens here.
+Test 2, Consequence check: Failure to handle this well would cause a real problem in this role.
+Test 3, Decision path check: There is a clear difference between a strong response and a risky response. A candidate cannot answer vaguely and still score well.
+Test 4, Gaming check: The scenario is specific enough to this JD and context that a generic interview prep answer will not work.
+Test 5, Behaviour check: The scenario tests what someone does, not what they know.
 
 ---
 
@@ -419,6 +482,8 @@ Return ONLY a JSON array with exactly 3 objects. No preamble, no explanation, no
   {
     "type": "Core Task",
     "title": "Concise title describing the situation",
+    "candidate_label": "One sentence plain English description of what this scenario is testing, written for the candidate to read before they begin. Must not use the words test or assess. Frame it as context for why this situation matters in the role.",
+    "dimension_tested": "PRIORITISATION UNDER LOAD",
     "context": "The full situation in present tense. At least 130 words. Named characters, specific numbers. Must feel like a real working day.",
     "task": "Exactly what the candidate must produce. One specific deliverable.",
     "timeMinutes": 9,
@@ -426,7 +491,9 @@ Return ONLY a JSON array with exactly 3 objects. No preamble, no explanation, no
   }
 ]
 
-The three scenario types must be: "Core Task", "Pressure Test", "Judgment Call"
+The three scenario types must be: "Core Task", "Pressure Test", "Judgment Call".
+
+dimension_tested must be one of: PRIORITISATION UNDER LOAD, STAKEHOLDER CONFLICT, RESOURCE CONSTRAINT, COMMUNICATION BREAKDOWN, ERROR RECOVERY, AMBIGUITY UNDER PRESSURE, COMPLIANCE JUDGEMENT, ESCALATION DECISION. Do not repeat a dimension across scenarios.
 
 Skills must be chosen only from: Communication, Problem solving, Prioritisation, Leadership, Negotiation, Client management, Judgment, Strategy, Analysis, Crisis management, People management, Technical communication, Stakeholder management, Conflict resolution
 
@@ -449,15 +516,51 @@ ${Object.entries(context_answers).map(([, v]) => v?.trim()).filter(Boolean).map(
 Treat these answers as ground truth.
 ` : ''}---
 
-STEP 1 - IDENTIFY THE SINGLE MOST CRITICAL TASK FROM THE JD
+STEP 1 - EXTRACT CONDENSED JOB DNA
 
-Read the job description. Identify the ONE task that will determine whether this hire survives their first week. Build a short, sharp scenario around it.
+Read the job description. Extract in shorthand:
+A. SUCCESS DEFINITION, what the ONE thing is this person must get right to survive their first week.
+B. FAILURE TRIGGERS, the ONE behaviour that gets people let go early in this role.
+D. PRESSURE PROFILE, the biggest pressure in this role (time, stakeholder, volume, or ambiguity).
+
+The scenario must trace back to A, B, and D.
 
 ---
 
-SCENARIO 1 - Quick fire task (Type: "Rapid Screen", Time: 8 minutes)
+STEP 1B - SELECT ONE DECISION MOMENT TYPE
 
-A real situation this person will face in their first week. Keep the context SHORT (60-80 words). The task must be specific and concrete. The candidate should respond in under 150 words. Use OPERATIONAL framing regardless of seniority: direct, practical, no corporate fluff.
+Pick the single decision moment type that best fits this role's reality:
+- PRIORITISATION UNDER LOAD
+- STAKEHOLDER CONFLICT
+- RESOURCE CONSTRAINT
+- COMMUNICATION BREAKDOWN
+- ERROR RECOVERY
+- AMBIGUITY UNDER PRESSURE
+- COMPLIANCE JUDGEMENT
+- ESCALATION DECISION
+
+---
+
+STEP 2 - BUILD THE SCENARIO FROM FOUR LAYERS (compressed)
+
+LAYER A, CONTEXT (60-80 words). Specific time of day, a named colleague or customer, a situation already in progress, the tool or workflow in play.
+LAYER B, CONFLICT. A genuine dilemma. Not a single-right-answer task.
+LAYER C, DECISION PRESSURE. At least one urgency signal (a specific clock time, a named person waiting, a countdown, or an escalation risk). Must emerge naturally from the context.
+LAYER D, REQUIRED OUTPUT. A real work output, not a reflection. The candidate's response should be under 150 words.
+
+Use OPERATIONAL framing regardless of seniority: direct, practical, no corporate fluff.
+
+---
+
+STEP 3 - VALIDATE BEFORE INCLUDING
+
+Test 1, Reality check: The hiring manager would recognise this as something that literally happens here.
+Test 2, Consequence check: Handling this badly would cause a real problem.
+Test 3, Decision path check: A strong response looks different to a risky response.
+Test 4, Gaming check: A generic interview prep answer will not work here.
+Test 5, Behaviour check: This tests what someone does, not what they know.
+
+If the scenario fails any test, rewrite it before output.
 
 ---
 
@@ -469,12 +572,16 @@ Return ONLY a JSON array with exactly 1 object. No preamble, no explanation, no 
   {
     "type": "Rapid Screen",
     "title": "Concise title describing the situation",
+    "candidate_label": "One sentence plain English description of what this scenario is testing, written for the candidate to read before they begin. Must not use the words test or assess. Frame it as context for why this situation matters in the role.",
+    "dimension_tested": "PRIORITISATION UNDER LOAD",
     "context": "The situation in present tense. 60-80 words. Named characters, specific details. Must feel like a real working day.",
     "task": "Exactly what the candidate must do. One specific deliverable. Tell them to keep their response under 150 words.",
     "timeMinutes": 8,
     "skills": ["Communication", "Judgment"]
   }
 ]
+
+dimension_tested must be one of: PRIORITISATION UNDER LOAD, STAKEHOLDER CONFLICT, RESOURCE CONSTRAINT, COMMUNICATION BREAKDOWN, ERROR RECOVERY, AMBIGUITY UNDER PRESSURE, COMPLIANCE JUDGEMENT, ESCALATION DECISION.
 
 Skills must be chosen only from: Communication, Problem solving, Prioritisation, Leadership, Negotiation, Client management, Judgment, Strategy, Analysis, Crisis management, People management, Technical communication, Stakeholder management, Conflict resolution
 
@@ -499,21 +606,74 @@ ${Object.entries(context_answers).map(([, v]) => v?.trim()).filter(Boolean).map(
 Treat these answers as ground truth. Weave the environment, failure modes, and success criteria directly into every scenario.
 ` : ''}---
 
-STEP 1 - IDENTIFY THE TWO HIGHEST-PRIORITY SKILLS FROM THE JD
+STEP 1 - EXTRACT JOB DNA (do this before writing a single scenario)
 
-Read the job description. Identify the two most critical skills that will determine whether this hire succeeds or fails in the first 90 days. Build one scenario around each.
+Read the job description and context answers. Extract:
+A. SUCCESS DEFINITION, top 2 outcomes this person must deliver in the first 90 days.
+B. FAILURE TRIGGERS, top 2 reasons someone fails in this role.
+C. DAILY DECISION MOMENTS, the decisions this person makes most often.
+D. PRESSURE PROFILE, the biggest source of pressure in this role (time, stakeholder, volume, or ambiguity).
+E. ROLE SPECIFICS, tools, KPIs, named stakeholders, sector, pace.
+
+Every scenario must trace back to at least one item above.
+
+---
+
+STEP 1B - MAP TO DECISION MOMENT TYPES
+
+Select two different decision moment types based on the Job DNA. Do not use the same type twice.
+
+- PRIORITISATION UNDER LOAD
+- STAKEHOLDER CONFLICT
+- RESOURCE CONSTRAINT
+- COMMUNICATION BREAKDOWN
+- ERROR RECOVERY
+- AMBIGUITY UNDER PRESSURE
+- COMPLIANCE JUDGEMENT
+- ESCALATION DECISION
+
+---
+
+STEP 2 - BUILD EACH SCENARIO FROM FOUR LAYERS
+
+LAYER A, CONTEXT (minimum 100 words). Specific time of day, specific week in role, named colleagues with job titles, a situation already in progress, background pressure.
+
+LAYER B, CONFLICT. A genuine dilemma where every option has a downside.
+
+LAYER C, DECISION PRESSURE. At least one of: a specific deadline, a named person waiting, a consequence if nothing is done, incomplete information, or emotional charge.
+
+LAYER D, REQUIRED OUTPUT. A real work output (email, ranked prioritisation, concrete decision with rationale, communication plan, or set of actions in order).
+
+URGENCY LANGUAGE RULE:
+Every scenario must contain at least one urgency signal (specific clock time, named person creating pressure, countdown, or escalation risk).
+
+PROGRESSIVE REALISM RULES:
+Scenario 1 (Core Task): One clear conflict, moderate time pressure. Tests basic competence.
+Scenario 2 (Pressure Test): Two competing priorities, tight deadline, a named stakeholder creating pressure. Tests resilience.
+
+GLOBAL RULES: Built around actual JD tasks. Realistic UK names and monetary figures. Specific numbers. Present tense.
 
 ---
 
 SCENARIO 1 - Core capability test (Type: "Core Task", Time: 7 minutes)
-
-The single most important task this person will do. Test whether they can execute it. Pull a specific task directly from the JD. Give them real content to work with. The output must reveal whether they can actually do the job.
+The single most important task this person will do. Pull a specific task directly from the JD. Give them real content to work with.
 
 ---
 
 SCENARIO 2 - Pressure and judgment (Type: "Pressure Test", Time: 8 minutes)
+A realistic pressure situation drawn from the JD. A competing deadline, a difficult stakeholder, or an unexpected problem mid-task. The candidate does real work under pressure.
 
-A realistic pressure situation drawn from the JD. A competing deadline, a difficult stakeholder, or an unexpected problem mid-task. They must do real work under pressure. The output must reveal how they handle the stress of the role.
+---
+
+STEP 3 - VALIDATE EVERY SCENARIO BEFORE INCLUDING IT
+
+Before finalising each scenario check it passes all five of these tests. If it fails any test, rewrite it.
+
+Test 1, Reality check: A hiring manager for this role would recognise this as something that literally happens here.
+Test 2, Consequence check: Failure to handle this well would cause a real problem in this role.
+Test 3, Decision path check: There is a clear difference between a strong response and a risky response.
+Test 4, Gaming check: The scenario is specific enough to this JD that a generic interview prep answer will not work.
+Test 5, Behaviour check: The scenario tests what someone does, not what they know.
 
 ---
 
@@ -525,6 +685,8 @@ Return ONLY a JSON array with exactly 2 objects. No preamble, no explanation, no
   {
     "type": "Core Task",
     "title": "Concise title describing the situation",
+    "candidate_label": "One sentence plain English description of what this scenario is testing, written for the candidate to read before they begin. Must not use the words test or assess. Frame it as context for why this situation matters in the role.",
+    "dimension_tested": "PRIORITISATION UNDER LOAD",
     "context": "The full situation in present tense. At least 100 words. Named characters, specific numbers. Must feel like a real working day.",
     "task": "Exactly what the candidate must produce. One specific deliverable.",
     "timeMinutes": 7,
@@ -532,7 +694,9 @@ Return ONLY a JSON array with exactly 2 objects. No preamble, no explanation, no
   }
 ]
 
-The two scenario types must be: "Core Task", "Pressure Test"
+The two scenario types must be: "Core Task", "Pressure Test".
+
+dimension_tested must be one of: PRIORITISATION UNDER LOAD, STAKEHOLDER CONFLICT, RESOURCE CONSTRAINT, COMMUNICATION BREAKDOWN, ERROR RECOVERY, AMBIGUITY UNDER PRESSURE, COMPLIANCE JUDGEMENT, ESCALATION DECISION. Do not repeat a dimension across scenarios.
 
 Skills must be chosen only from: Communication, Problem solving, Prioritisation, Leadership, Negotiation, Client management, Judgment, Strategy, Analysis, Crisis management, People management, Technical communication, Stakeholder management, Conflict resolution
 
@@ -556,111 +720,165 @@ Treat these answers as ground truth. Weave the environment, team size, pace, cha
 ` : ''}
 ---
 
-STEP 1 - EXTRACT ROLE INTELLIGENCE (do this before writing scenarios)
+STEP 1 - EXTRACT JOB DNA (do this before writing a single scenario)
 
-Read the job description and extract the following. Use every item you identify to shape the scenarios:
+Read the job description and context answers. Extract and record the following as your scenario blueprint. Every scenario must trace back to at least one item from this blueprint.
 
-- The specific tasks and deliverables this person will be responsible for
-- The exact tools, systems, platforms, or software mentioned
-- The KPIs, targets, or performance measures they will be judged on
-- The internal and external stakeholders they will work with (job titles, team structure)
-- The seniority level and who they report to
-- The industry, sector, and any regulatory or commercial context
-- The pace, environment, and likely day-to-day pressures
-- Any specific processes, clients, campaigns, reports, or workflows described
+A. SUCCESS DEFINITION
+- What does success look like in the first 90 days? Be specific.
+- What are the top 3 outcomes this person must deliver?
+- What would make the hiring manager say "brilliant hire" at the 3-month review?
 
-If the JD mentions Salesforce, use Salesforce. If it mentions a £500k target, use that number. If it mentions managing a team of five, give them a team of five. If it mentions cold calling, create a cold calling situation. Pull the actual work from the actual JD.
+B. FAILURE TRIGGERS
+- What are the top 3 reasons someone fails in this role?
+- What behaviours get people fired or terminated early?
+- What does a bad hire look like in this specific environment?
 
-Two job descriptions with the same role title must produce completely different scenarios. A Sales Executive at a car dealership is not a Sales Executive at a SaaS company. Read the JD, not the job title.
+C. DAILY DECISION MOMENTS
+- What decisions does this person make every day?
+- What competing priorities will they face regularly?
+- What gets them into trouble if they handle it wrong?
+
+D. PRESSURE PROFILE
+- What is the biggest source of pressure in this role?
+- Is the pressure time-based, stakeholder-based, volume-based, or ambiguity-based?
+- What does a bad day look like?
+
+E. ROLE SPECIFICS
+- Specific tools, systems, platforms mentioned
+- KPIs, targets, performance measures
+- Named stakeholders, team structure, reporting lines
+- Industry, sector, regulatory context
+- Pace, environment, day-to-day reality
+
+Use every item from A through E to shape the scenarios. If the context answers provide failure modes or success criteria, treat them as ground truth and build scenarios directly from them.
+
+If the JD mentions Salesforce, use Salesforce. If it mentions a £500k target, use that number. Two job descriptions with the same role title must produce completely different scenarios.
 
 ---
 
-STEP 2 - WRITE 4 SCENARIOS, EACH TESTING A DIFFERENT DIMENSION OF SUCCESS
+STEP 1B - MAP TO DECISION MOMENT TYPES
 
-Each scenario must:
-- Be built around an actual task or responsibility from the JD, not an abstract situation
+Every scenario must be built around one of these decision moment types. Select the types that best match the Job DNA you extracted. Do not use the same type twice.
+
+Decision moment types:
+- PRIORITISATION UNDER LOAD: Too many tasks, not enough time. What gets done first, what gets delayed, what gets dropped.
+- STAKEHOLDER CONFLICT: Two or more people want different things. The candidate must navigate without losing either relationship.
+- RESOURCE CONSTRAINT: Not enough budget, time, people, or information to do everything properly. Forced trade-off.
+- COMMUNICATION BREAKDOWN: Something has gone wrong and the right people do not know yet. Who do you tell, when, and how.
+- ERROR RECOVERY: A mistake has been made, by the candidate, a colleague, or a system. How do you fix it and what do you do first.
+- AMBIGUITY UNDER PRESSURE: Instructions are unclear or incomplete. The candidate must act without full information.
+- COMPLIANCE JUDGEMENT: Something feels wrong legally, ethically, or procedurally. What do you do.
+- ESCALATION DECISION: Something is beyond the candidate's authority or ability to fix alone. Do you escalate, and if so how and to whom.
+
+For each scenario note internally which decision moment type it uses. The scenario title in the JSON output should reflect the type naturally without naming it explicitly.
+
+---
+
+STEP 2 - BUILD EACH SCENARIO FROM FOUR LAYERS
+
+Every scenario must be constructed from all four of these layers. Do not skip any layer.
+
+LAYER A, CONTEXT (minimum 150 words)
+Set the scene with full specificity:
+- It is a specific time of day and day of the week
+- The candidate has been in the role for a specific number of weeks
+- Named colleagues with job titles are involved
+- A specific situation is already in progress with history behind it
+- Tools, systems, or workflows relevant to this role are active
+- There is background pressure the candidate is already aware of
+
+LAYER B, CONFLICT
+Something creates a genuine dilemma:
+- Competing priorities where both matter
+- Limited resources where something must give
+- A stakeholder with an opposing need
+- A mistake or problem that has just surfaced
+- An unexpected change that disrupts what was planned
+Every option must have a downside. There is no obviously correct answer. A candidate who sounds good but thinks poorly must be exposed here.
+
+LAYER C, DECISION PRESSURE
+Add one or more of these pressure elements:
+- A specific deadline: "by 3pm", "before the client call at 2", "end of play today"
+- A named person waiting for a response: "Sarah has asked for an update", "the client is on hold"
+- A consequence if nothing is done: "if this is not resolved today, the contract is at risk"
+- Incomplete information: one key piece of context is missing and the candidate must decide whether to act or seek it
+- Emotional charge: the situation involves a frustrated client, a struggling colleague, or a senior stakeholder who is watching
+
+LAYER D, REQUIRED OUTPUT
+State exactly what the candidate must produce. Not a reflection or opinion. A real work output:
+- An actual email or message drafted and sent
+- A specific ranked prioritisation with reasoning for each ranking
+- A concrete decision with rationale and next steps
+- A communication plan showing who gets told what and when
+- A set of actions in order with timing
+
+URGENCY LANGUAGE RULE:
+Every scenario must contain at least one of the following urgency signals, emerging naturally from the scenario context and not bolted on:
+- A specific clock time (e.g. "It is 9:10am", "It is 4:45pm and the office closes at 5")
+- A named person creating pressure (e.g. "Marcus has just messaged asking for an update", "Your line manager Priya is waiting")
+- A countdown (e.g. "You have 20 minutes before the call", "This needs to go out before 12")
+- An escalation risk (e.g. "If this is not resolved today the client has said they will escalate to the board")
+
+PROGRESSIVE REALISM RULES (apply across all four scenarios in sequence):
+Scenario 1 (Core Task): One clear conflict, moderate time pressure, familiar work context. Tests basic competence.
+Scenario 2 (Pressure Test): Two competing priorities, tight deadline, a named stakeholder creating pressure. Tests resilience.
+Scenario 3 (Judgment Call): Ambiguous situation, incomplete information, significant consequence if wrong. Tests judgment.
+Scenario 4 (Staying Power): Multiple simultaneous pressures, political complexity, no clean solution. Tests character under maximum load.
+
+GLOBAL RULES FOR EVERY SCENARIO:
+- Built around an actual task or responsibility from the JD, not an abstract situation
 - Use realistic UK company names, UK colleague names (mix of genders and cultural backgrounds), and monetary figures appropriate for this role and seniority
 - Include specific numbers: deadlines, budgets, team sizes, deal values, targets, percentages
-- Be written in present tense as if it is already happening. Never use "imagine", "suppose", or "pretend"
-- Drop the candidate into an ongoing situation with history, politics, and competing pressures already in play
-- Have genuine ambiguity with no single obvious right answer
-- Have a context section of at least 150 words with named characters and specific details
-- Have a task that demands a real work product (an actual email, a specific ranked plan, a concrete decision with rationale). Not a reflection or opinion.
+- Written in present tense. Never use "imagine", "suppose", or "pretend"
 
 ---
 
 SCENARIO 1 - "Can they do the job?" (Type: "Core Task", Time: 12 minutes)
-
-Take a core responsibility from the JD and give the candidate that actual work to do. If the JD says they manage accounts, give them an account situation to handle. If it says they write reports, give them the data and ask for the report. If it says they handle customer complaints, give them a complaint. If it says they build pipelines, give them a pipeline problem.
-
-The scenario must test whether the candidate can execute the fundamental work of this role competently. There should be enough information to do the task well, but the quality of their output will reveal their actual capability level.
-
-Include a realistic email thread, document, data set, or briefing they must respond to or work with. The email thread or context material must be at least 80 words of realistic, specific content.
-
-This scenario feeds primarily into: Skills Breakdown scores, the pass probation probability, and the Candidate Type Snapshot.
+Take a core responsibility from the JD and give the candidate that actual work to do. Include a realistic email thread, document, data set, or briefing of at least 80 words. Feeds primarily into Skills Breakdown scores, pass probation probability, and Candidate Type.
 
 ---
 
 SCENARIO 2 - "Will they last under pressure?" (Type: "Pressure Test", Time: 10 minutes)
-
-Take another real task from the JD but add pressure. The pressure must be specific and realistic for this role: a competing deadline on a second piece of work, a difficult stakeholder pushing back, a system that has gone down, a key resource that is unavailable, or an unexpected problem that has landed mid-task.
-
-The candidate must complete real work while managing the pressure. This is not just a prioritisation exercise. They should be doing something, not just deciding what to do.
-
-This scenario must heavily feed into ALL FOUR Pressure-Fit sub-scores:
-- Composure Under Stress: do they stay focused and clear-headed when the task gets harder?
-- Resilience: do they adapt and find a route through, or do they freeze or escalate unnecessarily?
-- Composure Under Conflict: is there a stakeholder creating friction they must navigate while completing the work?
-- Ownership and Accountability: do they take responsibility for the outcome, or do they look for someone else to blame or defer to?
-
-Also feeds into: the underperformance risk probability.
+Real task from the JD plus a specific realistic pressure element. The candidate must complete real work while managing the pressure. Feeds all four Pressure-Fit sub-scores and underperformance risk.
 
 ---
 
 SCENARIO 3 - "Will they fit?" (Type: "Judgment Call", Time: 12 minutes)
+A scenario involving the team, the manager, or company culture, built around a real task from the JD. The candidate must navigate the relationship while still completing real work.
 
-A scenario involving the team, the manager, or the company culture, built around a real task from the JD. A colleague disagrees with their approach on a piece of work they are jointly responsible for. A manager gives vague instructions on a deliverable with a hard deadline. Two departments want different things from the same output. A more senior person is wrong but confident.
+INCOMPLETE INFORMATION RULE (Scenario 3 only):
+This scenario must contain one piece of missing information that is relevant but not provided. The candidate must decide whether to act without it or seek it out first. Examples:
+- The budget figure is not confirmed yet
+- The client's exact requirements have not been signed off
+- A key colleague is on leave and cannot be reached
+- A system shows conflicting data and IT have not responded
+Do not tell the candidate the information is missing. Let them notice it or not. Their response to ambiguity is part of what is being measured.
 
-The candidate must navigate the relationship while still completing real work. This is not just a values exercise. They should produce something: a decision, a response, a plan for how they will handle both the task and the person.
-
-This scenario feeds primarily into:
-- Composure Under Conflict (Pressure-Fit sub-score)
-- Ownership and Accountability (Pressure-Fit sub-score)
-- The Candidate Type Snapshot (how they describe their approach reveals their working style)
+Feeds Composure Under Conflict, Ownership and Accountability, and Candidate Type.
 
 ---
 
 SCENARIO 4 - "Will they stay?" (Type: "Staying Power", Time: 14 minutes)
-
-A scenario where the reality of the role is harder or more mundane than expected, built around actual day-to-day tasks from the JD. The exciting project has been delayed. A process they want to improve is protected by someone senior. They are doing the routine, unglamorous work that the role actually requires most of the time.
-
-Add pressure elements to raise the stakes: a tight deadline on the routine work, a frustrated colleague or client who is not impressed, a manager asking for results on something the candidate clearly finds boring, or limited support for something they must complete alone.
-
-The candidate must show they can stay motivated, take ownership, and produce quality output even when the work is not what they hoped for.
-
-This scenario feeds into:
-- ALL FOUR Pressure-Fit sub-scores (this is the fullest test of their pressure response)
-- Churn risk probability in the Predicted Outcome Panel (candidates who disengage in this scenario are significantly more likely to leave within 6 months)
-- The Reality Timeline (their response tells you how their first 90 days will actually go)
-- Underperformance risk probability
+A scenario where the reality of the role is harder or more mundane than expected, built around actual day-to-day tasks from the JD. Multiple simultaneous pressures and no clean solution. Feeds all four Pressure-Fit sub-scores, churn risk, the Reality Timeline, and underperformance risk.
 
 ---
 
-SCORING GUIDANCE (do not include in output - use to shape what the scenarios reveal)
+STEP 3 - VALIDATE EVERY SCENARIO BEFORE INCLUDING IT
 
-When writing each scenario, be deliberate about what a strong response looks like versus a weak one. Strong responses will:
-- Show genuine competence with the actual work of the role
-- Maintain quality and composure when pressure is applied
-- Take ownership rather than escalate or defer unnecessarily
-- Demonstrate self-awareness about the less glamorous parts of the role
+Before finalising each scenario check it passes all five of these tests. If it fails any test, rewrite it.
 
-Weak responses will reveal:
-- Surface-level capability that does not hold up under scrutiny
-- Disengagement or frustration when the work is hard or dull
-- Conflict avoidance or inappropriate escalation in relationship scenarios
-- A preference for the interesting parts of the job over the essential parts
+Test 1, Reality check: Would a hiring manager for this role read this and say "yes, that literally happens here"? If not, rewrite using more specific details from the JD.
+Test 2, Consequence check: Would failure to handle this well actually cause a real problem in this role? If the stakes are low or abstract, raise them.
+Test 3, Decision path check: Is there a clear difference between a strong response and a risky response? If a candidate could answer vaguely and score well, add more specificity to force a real decision.
+Test 4, Gaming check: Could a candidate memorise an answer to this from a generic interview prep guide? If yes, make the scenario more specific to this JD, this company context, and this exact situation.
+Test 5, Behaviour check: Does this test what someone does, not what they know? If the scenario could be answered with textbook theory rather than practical judgment, rewrite it around a real action that must be taken.
 
-These contrasts must flow naturally from the scenario design, not from hints in the task wording.
+---
+
+SCORING GUIDANCE (do not include in output, use to shape what the scenarios reveal)
+
+Strong responses show genuine competence with the actual work, maintain composure under pressure, take ownership rather than escalate unnecessarily, and demonstrate self-awareness about the less glamorous parts of the role. Weak responses reveal surface-level capability, disengagement when work is hard or dull, conflict avoidance, and a preference for the interesting parts of the job over the essential parts. These contrasts must flow naturally from the scenario design, not from hints in the task wording.
 
 ---
 
@@ -672,6 +890,8 @@ Return ONLY a JSON array with exactly 4 objects. No preamble, no explanation, no
   {
     "type": "Core Task",
     "title": "Concise title describing the situation (not the task)",
+    "candidate_label": "One sentence plain English description of what this scenario is testing, written for the candidate to read before they begin. Must not use the words test or assess. Frame it as context for why this situation matters in the role.",
+    "dimension_tested": "PRIORITISATION UNDER LOAD",
     "context": "The full situation in present tense. Must be at least 150 words. Include named characters, specific numbers, and the full email thread, data, or briefing the candidate must work with. Must feel like a real working day at a real UK company in this specific sector.",
     "task": "Exactly what the candidate must produce. One specific deliverable. Tell them the format, the recipient, and any constraints. Do not hint at the right approach.",
     "timeMinutes": 12,
@@ -679,7 +899,9 @@ Return ONLY a JSON array with exactly 4 objects. No preamble, no explanation, no
   }
 ]
 
-The four scenario types must be: "Core Task", "Pressure Test", "Judgment Call", "Staying Power"
+The four scenario types must be: "Core Task", "Pressure Test", "Judgment Call", "Staying Power".
+
+dimension_tested must be one of: PRIORITISATION UNDER LOAD, STAKEHOLDER CONFLICT, RESOURCE CONSTRAINT, COMMUNICATION BREAKDOWN, ERROR RECOVERY, AMBIGUITY UNDER PRESSURE, COMPLIANCE JUDGEMENT, ESCALATION DECISION. Do not repeat a dimension across scenarios.
 
 Skills must be chosen only from: Communication, Problem solving, Prioritisation, Leadership, Negotiation, Client management, Judgment, Strategy, Analysis, Crisis management, People management, Technical communication, Stakeholder management, Conflict resolution
 

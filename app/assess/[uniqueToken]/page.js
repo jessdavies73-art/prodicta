@@ -729,6 +729,14 @@ function ActivePage({ candidate, assessment, onSubmit }) {
           )}
 
           <Card style={isOperational ? { background: '#f8f9fb', border: 'none', boxShadow: 'none', padding: '16px' } : {}}>
+            {scenario.candidate_label && (
+              <div style={{
+                fontFamily: F, fontSize: 13, fontStyle: 'italic', color: TX3,
+                marginBottom: 14, lineHeight: 1.55,
+              }}>
+                {scenario.candidate_label}
+              </div>
+            )}
             {isOperational ? (
               <>
                 {/* Chat-style scenario display for operational roles */}
