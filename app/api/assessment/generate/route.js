@@ -424,6 +424,35 @@ LAYER A, CONTEXT (minimum 130 words). Specific time of day, specific week in rol
 
 LAYER B, CONFLICT. A genuine dilemma where every option has a downside. No obviously correct answer.
 
+TRADE-OFF RULE, MANDATORY FOR EVERY SCENARIO:
+Every scenario conflict must present a genuine trade-off where every available option has a real downside. There must be no obviously correct answer. A candidate who sounds good but thinks poorly must be exposed by the trade-off.
+
+These are the trade-off types. Use at least one per scenario:
+
+SPEED VERSUS QUALITY: Acting quickly risks errors or client dissatisfaction. Taking time to do it properly risks missing the deadline or losing the opportunity. Neither option is safe. The candidate must choose and justify.
+Example: "You can submit the proposal today with the information you have, or wait two days for the full data set. The client is pushing for today. The data gap is significant."
+
+CLIENT VERSUS INTERNAL TEAM: What the client wants conflicts with what the internal team needs. Satisfying one damages the other. There is no solution that makes everyone happy.
+Example: "The client wants daily updates. Your team finds this micromanagement and is starting to disengage. You cannot change the client's preference."
+
+SHORT-TERM FIX VERSUS LONG-TERM IMPACT: The quick fix solves today's problem but creates a bigger one next month. The proper solution takes longer than the situation allows.
+Example: "You can patch the process now and ship on time, or rebuild it properly and miss the quarter. The patch will need rebuilding anyway."
+
+RELATIONSHIP VERSUS PROCESS: Following the correct process damages an important relationship. Protecting the relationship means bending or breaking the process.
+Example: "The correct procedure requires escalating this formally. Doing so will permanently damage your relationship with the client. Not doing so puts you in breach of compliance."
+
+INDIVIDUAL VERSUS TEAM: What is best for the candidate personally conflicts with what is best for the team or the business.
+Example: "Taking on this project would accelerate your career but would leave your team under-resourced during a critical period."
+
+TRADE-OFF CONSTRUCTION RULES:
+- Both options must have a real cost. If one option is obviously better, rewrite it.
+- The trade-off must be specific to this role and this scenario. Never use abstract trade-offs.
+- The candidate must actively choose. The scenario must require a decision, not a plan to find a third option.
+- The consequence of each choice must be stated or clearly implied. The candidate should know what they are giving up.
+- Never resolve the trade-off for the candidate by making one option clearly safer. If you find yourself making one option safer, add a downside to it.
+
+TRADE-OFF APPLICATION FOR THIS MODE (standard, 3 scenarios): Use a different trade-off type for each scenario. Trade-offs must escalate in complexity across scenarios: Scenario 1 uses a relatively contained trade-off (e.g. SPEED VERSUS QUALITY); Scenario 2 uses a sharper interpersonal or organisational trade-off (e.g. CLIENT VERSUS INTERNAL TEAM or SHORT-TERM FIX VERSUS LONG-TERM IMPACT); Scenario 3 uses the hardest trade-off (RELATIONSHIP VERSUS PROCESS or INDIVIDUAL VERSUS TEAM).
+
 LAYER C, DECISION PRESSURE. At least one of: a specific deadline, a named person waiting, a consequence if nothing is done, incomplete information, or emotional charge.
 
 LAYER D, REQUIRED OUTPUT. A real work output (email or message, ranked prioritisation with reasoning, concrete decision with rationale, communication plan, or set of actions in order). Not a reflection or opinion.
@@ -434,6 +463,45 @@ Every scenario must contain at least one urgency signal, emerging naturally from
 - A named person creating pressure
 - A countdown
 - An escalation risk
+
+EMOTIONAL REALISM RULES, MANDATORY:
+Every scenario must contain at least one emotional realism element that makes the situation feel like real work rather than a test. Choose from the following per scenario:
+
+ELEMENT 1, NAMED PERSON CREATING PRESSURE:
+A specific named colleague, manager, or client is waiting, frustrated, or watching. Their emotional state is clear.
+Examples:
+- "Marcus has been chasing you since 8am and his tone in the last message suggests he is losing patience."
+- "Sarah copied the MD into her last email. You are now being watched."
+- "The client, James Okafor, has left two voicemails. He sounds calm but you know from experience that calm is his warning sign."
+
+ELEMENT 2, TIME SPECIFICITY:
+A specific clock time creates urgency that feels real.
+Examples:
+- "It is 4:47pm. The office closes at 5:30 and you have no flexibility on that today."
+- "It is 9:10am. You have a meeting at 10 that you cannot move."
+- "It is Friday at 3pm. Nothing can be escalated until Monday."
+
+ELEMENT 3, CONSEQUENCE VISIBILITY:
+The candidate can see or anticipate the consequence of inaction. Someone is watching or will find out.
+Examples:
+- "If this is not resolved before the client call at 2pm, it will come up in front of the board."
+- "Your line manager reviews the dashboard every morning. Whatever state this is in at 9am tomorrow is what they will see."
+- "Three members of your team are waiting on your decision before they can start their day."
+
+ELEMENT 4, HISTORY AND CONTEXT:
+The situation has backstory that creates additional pressure. This is not the first time. There are existing relationships and tensions in play.
+Examples:
+- "This is the third time this quarter this client has escalated. Your manager has already mentioned it once."
+- "You and James have had a difficult working relationship since the restructure. This situation will either repair it or end it."
+- "The team has been promised this would be resolved by end of week. It is Thursday."
+
+RULES FOR EMOTIONAL REALISM:
+- Names must feel real and UK-appropriate. Mix genders and cultural backgrounds as the existing prompt already instructs.
+- Emotional realism must emerge naturally from the scenario context. It must not feel bolted on.
+- The emotional element must add to the decision pressure, not distract from it. Every emotional detail must make the trade-off harder, not easier.
+- Do not use emotional elements that could introduce bias. A frustrated female manager and a frustrated male manager must be treated identically. A client named James and a client named Mohammed must carry identical weight and tone.
+
+EMOTIONAL REALISM APPLICATION FOR THIS MODE (standard, 3 scenarios): Scenario 1 must use at least one element. Scenario 2 must use at least two elements. Scenario 3 must use at least two elements AND must include ELEMENT 4 (HISTORY AND CONTEXT).
 
 PROGRESSIVE REALISM RULES (apply across the three scenarios in sequence):
 Scenario 1 (Core Task): One clear conflict, moderate time pressure, familiar work context. Tests basic competence.
@@ -464,13 +532,14 @@ This scenario must contain one piece of missing information that is relevant but
 
 STEP 3 - VALIDATE EVERY SCENARIO BEFORE INCLUDING IT
 
-Before finalising each scenario check it passes all five of these tests. If it fails any test, rewrite it.
+Before finalising each scenario check it passes all six of these tests. If it fails any test, rewrite it.
 
 Test 1, Reality check: A hiring manager for this role would recognise this as something that literally happens here.
 Test 2, Consequence check: Failure to handle this well would cause a real problem in this role.
 Test 3, Decision path check: There is a clear difference between a strong response and a risky response. A candidate cannot answer vaguely and still score well.
 Test 4, Gaming check: The scenario is specific enough to this JD and context that a generic interview prep answer will not work.
 Test 5, Behaviour check: The scenario tests what someone does, not what they know.
+Test 6, Trade-off check: Does every available option in this scenario have a real downside? If one option is clearly safer or better than the others, add a cost to it or strengthen the downside of the better option until the choice is genuinely difficult.
 
 ---
 
@@ -585,7 +654,24 @@ STEP 2 - BUILD THE SCENARIO FROM FOUR LAYERS (compressed)
 
 LAYER A, CONTEXT (60-80 words). Specific time of day, a named colleague or customer, a situation already in progress, the tool or workflow in play.
 LAYER B, CONFLICT. A genuine dilemma. Not a single-right-answer task.
+
+TRADE-OFF RULE, MANDATORY: The conflict must present a genuine trade-off where every available option has a real downside. There must be no obviously correct answer. Use exactly ONE of these trade-off types, chosen to fit the role:
+- SPEED VERSUS QUALITY: Act now with incomplete information and risk errors, or wait for clarity and miss the window.
+- CLIENT VERSUS INTERNAL TEAM: What the client wants conflicts with what the team needs. Satisfying one damages the other.
+- SHORT-TERM FIX VERSUS LONG-TERM IMPACT: The quick patch solves today but creates a bigger problem later.
+- RELATIONSHIP VERSUS PROCESS: Following the correct process damages an important relationship. Protecting the relationship bends the process.
+- INDIVIDUAL VERSUS TEAM: What is best for the candidate personally conflicts with what is best for the team.
+Both options must have a real, specific cost. The candidate must actively choose, not plan a third option. Trade-off must be specific to this role.
+
 LAYER C, DECISION PRESSURE. At least one urgency signal (a specific clock time, a named person waiting, a countdown, or an escalation risk). Must emerge naturally from the context.
+
+EMOTIONAL REALISM RULE, MANDATORY: The scenario must include at least ONE of the following emotional realism elements, woven naturally into the context:
+- NAMED PERSON CREATING PRESSURE: a specific colleague, manager, or client whose emotional state (frustrated, losing patience, watching) is clear.
+- TIME SPECIFICITY: a specific clock time that creates real urgency (e.g. "It is 4:47pm. The office closes at 5:30.").
+- CONSEQUENCE VISIBILITY: someone is watching or will find out if this is not resolved.
+- HISTORY AND CONTEXT: existing backstory or prior tension that raises the stakes.
+The emotional element must make the trade-off harder, not easier, and must not introduce bias. Treat names and genders identically (e.g. a client named James and a client named Mohammed must carry identical weight and tone).
+
 LAYER D, REQUIRED OUTPUT. A real work output, not a reflection. The candidate's response should be under 150 words.
 
 Use OPERATIONAL framing regardless of seniority: direct, practical, no corporate fluff.
@@ -599,6 +685,7 @@ Test 2, Consequence check: Handling this badly would cause a real problem.
 Test 3, Decision path check: A strong response looks different to a risky response.
 Test 4, Gaming check: A generic interview prep answer will not work here.
 Test 5, Behaviour check: This tests what someone does, not what they know.
+Test 6, Trade-off check: Does every available option in this scenario have a real downside? If one option is clearly safer or better than the others, add a cost to it or strengthen the downside of the better option until the choice is genuinely difficult.
 
 If the scenario fails any test, rewrite it before output.
 
@@ -680,12 +767,80 @@ LAYER A, CONTEXT (minimum 100 words). Specific time of day, specific week in rol
 
 LAYER B, CONFLICT. A genuine dilemma where every option has a downside.
 
+TRADE-OFF RULE, MANDATORY FOR EVERY SCENARIO:
+Every scenario conflict must present a genuine trade-off where every available option has a real downside. There must be no obviously correct answer. A candidate who sounds good but thinks poorly must be exposed by the trade-off.
+
+These are the trade-off types. Use at least one per scenario:
+
+SPEED VERSUS QUALITY: Acting quickly risks errors or client dissatisfaction. Taking time to do it properly risks missing the deadline or losing the opportunity. Neither option is safe. The candidate must choose and justify.
+Example: "You can submit the proposal today with the information you have, or wait two days for the full data set. The client is pushing for today. The data gap is significant."
+
+CLIENT VERSUS INTERNAL TEAM: What the client wants conflicts with what the internal team needs. Satisfying one damages the other. There is no solution that makes everyone happy.
+Example: "The client wants daily updates. Your team finds this micromanagement and is starting to disengage. You cannot change the client's preference."
+
+SHORT-TERM FIX VERSUS LONG-TERM IMPACT: The quick fix solves today's problem but creates a bigger one next month. The proper solution takes longer than the situation allows.
+Example: "You can patch the process now and ship on time, or rebuild it properly and miss the quarter. The patch will need rebuilding anyway."
+
+RELATIONSHIP VERSUS PROCESS: Following the correct process damages an important relationship. Protecting the relationship means bending or breaking the process.
+Example: "The correct procedure requires escalating this formally. Doing so will permanently damage your relationship with the client. Not doing so puts you in breach of compliance."
+
+INDIVIDUAL VERSUS TEAM: What is best for the candidate personally conflicts with what is best for the team or the business.
+Example: "Taking on this project would accelerate your career but would leave your team under-resourced during a critical period."
+
+TRADE-OFF CONSTRUCTION RULES:
+- Both options must have a real cost. If one option is obviously better, rewrite it.
+- The trade-off must be specific to this role and this scenario. Never use abstract trade-offs.
+- The candidate must actively choose. The scenario must require a decision, not a plan to find a third option.
+- The consequence of each choice must be stated or clearly implied. The candidate should know what they are giving up.
+- Never resolve the trade-off for the candidate by making one option clearly safer. If you find yourself making one option safer, add a downside to it.
+
+TRADE-OFF APPLICATION FOR THIS MODE (quick, 2 scenarios): Use one trade-off per scenario, and the two scenarios must use DIFFERENT trade-off types.
+
 LAYER C, DECISION PRESSURE. At least one of: a specific deadline, a named person waiting, a consequence if nothing is done, incomplete information, or emotional charge.
 
 LAYER D, REQUIRED OUTPUT. A real work output (email, ranked prioritisation, concrete decision with rationale, communication plan, or set of actions in order).
 
 URGENCY LANGUAGE RULE:
 Every scenario must contain at least one urgency signal (specific clock time, named person creating pressure, countdown, or escalation risk).
+
+EMOTIONAL REALISM RULES, MANDATORY:
+Every scenario must contain at least one emotional realism element that makes the situation feel like real work rather than a test. Choose from the following per scenario:
+
+ELEMENT 1, NAMED PERSON CREATING PRESSURE:
+A specific named colleague, manager, or client is waiting, frustrated, or watching. Their emotional state is clear.
+Examples:
+- "Marcus has been chasing you since 8am and his tone in the last message suggests he is losing patience."
+- "Sarah copied the MD into her last email. You are now being watched."
+- "The client, James Okafor, has left two voicemails. He sounds calm but you know from experience that calm is his warning sign."
+
+ELEMENT 2, TIME SPECIFICITY:
+A specific clock time creates urgency that feels real.
+Examples:
+- "It is 4:47pm. The office closes at 5:30 and you have no flexibility on that today."
+- "It is 9:10am. You have a meeting at 10 that you cannot move."
+- "It is Friday at 3pm. Nothing can be escalated until Monday."
+
+ELEMENT 3, CONSEQUENCE VISIBILITY:
+The candidate can see or anticipate the consequence of inaction. Someone is watching or will find out.
+Examples:
+- "If this is not resolved before the client call at 2pm, it will come up in front of the board."
+- "Your line manager reviews the dashboard every morning. Whatever state this is in at 9am tomorrow is what they will see."
+- "Three members of your team are waiting on your decision before they can start their day."
+
+ELEMENT 4, HISTORY AND CONTEXT:
+The situation has backstory that creates additional pressure. This is not the first time. There are existing relationships and tensions in play.
+Examples:
+- "This is the third time this quarter this client has escalated. Your manager has already mentioned it once."
+- "You and James have had a difficult working relationship since the restructure. This situation will either repair it or end it."
+- "The team has been promised this would be resolved by end of week. It is Thursday."
+
+RULES FOR EMOTIONAL REALISM:
+- Names must feel real and UK-appropriate. Mix genders and cultural backgrounds as the existing prompt already instructs.
+- Emotional realism must emerge naturally from the scenario context. It must not feel bolted on.
+- The emotional element must add to the decision pressure, not distract from it. Every emotional detail must make the trade-off harder, not easier.
+- Do not use emotional elements that could introduce bias. A frustrated female manager and a frustrated male manager must be treated identically. A client named James and a client named Mohammed must carry identical weight and tone.
+
+EMOTIONAL REALISM APPLICATION FOR THIS MODE (quick, 2 scenarios): Use at least ONE element per scenario.
 
 PROGRESSIVE REALISM RULES:
 Scenario 1 (Core Task): One clear conflict, moderate time pressure. Tests basic competence.
@@ -707,13 +862,14 @@ A realistic pressure situation drawn from the JD. A competing deadline, a diffic
 
 STEP 3 - VALIDATE EVERY SCENARIO BEFORE INCLUDING IT
 
-Before finalising each scenario check it passes all five of these tests. If it fails any test, rewrite it.
+Before finalising each scenario check it passes all six of these tests. If it fails any test, rewrite it.
 
 Test 1, Reality check: A hiring manager for this role would recognise this as something that literally happens here.
 Test 2, Consequence check: Failure to handle this well would cause a real problem in this role.
 Test 3, Decision path check: There is a clear difference between a strong response and a risky response.
 Test 4, Gaming check: The scenario is specific enough to this JD that a generic interview prep answer will not work.
 Test 5, Behaviour check: The scenario tests what someone does, not what they know.
+Test 6, Trade-off check: Does every available option in this scenario have a real downside? If one option is clearly safer or better than the others, add a cost to it or strengthen the downside of the better option until the choice is genuinely difficult.
 
 ---
 
@@ -837,6 +993,35 @@ Something creates a genuine dilemma:
 - An unexpected change that disrupts what was planned
 Every option must have a downside. There is no obviously correct answer. A candidate who sounds good but thinks poorly must be exposed here.
 
+TRADE-OFF RULE, MANDATORY FOR EVERY SCENARIO:
+Every scenario conflict must present a genuine trade-off where every available option has a real downside. There must be no obviously correct answer. A candidate who sounds good but thinks poorly must be exposed by the trade-off.
+
+These are the trade-off types. Use at least one per scenario:
+
+SPEED VERSUS QUALITY: Acting quickly risks errors or client dissatisfaction. Taking time to do it properly risks missing the deadline or losing the opportunity. Neither option is safe. The candidate must choose and justify.
+Example: "You can submit the proposal today with the information you have, or wait two days for the full data set. The client is pushing for today. The data gap is significant."
+
+CLIENT VERSUS INTERNAL TEAM: What the client wants conflicts with what the internal team needs. Satisfying one damages the other. There is no solution that makes everyone happy.
+Example: "The client wants daily updates. Your team finds this micromanagement and is starting to disengage. You cannot change the client's preference."
+
+SHORT-TERM FIX VERSUS LONG-TERM IMPACT: The quick fix solves today's problem but creates a bigger one next month. The proper solution takes longer than the situation allows.
+Example: "You can patch the process now and ship on time, or rebuild it properly and miss the quarter. The patch will need rebuilding anyway."
+
+RELATIONSHIP VERSUS PROCESS: Following the correct process damages an important relationship. Protecting the relationship means bending or breaking the process.
+Example: "The correct procedure requires escalating this formally. Doing so will permanently damage your relationship with the client. Not doing so puts you in breach of compliance."
+
+INDIVIDUAL VERSUS TEAM: What is best for the candidate personally conflicts with what is best for the team or the business.
+Example: "Taking on this project would accelerate your career but would leave your team under-resourced during a critical period."
+
+TRADE-OFF CONSTRUCTION RULES:
+- Both options must have a real cost. If one option is obviously better, rewrite it.
+- The trade-off must be specific to this role and this scenario. Never use abstract trade-offs.
+- The candidate must actively choose. The scenario must require a decision, not a plan to find a third option.
+- The consequence of each choice must be stated or clearly implied. The candidate should know what they are giving up.
+- Never resolve the trade-off for the candidate by making one option clearly safer. If you find yourself making one option safer, add a downside to it.
+
+TRADE-OFF APPLICATION FOR THIS MODE (advanced, 4 scenarios): Use a different trade-off type across the four scenarios and escalate complexity in sequence. Scenario 4 (Staying Power) MUST use the most complex trade-off type: RELATIONSHIP VERSUS PROCESS or INDIVIDUAL VERSUS TEAM.
+
 LAYER C, DECISION PRESSURE
 Add one or more of these pressure elements:
 - A specific deadline: "by 3pm", "before the client call at 2", "end of play today"
@@ -859,6 +1044,45 @@ Every scenario must contain at least one of the following urgency signals, emerg
 - A named person creating pressure (e.g. "Marcus has just messaged asking for an update", "Your line manager Priya is waiting")
 - A countdown (e.g. "You have 20 minutes before the call", "This needs to go out before 12")
 - An escalation risk (e.g. "If this is not resolved today the client has said they will escalate to the board")
+
+EMOTIONAL REALISM RULES, MANDATORY:
+Every scenario must contain at least one emotional realism element that makes the situation feel like real work rather than a test. Choose from the following per scenario:
+
+ELEMENT 1, NAMED PERSON CREATING PRESSURE:
+A specific named colleague, manager, or client is waiting, frustrated, or watching. Their emotional state is clear.
+Examples:
+- "Marcus has been chasing you since 8am and his tone in the last message suggests he is losing patience."
+- "Sarah copied the MD into her last email. You are now being watched."
+- "The client, James Okafor, has left two voicemails. He sounds calm but you know from experience that calm is his warning sign."
+
+ELEMENT 2, TIME SPECIFICITY:
+A specific clock time creates urgency that feels real.
+Examples:
+- "It is 4:47pm. The office closes at 5:30 and you have no flexibility on that today."
+- "It is 9:10am. You have a meeting at 10 that you cannot move."
+- "It is Friday at 3pm. Nothing can be escalated until Monday."
+
+ELEMENT 3, CONSEQUENCE VISIBILITY:
+The candidate can see or anticipate the consequence of inaction. Someone is watching or will find out.
+Examples:
+- "If this is not resolved before the client call at 2pm, it will come up in front of the board."
+- "Your line manager reviews the dashboard every morning. Whatever state this is in at 9am tomorrow is what they will see."
+- "Three members of your team are waiting on your decision before they can start their day."
+
+ELEMENT 4, HISTORY AND CONTEXT:
+The situation has backstory that creates additional pressure. This is not the first time. There are existing relationships and tensions in play.
+Examples:
+- "This is the third time this quarter this client has escalated. Your manager has already mentioned it once."
+- "You and James have had a difficult working relationship since the restructure. This situation will either repair it or end it."
+- "The team has been promised this would be resolved by end of week. It is Thursday."
+
+RULES FOR EMOTIONAL REALISM:
+- Names must feel real and UK-appropriate. Mix genders and cultural backgrounds as the existing prompt already instructs.
+- Emotional realism must emerge naturally from the scenario context. It must not feel bolted on.
+- The emotional element must add to the decision pressure, not distract from it. Every emotional detail must make the trade-off harder, not easier.
+- Do not use emotional elements that could introduce bias. A frustrated female manager and a frustrated male manager must be treated identically. A client named James and a client named Mohammed must carry identical weight and tone.
+
+EMOTIONAL REALISM APPLICATION FOR THIS MODE (advanced, 4 scenarios): Scenario 1 uses at least one element. Scenario 2 uses at least two elements. Scenario 3 uses at least two elements AND must include ELEMENT 4 (HISTORY AND CONTEXT). Scenario 4 (Staying Power) MUST include all four elements, woven naturally into the context.
 
 PROGRESSIVE REALISM RULES (apply across all four scenarios in sequence):
 Scenario 1 (Core Task): One clear conflict, moderate time pressure, familiar work context. Tests basic competence.
@@ -906,13 +1130,14 @@ A scenario where the reality of the role is harder or more mundane than expected
 
 STEP 3 - VALIDATE EVERY SCENARIO BEFORE INCLUDING IT
 
-Before finalising each scenario check it passes all five of these tests. If it fails any test, rewrite it.
+Before finalising each scenario check it passes all six of these tests. If it fails any test, rewrite it.
 
 Test 1, Reality check: Would a hiring manager for this role read this and say "yes, that literally happens here"? If not, rewrite using more specific details from the JD.
 Test 2, Consequence check: Would failure to handle this well actually cause a real problem in this role? If the stakes are low or abstract, raise them.
 Test 3, Decision path check: Is there a clear difference between a strong response and a risky response? If a candidate could answer vaguely and score well, add more specificity to force a real decision.
 Test 4, Gaming check: Could a candidate memorise an answer to this from a generic interview prep guide? If yes, make the scenario more specific to this JD, this company context, and this exact situation.
 Test 5, Behaviour check: Does this test what someone does, not what they know? If the scenario could be answered with textbook theory rather than practical judgment, rewrite it around a real action that must be taken.
+Test 6, Trade-off check: Does every available option in this scenario have a real downside? If one option is clearly safer or better than the others, add a cost to it or strengthen the downside of the better option until the choice is genuinely difficult.
 
 ---
 
