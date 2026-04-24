@@ -2072,6 +2072,99 @@ function DemoDashboardInner() {
           </div>
         )}
 
+        {/* Active Coaching Plans (employer permanent only, demo parity with live dashboard) */}
+        {!isAgency && demoEmploymentType === 'permanent' && (() => {
+          const plans = [
+            { id: 'demo-c1', name: 'Sophie Chen', role_title: 'Marketing Manager', elapsed: 45, placement_date: new Date(Date.now() - 45 * 86400000).toISOString() },
+            { id: 'demo-c2', name: 'Marcus Williams', role_title: 'Marketing Manager', elapsed: 12, placement_date: new Date(Date.now() - 12 * 86400000).toISOString() },
+          ]
+          return (
+            <div style={{
+              order: 32, marginBottom: 24,
+              background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+              borderTop: '3px solid #D4A418',
+              padding: isMobile ? '16px 18px' : '20px 24px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY }}>
+                    Active Coaching Plans
+                  </div>
+                  <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 2 }}>
+                    90-day hiring manager coaching plans for Strong Hire candidates, in partnership with Alchemy Training UK
+                  </div>
+                </div>
+                <span style={{
+                  fontFamily: F, fontSize: 11, fontWeight: 700, color: NAVY,
+                  background: TEALLT, border: `1px solid ${TEAL}55`,
+                  padding: '3px 10px', borderRadius: 50,
+                }}>
+                  {plans.length} active
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {plans.map(p => {
+                  const phase = p.elapsed <= 30 ? 1 : p.elapsed <= 60 ? 2 : 3
+                  const daysRemaining = Math.max(0, 90 - p.elapsed)
+                  const placementDateStr = new Date(p.placement_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                  return (
+                    <div key={p.id} style={{
+                      display: 'grid',
+                      gridTemplateColumns: isMobile ? '1fr' : '1.6fr 1fr 1fr auto',
+                      gap: isMobile ? 10 : 14,
+                      alignItems: 'center',
+                      padding: '14px 16px',
+                      background: BG, border: `1px solid ${BD}`, borderRadius: 10,
+                    }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {p.name}
+                        </div>
+                        <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 2 }}>
+                          {p.role_title}
+                        </div>
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX2 }}>
+                        <div style={{ fontWeight: 700, color: NAVY }}>Phase {phase}</div>
+                        <div style={{ fontSize: 11.5, color: TX3, marginTop: 2 }}>Placed {placementDateStr}</div>
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX2 }}>
+                        <div style={{ fontFamily: FM, fontSize: 15, fontWeight: 800, color: NAVY }}>{daysRemaining}</div>
+                        <div style={{ fontSize: 11, color: TX3 }}>days remaining</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
+                        <button
+                          type="button"
+                          onClick={() => setModal(true)}
+                          style={{
+                            padding: '7px 14px', borderRadius: 7, border: `1px solid ${BD}`,
+                            background: CARD, fontFamily: F, fontSize: 12, fontWeight: 700, color: NAVY, cursor: 'pointer',
+                          }}
+                        >
+                          View plan
+                        </button>
+                        <a
+                          href="https://tidycal.com/m57e7l3/30-minute-coaching-check-in"
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            padding: '7px 14px', borderRadius: 7, border: 'none',
+                            background: TEAL, color: '#fff', fontFamily: F, fontSize: 12, fontWeight: 700,
+                            textDecoration: 'none', whiteSpace: 'nowrap',
+                          }}
+                        >
+                          Book check-in with Liz
+                        </a>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* Employer-only: Probation Tracker + Decision Overrides + Pending Check-ins */}
         {!isAgency && (
           <>
