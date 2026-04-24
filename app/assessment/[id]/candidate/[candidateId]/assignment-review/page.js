@@ -342,44 +342,9 @@ export default function AssignmentReviewPage({ params }) {
   async function loadReplacementCandidates() {
     setLoadingReplacements(true)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      const roleTitle = candidate?.assessments?.role_title || ''
-
-      // Find completed candidates for similar roles who scored 70+
-      const { data: allCands } = await supabase
-        .from('candidates')
-        .select('id, name, email, completed_at, status, assessment_id, assessments!inner(role_title, employment_type), results(overall_score, risk_level)')
-        .eq('user_id', user.id)
-        .eq('status', 'completed')
-
-      // Filter: same or similar role, score >= 70, not the current candidate
-      const matches = (allCands || []).filter(c => {
-        if (c.id === params.candidateId) return false
-        const score = c.results?.[0]?.overall_score ?? 0
-        if (score < 70) return false
-        // Match by role title similarity (exact or contains key words)
-        const cRole = (c.assessments?.role_title || '').toLowerCase()
-        const targetRole = roleTitle.toLowerCase()
-        if (cRole === targetRole) return true
-        const words = targetRole.split(/\s+/).filter(w => w.length > 3)
-        return words.some(w => cRole.includes(w))
-      })
-
-      // Check which ones are NOT on active placements
-      const { data: activeOutcomes } = await supabase
-        .from('candidate_outcomes')
-        .select('candidate_id, outcome')
-        .eq('user_id', user.id)
-        .in('outcome', ['still_in_probation', 'still_employed', 'placed', 'passing'])
-      const activeCandIds = new Set((activeOutcomes || []).map(o => o.candidate_id))
-
-      const available = matches
-        .filter(c => !activeCandIds.has(c.id))
-        .sort((a, b) => (b.results?.[0]?.overall_score ?? 0) - (a.results?.[0]?.overall_score ?? 0))
-        .slice(0, 10)
-
-      setReplacementCandidates(available)
+      const res = await fetch(`/api/placements/replacement-candidates?candidate_id=${encodeURIComponent(params.candidateId)}`)
+      const json = await res.json().catch(() => ({}))
+      setReplacementCandidates(res.ok ? (json.candidates || []) : [])
     } catch (err) {
       console.error('Replacement search error:', err)
       setReplacementCandidates([])
@@ -1346,7 +1311,7 @@ export default function AssignmentReviewPage({ params }) {
                             onClick={() => router.push(`/assessment/new?role=${encodeURIComponent(candidate?.assessments?.role_title || '')}&type=temporary`)}
                             style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}
                           >
-                            Start New Rapid Screen
+                            Screen new candidates
                           </button>
                         </div>
                       )}
@@ -1354,8 +1319,7 @@ export default function AssignmentReviewPage({ params }) {
                       {replacementCandidates && !loadingReplacements && replacementCandidates.length > 0 && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                           {replacementCandidates.map(rc => {
-                            const rcScore = rc.results?.[0]?.overall_score ?? 0
-                            const rcRisk = rc.results?.[0]?.risk_level || 'N/A'
+                            const rcScore = rc.score ?? rc.results?.[0]?.overall_score ?? 0
                             const rcColor = rcScore >= 80 ? GRN : rcScore >= 70 ? TEAL : AMB
                             const rcVerdict = rcScore >= 80 ? 'Strong Hire' : 'Review'
                             const size = 48, sw = 4, r = (size - sw * 2) / 2, circ = 2 * Math.PI * r
@@ -1379,7 +1343,7 @@ export default function AssignmentReviewPage({ params }) {
                                 <div style={{ flex: 1, minWidth: 140 }}>
                                   <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{rc.name}</div>
                                   <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 2 }}>
- {rc.assessments?.role_title || 'Role'}, Assessed {fmtDate(rc.completed_at)}
+ {rc.role_title || rc.assessments?.role_title || 'Role'}{rc.completed_at ? `, Assessed ${fmtDate(rc.completed_at)}` : ''}
                                   </div>
                                   <span style={{
                                     display: 'inline-block', marginTop: 4,

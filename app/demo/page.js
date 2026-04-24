@@ -365,6 +365,7 @@ function DemoDashboardInner() {
   const [searchFocused, setSearchFocused] = useState(false)
   const [filterAssessmentId, setFilterAssessmentId] = useState(null)
   const [modal, setModal] = useState(false)
+  const [replaceModal, setReplaceModal] = useState(false)
   const [selectedCandidates, setSelectedCandidates] = useState(new Set())
   const [activeFilter, setActiveFilter] = useState(null) // { type: 'health', value: 'GREEN' } | { type: 'verdict', value: 'strong' } | null
   const [selectedLocation, setSelectedLocation] = useState('')
@@ -726,6 +727,68 @@ function DemoDashboardInner() {
   return (
     <DemoLayout active="dashboard" demoEmploymentType={demoEmploymentType}>
       {modal && <SignUpModal onClose={() => setModal(false)} />}
+
+      {replaceModal && (() => {
+        // All three View Report buttons land on demo-c2 (Marcus) since that is
+        // the only populated demo report. The other names are illustrative for
+        // the replacement list.
+        const replacements = [
+          { id: 'demo-c2', name: 'Marcus Williams', role: 'Marketing Manager', score: 74 },
+          { id: 'demo-c2', name: 'Tom Chen', role: 'Marketing Executive', score: 71 },
+          { id: 'demo-c2', name: 'Sarah Okafor', role: 'Brand Manager', score: 70 },
+        ]
+        return (
+          <div
+            onClick={() => setReplaceModal(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{ background: CARD, borderRadius: 14, padding: isMobile ? '22px 20px' : '28px 30px', maxWidth: 560, width: '100%', maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(15,33,55,0.25)' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 9, background: REDBG, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ic name="users" size={18} color={RED} />
+                  </div>
+                  <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: NAVY, margin: 0 }}>Replacement Trigger</h3>
+                </div>
+                <button onClick={() => setReplaceModal(false)} style={{ background: 'none', border: 'none', color: TX3, fontSize: 22, cursor: 'pointer', padding: 0, lineHeight: 1 }}>&times;</button>
+              </div>
+              <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 18px', lineHeight: 1.55 }}>
+                3 previously screened candidates available for this role.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
+                {replacements.map(rc => {
+                  const rcColor = rc.score >= 80 ? GRN : rc.score >= 70 ? TEAL : AMB
+                  return (
+                    <div key={rc.name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: BG, border: `1px solid ${BD}`, borderRadius: 10, flexWrap: 'wrap' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: TX }}>{rc.name}</div>
+                        <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 2 }}>
+                          {rc.role} , Score <strong style={{ color: rcColor }}>{rc.score}</strong>/100
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => { setReplaceModal(false); router.push(`/demo/candidate/${rc.id}?type=${demoType}`) }}
+                        style={{ padding: '7px 14px', borderRadius: 7, border: `1px solid ${TEAL}`, background: TEALLT, color: TEALD, fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
+                      >
+                        View Report
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+              <button
+                onClick={() => setReplaceModal(false)}
+                style={{ width: '100%', padding: '12px 0', borderRadius: 10, border: `1px solid ${BD}`, background: CARD, color: TX2, fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )
+      })()}
 
       <main style={{ marginLeft: isMobile ? 0 : 220, marginTop: isMobile ? 96 : 46, padding: isMobile ? '16px 16px 32px' : '32px 40px', minHeight: '100vh', background: BG, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
 
@@ -1135,7 +1198,7 @@ function DemoDashboardInner() {
                 { icon: 'file-text', label: 'Interview Brief', desc: 'Generate interview brief', color: GRN, bg: GRNBG },
                 { icon: 'zap', label: 'Highlight Reel', desc: 'Copy shareable link', color: GRN, bg: GRNBG },
               ]).map(a => (
-                <button key={a.label} onClick={() => setModal(true)} style={{
+                <button key={a.label} onClick={() => { if (a.label === 'Replace Worker') { setReplaceModal(true) } else { setModal(true) } }} style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
                   padding: isMobile ? '18px 12px' : '20px 16px', borderRadius: 12,
                   border: `1.5px solid ${BD}`, background: CARD, cursor: 'pointer',

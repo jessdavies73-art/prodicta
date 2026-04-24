@@ -3089,13 +3089,13 @@ function DashboardPageInner() {
                               {!qaReplacementLoading && qaReplacementCandidates && qaReplacementCandidates.length === 0 && (
                                 <>
                                   <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 12px', lineHeight: 1.55 }}>
-                                    No previously screened candidates for this role scored 70 or above and are currently available. Send a Rapid Screen to source new candidates.
+                                    No previously screened candidates available for this role.
                                   </p>
                                   <button
-                                    onClick={() => { router.push('/assessment/new'); resetQaModal() }}
+                                    onClick={() => { const role = qaSelectedCandidate?.assessments?.role_title || ''; router.push(`/assessment/new${role ? `?role=${encodeURIComponent(role)}` : ''}`); resetQaModal() }}
                                     style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
                                   >
-                                    Send Rapid Screen
+                                    Screen new candidates
                                   </button>
                                 </>
                               )}
