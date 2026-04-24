@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { getTeamContext, isOwnerOrManager } from '@/lib/team'
 import { PLANS } from '@/lib/stripe'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 const ALLOWED_ROLES = new Set(['manager', 'consultant'])
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://prodicta.co.uk'
@@ -127,7 +128,7 @@ export async function POST(request) {
     try {
       if (process.env.RESEND_API_KEY) {
         await getResend().emails.send({
-          from: 'PRODICTA <hello@prodicta.co.uk>',
+          from: EMAIL_FROM,
           to: email,
           subject,
           html: `

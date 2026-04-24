@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 // Sibling to /api/cron/outcome-reminders (which handles 3/6/12-month probation
 // check-ins). This route nudges users who have CANDIDATES whose assessment was
@@ -90,7 +91,7 @@ export async function GET(request) {
     const count = list.length
     try {
       await resend.emails.send({
-        from: 'PRODICTA <hello@prodicta.co.uk>',
+        from: EMAIL_FROM,
         to: userRow.email,
         subject: "Don't forget to log your hiring outcomes",
         html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head>

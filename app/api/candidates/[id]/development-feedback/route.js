@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import Anthropic from '@anthropic-ai/sdk'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 export const maxDuration = 120
 
@@ -219,7 +220,7 @@ JSON format:
     // Send email
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
-      from: 'Prodicta <hello@prodicta.co.uk>',
+      from: EMAIL_FROM,
       to: [candidate.email],
       subject: `Your development feedback from ${companyName}`,
       html: emailHtml,

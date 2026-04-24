@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 export const maxDuration = 120
 
@@ -152,7 +153,7 @@ Return JSON only. UK English. No emoji. No em dashes.
           const assessmentId = candidate.assessments?.id || ''
           const trackerUrl = `https://prodicta.co.uk/assessment/${assessmentId}/candidate/${params.candidateId}/assignment-review`
           await getResend().emails.send({
-            from: 'PRODICTA Alerts <alerts@prodicta.co.uk>',
+            from: EMAIL_FROM,
             to: user.email,
             subject: `Assignment Alert - ${candidate.name} at ${review.client_company || 'Client'}`,
             html: `

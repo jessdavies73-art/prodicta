@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import QRCode from 'qrcode'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 function safe(text) {
   if (!text) return ''
@@ -267,7 +268,7 @@ export async function POST(request, { params }) {
     const { Resend } = await import('resend')
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
-      from: 'PRODICTA <reports@prodicta.co.uk>',
+      from: EMAIL_FROM,
       to: email,
  subject: `Candidate Brief: ${candidate?.name || 'Candidate'}, ${candidate?.assessments?.role_title || 'Role'}`,
       html: `<div style="font-family:'Outfit',system-ui,sans-serif;max-width:500px;margin:0 auto;padding:32px 0">

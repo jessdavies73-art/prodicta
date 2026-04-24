@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 // Public endpoint: handles tracking pixel opens and pulse responses
 export async function GET(request) {
@@ -95,7 +96,7 @@ export async function GET(request) {
           : 'TBC'
 
         await resend.emails.send({
-          from: 'Prodicta <alerts@prodicta.co.uk>',
+          from: EMAIL_FROM,
           to: pulse.users.email,
           subject: isUrgent
  ? `Ghosting Risk Alert, ${pulse.worker_name} starts ${fmtDate}`

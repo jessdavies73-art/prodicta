@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Health score calculation
@@ -192,7 +193,7 @@ export async function GET(request) {
         for (const t of transitionsToAmber) {
           const copilotUrl = `${siteUrl}/assessment/${t.candidate.assessment_id}/candidate/${t.candidate.id}/copilot`
           await resend.emails.send({
-            from: 'PRODICTA <alerts@prodicta.co.uk>',
+            from: EMAIL_FROM,
             to: profile.email,
             subject: `Placement Alert: ${t.candidate.name} showing early risk signals`,
             html: `

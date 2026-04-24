@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 function calculateRisk({ startConfirmed, inContact, hesitation, counterOfferRisk }) {
   let ghostingRisk = 'low'
@@ -140,7 +141,7 @@ export async function POST(request) {
           const trackerUrl = assessment_id ? `${siteUrl}/assessment/${assessment_id}/candidate/${candidate_id}/assignment-review` : siteUrl
           const resend = new Resend(process.env.RESEND_API_KEY)
           await resend.emails.send({
-            from: 'PRODICTA Alerts <alerts@prodicta.co.uk>',
+            from: EMAIL_FROM,
             to: profile.email,
             subject: `Pre-Start Risk Alert \u2014 ${worker_name || 'Worker'} starting ${start_date}`,
             html: `

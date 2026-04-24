@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 const ALLOWED_STAGES = new Set(['active', 'progress', 'hold', 'reject'])
 const EMAIL_STAGES = new Set(['hold', 'reject'])
@@ -130,7 +131,7 @@ export async function PATCH(request, { params }) {
           console.warn('[stage-email] skipped, RESEND_API_KEY not set', { candidateId: params.id, stage })
         } else {
           await getResend().emails.send({
-            from: 'PRODICTA <hello@prodicta.co.uk>',
+            from: EMAIL_FROM,
             to: candidate.email,
             subject,
             html: renderEmailHtml({ body, candidateName: candidate.name }),

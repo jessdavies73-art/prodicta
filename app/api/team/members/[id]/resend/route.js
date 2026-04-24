@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { getTeamContext, isOwnerOrManager } from '@/lib/team'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://prodicta.co.uk'
 function getResend() { return new Resend(process.env.RESEND_API_KEY) }
@@ -44,7 +45,7 @@ export async function POST(request, { params }) {
     }
 
     await getResend().emails.send({
-      from: 'PRODICTA <hello@prodicta.co.uk>',
+      from: EMAIL_FROM,
       to: member.email,
       subject: `Reminder, you have been invited to join ${companyName} on PRODICTA`,
       html: `

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 export async function POST(request) {
   try {
@@ -32,7 +33,7 @@ export async function POST(request) {
       .join('')
 
     await resend.emails.send({
-      from: 'reports@prodicta.co.uk',
+      from: EMAIL_FROM,
       to: [to],
       subject,
       html: `<!DOCTYPE html>

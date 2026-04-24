@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { Resend } from 'resend'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 export const maxDuration = 120
 
@@ -231,7 +232,7 @@ export async function POST(request) {
     // Email to the requester
     try {
       await resend.emails.send({
-        from: 'hello@prodicta.co.uk',
+        from: EMAIL_FROM,
         to: [email],
         subject: 'Your PRODICTA Hiring Risk Audit',
         html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f7f9fb;font-family:'Outfit',system-ui,sans-serif;">
@@ -256,7 +257,7 @@ export async function POST(request) {
     // Notify internal
     try {
       await resend.emails.send({
-        from: 'hello@prodicta.co.uk',
+        from: EMAIL_FROM,
         to: ['hello@prodicta.co.uk'],
         subject: `New Hiring Risk Audit request from ${company_name}`,
         html: `<p>Audit requested.</p>

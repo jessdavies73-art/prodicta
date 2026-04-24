@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 function getResend() { return new Resend(process.env.RESEND_API_KEY) }
 
@@ -154,7 +155,7 @@ export async function POST(request) {
           : `https://prodicta.co.uk/candidates/${candidate_id}`
 
         await getResend().emails.send({
-          from: 'PRODICTA Alerts <alerts@prodicta.co.uk>',
+          from: EMAIL_FROM,
           to: user.email,
           subject: `Attendance Alert \u2014 ${worker_name || 'Worker'} at ${client_company || 'Client'}`,
           html: `

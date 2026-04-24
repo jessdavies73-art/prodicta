@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 export async function GET(request) {
   // ── Auth: bearer token must match CRON_SECRET ──────────────────────────────
@@ -99,7 +100,7 @@ export async function GET(request) {
       })
 
       await resend.emails.send({
-        from: 'Prodicta <insights@prodicta.co.uk>',
+        from: EMAIL_FROM,
         to: user.email,
         subject: `Your PRODICTA Monthly Summary: ${monthLabel}`,
         html,

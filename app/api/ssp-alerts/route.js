@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 export async function POST(request) {
   const supabase = createServerSupabaseClient()
@@ -40,7 +41,7 @@ export async function POST(request) {
 
   try {
     await resend.emails.send({
-      from: 'Prodicta <alerts@prodicta.co.uk>',
+      from: EMAIL_FROM,
       to: user.email,
  subject: `SSP Check Required, ${worker_name}`,
       html: `<!DOCTYPE html>

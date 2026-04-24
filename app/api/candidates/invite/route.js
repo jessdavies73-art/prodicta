@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { v4 as uuidv4 } from 'uuid'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 export async function POST(request) {
   try {
@@ -74,7 +75,7 @@ export async function POST(request) {
 
       try {
         await resend.emails.send({
-          from: 'Prodicta <assessments@prodicta.co.uk>',
+          from: EMAIL_FROM,
           to: candidate.email,
           subject: `You've been invited to complete an assessment for ${assessment.role_title}`,
           html: `

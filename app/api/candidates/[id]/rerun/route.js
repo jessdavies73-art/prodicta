@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { Resend } from 'resend'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 export const maxDuration = 120
 
@@ -98,7 +99,7 @@ Write in UK English. Never use em dash or en dash characters. Use commas or full
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
       await resend.emails.send({
-        from: 'Prodicta <assessments@prodicta.co.uk>',
+        from: EMAIL_FROM,
         to: candidate.email,
         subject: `One additional scenario for the ${candidate.assessments?.role_title} assessment`,
         html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f7f9fb;font-family:'Outfit',system-ui,sans-serif;">

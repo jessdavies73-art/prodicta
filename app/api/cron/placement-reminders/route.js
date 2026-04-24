@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 export async function GET(request) {
   const authHeader = request.headers.get('authorization')
@@ -184,7 +185,7 @@ async function insertNotification(client, userId, candidateId, assessmentId, tit
 async function sendReminderEmail(resend, to, subject, html) {
   if (!to) return
   await resend.emails.send({
-    from: 'Prodicta <reminders@prodicta.co.uk>',
+    from: EMAIL_FROM,
     to,
     subject,
     html,

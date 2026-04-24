@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 // Coaching plan reminder cron.
 // Fires at day 7, 30, 60 and 90 after placement for employer permanent hires
@@ -117,7 +118,7 @@ export async function GET(request) {
 
       try {
         await resend.emails.send({
-          from: 'Prodicta <reminders@prodicta.co.uk>',
+          from: EMAIL_FROM,
           to: user.email,
           subject,
           html,

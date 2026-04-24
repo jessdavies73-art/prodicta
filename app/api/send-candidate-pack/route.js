@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 const sc   = s => s >= 85 ? '#10b981' : s >= 70 ? '#00BFA5' : s >= 50 ? '#f59e0b' : '#ef4444'
 const slbl = s => s >= 85 ? 'Excellent' : s >= 75 ? 'Strong' : s >= 65 ? 'Good' : s >= 50 ? 'Developing' : 'Concern'
@@ -195,7 +196,7 @@ export async function POST(request) {
 
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
-      from: `${companyName} via Prodicta <reports@prodicta.co.uk>`,
+      from: EMAIL_FROM,
       to: [clientEmail],
       subject: `Candidate Brief: ${candidate.name} - ${roleTitle}`,
       html,

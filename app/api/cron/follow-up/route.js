@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 export async function GET(request) {
   const authHeader = request.headers.get('authorization')
@@ -39,7 +40,7 @@ export async function GET(request) {
 
     try {
       await resend.emails.send({
-        from: 'Prodicta <assessments@prodicta.co.uk>',
+        from: EMAIL_FROM,
         to: candidate.email,
         subject: `Reminder: Your assessment for ${roleTitle} is waiting`,
         html: `<!DOCTYPE html>

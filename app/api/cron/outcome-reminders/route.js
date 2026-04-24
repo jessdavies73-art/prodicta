@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { v4 as uuidv4 } from 'uuid'
 import { createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 const HIRE_OUTCOMES = ['passed_probation', 'still_probation', 'still_in_probation', 'still_employed']
 
@@ -74,7 +75,7 @@ export async function GET(request) {
 
       try {
         await resend.emails.send({
-          from: 'PRODICTA <hello@prodicta.co.uk>',
+          from: EMAIL_FROM,
           to: ownerEmail,
           subject: `How is ${candidateName} doing? ${due}-month check-in for ${roleTitle}`,
           html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head>

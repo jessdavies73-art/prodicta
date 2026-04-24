@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://prodicta.co.uk'
 
@@ -116,7 +117,7 @@ export async function GET(request) {
         }
 
         await resend.emails.send({
-          from: 'Prodicta <engagement@prodicta.co.uk>',
+          from: EMAIL_FROM,
           to: pulse.worker_email,
           subject: `Quick question before you start at ${company} on ${fmtDate}`,
           html: pulseEmailHtml({
@@ -207,7 +208,7 @@ export async function GET(request) {
 
         try {
           await resend.emails.send({
-            from: 'Prodicta <alerts@prodicta.co.uk>',
+            from: EMAIL_FROM,
             to: userRow.email,
  subject: `Ghosting Risk Alert, ${latestPulse.worker_name} starts ${fmtDate}`,
             html: buildCronAlertEmail({

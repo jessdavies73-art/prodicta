@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 export const maxDuration = 120
 
@@ -104,7 +105,7 @@ Return JSON only. UK English. No emoji. No em dashes.
         if (!existingCopilot?.redline_alerted) {
           try {
             await getResend().emails.send({
-              from: 'PRODICTA Alerts <alerts@prodicta.co.uk>',
+              from: EMAIL_FROM,
               to: user.email,
               subject: `Redline Alert: ${candidate.name} - Immediate Action Required`,
               html: `

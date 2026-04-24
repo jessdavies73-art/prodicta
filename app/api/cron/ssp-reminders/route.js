@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 export async function GET(request) {
   const authHeader = request.headers.get('authorization')
@@ -44,7 +45,7 @@ export async function GET(request) {
 
     try {
       await resend.emails.send({
-        from: 'Prodicta <reminders@prodicta.co.uk>',
+        from: EMAIL_FROM,
         to: email,
  subject: `Reminder: SSP Check Still Required, ${alert.worker_name}`,
         html: `<!DOCTYPE html>

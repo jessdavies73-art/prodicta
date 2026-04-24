@@ -3,6 +3,7 @@ import { waitUntil } from '@vercel/functions'
 import { Resend } from 'resend'
 import { createServiceClient } from '@/lib/supabase-server'
 import { scoreCandidate } from '@/lib/score-candidate'
+import { EMAIL_FROM } from '@/lib/email-sender'
 
 export const maxDuration = 300
 
@@ -37,7 +38,7 @@ async function scoreAndNotify(candidateId, adminClient) {
     const feedbackUrl = `https://prodicta.co.uk/assess/${candidate.unique_link}/feedback`
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
-      from: 'Prodicta <hello@prodicta.co.uk>',
+      from: EMAIL_FROM,
       to: candidate.email,
       subject: 'Your PRODICTA assessment results are ready',
       html: `<!DOCTYPE html><html><body style="margin:0;padding:24px;background:#f7f9fb;font-family:'Outfit',system-ui,sans-serif;color:#0f2137;">
