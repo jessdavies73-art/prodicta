@@ -2795,17 +2795,6 @@ function DemoCandidateInner({ params }) {
           </Card>
         )}
 
-        {/* Documents placeholder */}
-        <Card style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <Ic name="file" size={14} color={TEALD} />
-            <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>Documents</span>
-          </div>
-          <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '12px 14px' }}>
-            <span style={{ fontFamily: F, fontSize: 12.5, color: TX3, fontWeight: 600 }}>Document templates coming soon</span>
-          </div>
-        </Card>
-
         {/* ══════════════════════════════════════════════════
             UNIFIED VERDICT + LAYER 1 CARD
         ══════════════════════════════════════════════════ */}
