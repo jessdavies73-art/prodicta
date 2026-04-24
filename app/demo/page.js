@@ -1517,6 +1517,84 @@ function DemoDashboardInner() {
         {/* Agency-only sections */}
         {isAgency && (
           <>
+            {/* Assignment Alerts banner (agency + temp only) */}
+            {demoHasTempWork && (
+              <div style={{
+                order: 34, marginBottom: 20,
+                background: 'linear-gradient(135deg, #fef2f2, #fff5f5)',
+                border: '1.5px solid #fecaca',
+                borderLeft: '4px solid #B91C1C',
+                borderRadius: '0 12px 12px 0',
+                padding: isMobile ? '14px 16px' : '18px 24px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <Ic name="alert" size={16} color="#B91C1C" />
+                  <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: '#B91C1C' }}>
+                    Assignment Alerts
+                  </span>
+                </div>
+                <div style={{ fontFamily: F, fontSize: 12.5, color: TX3, margin: '0 0 12px', lineHeight: 1.55 }}>
+                  Performance deviations detected on active placements
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    {
+                      id: 'demo-c1',
+                      severity: 'REDLINE',
+                      worker: 'Sophie Chen',
+                      role: 'Marketing Manager',
+                      text: 'Performance has dropped significantly in week 4. Three consecutive missed deadlines flagged.',
+                    },
+                    {
+                      id: 'demo-c2',
+                      severity: 'ORANGE',
+                      worker: 'Marcus Williams',
+                      role: 'Marketing Executive',
+                      text: 'Attendance reliability dropped to 74% this week. Client has noted concern.',
+                    },
+                  ].map(a => {
+                    const isRedline = a.severity === 'REDLINE'
+                    const badgeBg = isRedline ? '#B91C1C' : '#E8B84B'
+                    const badgeColor = isRedline ? '#fff' : NAVY
+                    return (
+                      <div key={a.id} style={{
+                        display: 'flex', alignItems: isMobile ? 'flex-start' : 'center',
+                        flexDirection: isMobile ? 'column' : 'row',
+                        gap: isMobile ? 8 : 14, padding: '12px 14px',
+                        background: '#fff', border: '1px solid #fecaca', borderRadius: 8,
+                      }}>
+                        <span style={{
+                          display: 'inline-block', padding: '3px 10px', borderRadius: 50,
+                          fontSize: 10, fontWeight: 800, fontFamily: F, letterSpacing: '0.04em',
+                          background: badgeBg, color: badgeColor, flexShrink: 0,
+                        }}>
+                          {a.severity}
+                        </span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX }}>
+                            {a.worker}, {a.role}
+                          </div>
+                          <div style={{ fontFamily: F, fontSize: 12, color: TX2, marginTop: 3, lineHeight: 1.55 }}>
+                            {a.text}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => router.push(`/demo/candidate/${a.id}?type=${demoType}`)}
+                          style={{
+                            padding: '7px 16px', borderRadius: 7, border: 'none',
+                            background: TEAL, fontFamily: F, fontSize: 12, fontWeight: 700,
+                            color: NAVY, cursor: 'pointer', flexShrink: 0,
+                          }}
+                        >
+                          View tracker
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Placement Health (traffic light) */}
             <div style={{ order: 35, marginBottom: 24 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
