@@ -2651,8 +2651,8 @@ function DemoCandidateInner({ params }) {
           )
         })()}
 
-        {/* ── Rebate Period Tracker (agency only) ── */}
-        {isAgency && demoOutcome && (
+        {/* ── Rebate Period Tracker (agency permanent only) ── */}
+        {isAgency && !isTemp && demoOutcome && (
           <Card style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <Ic name="clock" size={14} color={TEAL} />
@@ -2716,8 +2716,8 @@ function DemoCandidateInner({ params }) {
           </Card>
         )}
 
-        {/* ── Probation Co-pilot (employer only, static demo card) ── */}
-        {!isAgency && (
+        {/* ── Probation Co-pilot (employer permanent only, static demo card) ── */}
+        {!isAgency && !isTemp && (
           <Card style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <Ic name="shield" size={14} color={TEAL} />

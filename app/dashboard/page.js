@@ -4367,8 +4367,8 @@ function DashboardPageInner() {
           </div>
         )}
 
- {/* ── Probation Co-pilot (employer only, live status on current hires) ── Section 3 */}
-        {profile?.account_type === 'employer' && (
+ {/* ── Probation Co-pilot (employer permanent only, live status on current hires) ── Section 3 */}
+        {profile?.account_type === 'employer' && (candidates.length === 0 || candidates.some(c => c.assessments?.employment_type === 'permanent')) && (
           <div style={{ order: 38, ...cs, marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <Ic name="shield" size={14} color={TEAL} />
@@ -4688,8 +4688,8 @@ function DashboardPageInner() {
           )
         ) : null}
 
-        {/* ── Rebate Period Tracker (agency only) ── Section 3 */}
-        {isAgencyAccount && (() => {
+        {/* ── Rebate Period Tracker (agency permanent only) ── Section 3 */}
+        {isAgencyAccount && (candidates.length === 0 || candidates.some(c => c.assessments?.employment_type === 'permanent')) && (() => {
           const rebatePlacements = (placementHealth?.placements || []).filter(p => p.placement_date && p.rebate_weeks)
           return (
           <div style={{ order: 36, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>

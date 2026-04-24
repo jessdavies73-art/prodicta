@@ -2591,7 +2591,7 @@ export default function CandidateReportPage({ params }) {
             )}
 
             {/* Timeline trackers */}
-            {existingOutcome?.placement_date && profile?.account_type === 'agency' && (
+            {existingOutcome?.placement_date && profile?.account_type === 'agency' && candidate?.assessments?.employment_type === 'permanent' && (
               <RebateTimeline outcome={existingOutcome} candidateName={candidate?.name} />
             )}
             {existingOutcome && profile?.account_type === 'employer' && (

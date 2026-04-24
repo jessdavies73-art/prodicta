@@ -1769,7 +1769,8 @@ function DemoDashboardInner() {
               </div>
             </div>
 
-            {/* Rebate Period Tracker */}
+            {/* Rebate Period Tracker (agency permanent only) */}
+            {demoEmploymentType === 'permanent' && (
             <div style={{ order: 36, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
               <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1806,6 +1807,7 @@ function DemoDashboardInner() {
                 })}
               </div>
             </div>
+            )}
 
             {/* Agency: Outcome Tracking + Red Flag Alerts */}
             <div style={{ order: 40, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
@@ -2237,8 +2239,9 @@ function DemoDashboardInner() {
               </div>
             </div>
 
-            {/* Employer: Probation Co-pilot + Probation Review Generator */}
+            {/* Employer: Probation Co-pilot (permanent only) + Probation Review Generator */}
             <div style={{ order: 38, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
+              {demoEmploymentType === 'permanent' && (
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Probation co-pilot</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
@@ -2262,6 +2265,7 @@ function DemoDashboardInner() {
                   </div>
                 </div>
               </div>
+              )}
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Probation review generator</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, marginBottom: 10 }}>
