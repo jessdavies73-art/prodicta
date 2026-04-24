@@ -3063,7 +3063,7 @@ export default function CandidateReportPage({ params }) {
                 {/* ══════════════════════════════════════════════════
                     COUNTER-OFFER RESILIENCE
                 ══════════════════════════════════════════════════ */}
-                {results?.counter_offer_resilience != null && (() => {
+                {results?.counter_offer_resilience != null ? (() => {
                   const cor = results.counter_offer_resilience
                   const high = cor >= 65
                   const mid = cor >= 45 && cor < 65
@@ -3089,12 +3089,23 @@ export default function CandidateReportPage({ params }) {
                       </Card>
                     </ScrollReveal>
                   )
-                })()}
+                })() : (
+                  <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <SectionHeading tooltip="How likely this candidate is to accept and stay once an offer is made, based on their commitment and motivation responses.">
+                        Will they accept the offer?
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        Counter-offer resilience will be calculated once the candidate's motivation responses are scored.
+                      </p>
+                    </Card>
+                  </ScrollReveal>
+                )}
 
                 {/* ══════════════════════════════════════════════════
                     CULTURE FIT
                 ══════════════════════════════════════════════════ */}
-                {results?.culture_fit && (results.culture_fit.score != null || (Array.isArray(results.culture_fit.points) && results.culture_fit.points.length > 0)) && (() => {
+                {results?.culture_fit && (results.culture_fit.score != null || (Array.isArray(results.culture_fit.points) && results.culture_fit.points.length > 0)) ? (() => {
                   const cf = results.culture_fit
                   const sv = cf.score ?? 0
                   const high = sv >= 70
@@ -3140,12 +3151,23 @@ export default function CandidateReportPage({ params }) {
                       </Card>
                     </ScrollReveal>
                   )
-                })()}
+                })() : (
+                  <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <SectionHeading tooltip="How the candidate's natural working style aligns with the role environment across structure, collaboration, pace, communication and process.">
+                        Will they fit the culture?
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        Culture fit analysis will appear here once the candidate completes the assessment and role context has been provided.
+                      </p>
+                    </Card>
+                  </ScrollReveal>
+                )}
 
                 {/* ══════════════════════════════════════════════════
                     MONDAY MORNING REALITY
                 ══════════════════════════════════════════════════ */}
-                {results?.tuesday_reality && (
+                {results?.tuesday_reality ? (
                   <ScrollReveal delay={60}>
                     <Card style={{ marginBottom: 20 }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
@@ -3166,6 +3188,17 @@ export default function CandidateReportPage({ params }) {
                           ))}
                         </div>
                       )}
+                    </Card>
+                  </ScrollReveal>
+                ) : (
+                  <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <SectionHeading tooltip="A plain English description of what the hiring manager will actually experience day to day with this candidate.">
+                        What managing them actually looks like
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        A plain English description of day-to-day management with this candidate will appear once the assessment is scored.
+                      </p>
                     </Card>
                   </ScrollReveal>
                 )}
@@ -3942,7 +3975,7 @@ export default function CandidateReportPage({ params }) {
                 {/* ══════════════════════════════════════════════════
                     AI HIRING SUMMARY
                 ══════════════════════════════════════════════════ */}
-                {results.ai_summary && (
+                {results.ai_summary ? (
                   <ScrollReveal id="ai-assessment" delay={60}>
                   <Card style={{ marginBottom: 20, borderLeft: `4px solid ${TEAL}`, boxShadow: SHADOW_LG }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
@@ -3966,6 +3999,17 @@ export default function CandidateReportPage({ params }) {
                       </div>
                     )}
                   </Card>
+                  </ScrollReveal>
+                ) : (
+                  <ScrollReveal id="ai-assessment" delay={60}>
+                    <Card style={{ marginBottom: 20, borderLeft: `4px solid ${TEAL}` }}>
+                      <SectionHeading tooltip="AI-generated narrative summarising the candidate's overall performance with specific evidence.">
+                        AI Hiring Summary
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        The AI narrative summary will appear here once the candidate completes their assessment and the responses are scored.
+                      </p>
+                    </Card>
                   </ScrollReveal>
                 )}
 
@@ -4180,7 +4224,7 @@ export default function CandidateReportPage({ params }) {
                 {/* ══════════════════════════════════════════════════
                     SKILLS BREAKDOWN , 2×2 grid with small rings
                 ══════════════════════════════════════════════════ */}
-                {results.scores && Object.keys(results.scores).length > 0 && (
+                {results.scores && Object.keys(results.scores).length > 0 ? (
                   <ScrollReveal id="skills" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading tooltip="Individual skill scores with detailed narratives referencing specific scenario responses.">
@@ -4241,12 +4285,23 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   </Card>
                   </ScrollReveal>
+                ) : (
+                  <ScrollReveal id="skills" delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <SectionHeading tooltip="Individual skill scores with detailed narratives referencing specific scenario responses.">
+                        Skills Breakdown
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        Skill scores across the assessed dimensions will appear here with narratives once the candidate completes the assessment.
+                      </p>
+                    </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
                     EXECUTION RELIABILITY
                 ══════════════════════════════════════════════════ */}
-                {typeof results.execution_reliability === 'number' && (
+                {typeof results.execution_reliability === 'number' ? (
                   <ScrollReveal delay={60}>
                     <Card style={{ marginBottom: 20 }}>
                       <SectionHeading tooltip="Whether the candidate followed instructions, completed every part of each task, avoided overcomplicating things, and stayed consistent across scenarios.">
@@ -4276,6 +4331,17 @@ export default function CandidateReportPage({ params }) {
                       />
                     </Card>
                   </ScrollReveal>
+                ) : (
+                  <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <SectionHeading tooltip="Whether the candidate followed instructions, completed every part of each task, avoided overcomplicating things, and stayed consistent across scenarios.">
+                        Will they deliver consistently?
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        Execution reliability will be calculated once the candidate completes the assessment scenarios.
+                      </p>
+                    </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
@@ -4285,7 +4351,20 @@ export default function CandidateReportPage({ params }) {
                   const roleText = (candidate?.assessments?.role_title || '').toLowerCase()
                   const isSenior = /\b(director|head of|vp|vice president|chief|cxo|ceo|cto|cfo|coo|senior|principal|lead|staff)\b/.test(roleText)
                   if (isSenior) return null
-                  if (typeof results.training_potential !== 'number') return null
+                  if (typeof results.training_potential !== 'number') {
+                    return (
+                      <ScrollReveal delay={60}>
+                        <Card style={{ marginBottom: 20 }}>
+                          <SectionHeading tooltip="How developable this candidate is. Looks at improvement across scenarios, adaptability, willingness to learn, and self-awareness about gaps.">
+                            How quickly will they grow?
+                          </SectionHeading>
+                          <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                            Development potential will appear here once the candidate completes the assessment.
+                          </p>
+                        </Card>
+                      </ScrollReveal>
+                    )
+                  }
                   const tp = results.training_potential
                   return (
                     <ScrollReveal delay={60}>
@@ -4321,9 +4400,20 @@ export default function CandidateReportPage({ params }) {
                   const pf = typeof results.pressure_fit_score === 'number' ? results.pressure_fit_score : null
                   const er = typeof results.execution_reliability === 'number' ? results.execution_reliability : null
                   const tp = typeof results.training_potential === 'number' ? results.training_potential : null
-                  // Missing scoring data, skip the card rather than
-                  // showing meaningless zeros.
-                  if (pf == null && er == null && tp == null) return null
+                  if (pf == null && er == null && tp == null) {
+                    return (
+                      <ScrollReveal delay={60}>
+                        <Card style={{ marginBottom: 20 }}>
+                          <SectionHeading tooltip="Two forward-looking risk scores drawn from the assessment signals. Click each one to see the methodology.">
+                            Reputation and repeat risk
+                          </SectionHeading>
+                          <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                            Forward-looking risk scores will appear here once the assessment is fully scored.
+                          </p>
+                        </Card>
+                      </ScrollReveal>
+                    )
+                  }
 
                   const integrity = results.integrity || {}
                   const integrityFlag = (integrity.flag || integrity.status || integrity.label || '').toLowerCase()
@@ -4598,7 +4688,7 @@ export default function CandidateReportPage({ params }) {
                 {/* ══════════════════════════════════════════════════
                     DAY ONE PLANNING
                 ══════════════════════════════════════════════════ */}
-                {results.day_planning_score != null && (
+                {results.day_planning_score != null ? (
                   <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }} topColor={TEAL}>
                     <SectionHeading tooltip="How this candidate structured their simulated first Monday. Tests time management, prioritisation, and planning under realistic conditions.">
@@ -4642,12 +4732,23 @@ export default function CandidateReportPage({ params }) {
                     )}
                   </Card>
                   </ScrollReveal>
+                ) : (
+                  <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20 }} topColor={TEAL}>
+                      <SectionHeading tooltip="How this candidate structured their simulated first Monday. Tests time management, prioritisation, and planning under realistic conditions.">
+                        How they would organise their first day
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        The day one planning scenario and a narrative breakdown will appear here once the candidate completes the assessment.
+                      </p>
+                    </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
                     INBOX OVERLOAD
                 ══════════════════════════════════════════════════ */}
-                {results.overload_score != null && (
+                {results.overload_score != null ? (
                   <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }} topColor={NAVY}>
                     <SectionHeading tooltip="How this candidate handles competing demands under pressure. Measures triage quality, prioritisation logic, and focus maintenance when facing inbox overload.">
@@ -4693,12 +4794,23 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   </Card>
                   </ScrollReveal>
+                ) : (
+                  <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20 }} topColor={NAVY}>
+                      <SectionHeading tooltip="How this candidate handles competing demands under pressure. Measures triage quality, prioritisation logic, and focus maintenance when facing inbox overload.">
+                        How they handle it when everything hits at once
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        The inbox overload scenario will appear here once the candidate completes the assessment, along with triage signals and a narrative.
+                      </p>
+                    </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
                     WORKSPACE PERFORMANCE
                 ══════════════════════════════════════════════════ */}
-                {results.workspace_score != null && (
+                {results.workspace_score != null ? (
                   <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }} topColor={NAVY}>
                     <SectionHeading tooltip="How this candidate handled a simulated first morning on the job. Tests email handling, task prioritisation, delegation judgment, and response to unexpected interruptions.">
@@ -4750,12 +4862,23 @@ export default function CandidateReportPage({ params }) {
                     )}
                   </Card>
                   </ScrollReveal>
+                ) : (
+                  <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20 }} topColor={NAVY}>
+                      <SectionHeading tooltip="How this candidate handled a simulated first morning on the job. Tests email handling, task prioritisation, delegation judgment, and response to unexpected interruptions.">
+                        How they handled their first morning
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        The first-morning workspace scenario will appear here once the candidate completes the assessment, including how they triaged email, tasks, and interruptions.
+                      </p>
+                    </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
                     STRENGTHS
                 ══════════════════════════════════════════════════ */}
-                {results.strengths?.length > 0 && (
+                {results.strengths?.length > 0 ? (
                   <ScrollReveal id="strengths" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading tooltip="Key strengths identified with direct quotes from the candidate's responses as evidence.">
@@ -4817,12 +4940,23 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   </Card>
                   </ScrollReveal>
+                ) : (
+                  <ScrollReveal id="strengths" delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <SectionHeading tooltip="Key strengths identified with direct quotes from the candidate's responses as evidence.">
+                        Strengths
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        Key strengths with supporting quotes from the candidate's responses will appear here once the assessment is scored.
+                      </p>
+                    </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
                     WATCH-OUTS
                 ══════════════════════════════════════════════════ */}
-                {results.watchouts?.length > 0 && (
+                {results.watchouts?.length > 0 ? (
                   <ScrollReveal id="watchouts" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <SectionHeading tooltip="Concerns flagged by severity with evidence, recommended actions, and consequence predictions if ignored.">
@@ -4945,6 +5079,17 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   </Card>
                   </ScrollReveal>
+                ) : (
+                  <ScrollReveal id="watchouts" delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <SectionHeading tooltip="Concerns flagged by severity with evidence, recommended actions, and consequence predictions if ignored.">
+                        Watch-outs
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        Risk flags with severity levels, supporting evidence, and consequence predictions will appear here once the assessment is scored.
+                      </p>
+                    </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
@@ -5003,7 +5148,7 @@ export default function CandidateReportPage({ params }) {
                 {/* ══════════════════════════════════════════════════
                     TARGETED WEEK 1 INTERVENTIONS (re-skilling summary)
                 ══════════════════════════════════════════════════ */}
-                {results.watchouts?.length > 0 && (
+                {results.watchouts?.length > 0 ? (
                   <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }} topColor={TEAL}>
                     <SectionHeading tooltip="Targeted re-skilling interventions for the first week, based on each watch-out identified in the assessment.">
@@ -5045,12 +5190,25 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   </Card>
                   </ScrollReveal>
+                ) : (
+                  <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20 }} topColor={TEAL}>
+                      <SectionHeading tooltip="Targeted re-skilling interventions for the first week, based on each watch-out identified in the assessment.">
+                        {profile?.account_type === 'agency' ? 'Placement Preparation, Week 1 Interventions'
+                         : candidate?.assessments?.employment_type === 'temporary' ? 'Assignment Success, Week 1 Interventions'
+                         : 'Targeted Week 1 Interventions'}
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        Practical, structured interventions to address each watch-out in the first week will appear here once the assessment is scored.
+                      </p>
+                    </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
                     ONBOARDING PLAN , structured week cards
                 ══════════════════════════════════════════════════ */}
-                {results.onboarding_plan?.length > 0 && (
+                {results.onboarding_plan?.length > 0 ? (
                   <ScrollReveal id="onboarding" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 0 }}>
@@ -5309,16 +5467,38 @@ export default function CandidateReportPage({ params }) {
                     </div>
                   </Card>
                   </ScrollReveal>
+                ) : (
+                  <ScrollReveal id="onboarding" delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <SectionHeading tooltip={candidate?.assessments?.role_level === 'OPERATIONAL' ? 'A practical daily management guide for the first 6 weeks, focused on reliability, safety, and process adherence.' : candidate?.assessments?.role_level === 'LEADERSHIP' ? 'A strategic onboarding brief covering stakeholder landscape, listening tour, and 90-day priorities.' : 'A structured 90-day success plan with milestones, stakeholder introductions, and early wins.'}>
+                        {candidate?.assessments?.role_level === 'OPERATIONAL' ? 'Day One Management Guide' : candidate?.assessments?.role_level === 'LEADERSHIP' ? 'Strategic Onboarding Brief' : '90-Day Success Plan'}
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        A structured plan with milestones, stakeholder introductions, and early wins will appear here once the assessment is scored.
+                      </p>
+                    </Card>
+                  </ScrollReveal>
                 )}
 
                 {/* ══════════════════════════════════════════════════
                     INTERVIEW VERIFICATION QUESTIONS
                 ══════════════════════════════════════════════════ */}
-                {results.interview_questions?.length > 0 && (
+                {results.interview_questions?.length > 0 ? (
                   <ScrollReveal id="questions" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <InterviewVerificationMode questions={results.interview_questions} isMobile={isMobile} />
                   </Card>
+                  </ScrollReveal>
+                ) : (
+                  <ScrollReveal id="questions" delay={60}>
+                    <Card style={{ marginBottom: 20 }}>
+                      <SectionHeading tooltip="Interview verification questions drawn from the candidate's responses, targeting areas that warrant probing in person.">
+                        Interview Verification Questions
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13.5, color: TX3, fontStyle: 'italic', lineHeight: 1.6, margin: 0 }}>
+                        Suggested interview questions to probe the candidate's responses will appear here once the assessment is scored.
+                      </p>
+                    </Card>
                   </ScrollReveal>
                 )}
 

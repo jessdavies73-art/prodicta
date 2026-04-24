@@ -3785,7 +3785,7 @@ function DashboardPageInner() {
         )}
 
         {/* ── Active Coaching Plans (employer permanent only) ── Section 3 */}
-        {profile?.account_type === 'employer' && (activeCoachingPlans.length > 0 || coachingProspectCount > 0) && (
+        {profile?.account_type === 'employer' && (
           <div style={{
             order: 32, marginBottom: 24,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
@@ -3812,7 +3812,23 @@ function DashboardPageInner() {
               )}
             </div>
 
-            {activeCoachingPlans.length === 0 ? (
+            {activeCoachingPlans.length === 0 && coachingProspectCount === 0 ? (
+              <div style={{ padding: '14px 16px', background: BG, border: `1px solid ${BD}`, borderRadius: 10 }}>
+                <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.6, marginBottom: 12 }}>
+                  90-day coaching plans will appear here once you have Strong Hire candidates and a logged placement.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => router.push('/assessment/new')}
+                  style={{
+                    padding: '8px 16px', borderRadius: 8, border: 'none',
+                    background: TEAL, color: NAVY, fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  Run your first assessment
+                </button>
+              </div>
+            ) : activeCoachingPlans.length === 0 ? (
               <div style={{ padding: '14px 16px', background: BG, border: `1px solid ${BD}`, borderRadius: 10 }}>
                 <div style={{ fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.6 }}>
                   You have <strong style={{ color: NAVY }}>{coachingProspectCount}</strong> Strong Hire candidate{coachingProspectCount === 1 ? '' : 's'} who could benefit from a 90-day coaching plan. Log a placement to start tracking progress.
@@ -3891,12 +3907,45 @@ function DashboardPageInner() {
           </div>
         )}
 
+        {/* ── Saved Roles (stub; feature not yet shipped in live) ── */}
+        <div style={{
+          order: 3,
+          background: CARD, border: `1.5px solid ${TEAL}55`, borderRadius: 14,
+          padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 24,
+          boxShadow: '0 2px 10px rgba(0,191,165,0.08)',
+        }}>
+          <div style={{ marginBottom: 12 }}>
+            <h2 style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: NAVY, margin: 0 }}>
+              Saved Roles
+            </h2>
+            <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '4px 0 0' }}>
+              Re-send for a known role in two taps. Candidate name and email stay blank until you are ready.
+            </p>
+          </div>
+          <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.6, marginBottom: 12 }}>
+            Saved role templates will appear here once the feature is available. In the meantime, configure roles as you run each assessment.
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push('/assessment/new')}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '9px 16px', borderRadius: 8, border: 'none',
+              background: TEAL, color: NAVY,
+              fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            }}
+          >
+            Run your first assessment
+          </button>
+        </div>
+
         {/* ── Candidate Pipeline (all account types) ── Section 1 */}
-        {candidates.length > 0 && (
-          <div style={{ order: 12, marginBottom: 24 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
-              Candidate Pipeline
-            </div>
+        <div style={{ order: 12, marginBottom: 24 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+            Candidate Pipeline
+          </div>
+          {candidates.length > 0 ? (
+            <>
             <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
               {[
                 { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Score 70 and above', accent: '#00BFA5' },
@@ -4009,8 +4058,30 @@ function DashboardPageInner() {
                 </div>
               )
             })()}
-          </div>
-        )}
+            </>
+          ) : (
+            <div style={{
+              background: CARD, border: `1px solid ${BD}`, borderRadius: 12,
+              padding: '22px 24px',
+            }}>
+              <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.6, marginBottom: 14 }}>
+                Strong Hire, Review, and High Risk breakdowns will appear here once you assess your first candidate.
+              </div>
+              <button
+                type="button"
+                onClick={() => router.push('/assessment/new')}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '9px 16px', borderRadius: 8, border: 'none',
+                  background: TEAL, color: NAVY,
+                  fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Run your first assessment
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* ── Verdict filtered results (directly after pipeline cards) ── Section 1 */}
         {activeFilter?.type === 'verdict' && (
@@ -4498,6 +4569,27 @@ function DashboardPageInner() {
           </div>
         )}
 
+        {/* ── Hiring Cost Saved (stub; empty state until outcome data is logged) ── */}
+        <div style={{
+          order: 61,
+          background: NAVY, borderRadius: 14,
+          padding: isMobile ? '18px 20px' : '22px 24px',
+          marginBottom: 20,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+            Hiring cost saved
+          </div>
+          <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, color: TEAL, lineHeight: 1, marginBottom: 6 }}>
+            &pound;0
+          </div>
+          <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.5)', marginBottom: 14 }}>
+            Estimated savings this quarter
+          </div>
+          <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.7)', fontStyle: 'italic', lineHeight: 1.6 }}>
+            Bad hires avoided and estimated savings will appear here once you log hire outcomes.
+          </div>
+        </div>
+
         {/* ── Cost of Vacancy (Insights section 5) ── */}
         <div style={{ order: 62 }}>
           <CostOfVacancyCard profile={profile} />
@@ -4659,7 +4751,36 @@ function DashboardPageInner() {
             .filter(x => typeof x.score === 'number')
             .sort((a, b) => b.score - a.score)
             .slice(0, 3)
-          if (ranked.length === 0) return null
+          if (ranked.length === 0) {
+            return (
+              <div style={{ order: 18, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
+                <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Ic name="award" size={16} color={TEAL} />
+                    <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Auto Shortlist</h2>
+                  </div>
+                  <p style={{ margin: '4px 0 0', fontSize: 12.5, color: TX3 }}>Top-ranked candidates across your assessments</p>
+                </div>
+                <div style={{ padding: '22px 24px' }}>
+                  <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.6, marginBottom: 14 }}>
+                    Your highest-scoring completed candidates will be ranked here once assessments start coming back.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/assessment/new')}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '9px 16px', borderRadius: 8, border: 'none',
+                      background: TEAL, color: NAVY,
+                      fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                    }}
+                  >
+                    Run your first assessment
+                  </button>
+                </div>
+              </div>
+            )
+          }
           return (
             <div style={{ order: 18, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
               <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
@@ -4952,7 +5073,7 @@ function DashboardPageInner() {
         )}
 
         {/* ── Roles Overview (all account types) ── Section 1 */}
-        {!activeFilter && !selectedRole && rolesOverview.length > 0 && (
+        {!activeFilter && !selectedRole && (
           <div style={{ order: 14, ...cs, marginBottom: 20, padding: isMobile ? '18px 18px' : '22px 24px' }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -4963,7 +5084,9 @@ function DashboardPageInner() {
                   Roles Overview
                 </h2>
                 <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>
-                  {rolesOverview.length} role{rolesOverview.length !== 1 ? 's' : ''} assessed. Click a role to drill into its candidates.
+                  {rolesOverview.length > 0
+                    ? `${rolesOverview.length} role${rolesOverview.length !== 1 ? 's' : ''} assessed. Click a role to drill into its candidates.`
+                    : 'Click a role to drill into its candidates.'}
                 </div>
               </div>
               {rolesOverview.length > 6 && (
@@ -4980,6 +5103,7 @@ function DashboardPageInner() {
                 </button>
               )}
             </div>
+            {rolesOverview.length > 0 ? (
             <div style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
@@ -5091,6 +5215,24 @@ function DashboardPageInner() {
                 )
               })}
             </div>
+            ) : (
+              <div style={{ border: `1px dashed ${BD}`, borderRadius: 10, padding: '24px 20px' }}>
+                <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.6, marginBottom: 12 }}>
+                  Each role you assess will appear here, with completion progress and a strong-hire count. Click in to drill into its candidates.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => router.push('/assessment/new')}
+                  style={{
+                    padding: '8px 16px', borderRadius: 8, border: 'none',
+                    background: TEAL, color: NAVY,
+                    fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  Run your first assessment
+                </button>
+              </div>
+            )}
           </div>
         )}
 
