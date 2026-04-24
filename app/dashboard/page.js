@@ -3336,7 +3336,7 @@ function DashboardPageInner() {
         )}
 
         {/* ── Pre-Start Risk panel (agency, upcoming temp starts) ── */}
-        {isAgencyAccount && (
+        {isAgencyAccount && (candidates.length === 0 || hasTemporaryCandidates) && (
           <div style={{
             order: 31,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
@@ -3402,7 +3402,7 @@ function DashboardPageInner() {
         )}
 
         {/* ── Pre-Start Engagement panel (agency + temp, active pulse sequences) ── */}
-        {isAgencyAccount && (
+        {isAgencyAccount && (candidates.length === 0 || hasTemporaryCandidates) && (
           <div style={{
             order: 32,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
@@ -3507,7 +3507,7 @@ function DashboardPageInner() {
         )}
 
         {/* ── SSP Alerts panel (agency + temporary only) ── Section 4 Compliance */}
-        {isAgencyAccount && (
+        {isAgencyAccount && (candidates.length === 0 || hasTemporaryCandidates) && (
           <div style={{
             order: 43,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
@@ -3785,7 +3785,7 @@ function DashboardPageInner() {
         )}
 
         {/* ── Active Coaching Plans (employer permanent only) ── Section 3 */}
-        {profile?.account_type === 'employer' && (
+        {profile?.account_type === 'employer' && (candidates.length === 0 || candidates.some(c => c.assessments?.employment_type !== 'temporary')) && (
           <div style={{
             order: 32, marginBottom: 24,
             background: CARD, border: `1px solid ${BD}`, borderRadius: 14,

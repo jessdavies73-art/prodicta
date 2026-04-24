@@ -5505,7 +5505,7 @@ export default function CandidateReportPage({ params }) {
                 {/* ══════════════════════════════════════════════════
                     ASSIGNMENT SUCCESS PLAN (employer + temporary)
                 ══════════════════════════════════════════════════ */}
-                {results?.coaching_plan && profile?.account_type === 'employer' && candidate?.assessments?.employment_type !== 'temporary' && (
+                {results?.coaching_plan && profile?.account_type === 'employer' && candidate?.assessments?.employment_type === 'temporary' && (
                   <ScrollReveal id="coaching-plan" delay={60}>
                     <Card style={{ marginBottom: 20 }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
