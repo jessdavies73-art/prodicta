@@ -2554,9 +2554,21 @@ function DemoCandidateInner({ params }) {
 
                 {/* CANDIDATE */}
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Candidate</div>
-                <button onClick={() => setOutcomeModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
+                {/*
+                  The hardcoded DemoOutcomeLogModal is agency-permanent only.
+                  Any other demo context (employer, or agency-temp) would show
+                  the wrong form, so route those clicks to the signup prompt
+                  rather than opening the modal.
+                */}
+                <button
+                  onClick={() => {
+                    if (isAgency && !isTemp) setOutcomeModal(true)
+                    else setSignupPrompt(true)
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}
+                >
                   <Ic name="check" size={14} color={TEALD} />
-                  {demoOutcome ? 'Update Outcome' : 'Log Outcome'}
+                  {(isAgency && !isTemp) ? (demoOutcome ? 'Update Outcome' : 'Log Outcome') : (isAgency ? 'Log Assignment Outcome' : isTemp ? 'Log Assignment Outcome' : 'Log Probation Outcome')}
                 </button>
                 <button onClick={() => setCandidatePreview(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', cursor: 'pointer', width: '100%' }}>
                   <Ic name="users" size={14} color={TEALD} />
@@ -4631,8 +4643,12 @@ function DemoCandidateInner({ params }) {
           </>
         )}
 
-        {/* ── LOG OUTCOME MODAL (demo, fully interactive, no DB write) ── */}
-        {outcomeModal && (
+        {/* ── LOG OUTCOME MODAL (demo, fully interactive, no DB write) ──
+            Only rendered in the agency-permanent demo context because the
+            modal body is hardcoded as agency permanent. Employer and agency
+            temp contexts must not open this modal, or they would see the
+            wrong form. */}
+        {outcomeModal && isAgency && !isTemp && (
           <DemoOutcomeLogModal
             candidateId={params.candidateId}
             candidateName={candidate?.name || 'this candidate'}

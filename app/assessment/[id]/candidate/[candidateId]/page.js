@@ -5984,12 +5984,59 @@ export default function CandidateReportPage({ params }) {
       )}
 
       {outcomeModal && (() => {
-        const isAgency = profile?.account_type === 'agency'
-        const isEmployer = profile?.account_type === 'employer'
+        const accountType = profile?.account_type
+        const isAgency = accountType === 'agency'
+        const isEmployer = accountType === 'employer'
         const isTemp = candidate?.assessments?.employment_type === 'temporary'
-        const variant = isAgency ? (isTemp ? 'agencyTemp' : 'agencyPerm')
-                      : isEmployer ? (isTemp ? 'employerTemp' : 'employerPerm')
-                      : 'employerPerm'
+
+        // If the profile has not loaded yet we must not guess the variant.
+        // Picking a default would silently show the wrong form to the wrong
+        // account type, which is the exact bug this branching is meant to
+        // prevent. Surface a loading state instead.
+        if (!profile) {
+          return (
+            <div
+              style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,33,55,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+              onClick={() => setOutcomeModal(false)}
+            >
+              <div onClick={e => e.stopPropagation()} style={{ background: CARD, borderRadius: 16, maxWidth: 420, width: '100%', padding: '32px 28px', textAlign: 'center', boxShadow: '0 16px 48px rgba(15,33,55,0.22)' }}>
+                <div style={{ fontFamily: F, fontSize: 15, fontWeight: 700, color: TX }}>Loading your account…</div>
+                <p style={{ fontFamily: F, fontSize: 13, color: TX3, margin: '8px 0 0', lineHeight: 1.55 }}>
+                  The outcome form will open in a moment.
+                </p>
+              </div>
+            </div>
+          )
+        }
+
+        // If the profile loaded but the account type is unknown, show an
+        // explicit error rather than silently defaulting. This prevents the
+        // historical agency-variant-to-everyone bug from re-appearing.
+        if (!isAgency && !isEmployer) {
+          return (
+            <div
+              style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,33,55,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+              onClick={() => setOutcomeModal(false)}
+            >
+              <div onClick={e => e.stopPropagation()} style={{ background: CARD, borderRadius: 16, maxWidth: 440, width: '100%', padding: '28px 28px 22px', boxShadow: '0 16px 48px rgba(15,33,55,0.22)' }}>
+                <div style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: TX, marginBottom: 8 }}>Account type not set</div>
+                <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 16px', lineHeight: 1.6 }}>
+                  We could not determine whether this account is an agency or a direct employer, so we cannot show the right outcome form. Please contact support so we can correct your account setup.
+                </p>
+                <button
+                  onClick={() => setOutcomeModal(false)}
+                  style={{ padding: '10px 18px', borderRadius: 9, border: 'none', background: NAVY, color: '#fff', fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          )
+        }
+
+        const variant = isAgency
+          ? (isTemp ? 'agencyTemp' : 'agencyPerm')
+          : (isTemp ? 'employerTemp' : 'employerPerm')
 
         const RESULT_OPTIONS = {
           agencyPerm: [
