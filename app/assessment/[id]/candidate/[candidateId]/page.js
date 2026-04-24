@@ -2937,6 +2937,59 @@ export default function CandidateReportPage({ params }) {
                 )}
 
                 {/* ══════════════════════════════════════════════════
+                    SIMILAR CANDIDATE PATTERN
+                ══════════════════════════════════════════════════ */}
+                {results?.similar_candidate_pattern?.pattern_label && (
+                  <ScrollReveal delay={60}>
+                    <Card style={{ marginBottom: 20, padding: 0, overflow: 'hidden' }}>
+                      <div style={{
+                        background: NAVY, color: '#fff',
+                        padding: '14px 20px',
+                        fontFamily: F, fontSize: 13, fontWeight: 800,
+                        textTransform: 'uppercase', letterSpacing: '0.06em',
+                      }}>
+                        Candidates with this profile
+                      </div>
+                      <div style={{ padding: isMobile ? '22px 18px' : '28px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                          <div style={{
+                            display: 'inline-block',
+                            background: TEAL, color: '#fff',
+                            fontFamily: F, fontWeight: 800,
+                            fontSize: isMobile ? 15 : 17,
+                            padding: isMobile ? '10px 20px' : '12px 28px',
+                            borderRadius: 999,
+                            letterSpacing: '0.01em',
+                            textAlign: 'center',
+                          }}>
+                            {results.similar_candidate_pattern.pattern_label}
+                          </div>
+                        </div>
+                        {results.similar_candidate_pattern.pattern_insight && (
+                          <p style={{
+                            fontFamily: F, fontSize: 14.5, color: NAVY,
+                            lineHeight: 1.75, margin: 0, textAlign: 'center',
+                            padding: isMobile ? '0 4px' : '0 16px',
+                          }}>
+                            {results.similar_candidate_pattern.pattern_insight}
+                          </p>
+                        )}
+                        {results.similar_candidate_pattern.platform_context && (
+                          <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 14 }}>
+                            <p style={{
+                              fontFamily: F, fontSize: 12, color: TX3,
+                              fontStyle: 'italic', lineHeight: 1.6, margin: 0, textAlign: 'center',
+                            }}>
+                              {results.similar_candidate_pattern.platform_context}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  </ScrollReveal>
+                )}
+
+                {/* ══════════════════════════════════════════════════
                     WHY THEY MIGHT LEAVE
                 ══════════════════════════════════════════════════ */}
                 {results?.leave_analysis && (

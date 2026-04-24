@@ -3448,6 +3448,69 @@ function DemoCandidateInner({ params }) {
               <DemoFirstThirtyDays candidateId={params.candidateId} />
             )}
 
+            {/* ── SIMILAR CANDIDATE PATTERN (demo hardcoded) ── */}
+            {(() => {
+              const DEMO_SIMILAR_PATTERN = {
+                'demo-c1': {
+                  pattern_label: 'Strong and consistent',
+                  pattern_insight: 'Candidates with this profile typically settle quickly and deliver early wins. Their consistent behaviour across scenarios suggests they will perform similarly under real work pressure. Early exit risk is low for this profile.',
+                  platform_context: 'This insight is based on assessment behaviour patterns. As placement outcomes are tracked through PRODICTA, this section will reflect real placement data for this profile type.',
+                },
+                'demo-c2': {
+                  pattern_label: 'Strong but variable',
+                  pattern_insight: 'Candidates with this profile often start strongly but can become inconsistent when the environment changes unexpectedly. Early management structure helps them maintain performance through the first 90 days.',
+                  platform_context: 'This insight is based on assessment behaviour patterns. As placement outcomes are tracked through PRODICTA, this section will reflect real placement data for this profile type.',
+                },
+              }
+              const scp = DEMO_SIMILAR_PATTERN[params.candidateId]
+              if (!scp?.pattern_label) return null
+              return (
+                <ScrollReveal id="similar-candidate-pattern" delay={70}>
+                  <Card style={{ marginBottom: 20, padding: 0, overflow: 'hidden' }}>
+                    <div style={{
+                      background: NAVY, color: '#fff',
+                      padding: '14px 20px',
+                      fontFamily: F, fontSize: 13, fontWeight: 800,
+                      textTransform: 'uppercase', letterSpacing: '0.06em',
+                    }}>
+                      Candidates with this profile
+                    </div>
+                    <div style={{ padding: isMobile ? '22px 18px' : '28px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <div style={{
+                          display: 'inline-block',
+                          background: TEAL, color: '#fff',
+                          fontFamily: F, fontWeight: 800,
+                          fontSize: isMobile ? 15 : 17,
+                          padding: isMobile ? '10px 20px' : '12px 28px',
+                          borderRadius: 999,
+                          letterSpacing: '0.01em',
+                          textAlign: 'center',
+                        }}>
+                          {scp.pattern_label}
+                        </div>
+                      </div>
+                      <p style={{
+                        fontFamily: F, fontSize: 14.5, color: NAVY,
+                        lineHeight: 1.75, margin: 0, textAlign: 'center',
+                        padding: isMobile ? '0 4px' : '0 16px',
+                      }}>
+                        {scp.pattern_insight}
+                      </p>
+                      <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 14 }}>
+                        <p style={{
+                          fontFamily: F, fontSize: 12, color: TX3,
+                          fontStyle: 'italic', lineHeight: 1.6, margin: 0, textAlign: 'center',
+                        }}>
+                          {scp.platform_context}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                </ScrollReveal>
+              )
+            })()}
+
             {/* ── COUNTER-OFFER RESILIENCE ── */}
             <ScrollReveal id="counter-offer" delay={70}>
               <Card style={{ marginBottom: 20 }}>
