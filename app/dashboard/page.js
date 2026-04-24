@@ -750,6 +750,8 @@ function DashboardPageInner() {
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [activePlacements, setActivePlacements] = useState([])
+  const [activeCoachingPlans, setActiveCoachingPlans] = useState([])
+  const [coachingProspectCount, setCoachingProspectCount] = useState(0)
   const [candidateOutcomes, setCandidateOutcomes] = useState([])
   const [probationHires, setProbationHires] = useState([])
   const [accuracyData, setAccuracyData] = useState(null)
@@ -962,6 +964,64 @@ function DashboardPageInner() {
           } catch (_) {
           } finally {
             setRevenueProtectionLoading(false)
+          }
+        }
+
+        // Load active coaching plans (employer permanent only). A coaching plan
+        // is "active" when the candidate is a Strong Hire, has a populated
+        // 90-day coaching plan, has a placement_date logged, the assessment is
+        // permanent, and the placement is within 90 days.
+        if (prof?.account_type === 'employer') {
+          try {
+            const { data: rows } = await supabase
+              .from('candidates')
+              .select('id, name, assessment_id, assessments!inner(id, role_title, employment_type), results(overall_score, coaching_plan)')
+              .in('user_id', allowedUserIds)
+              .neq('status', 'archived')
+              .neq('assessments.employment_type', 'temporary')
+
+            const strongHireWithPlan = (rows || []).filter(c => {
+              const r = Array.isArray(c.results) ? c.results[0] : c.results
+              return r?.overall_score >= 70 && r?.coaching_plan
+            })
+
+            const candIds = strongHireWithPlan.map(c => c.id)
+            let outcomeByCand = {}
+            if (candIds.length > 0) {
+              const { data: outcomeRows } = await supabase
+                .from('candidate_outcomes')
+                .select('candidate_id, placement_date, outcome')
+                .in('candidate_id', candIds)
+                .not('placement_date', 'is', null)
+              for (const o of outcomeRows || []) outcomeByCand[o.candidate_id] = o
+            }
+
+            const nowMs = Date.now()
+            const active = []
+            let unhiredCount = 0
+            for (const c of strongHireWithPlan) {
+              const o = outcomeByCand[c.id]
+              if (o?.placement_date) {
+                const elapsed = Math.max(0, Math.floor((nowMs - new Date(o.placement_date).getTime()) / 86400000))
+                if (elapsed <= 90) {
+                  active.push({
+                    id: c.id,
+                    name: c.name,
+                    assessment_id: c.assessment_id,
+                    role_title: c.assessments?.role_title || 'this role',
+                    placement_date: o.placement_date,
+                    elapsed,
+                  })
+                }
+              } else {
+                unhiredCount++
+              }
+            }
+            active.sort((a, b) => a.elapsed - b.elapsed)
+            setActiveCoachingPlans(active)
+            setCoachingProspectCount(unhiredCount)
+          } catch (_) {
+            // Column or table missing, leave empty
           }
         }
 
@@ -3721,6 +3781,113 @@ function DashboardPageInner() {
         {profile?.account_type === 'agency' && (
           <div style={{ order: 34 }}>
             <ActivePlacements placements={activePlacements} router={router} />
+          </div>
+        )}
+
+        {/* ── Active Coaching Plans (employer permanent only) ── Section 3 */}
+        {profile?.account_type === 'employer' && (activeCoachingPlans.length > 0 || coachingProspectCount > 0) && (
+          <div style={{
+            order: 32, marginBottom: 24,
+            background: CARD, border: `1px solid ${BD}`, borderRadius: 14,
+            borderTop: '3px solid #D4A418',
+            padding: isMobile ? '16px 18px' : '20px 24px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY }}>
+                  Active Coaching Plans
+                </div>
+                <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 2 }}>
+                  90-day hiring manager coaching plans for Strong Hire candidates, in partnership with Alchemy Training UK
+                </div>
+              </div>
+              {activeCoachingPlans.length > 0 && (
+                <span style={{
+                  fontFamily: F, fontSize: 11, fontWeight: 700, color: NAVY,
+                  background: TEALLT, border: `1px solid ${TEAL}55`,
+                  padding: '3px 10px', borderRadius: 50,
+                }}>
+                  {activeCoachingPlans.length} active
+                </span>
+              )}
+            </div>
+
+            {activeCoachingPlans.length === 0 ? (
+              <div style={{ padding: '14px 16px', background: BG, border: `1px solid ${BD}`, borderRadius: 10 }}>
+                <div style={{ fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.6 }}>
+                  You have <strong style={{ color: NAVY }}>{coachingProspectCount}</strong> Strong Hire candidate{coachingProspectCount === 1 ? '' : 's'} who could benefit from a 90-day coaching plan. Log a placement to start tracking progress.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setActiveFilter({ type: 'verdict', value: 'strong' }); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                  style={{
+                    marginTop: 12, padding: '8px 16px', borderRadius: 8, border: 'none',
+                    background: TEAL, color: '#fff', fontFamily: F, fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  View Strong Hire candidates
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {activeCoachingPlans.map(p => {
+                  const phase = p.elapsed <= 30 ? 1 : p.elapsed <= 60 ? 2 : 3
+                  const daysRemaining = Math.max(0, 90 - p.elapsed)
+                  const placementDateStr = new Date(p.placement_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                  return (
+                    <div key={p.id} style={{
+                      display: 'grid',
+                      gridTemplateColumns: isMobile ? '1fr' : '1.6fr 1fr 1fr auto',
+                      gap: isMobile ? 10 : 14,
+                      alignItems: 'center',
+                      padding: '14px 16px',
+                      background: BG, border: `1px solid ${BD}`, borderRadius: 10,
+                    }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: TX, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {p.name}
+                        </div>
+                        <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 2 }}>
+                          {p.role_title}
+                        </div>
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX2 }}>
+                        <div style={{ fontWeight: 700, color: NAVY }}>Phase {phase}</div>
+                        <div style={{ fontSize: 11.5, color: TX3, marginTop: 2 }}>Placed {placementDateStr}</div>
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX2 }}>
+                        <div style={{ fontFamily: FM, fontSize: 15, fontWeight: 800, color: NAVY }}>{daysRemaining}</div>
+                        <div style={{ fontSize: 11, color: TX3 }}>days remaining</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/assessment/${p.assessment_id}/candidate/${p.id}/coaching-plan`)}
+                          style={{
+                            padding: '7px 14px', borderRadius: 7, border: `1px solid ${BD}`,
+                            background: CARD, fontFamily: F, fontSize: 12, fontWeight: 700, color: NAVY, cursor: 'pointer',
+                          }}
+                        >
+                          View plan
+                        </button>
+                        <a
+                          href="https://tidycal.com/m57e7l3/30-minute-coaching-check-in"
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            padding: '7px 14px', borderRadius: 7, border: 'none',
+                            background: TEAL, color: '#fff', fontFamily: F, fontSize: 12, fontWeight: 700,
+                            textDecoration: 'none', whiteSpace: 'nowrap',
+                          }}
+                        >
+                          Book check-in with Liz
+                        </a>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
