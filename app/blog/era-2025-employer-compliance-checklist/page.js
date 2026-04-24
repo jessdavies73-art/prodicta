@@ -1,7 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getAllPosts, getPostBySlug, readingTime } from '@/lib/blog-posts'
+import { getPostBySlug, readingTime } from '@/lib/blog-posts'
 import ProdictaLogo from '@/components/ProdictaLogo'
+import EmailCaptureForm from './EmailCaptureForm'
+
+const SLUG = 'era-2025-employer-compliance-checklist'
 
 const NAVY = '#0f2137'
 const TEAL = '#00BFA5'
@@ -15,20 +18,12 @@ const TX2 = '#4a5568'
 const TX3 = '#94a1b3'
 const F = "'Outfit', system-ui, sans-serif"
 
-export function generateStaticParams() {
-  // Posts with a dedicated page under app/blog/<slug>/page.js render there,
-  // so we skip them here to avoid a redundant prerender.
-  return getAllPosts()
-    .filter(p => p.slug !== 'era-2025-employer-compliance-checklist')
-    .map(p => ({ slug: p.slug }))
-}
-
-export function generateMetadata({ params }) {
-  const post = getPostBySlug(params.slug)
+export function generateMetadata() {
+  const post = getPostBySlug(SLUG)
   if (!post) return {}
-  const url = `https://prodicta.co.uk/blog/${post.slug}`
+  const url = `https://prodicta.co.uk/blog/${SLUG}`
   return {
-    title: post.title,
+    title: post.metaTitle || post.title,
     description: post.metaDescription,
     alternates: { canonical: url },
     openGraph: {
@@ -47,11 +42,11 @@ export function generateMetadata({ params }) {
   }
 }
 
-export default function BlogPostPage({ params }) {
-  const post = getPostBySlug(params.slug)
+export default function Era2025ChecklistPage() {
+  const post = getPostBySlug(SLUG)
   if (!post) notFound()
 
-  const url = `https://prodicta.co.uk/blog/${post.slug}`
+  const url = `https://prodicta.co.uk/blog/${SLUG}`
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -65,6 +60,7 @@ export default function BlogPostPage({ params }) {
       name: 'PRODICTA',
       url: 'https://prodicta.co.uk',
     },
+    image: 'https://prodicta.co.uk/icon.png',
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
   }
 
@@ -94,7 +90,7 @@ export default function BlogPostPage({ params }) {
 
         <article style={{ marginTop: 18 }}>
           <div style={{ fontSize: 12, color: TX3, fontWeight: 600, marginBottom: 14 }}>
-            {post.dateLabel} &middot; {minutes} min read
+            {post.dateLabel} &middot; {minutes} min read &middot; {post.category}
           </div>
           <h1 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, color: NAVY, margin: '0 0 26px', lineHeight: 1.15, letterSpacing: '-1px' }}>
             {post.title}
@@ -103,14 +99,40 @@ export default function BlogPostPage({ params }) {
           <div style={{ fontSize: 16, color: TX, lineHeight: 1.75 }}>
             {post.body.map((block, i) => {
               if (block.type === 'h2') {
-                return <h2 key={i} style={{ fontSize: 24, fontWeight: 800, color: NAVY, margin: '36px 0 14px', letterSpacing: '-0.3px' }}>{block.text}</h2>
+                return <h2 key={i} style={{ fontSize: 24, fontWeight: 800, color: NAVY, margin: '40px 0 14px', letterSpacing: '-0.3px' }}>{block.text}</h2>
               }
               if (block.type === 'h3') {
-                return <h3 key={i} style={{ fontSize: 18, fontWeight: 800, color: NAVY, margin: '26px 0 10px' }}>{block.text}</h3>
+                return <h3 key={i} style={{ fontSize: 18, fontWeight: 800, color: NAVY, margin: '28px 0 10px' }}>{block.text}</h3>
+              }
+              if (block.type === 'list') {
+                return (
+                  <ul key={i} style={{ margin: '0 0 18px', paddingLeft: 22, color: TX2 }}>
+                    {block.items.map((it, k) => (
+                      <li key={k} style={{ margin: '0 0 8px', lineHeight: 1.7 }}>{it}</li>
+                    ))}
+                  </ul>
+                )
+              }
+              if (block.type === 'item') {
+                return (
+                  <div key={i} style={{
+                    background: CARD, border: `1px solid ${BD}`, borderLeft: `4px solid ${TEAL}`,
+                    borderRadius: '0 10px 10px 0', padding: '16px 18px', margin: '0 0 14px',
+                  }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: NAVY, margin: '0 0 6px', lineHeight: 1.4 }}>
+                      {block.n}. {block.title}
+                    </div>
+                    <div style={{ fontSize: 15, color: TX2, lineHeight: 1.7 }}>
+                      {block.text}
+                    </div>
+                  </div>
+                )
               }
               return <p key={i} style={{ margin: '0 0 16px', color: TX2 }}>{block.text}</p>
             })}
           </div>
+
+          <EmailCaptureForm />
         </article>
       </main>
 
