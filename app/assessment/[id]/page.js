@@ -186,6 +186,11 @@ export default function AssessmentPage({ params }) {
   // Bulk invite (agency)
   const [bulkModal, setBulkModal] = useState(false)
   const [bulkText, setBulkText] = useState('')
+  // In-scenario interruption keying for the bulk-invite flow. Defaults to
+  // 'assessment' so every candidate on a bulk invite sees the curveball on the
+  // same scenarios for apples-to-apples comparison. Available to all account
+  // types and both permanent and temporary roles.
+  const [bulkInterruptionKeying, setBulkInterruptionKeying] = useState('assessment')
 
   // Shortlist (agency)
   const [shortlistThreshold, setShortlistThreshold] = useState(70)
@@ -302,7 +307,13 @@ export default function AssessmentPage({ params }) {
       const res = await fetch('/api/candidates/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assessment_id: id, candidates: pendingInvites })
+        body: JSON.stringify({
+          assessment_id: id,
+          candidates: pendingInvites,
+          // Bulk send: pass the keying choice through. Single-invite flows
+          // omit this and the assessment's existing keying is preserved.
+          ...(pendingInvites.length > 1 && { interruption_keying: bulkInterruptionKeying }),
+        }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -438,6 +449,53 @@ export default function AssessmentPage({ params }) {
                 {parseBulkEmails(bulkText).length} valid email{parseBulkEmails(bulkText).length !== 1 ? 's' : ''} detected
               </p>
             )}
+
+            {/* Interruption pattern (bulk-invite default is assessment-level
+                consistency for apples-to-apples comparison). Available for
+                all account types and both employment types. */}
+            <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '14px 16px', marginBottom: 14 }}>
+              <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: TX, marginBottom: 4 }}>
+                Interruption pattern
+              </div>
+              <div style={{ fontFamily: F, fontSize: 12, color: TX2, marginBottom: 10, lineHeight: 1.55 }}>
+                Choose how the in-scenario curveball is keyed across this batch.
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { value: 'assessment', title: 'Same for all candidates',  sub: 'Every candidate hits the curveball on the same scenarios. Best for bulk hiring where you want to compare candidates side by side.' },
+                  { value: 'candidate',  title: 'Randomised per candidate', sub: 'Each candidate sees the curveball on different scenarios. Best when candidates may share information.' },
+                ].map(opt => {
+                  const sel = bulkInterruptionKeying === opt.value
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setBulkInterruptionKeying(opt.value)}
+                      aria-pressed={sel}
+                      style={{
+                        display: 'flex', alignItems: 'flex-start', gap: 10, textAlign: 'left',
+                        padding: '10px 12px', borderRadius: 8,
+                        border: `1.5px solid ${sel ? TEAL : BD}`,
+                        background: sel ? TEALLT : '#fff',
+                        cursor: 'pointer', fontFamily: F,
+                      }}
+                    >
+                      <span style={{
+                        width: 16, height: 16, marginTop: 2, borderRadius: '50%',
+                        border: `2px solid ${sel ? TEAL : '#94a1b3'}`,
+                        background: sel ? TEAL : '#fff',
+                        flexShrink: 0,
+                        boxShadow: sel ? 'inset 0 0 0 3px #fff' : 'none',
+                      }} />
+                      <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <span style={{ fontSize: 12.5, fontWeight: 700, color: TX }}>{opt.title}</span>
+                        <span style={{ fontSize: 12, color: TX2, lineHeight: 1.55 }}>{opt.sub}</span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={handleBulkAdd}

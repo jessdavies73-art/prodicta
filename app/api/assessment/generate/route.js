@@ -365,6 +365,12 @@ export async function POST(request) {
         ]))
       : contextAnswersRaw
     const employment_type = body.employment_type || 'permanent'
+    // Per-assessment keying for the in-scenario interruption gate. 'candidate'
+    // is the anti-gaming default (each candidate sees the curveball on
+    // different scenarios). 'assessment' makes every candidate on this
+    // assessment hit the curveball on the same scenarios, used for
+    // apples-to-apples bulk-invite comparison.
+    const interruption_keying = body.interruption_keying === 'assessment' ? 'assessment' : 'candidate'
     // Normalise mode: 'rapid' (1 scenario + prioritisation), 'quick' (2 scenarios), 'standard' (3 scenarios), 'advanced' (4 scenarios).
     const rawMode = (assessment_mode || 'standard').toLowerCase()
     let mode = ['rapid', 'quick', 'standard', 'advanced'].includes(rawMode) ? rawMode : 'standard'
@@ -1585,6 +1591,7 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         status: 'active',
         assessment_mode: mode,
         employment_type,
+        interruption_keying,
         ...(jobBreakdown && { job_breakdown: jobBreakdown }),
         ...(detectedDimensions && { detected_dimensions: detectedDimensions }),
         ...(dimensionRubrics && { dimension_rubrics: dimensionRubrics }),

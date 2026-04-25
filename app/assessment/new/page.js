@@ -263,6 +263,12 @@ export default function NewAssessmentPage() {
   const [modeOverridden, setModeOverridden] = useState(false)
   const [employmentType, setEmploymentType] = useState('') // 'permanent' | 'temporary'
   const [employmentTypeDefaulted, setEmploymentTypeDefaulted] = useState(false) // true if pre-set from settings
+
+  // Per-assessment in-scenario interruption keying. 'candidate' randomises the
+  // gate per candidate (anti-gaming default). 'assessment' fixes the gate
+  // across every candidate on this assessment for apples-to-apples bulk-invite
+  // comparison. Available to all account types and employment types.
+  const [interruptionKeying, setInterruptionKeying] = useState('candidate')
   const [location, setLocation] = useState('') // free-text location or site, used by the dashboard location filter
 
   // Context questions
@@ -679,6 +685,7 @@ export default function NewAssessmentPage() {
           assessment_mode: mode,
           employment_type: employmentType || undefined,
           location: location.trim() || undefined,
+          interruption_keying: interruptionKeying,
         })
       })
       const data = await res.json()
@@ -1825,6 +1832,59 @@ export default function NewAssessmentPage() {
             </div>
           )
         })()}
+
+        {/* Interruption pattern toggle. Available for all account types and
+            both permanent and temporary roles. Defaults to candidate-level
+            randomisation (anti-gaming). Bulk-invite UI flips the default to
+            assessment-level consistency. */}
+        {!analysed && (
+          <div style={{
+            background: '#fff', borderRadius: 14, border: '1px solid #e4e9f0',
+            padding: '20px 24px', marginBottom: 16,
+          }}>
+            <p style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: '#0f172a', margin: '0 0 4px' }}>
+              Interruption pattern
+            </p>
+            <p style={{ fontFamily: F, fontSize: 12.5, color: '#5e6b7f', margin: '0 0 14px', lineHeight: 1.55 }}>
+              Each scenario can fire a mid-task interruption that asks the candidate to revisit their ranking. Choose how that gate is keyed.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { value: 'candidate',  title: 'Randomised per candidate', sub: 'Each candidate sees the curveball on different scenarios. Best when candidates may share information.' },
+                { value: 'assessment', title: 'Same for all candidates',  sub: 'Every candidate hits the curveball on the same scenarios. Best for bulk hiring where you want to compare candidates side by side.' },
+              ].map(opt => {
+                const selected = interruptionKeying === opt.value
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setInterruptionKeying(opt.value)}
+                    aria-pressed={selected}
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left',
+                      padding: '12px 14px', borderRadius: 10,
+                      border: `1.5px solid ${selected ? '#00BFA5' : '#e4e9f0'}`,
+                      background: selected ? '#e0f2f0' : '#fff',
+                      cursor: 'pointer', fontFamily: F,
+                    }}
+                  >
+                    <span style={{
+                      width: 18, height: 18, marginTop: 2, borderRadius: '50%',
+                      border: `2px solid ${selected ? '#00BFA5' : '#94a1b3'}`,
+                      background: selected ? '#00BFA5' : '#fff',
+                      flexShrink: 0,
+                      boxShadow: selected ? 'inset 0 0 0 3px #fff' : 'none',
+                    }} />
+                    <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a' }}>{opt.title}</span>
+                      <span style={{ fontSize: 12.5, color: '#5e6b7f', lineHeight: 1.55 }}>{opt.sub}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Generate button (shown in adjust mode or when not yet analysed) */}
         {!analysed && (

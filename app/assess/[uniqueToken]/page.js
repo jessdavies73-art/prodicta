@@ -26,13 +26,20 @@ function formatTime(seconds) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-// Deterministic 30%-chance gate for the in-scenario interruption. Same
-// candidate + same scenario yields the same result so a refresh does not
-// surprise the candidate, but two candidates on the same assessment will see
-// different patterns. Returns true on roughly 30% of (assessmentId, index)
-// pairs across the population.
-function shouldFireInterruption(assessmentId, scenarioIndex) {
-  const seed = String(assessmentId || '') + '|' + String(scenarioIndex || 0)
+// Deterministic 30%-chance gate for the in-scenario interruption. The seed
+// depends on the assessment's `interruption_keying`:
+//   'candidate'  (default, anti-gaming): hash on (candidateId, scenarioIndex)
+//                so two candidates on the same assessment see different
+//                interruption patterns.
+//   'assessment' (bulk-invite consistency): hash on (assessmentId, scenarioIndex)
+//                so every candidate on the same assessment hits the curveball
+//                on the same scenarios for apples-to-apples comparison.
+// Same probability target in both modes. Same hashing function so a refresh
+// of the same candidate produces the same result.
+function shouldFireInterruption(keying, assessmentId, candidateId, scenarioIndex) {
+  const mode = keying === 'assessment' ? 'assessment' : 'candidate'
+  const primary = mode === 'assessment' ? assessmentId : candidateId
+  const seed = String(primary || '') + '|' + String(scenarioIndex || 0)
   let hash = 0
   for (let i = 0; i < seed.length; i++) {
     hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0
@@ -599,7 +606,8 @@ function ActivePage({ candidate, assessment, onSubmit }) {
     const slots = rankedActions[scenarioIndex]?.slots || []
     if (!rankedSlotsAreFullyFilled(slots)) return false
     if (!scenarios[scenarioIndex]?.interruption) return false
-    if (!shouldFireInterruption(assessment.id, scenarioIndex)) return false
+    const keying = assessment.interruption_keying === 'assessment' ? 'assessment' : 'candidate'
+    if (!shouldFireInterruption(keying, assessment.id, candidate.id, scenarioIndex)) return false
     setInterruptionDraftSlots(slots.map(s => ({ action: s.action, justification: s.justification })))
     setInterruptionDraftReasoning('')
     setInterruptionModalOpen(true)

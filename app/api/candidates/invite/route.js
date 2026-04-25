@@ -6,8 +6,13 @@ import { EMAIL_FROM } from '@/lib/email-sender'
 
 export async function POST(request) {
   try {
-    const { assessment_id, candidates } = await request.json()
+    const { assessment_id, candidates, interruption_keying } = await request.json()
     // candidates = [{ name, email }]
+    // interruption_keying (optional) = 'candidate' | 'assessment'. When set on
+    // a bulk invite, the assessment row is updated so every subsequent
+    // candidate on this assessment uses the chosen keying. The bulk-invite
+    // UI defaults to 'assessment' for apples-to-apples comparison; the
+    // assessment-creation UI defaults to 'candidate' for anti-gaming.
 
     // Auth check
     const supabase = createServerSupabaseClient()
@@ -23,6 +28,21 @@ export async function POST(request) {
       .single()
 
     if (!assessment) return NextResponse.json({ error: 'Assessment not found' }, { status: 404 })
+
+    // Optional: update interruption_keying on the assessment row if a valid
+    // value was supplied. Failure is non-fatal so a missing column does not
+    // block invites.
+    if (interruption_keying === 'candidate' || interruption_keying === 'assessment') {
+      try {
+        await supabase
+          .from('assessments')
+          .update({ interruption_keying })
+          .eq('id', assessment_id)
+          .eq('user_id', user.id)
+      } catch (e) {
+        console.warn('[invite] interruption_keying update skipped:', e?.message)
+      }
+    }
 
     // Get company name
     const { data: userProfile } = await supabase
