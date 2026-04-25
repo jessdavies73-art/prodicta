@@ -10,6 +10,20 @@ const ibmPlexMono = IBM_Plex_Mono({
   variable: '--font-mono'
 })
 
+// Resolve the build commit so visitors can verify which deployment they are
+// looking at via View Source. Vercel injects VERCEL_GIT_COMMIT_SHA at build
+// time; for local builds we fall back to reading the current git HEAD. If
+// neither is available the meta tag still renders with "unknown".
+const PD_BUILD_SHA = (() => {
+  if (process.env.VERCEL_GIT_COMMIT_SHA) return process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7)
+  try {
+    const cp = require('child_process')
+    return cp.execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+  } catch {
+    return 'unknown'
+  }
+})()
+
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -32,6 +46,7 @@ export const metadata = {
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'default',
     'apple-mobile-web-app-title': 'PRODICTA',
+    'x-prodicta-build': PD_BUILD_SHA,
   },
 }
 
