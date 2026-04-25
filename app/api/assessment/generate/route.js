@@ -41,6 +41,90 @@ const MAX_TOKENS_BY_MODE = {
 const JD_MAX_CHARS = 2000
 const CONTEXT_ANSWER_MAX_CHARS = 200
 
+// Pre-scenario pipeline. Pulls a structured Job Breakdown from the JD using
+// claude-sonnet-4-5 so scenarios are built from the actual tasks, disruptions,
+// decisions, and failure points specific to this role. Returns null on any
+// failure so the caller can fall back to the inline Job DNA extraction baked
+// into each scenario prompt.
+async function extractJobBreakdown(client, role_title, job_description, context_answers) {
+  const contextBlock = context_answers && Object.values(context_answers).some(v => v?.trim())
+    ? `\n\nADDITIONAL CONTEXT FROM HIRING MANAGER:\n${Object.entries(context_answers)
+        .map(([, v]) => v?.trim())
+        .filter(Boolean)
+        .map(v => `- ${v}`)
+        .join('\n')}`
+    : ''
+
+  const prompt = `You are an expert role analyst. Read the job description below and produce a structured Job Breakdown that another AI will use as the source of truth when designing work simulation scenarios.
+
+ROLE: ${role_title}
+
+JOB DESCRIPTION:
+${job_description}${contextBlock}
+
+Extract four buckets. Be concrete, role-specific, and verb-led. Do NOT use generic filler. If the JD does not state something explicitly, infer the most realistic answer for this exact role and seniority.
+
+1. TASKS: what this person actually does day to day. Concrete, verb-led, role-specific. (5 to 8 items)
+2. DISRUPTIONS: what interrupts the work. Other people, deadlines, unexpected requests, system failures, conflicting priorities. (4 to 6 items)
+3. DECISIONS: what the person must choose. Not "make decisions" generically, but specific decisions like "decide whether to release figures on deadline when discrepancy is unresolved." (4 to 6 items)
+4. FAILURE_POINTS: what would cause them to fail. Specific mistakes, omissions, or wrong calls that would lose money, break trust, or create risk. (4 to 6 items)
+
+Return JSON only, no prose, no code fences:
+{
+  "tasks": ["string", ...],
+  "disruptions": ["string", ...],
+  "decisions": ["string", ...],
+  "failure_points": ["string", ...]
+}
+
+Write in UK English. No em dashes or en dashes. No emoji.`
+
+  try {
+    const msg = await raceWithTimeout(
+      client.messages.create({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+      30000,
+      'job breakdown extraction'
+    )
+    const text = msg?.content?.[0]?.text || ''
+    const match = text.match(/\{[\s\S]*\}/)
+    if (!match) return null
+    const parsed = JSON.parse(match[0])
+    const arr = (v) => Array.isArray(v) ? v.map(String).map(s => s.trim()).filter(Boolean) : []
+    const breakdown = {
+      tasks: arr(parsed.tasks),
+      disruptions: arr(parsed.disruptions),
+      decisions: arr(parsed.decisions),
+      failure_points: arr(parsed.failure_points),
+    }
+    if (!breakdown.tasks.length && !breakdown.disruptions.length && !breakdown.decisions.length && !breakdown.failure_points.length) {
+      return null
+    }
+    return breakdown
+  } catch (err) {
+    console.error('[generate] job breakdown extraction failed', err?.message)
+    return null
+  }
+}
+
+function formatJobBreakdownBlock(breakdown) {
+  if (!breakdown) return ''
+  const fmt = (label, items) => items?.length
+    ? `${label}:\n${items.map(x => `- ${x}`).join('\n')}`
+    : null
+  const sections = [
+    fmt('TASKS', breakdown.tasks),
+    fmt('DISRUPTIONS', breakdown.disruptions),
+    fmt('DECISIONS', breakdown.decisions),
+    fmt('FAILURE POINTS', breakdown.failure_points),
+  ].filter(Boolean)
+  if (!sections.length) return ''
+  return `\nJOB BREAKDOWN (extracted in a pre-pass, treat as authoritative):\n${sections.join('\n\n')}\nUse these tasks, disruptions, decisions, and failure points as the source of truth when building scenarios. Every scenario must trace back to at least one item from each bucket where possible.\n`
+}
+
 export async function POST(request) {
   // Tracks PAYG credit state so the outer catch can refund if a failure happens
   // after deduction. null means no deduction yet / not applicable.
@@ -370,6 +454,14 @@ ASSESSMENT STYLE: Stakeholder Conflict Navigation. Present two conflicting but e
     // Call Claude API
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+    // Pre-pass: pull a structured Job Breakdown (tasks, disruptions, decisions,
+    // failure points) before any scenario is generated. The breakdown is fed
+    // into every scenario prompt as authoritative input and persisted on the
+    // assessment row for the audit trail. Failure here is non-fatal; scenarios
+    // fall back to the inline Job DNA extraction.
+    const jobBreakdown = await extractJobBreakdown(client, role_title, job_description, context_answers)
+    const jobBreakdownBlock = formatJobBreakdownBlock(jobBreakdown)
+
     const standard3Prompt = `You are a specialist assessment designer for UK businesses. Your job is to create THREE work simulation scenarios for this role. These are for a 25-minute Depth-Fit Assessment, the right balance of depth and candidate experience for most roles.
 
 These are NOT hypothetical exercises. Each scenario must be built from actual tasks listed in the job description. The candidate should feel like they are already in the role.
@@ -385,7 +477,7 @@ ADDITIONAL CONTEXT PROVIDED BY THE HIRING MANAGER:
 ${Object.entries(context_answers).map(([, v]) => v?.trim()).filter(Boolean).map(v => `- ${v}`).join('\n')}
 
 Treat these answers as ground truth. Weave the environment, failure modes, and success criteria directly into every scenario.
-` : ''}---
+` : ''}${jobBreakdownBlock}---
 
 STEP 1 - EXTRACT JOB DNA (do this before writing a single scenario)
 
@@ -623,7 +715,7 @@ ADDITIONAL CONTEXT PROVIDED BY THE HIRING MANAGER:
 ${Object.entries(context_answers).map(([, v]) => v?.trim()).filter(Boolean).map(v => `- ${v}`).join('\n')}
 
 Treat these answers as ground truth.
-` : ''}---
+` : ''}${jobBreakdownBlock}---
 
 STEP 1 - EXTRACT CONDENSED JOB DNA
 
@@ -731,7 +823,7 @@ ADDITIONAL CONTEXT PROVIDED BY THE HIRING MANAGER:
 ${Object.entries(context_answers).map(([, v]) => v?.trim()).filter(Boolean).map(v => `- ${v}`).join('\n')}
 
 Treat these answers as ground truth. Weave the environment, failure modes, and success criteria directly into every scenario.
-` : ''}---
+` : ''}${jobBreakdownBlock}---
 
 STEP 1 - EXTRACT JOB DNA (do this before writing a single scenario)
 
@@ -913,7 +1005,7 @@ ADDITIONAL CONTEXT PROVIDED BY THE HIRING MANAGER:
 ${Object.entries(context_answers).map(([, v]) => v?.trim()).filter(Boolean).map(v => `- ${v}`).join('\n')}
 
 Treat these answers as ground truth. Weave the environment, team size, pace, challenges, failure modes, and success criteria directly into every scenario.
-` : ''}
+` : ''}${jobBreakdownBlock}
 ---
 
 STEP 1 - EXTRACT JOB DNA (do this before writing a single scenario)
@@ -1274,6 +1366,7 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         status: 'active',
         assessment_mode: mode,
         employment_type,
+        ...(jobBreakdown && { job_breakdown: jobBreakdown }),
         ...(location && { location }),
         ...(context_answers && Object.values(context_answers).some(v => v?.trim()) && {
           context_answers,
