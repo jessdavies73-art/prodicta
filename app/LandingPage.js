@@ -358,7 +358,7 @@ export default function LandingPage() {
 
   return (
     <div style={{ fontFamily: F, background: '#fff', overflowX: 'hidden' }}>
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
@@ -392,7 +392,7 @@ export default function LandingPage() {
             transform: rotate(90deg);
           }
         }
-      `}</style>
+      ` }} />
 
       <Nav />
 
@@ -751,7 +751,7 @@ export default function LandingPage() {
               <div key={personaTab} style={{
                 animation: 'personaFade 0.3s ease',
               }}>
-                <style>{`@keyframes personaFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}`}</style>
+                <style dangerouslySetInnerHTML={{ __html: `@keyframes personaFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}` }} />
                 <div style={{ textAlign: 'center', marginBottom: 28, maxWidth: 820, margin: '0 auto 28px' }}>
                   <h3 style={{
                     fontFamily: F, fontSize: 'clamp(22px, 2.6vw, 30px)', fontWeight: 800,
@@ -1054,7 +1054,7 @@ export default function LandingPage() {
           HOW IT WORKS
       ════════════════════════════════════════════════════════════════════ */}
       <section id="how-it-works" style={{ background: '#f1f3f5', padding: '72px 24px' }}>
-        <style>{`
+        <style dangerouslySetInnerHTML={{ __html: `
           .hiw-steps {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -1127,7 +1127,7 @@ export default function LandingPage() {
             }
             .hiw-step:last-child::after { display: none; }
           }
-        `}</style>
+        ` }} />
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 80 }}>
@@ -1240,7 +1240,7 @@ export default function LandingPage() {
           HOW PRODICTA WORKS (PRODICTA Placement Intelligence Model)
       ════════════════════════════════════════════════════════════════════ */}
       <section id="placement-intelligence" style={{ background: '#fff', padding: '72px 24px' }}>
-        <style>{`
+        <style dangerouslySetInnerHTML={{ __html: `
           .ppim-grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1268,7 +1268,7 @@ export default function LandingPage() {
             font-size: 15px; font-weight: 800;
             margin-bottom: 14px;
           }
-        `}</style>
+        ` }} />
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 44 }}>
@@ -2303,7 +2303,7 @@ export default function LandingPage() {
             </div>
           </Reveal>
         </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <style dangerouslySetInnerHTML={{ __html: `@keyframes spin { to { transform: rotate(360deg); } }` }} />
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
