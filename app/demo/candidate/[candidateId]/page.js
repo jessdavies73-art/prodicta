@@ -2909,11 +2909,23 @@ function DemoCandidateInner({ params }) {
                   })
                   const risk = 100 - survival
                   const riskColor = risk > 40 ? '#fca5a5' : risk > 25 ? '#fcd34d' : 'rgba(255,255,255,0.7)'
-                  const survivalLabel = isAgency
-                    ? `chance this placement completes the assignment`
+                  // Phrasing varies by account_type AND employment_type so a
+                  // perm role never reads as temp language and an employer
+                  // never reads as agency language.
+                  const survivalLabel = isAgency && isTemp
+                    ? 'chance this placement completes the assignment'
+                    : isAgency
+                    ? 'chance this placement stays past the rebate window'
                     : isTemp
-                    ? `chance this worker completes the assignment`
-                    : `chance this hire passes probation`
+                    ? 'chance this hire completes the assignment'
+                    : 'chance this hire passes probation'
+                  const riskLabel = isAgency && isTemp
+                    ? `${risk}% risk of early exit during assignment`
+                    : isAgency
+                    ? `${risk}% risk of early exit before the rebate window closes`
+                    : isTemp
+                    ? `${risk}% risk of early exit during assignment`
+                    : `${risk}% risk of probation failure`
                   const costOfRisk = isAgency && survival < 80
                     ? Math.round((2500 * (1 - survival / 100)) / 100) * 100
                     : null
@@ -2927,7 +2939,7 @@ function DemoCandidateInner({ params }) {
                         </span>
                       </div>
                       <div style={{ fontFamily: F, fontSize: isMobile ? 12 : 13, fontWeight: 600, color: riskColor, marginTop: 4 }}>
-                        {risk}% risk of early exit
+                        {riskLabel}
                       </div>
                       {costOfRisk != null && (
                         <div style={{ fontFamily: F, fontSize: 11.5, color: 'rgba(255,255,255,0.55)', marginTop: 6 }}>
