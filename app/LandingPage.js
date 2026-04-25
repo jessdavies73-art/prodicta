@@ -466,7 +466,7 @@ export default function LandingPage() {
           fontSize: 'clamp(36px, 5.5vw, 66px)', letterSpacing: '-2px', lineHeight: 1.05,
           maxWidth: 820, marginBottom: 24,
         }}>
-          We tell you if a placement will fail<br />
+          {heroPersona === 'agency' ? 'We tell you if a placement will fail' : 'We tell you if a hire will fail'}<br />
           <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>before you make it.</span>
         </h1>
 
@@ -478,7 +478,7 @@ export default function LandingPage() {
         }}>
           {heroPersona === 'agency'
             ? 'Then we help you protect the fee.'
-            : 'And we stop it failing after you do.'}
+            : 'Then we help them perform from day one.'}
         </p>
 
         {/* Toggle subtext */}
@@ -490,7 +490,7 @@ export default function LandingPage() {
         }}>
           {heroPersona === 'agency'
             ? "PRODICTA doesn't test personality or theory. We put candidates into real job situations and measure how they actually perform. Whether you place permanent hires or temps, you get evidence not guesswork. Real work simulations. Placement health in real time. SSP and compliance handled automatically. When something goes wrong you know at week one, not month four."
-            : 'Whether you are hiring permanently or using temps, PRODICTA puts every candidate through real work scenarios built from the role itself. Predict who will pass probation or succeed on assignment. Generate ERA 2025 compliance documentation automatically. Track every hire through probation with early warning alerts. Manage SSP, holiday pay, and Fair Work Agency compliance. From first assessment to end of probation \u2014 fully covered.'}
+            : "PRODICTA doesn't test personality or theory. We put candidates into real job situations and measure how they actually perform. Whether you're hiring permanent staff or temporary cover, you get evidence not guesswork. Real work simulations. Probation tracking with ERA 2025 compliance built in. A 90-day coaching plan for every line manager so onboarding is structured, not improvised."}
         </p>
 
         {/* Fear line */}
