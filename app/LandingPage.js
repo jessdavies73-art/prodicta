@@ -145,88 +145,38 @@ function Nav() {
   )
 }
 
-// ── ROI calculator ────────────────────────────────────────────────────────────
-const SECTOR_COSTS = {
-  'General':     38400,
-  'Healthcare':  42000,
-  'Finance':     45000,
-  'Sales':       35000,
-  'Legal':       48000,
-  'Operations':  36000,
-  'Technology':  52000,
-  'Admin':       28000,
-}
-
-function RoiCalculator() {
-  const [sector, setSector] = useState('General')
-  const cost = SECTOR_COSTS[sector] || SECTOR_COSTS.General
-  const saving = Math.round(cost * 0.47)
-  const fmt = n => '£' + n.toLocaleString('en-GB')
-
+// ── Bad hire cost banner ─────────────────────────────────────────────────────
+function CostBanner() {
   return (
     <section style={{
       background: 'linear-gradient(180deg, #0d1e30 0%, #0f2137 100%)',
       padding: '72px 24px', position: 'relative', overflow: 'hidden',
     }}>
       <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}10 0%, transparent 65%)`, pointerEvents: 'none' }} />
-      <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative' }}>
-        <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
-            ROI calculator
-          </div>
-          <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.2vw, 40px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.8px', lineHeight: 1.15, margin: 0 }}>
-            The cost of getting it wrong.
-          </h2>
-        </div>
+      <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative', textAlign: 'center' }}>
+        <h2 style={{ fontFamily: F, fontSize: 'clamp(26px, 3.2vw, 40px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.8px', lineHeight: 1.15, margin: '0 0 36px' }}>
+          The cost of getting it wrong
+        </h2>
 
         <div style={{
           background: 'rgba(255,255,255,0.04)',
           border: `1px solid ${TEAL}33`,
-          borderRadius: 16, padding: '32px 36px',
+          borderRadius: 16, padding: '40px 36px',
         }}>
-          <label style={{ display: 'block', fontFamily: F, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-            Pick your sector
-          </label>
-          <select
-            value={sector}
-            onChange={e => setSector(e.target.value)}
-            style={{
-              width: '100%', padding: '12px 16px', borderRadius: 10,
-              background: 'rgba(255,255,255,0.08)', color: '#fff',
-              border: `1.5px solid ${TEAL}55`, fontFamily: F, fontSize: 14, fontWeight: 600,
-              outline: 'none', cursor: 'pointer', marginBottom: 28,
-            }}
-          >
-            {Object.keys(SECTOR_COSTS).map(s => (
-              <option key={s} value={s} style={{ background: NAVY, color: '#fff' }}>{s}</option>
-            ))}
-          </select>
-
-          <div style={{ textAlign: 'center', marginBottom: 26 }}>
-            <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-              Average bad hire cost in {sector === 'General' ? 'the UK' : `${sector.toLowerCase()}`}
-            </div>
-            <div style={{ fontFamily: FM, fontSize: 'clamp(42px, 6vw, 64px)', fontWeight: 800, color: TEAL, lineHeight: 1 }}>
-              {fmt(cost)}
-            </div>
+          <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+            The average bad hire costs
           </div>
-
-          <div style={{
-            background: 'rgba(0,191,165,0.08)', border: `1px solid ${TEAL}33`,
-            borderRadius: 12, padding: '18px 22px', marginBottom: 14,
-          }}>
-            <div style={{ fontFamily: F, fontSize: 14, color: 'rgba(255,255,255,0.85)', lineHeight: 1.65, marginBottom: 6 }}>
-              PRODICTA users reduce bad hire costs by up to <strong style={{ color: TEAL }}>47%</strong> in their first year.
-            </div>
-            <div style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>
-              That is roughly <strong style={{ color: TEAL }}>{fmt(saving)}</strong> saved per prevented bad hire in your sector.
-            </div>
+          <div style={{ fontFamily: FM, fontSize: 'clamp(48px, 7vw, 76px)', fontWeight: 800, color: TEAL, lineHeight: 1, marginBottom: 28 }}>
+            £42,000
           </div>
-
-          <p style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.65, margin: 0, textAlign: 'center' }}>
-            One prevented bad hire pays for <strong style={{ color: TEAL }}>10+ years</strong> of PRODICTA subscription.
-          </p>
+          <div style={{ fontFamily: F, fontSize: 'clamp(16px, 1.8vw, 19px)', color: 'rgba(255,255,255,0.85)', lineHeight: 1.55 }}>
+            PRODICTA users reduce that by up to <strong style={{ color: TEAL, fontWeight: 800 }}>47%</strong>.
+          </div>
         </div>
+
+        <p style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.65, margin: '20px 0 0' }}>
+          One prevented bad hire pays for <strong style={{ color: TEAL }}>10+ years</strong> of PRODICTA subscription.
+        </p>
       </div>
     </section>
   )
@@ -1943,9 +1893,9 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════════════════
-          ROI CALCULATOR
+          BAD HIRE COST BANNER
       ════════════════════════════════════════════════════════════════════ */}
-      <RoiCalculator />
+      <CostBanner />
 
       {/* ════════════════════════════════════════════════════════════════════
           THE 6-MONTH TRAP
