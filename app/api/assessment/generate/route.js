@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { SCORING_DIMENSIONS, SCORING_DIMENSION_NAMES } from '@/lib/dimensions'
+import { PD_SCENARIO_VERSION } from '@/lib/constants'
 
 // Scenario generation calls the Anthropic API which can take 30-60s for
 // Strategy-Fit (4 scenarios). Allow up to 120s before Vercel kills the function.
@@ -1578,7 +1579,7 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
 
     // Save assessment to Supabase
 
-    const { data: assessment, error } = await adminClient
+    let { data: assessment, error } = await adminClient
       .from('assessments')
       .insert({
         user_id: user.id,
@@ -1592,6 +1593,8 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         assessment_mode: mode,
         employment_type,
         interruption_keying,
+        // Audit-trail provenance: which scenario template generated these.
+        scenario_version: PD_SCENARIO_VERSION,
         ...(jobBreakdown && { job_breakdown: jobBreakdown }),
         ...(detectedDimensions && { detected_dimensions: detectedDimensions }),
         ...(dimensionRubrics && { dimension_rubrics: dimensionRubrics }),
@@ -1607,7 +1610,45 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
       .select()
       .single()
 
-    if (error) throw error
+    // If the audit-trail migration has not been applied yet, retry without
+    // scenario_version so assessment creation stays resilient. Other paths
+    // already use this pattern for new columns.
+    let assessmentInsertRetried = error && /scenario_version/i.test(error.message || '')
+    if (assessmentInsertRetried) {
+      console.warn('[generate] retrying assessment insert without scenario_version (migration not applied)')
+      const retry = await adminClient
+        .from('assessments')
+        .insert({
+          user_id: user.id,
+          role_title,
+          job_description,
+          detected_role_type,
+          role_level: roleLevel,
+          scenarios,
+          skill_weights: skill_weights || { Communication: 25, 'Problem solving': 25, Prioritisation: 25, Leadership: 25 },
+          status: 'active',
+          assessment_mode: mode,
+          employment_type,
+          interruption_keying,
+          ...(jobBreakdown && { job_breakdown: jobBreakdown }),
+          ...(detectedDimensions && { detected_dimensions: detectedDimensions }),
+          ...(dimensionRubrics && { dimension_rubrics: dimensionRubrics }),
+          ...(location && { location }),
+          ...(context_answers && Object.values(context_answers).some(v => v?.trim()) && {
+            context_answers,
+          }),
+          ...(save_as_template && {
+            is_template: true,
+            template_name: template_name?.trim() || role_title,
+          }),
+        })
+        .select()
+        .single()
+      if (retry.error) throw retry.error
+      assessment = retry.data
+    } else if (error) {
+      throw error
+    }
 
  // Assessment is persisted, now it is safe to deduct the PAYG credit.
     // If the calendar / inbox generations below fail, they are non-blocking

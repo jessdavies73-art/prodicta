@@ -64,16 +64,16 @@ export async function GET(request, { params }) {
 
     const { data: candidate } = await admin
       .from('candidates')
-      .select('id, name, email, user_id, completed_at, assessment_id, assessments(role_title, role_level)')
+      .select('id, name, email, user_id, invited_at, completed_at, assessment_id, assessments(role_title, role_level, job_description, context_answers, employment_type, scenario_version, assessment_mode, scenarios)')
       .eq('id', params.candidateId)
       .single()
     if (!candidate) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     const [{ data: result }, { data: outcome }, { data: copilot }, { data: profile }] = await Promise.all([
-      admin.from('results').select('overall_score, risk_level, hiring_confidence, strengths, watchouts, pressure_fit_score, integrity, reality_timeline, role_level').eq('candidate_id', params.candidateId).maybeSingle(),
+      admin.from('results').select('overall_score, risk_level, hiring_confidence, strengths, watchouts, pressure_fit_score, integrity, reality_timeline, role_level, scoring_rubric_version, model_version, response_quality, generic_detection, scoring_confidence, scores, created_at').eq('candidate_id', params.candidateId).maybeSingle(),
       admin.from('candidate_outcomes').select('*').eq('candidate_id', params.candidateId).eq('user_id', user.id).maybeSingle(),
       admin.from('probation_copilot').select('*').eq('candidate_id', params.candidateId).eq('user_id', user.id).maybeSingle(),
-      admin.from('users').select('company_name').eq('id', user.id).maybeSingle(),
+      admin.from('users').select('company_name, account_type').eq('id', user.id).maybeSingle(),
     ])
 
     if (!result) return NextResponse.json({ error: 'No results' }, { status: 404 })
@@ -522,6 +522,45 @@ export async function GET(request, { params }) {
     drawKV('Reference', referenceNumber)
     drawKV('Generated', generatedAtLabel)
     drawParagraph('This statement is generated automatically by the PRODICTA platform on the basis of platform records and configuration. The platform is a closed scoring system: it does not accept protected-characteristic inputs and does not vary its scoring based on candidate identity.', { size: 9.5, color: grey, italic: true })
+
+    // ──────────────────────────────────────────────────────────────────────
+    // SECTION 5b, HIRING / ASSIGNMENT DECISION AUDIT TRAIL
+    // Captures the provenance of the report so the hiring decision is
+    // defensible at probation, tribunal, or Fair Work Agency review.
+    // Header phrasing varies by employment_type.
+    // ──────────────────────────────────────────────────────────────────────
+    addPage()
+    const isEmployerTemp = (candidate.assessments?.employment_type || '').toLowerCase() === 'temporary'
+    const auditHeader = isEmployerTemp ? 'Section 5b, Assignment Decision Audit Trail' : 'Section 5b, Hiring Decision Audit Trail'
+    const auditIntro = isEmployerTemp
+      ? 'Evidence the employer assessed the worker against the assignment requirements before bringing them on assignment.'
+      : 'Evidence the employer followed a fair, documented hiring process. Useful for ERA 2025, Fair Work Agency, or tribunal defence.'
+    drawSectionHeading(auditHeader)
+    drawParagraph(auditIntro, { size: 10.5 })
+    drawSubLabel('Candidate evidence collected for hiring decision and probation defence')
+
+    const ctxAnswers = candidate.assessments?.context_answers
+    const ctxSummary = ctxAnswers && typeof ctxAnswers === 'object'
+      ? Object.entries(ctxAnswers).filter(([, v]) => typeof v === 'string' && v.trim()).map(([k, v]) => `${k}: ${String(v).slice(0, 220)}`).join(' | ')
+      : ''
+    const scenarioCount = Array.isArray(candidate.assessments?.scenarios) ? candidate.assessments.scenarios.length : 0
+    const scoreEntries = result.scores && typeof result.scores === 'object'
+      ? Object.entries(result.scores).filter(([k]) => !/^pf_|^_/.test(k)).map(([k, v]) => `${k}: ${v}`).join(', ')
+      : ''
+    const integrityFlags = (result.generic_detection?.flags || []).join(', ') || (result.response_quality || 'No integrity flags')
+
+    drawKV('Job description on file', (candidate.assessments?.job_description || '').slice(0, 600) || 'Not recorded')
+    drawKV('Role context answers', ctxSummary || 'No context answers captured')
+    drawKV('Scenario template version', candidate.assessments?.scenario_version || 'Not recorded (legacy assessment)')
+    drawKV('Scoring rubric version', result.scoring_rubric_version || 'Not recorded (legacy result)')
+    drawKV('Model version', result.model_version || 'Not recorded (legacy result)')
+    drawKV('Assessment mode and scenarios', `${(candidate.assessments?.assessment_mode || 'standard')}, ${scenarioCount} scenarios delivered`)
+    drawKV('Score breakdown (per dimension)', scoreEntries || 'No per-dimension scores recorded')
+    drawKV('Integrity result', integrityFlags)
+    drawKV('Scoring confidence', result.scoring_confidence?.level || 'standard')
+    drawKV('Candidate invited at', candidate.invited_at ? new Date(candidate.invited_at).toLocaleString('en-GB') : 'Not recorded')
+    drawKV('Candidate completed at', candidate.completed_at ? new Date(candidate.completed_at).toLocaleString('en-GB') : 'Not recorded')
+    drawKV('Report generated at', result.created_at ? new Date(result.created_at).toLocaleString('en-GB') : 'Not recorded')
 
     // ──────────────────────────────────────────────────────────────────────
  // SECTION 6, RECOMMENDATION FOR LEGAL USE

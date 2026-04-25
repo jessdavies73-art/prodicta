@@ -71,3 +71,17 @@ Replace the placeholder values with the keys from Step 3.
 | `benchmarks` | Per-employer skill score thresholds for pass/fail decisions |
 
 All tables have Row Level Security enabled. Employers can only access their own data. Candidates can submit responses and view their own record anonymously via their unique link.
+
+---
+
+## 7. Audit-trail provenance migration
+
+Every report needs to defensibly show which scenario template, scoring rubric, and Claude model generated it. Three columns capture this. Run once against any environment that pre-dates this change (newer environments are unaffected because the columns use IF NOT EXISTS).
+
+```sql
+ALTER TABLE assessments ADD COLUMN IF NOT EXISTS scenario_version TEXT;
+ALTER TABLE results ADD COLUMN IF NOT EXISTS scoring_rubric_version TEXT;
+ALTER TABLE results ADD COLUMN IF NOT EXISTS model_version TEXT;
+```
+
+The scoring pipeline reads the canonical values from `lib/constants.js` (`PD_SCENARIO_VERSION`, `PD_RUBRIC_VERSION`, `PD_MODEL_DEFAULT`) and writes them through on every new scoring run. If the migration has not been applied the insert retries without those columns so scoring stays resilient.

@@ -41,19 +41,19 @@ export async function GET(request, { params }) {
 
     const { data: candidate } = await admin
       .from('candidates')
-      .select('id, name, email, user_id, completed_at, assessment_id, assessments(role_title, role_level)')
+      .select('id, name, email, user_id, invited_at, completed_at, assessment_id, assessments(role_title, role_level, job_description, context_answers, employment_type, scenario_version, assessment_mode, scenarios)')
       .eq('id', params.candidateId)
       .single()
     if (!candidate) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     const { data: result } = await admin
       .from('results')
-      .select('overall_score, risk_level, hiring_confidence, strengths, watchouts, reality_timeline, onboarding_plan, interview_questions')
+      .select('overall_score, risk_level, hiring_confidence, strengths, watchouts, reality_timeline, onboarding_plan, interview_questions, scoring_rubric_version, model_version, response_quality, generic_detection, scoring_confidence, scores, created_at')
       .eq('candidate_id', params.candidateId)
       .maybeSingle()
     if (!result) return NextResponse.json({ error: 'No results' }, { status: 404 })
 
-    const { data: profile } = await admin.from('users').select('company_name').eq('id', user.id).single()
+    const { data: profile } = await admin.from('users').select('company_name, account_type').eq('id', user.id).single()
 
     // Setup
     const navy = rgb(0.06, 0.13, 0.22)
@@ -217,7 +217,77 @@ export async function GET(request, { params }) {
       page.drawText(safe(reportUrl), { x: 40, y: 78, size: 8, font: helv, color: grey })
     }
 
-    // Footer with the standard PRODICTA compliance disclaimer.
+    // ── PAGE 2: Placement / Assignment Decision Audit Trail ──
+    // Manager Brief is the agency-side PDF. Header phrasing varies by
+    // employment_type: temporary placements emphasise assignment decisions,
+    // permanent placements emphasise rebate-window protection and client
+    // submission. Captures the provenance of the report so it is defensible
+    // in a rebate dispute.
+    const isAgencyTemp = (candidate.assessments?.employment_type || '').toLowerCase() === 'temporary'
+    const auditTitle = isAgencyTemp ? 'Assignment Decision Audit Trail' : 'Placement Decision Audit Trail'
+    const auditSubtitle = isAgencyTemp
+      ? 'Evidence the agency assessed the worker against the assignment requirements before placing them.'
+      : 'Evidence the agency followed a fair, documented process before submitting the candidate to client. Useful in a rebate dispute.'
+    const auditEvidenceLabel = 'Candidate evidence collected for client review'
+
+    const auditPage = pdf.addPage([595, 842])
+    let ay = 842
+
+    auditPage.drawRectangle({ x: 0, y: 752, width: 595, height: 90, color: navy })
+    auditPage.drawText('PRODICTA', { x: 40, y: 800, size: 28, font: helvB, color: teal })
+    auditPage.drawText(auditTitle, { x: 40, y: 778, size: 13, font: helv, color: white })
+    if (companyName) auditPage.drawText(safe(companyName), { x: 40, y: 762, size: 10, font: helv, color: rgb(0.65, 0.75, 0.75) })
+    ay = 730
+
+    auditPage.drawText(safe(candidate.name || 'Candidate'), { x: 40, y: ay, size: 16, font: helvB, color: black })
+    ay -= 16
+    auditPage.drawText(safe(`${candidate.assessments?.role_title || 'Role'} | ${assessmentDate}`), { x: 40, y: ay, size: 10, font: helv, color: grey })
+    ay -= 22
+
+    const subtitleLines = wrap(auditSubtitle, helv, 10, 515)
+    subtitleLines.forEach(l => { auditPage.drawText(l, { x: 40, y: ay, size: 10, font: helv, color: black }); ay -= 13 })
+    ay -= 10
+    auditPage.drawText(auditEvidenceLabel, { x: 40, y: ay, size: 9.5, font: helvB, color: teal })
+    ay -= 18
+
+    // Helper to draw a labelled audit row, wrapping the value across lines.
+    const drawAuditRow = (label, value) => {
+      if (ay < 110) return false
+      auditPage.drawText(safe(label).toUpperCase(), { x: 40, y: ay, size: 8.5, font: helvB, color: teal })
+      ay -= 12
+      const valueText = value == null || value === '' ? 'Not recorded' : String(value)
+      const lines = wrap(valueText, helv, 9.5, 515)
+      lines.slice(0, 6).forEach(l => { auditPage.drawText(l, { x: 40, y: ay, size: 9.5, font: helv, color: black }); ay -= 12 })
+      ay -= 6
+      return true
+    }
+
+    const ctxAnswers = candidate.assessments?.context_answers
+    const ctxSummary = ctxAnswers && typeof ctxAnswers === 'object'
+      ? Object.entries(ctxAnswers).filter(([, v]) => typeof v === 'string' && v.trim()).map(([k, v]) => `${k}: ${String(v).slice(0, 220)}`).join(' | ')
+      : ''
+    const scenarioCount = Array.isArray(candidate.assessments?.scenarios) ? candidate.assessments.scenarios.length : 0
+    const scoreEntries = result.scores && typeof result.scores === 'object'
+      ? Object.entries(result.scores).filter(([k]) => !/^pf_|^_/.test(k)).map(([k, v]) => `${k}: ${v}`).join(', ')
+      : ''
+    const integrityFlags = (result.generic_detection?.flags || []).join(', ') || (result.response_quality || 'No integrity flags')
+
+    drawAuditRow('Job description on file', (candidate.assessments?.job_description || '').slice(0, 600))
+    drawAuditRow('Role context answers', ctxSummary || 'No context answers captured')
+    drawAuditRow('Scenario template version', candidate.assessments?.scenario_version || 'Not recorded (legacy assessment)')
+    drawAuditRow('Scoring rubric version', result.scoring_rubric_version || 'Not recorded (legacy result)')
+    drawAuditRow('Model version', result.model_version || 'Not recorded (legacy result)')
+    drawAuditRow('Assessment mode and scenarios', `${(candidate.assessments?.assessment_mode || 'standard')}, ${scenarioCount} scenarios delivered`)
+    drawAuditRow('Score breakdown (per dimension)', scoreEntries || 'No per-dimension scores recorded')
+    drawAuditRow('Integrity result', integrityFlags)
+    drawAuditRow('Scoring confidence', result.scoring_confidence?.level || 'standard')
+    drawAuditRow('Candidate invited at', candidate.invited_at ? new Date(candidate.invited_at).toLocaleString('en-GB') : 'Not recorded')
+    drawAuditRow('Candidate completed at', candidate.completed_at ? new Date(candidate.completed_at).toLocaleString('en-GB') : 'Not recorded')
+    drawAuditRow('Report generated at', result.created_at ? new Date(result.created_at).toLocaleString('en-GB') : 'Not recorded')
+
+    // Footer with the standard PRODICTA compliance disclaimer applied to
+    // every page (page 1, audit trail, plus any additional content pages
+    // pdf-lib later splits into).
     const drawFooter = (pg) => {
       pg.drawRectangle({ x: 0, y: 0, width: 595, height: 60, color: navy })
       pg.drawText('PRODICTA reports describe assessment behaviour and surface risk indicators.', { x: 40, y: 44, size: 7.5, font: helv, color: rgb(0.78, 0.86, 0.84) })
@@ -226,8 +296,7 @@ export async function GET(request, { params }) {
       pg.drawText('Generated by PRODICTA', { x: 40, y: 7, size: 9, font: helv, color: rgb(0.65, 0.75, 0.75) })
       pg.drawText('prodicta.co.uk', { x: 460, y: 7, size: 9, font: helvB, color: teal })
     }
-    drawFooter(page)
-    drawFooter(pdf.getPages()[0])
+    pdf.getPages().forEach(drawFooter)
 
     const bytes = await pdf.save()
     return new Response(bytes, {
