@@ -424,15 +424,19 @@ export default function LandingPage() {
         }} />
         <div aria-hidden="true" style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
-          background: 'linear-gradient(-45deg, #F8F6F2, #FAFAF7, #E6F4F1, #F8F6F2)',
+          // Jade-led palette. Three pale jade stops shift across 12 seconds.
+          // None of the stops approach the brand jade #00BFA5 saturation, so
+          // the jade CTAs and accent type still pop against this background.
+          background: 'linear-gradient(-45deg, #E6F4F1, #C9E8E2, #A8D9D0, #E6F4F1)',
           backgroundSize: '400% 400%', animation: 'gradShiftLight 12s ease infinite',
           opacity: isEmployer ? 1 : 0,
           transition: 'opacity 600ms ease',
         }} />
 
-        {/* Floating dots only on the dark agency hero. The lighter employer
-            treatment is intentionally dot-free. */}
-        {!isEmployer && <FloatingDots tone="dark" />}
+        {/* Floating dots on both heroes. Agency uses the dark tone (white +
+            jade), employer uses the light tone (navy + jade) so the dots read
+            as subtle navy specks across the new jade-led gradient. */}
+        <FloatingDots tone={isEmployer ? 'light' : 'dark'} />
 
         {/* Radial glow, slightly softer on the light treatment so it does not bloom. */}
         <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}${isEmployer ? '0c' : '14'} 0%, transparent 65%)`, pointerEvents: 'none', transition: 'background 600ms ease', zIndex: 0 }} />
@@ -505,7 +509,7 @@ export default function LandingPage() {
           transition: 'color 600ms ease',
         }}>
           {heroPersona === 'agency' ? 'We tell you if a placement will fail' : 'We tell you if a hire will fail'}<br />
-          <span style={{ color: isEmployer ? TEALD : TEAL, textShadow: isEmployer ? 'none' : '0 0 40px rgba(0,191,165,0.35)', transition: 'color 600ms ease, text-shadow 600ms ease' }}>before you make it.</span>
+          <span style={{ color: isEmployer ? '#00524A' : TEAL, textShadow: isEmployer ? 'none' : '0 0 40px rgba(0,191,165,0.35)', transition: 'color 600ms ease, text-shadow 600ms ease' }}>before you make it.</span>
         </h1>
 
         {/* Subheadline */}
@@ -536,7 +540,7 @@ export default function LandingPage() {
         {/* Fear line: amber stays amber on both palettes (it is a warning signal, not decoration) */}
         <p style={{
           fontFamily: F, fontSize: 'clamp(13px, 1.3vw, 15px)', fontWeight: 600,
-          color: isEmployer ? '#B45309' : '#D97706', lineHeight: 1.6,
+          color: isEmployer ? '#92400E' : '#D97706', lineHeight: 1.6,
           maxWidth: 620, marginBottom: 28, position: 'relative', zIndex: 1,
           transition: 'color 600ms ease',
         }}>
@@ -686,7 +690,7 @@ export default function LandingPage() {
             { to: null, display: 'UK-built', label: 'For ERA 2025 compliance' },
           ].map((item) => (
             <div key={item.label} style={{ textAlign: 'center', minWidth: 90 }}>
-              <div style={{ fontFamily: FM, fontSize: 31, fontWeight: 700, color: isEmployer ? TEALD : TEAL, letterSpacing: '-0.5px', lineHeight: 1, transition: 'color 600ms ease' }}>
+              <div style={{ fontFamily: FM, fontSize: 31, fontWeight: 700, color: isEmployer ? '#00524A' : TEAL, letterSpacing: '-0.5px', lineHeight: 1, transition: 'color 600ms ease' }}>
                 <StatNumber to={item.to} suffix={item.suffix} display={item.display} />
               </div>
               <div style={{ fontFamily: F, fontSize: 12, color: isEmployer ? '#46566b' : 'rgba(255,255,255,0.42)', marginTop: 5, whiteSpace: 'nowrap', transition: 'color 600ms ease' }}>{item.label}</div>
