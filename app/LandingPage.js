@@ -665,7 +665,7 @@ export default function LandingPage() {
           agency_temp: {
             tab: 'Recruitment Agency, Temporary and Contract',
             heading: 'Screen faster, place better, stay compliant.',
-            sub: 'PRODICTA replaces the phone screen with a real work simulation, handles your SSP automatically, and catches no-shows before day one.',
+            sub: 'PRODICTA replaces candidate screening with a real work simulation, handles your SSP automatically, and catches no-shows before day one.',
             exciters: [
               { title: 'Ghosting Prevention Loop', body: 'Three automated pulses between offer and start. Catches silent no-shows before day one.' },
               { title: 'Pre-Start Risk Check', body: 'Know who is HIGH risk before they show up. Surface backup candidates instantly.' },
