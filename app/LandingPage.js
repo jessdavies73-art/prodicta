@@ -641,7 +641,7 @@ export default function LandingPage() {
           transition: 'color 600ms ease',
         }}>
           {heroPersona === 'agency' ? 'We tell you if a placement will fail' : 'We tell you if a hire will fail'}<br />
-          <span style={{ color: isEmployer ? '#00524A' : TEAL, textShadow: isEmployer ? 'none' : '0 0 40px rgba(0,191,165,0.35)', transition: 'color 600ms ease, text-shadow 600ms ease' }}>before you make it.</span>
+          <span style={{ color: isEmployer ? '#00796B' : TEAL, textShadow: isEmployer ? 'none' : '0 0 40px rgba(0,191,165,0.35)', transition: 'color 600ms ease, text-shadow 600ms ease' }}>before you make it.</span>
         </h1>
 
         {/* Subheadline */}
@@ -822,7 +822,7 @@ export default function LandingPage() {
             { to: null, display: 'UK-built', label: 'For ERA 2025 compliance' },
           ].map((item) => (
             <div key={item.label} style={{ textAlign: 'center', minWidth: 90 }}>
-              <div style={{ fontFamily: FM, fontSize: 31, fontWeight: 700, color: isEmployer ? '#00524A' : TEAL, letterSpacing: '-0.5px', lineHeight: 1, transition: 'color 600ms ease' }}>
+              <div style={{ fontFamily: FM, fontSize: 31, fontWeight: 700, color: isEmployer ? '#00796B' : TEAL, letterSpacing: '-0.5px', lineHeight: 1, transition: 'color 600ms ease' }}>
                 <StatNumber to={item.to} suffix={item.suffix} display={item.display} />
               </div>
               <div style={{ fontFamily: F, fontSize: 12, color: isEmployer ? '#46566b' : 'rgba(255,255,255,0.42)', marginTop: 5, whiteSpace: 'nowrap', transition: 'color 600ms ease' }}>{item.label}</div>
