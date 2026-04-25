@@ -40,16 +40,21 @@ function Reveal({ children, delay = 0, style = {} }) {
 }
 
 // ── Floating dots (same as login) ─────────────────────────────────────────────
-function FloatingDots() {
+function FloatingDots({ tone = 'dark' }) {
+  // tone: 'dark' uses the original white + jade dots for the dark hero.
+  // 'light' swaps the white dots for navy and slightly reduces opacity so
+  // they read against the cream/off-white employer palette.
+  const NEUTRAL = tone === 'light' ? NAVY : '#fff'
+  const opMul = tone === 'light' ? 0.55 : 1
   const dots = [
     { size: 4,  left: '6%',  delay: '0s',   dur: '18s', opacity: 0.18, color: TEAL },
-    { size: 3,  left: '14%', delay: '4s',   dur: '22s', opacity: 0.09, color: '#fff' },
+    { size: 3,  left: '14%', delay: '4s',   dur: '22s', opacity: 0.09, color: NEUTRAL },
     { size: 6,  left: '24%', delay: '8s',   dur: '15s', opacity: 0.12, color: TEAL },
-    { size: 3,  left: '35%', delay: '2s',   dur: '24s', opacity: 0.07, color: '#fff' },
+    { size: 3,  left: '35%', delay: '2s',   dur: '24s', opacity: 0.07, color: NEUTRAL },
     { size: 5,  left: '48%', delay: '11s',  dur: '17s', opacity: 0.10, color: TEAL },
-    { size: 4,  left: '58%', delay: '5s',   dur: '20s', opacity: 0.08, color: '#fff' },
+    { size: 4,  left: '58%', delay: '5s',   dur: '20s', opacity: 0.08, color: NEUTRAL },
     { size: 7,  left: '68%', delay: '1s',   dur: '14s', opacity: 0.13, color: TEAL },
-    { size: 3,  left: '78%', delay: '7s',   dur: '19s', opacity: 0.08, color: '#fff' },
+    { size: 3,  left: '78%', delay: '7s',   dur: '19s', opacity: 0.08, color: NEUTRAL },
     { size: 5,  left: '88%', delay: '3s',   dur: '21s', opacity: 0.11, color: TEAL },
     { size: 4,  left: '95%', delay: '9s',   dur: '16s', opacity: 0.09, color: TEAL },
   ]
@@ -59,7 +64,7 @@ function FloatingDots() {
         <div key={i} style={{
           position: 'absolute', bottom: -16, left: d.left,
           width: d.size, height: d.size, borderRadius: '50%',
-          background: d.color, opacity: d.opacity,
+          background: d.color, opacity: d.opacity * opMul,
           animation: `floatDot ${d.dur} linear ${d.delay} infinite`,
         }} />
       ))}
@@ -269,6 +274,18 @@ function StatNumber({ to, suffix = '', display }) {
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState(null)
   const [heroPersona, setHeroPersona] = useState('agency') // 'agency' | 'employer'
+
+  // Toggle a body class so the global CSS rules in this file can warm the
+  // existing light section backgrounds and add a touch of extra padding when
+  // the visitor selects the Direct Employer view. Cleared on unmount so the
+  // tone never leaks to other routes (login, sign-up, dashboard).
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    if (heroPersona === 'employer') document.body.classList.add('pd-employer-tone')
+    else document.body.classList.remove('pd-employer-tone')
+    return () => { document.body.classList.remove('pd-employer-tone') }
+  }, [heroPersona])
+
   const [personaTab, setPersonaTab] = useState('agency_perm') // 'agency_perm' | 'agency_temp' | 'employer_perm' | 'employer_temp'
   const [pricingMode, setPricingMode] = useState('subscription') // 'subscription' | 'payg'
   const [riskJd, setRiskJd] = useState('')
@@ -323,12 +340,43 @@ export default function LandingPage() {
           50%  { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
+        @keyframes gradShiftLight {
+          0%   { background-position: 0% 50%; }
+          50%  { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
         @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.7} }
         @keyframes ctaPulse {
           0%,100% { box-shadow: 0 8px 32px rgba(0,191,165,0.34); }
           50% { box-shadow: 0 8px 48px rgba(0,191,165,0.6), 0 0 0 10px rgba(0,191,165,0.1); }
         }
         @keyframes goldPulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+        /* Direct Employer view: warm the light section backgrounds and add
+           a touch more breathing room. The dark gradient sections and the
+           hero are not matched by these selectors so they stay unchanged. */
+        body.pd-employer-tone section[style*="background:#ffffff"],
+        body.pd-employer-tone section[style*="background:#fff"],
+        body.pd-employer-tone section[style*="background: #fff"] {
+          background: #FAFAF7 !important;
+          padding-top: 90px !important;
+          padding-bottom: 90px !important;
+          transition: background 600ms ease, padding 600ms ease;
+        }
+        body.pd-employer-tone section[style*="background:#f8f9fb"],
+        body.pd-employer-tone section[style*="background: #f8f9fb"] {
+          background: #F4EFE7 !important;
+          padding-top: 90px !important;
+          padding-bottom: 90px !important;
+          transition: background 600ms ease, padding 600ms ease;
+        }
+        body.pd-employer-tone section[style*="background:#f1f3f5"],
+        body.pd-employer-tone section[style*="background: #f1f3f5"] {
+          background: #EDE6D8 !important;
+          padding-top: 90px !important;
+          padding-bottom: 90px !important;
+          transition: background 600ms ease, padding 600ms ease;
+        }
         @media (max-width: 768px) {
           .cv-vs-prodicta {
             grid-template-columns: 1fr !important;
@@ -348,34 +396,57 @@ export default function LandingPage() {
 
       {/* ════════════════════════════════════════════════════════════════════
           HERO
+          The hero supports two persona treatments. Agency keeps the
+          original dark animated gradient with white text and white-tinted
+          dots. Employer swaps to a softer cream + pale jade gradient with
+          navy text and navy-tinted dots, cross-faded over 600ms when the
+          toggle is pressed.
       ════════════════════════════════════════════════════════════════════ */}
+      {(() => { const isEmployer = heroPersona === 'employer'; return (
       <section style={{
         position: 'relative', minHeight: '100vh', overflow: 'hidden',
-        background: 'linear-gradient(-45deg, #0f2137, #1a3a5c, #0a2a2e, #0f2137)',
-        backgroundSize: '400% 400%', animation: 'gradShift 12s ease infinite',
+        background: '#0f2137',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         justifyContent: 'center', textAlign: 'center',
         padding: '90px 24px 75px',
       }}>
-        <FloatingDots />
+        {/* Two stacked animated gradient layers, cross-faded by opacity. */}
+        <div aria-hidden="true" style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'linear-gradient(-45deg, #0f2137, #1a3a5c, #0a2a2e, #0f2137)',
+          backgroundSize: '400% 400%', animation: 'gradShift 12s ease infinite',
+          opacity: isEmployer ? 0 : 1,
+          transition: 'opacity 600ms ease',
+        }} />
+        <div aria-hidden="true" style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'linear-gradient(-45deg, #F8F6F2, #FAFAF7, #E6F4F1, #F8F6F2)',
+          backgroundSize: '400% 400%', animation: 'gradShiftLight 12s ease infinite',
+          opacity: isEmployer ? 1 : 0,
+          transition: 'opacity 600ms ease',
+        }} />
 
-        {/* Radial glow */}
-        <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}14 0%, transparent 65%)`, pointerEvents: 'none' }} />
+        <FloatingDots tone={isEmployer ? 'light' : 'dark'} />
 
-        {/* Badge */}
+        {/* Radial glow, slightly softer on the light treatment so it does not bloom. */}
+        <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}${isEmployer ? '0c' : '14'} 0%, transparent 65%)`, pointerEvents: 'none', transition: 'background 600ms ease' }} />
+
+        {/* Badge: jade-on-dark for agency, navy-on-jade-tint for employer */}
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 32,
-          background: 'rgba(0,191,165,0.1)', border: '1px solid rgba(0,191,165,0.3)',
+          background: isEmployer ? TEALLT : 'rgba(0,191,165,0.1)',
+          border: `1px solid ${isEmployer ? `${TEAL}55` : 'rgba(0,191,165,0.3)'}`,
           borderRadius: 50, padding: '7px 18px', position: 'relative', zIndex: 1,
           animation: 'pulse 3s ease infinite',
+          transition: 'background 600ms ease, border-color 600ms ease',
         }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: TEAL, display: 'inline-block' }} />
-          <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEAL }}>Built for the Employment Rights Act 2025</span>
+          <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: isEmployer ? NAVY : TEAL, transition: 'color 600ms ease' }}>Built for the Employment Rights Act 2025</span>
         </div>
 
-        {/* Logo mark */}
-        <div style={{ marginBottom: 28, position: 'relative', zIndex: 1, filter: `drop-shadow(0 0 24px ${TEAL}44)` }}>
-          <ProdictaLogo size={56} textColor="#ffffff" />
+        {/* Logo mark: white wordmark on dark, navy wordmark on light */}
+        <div style={{ marginBottom: 28, position: 'relative', zIndex: 1, filter: isEmployer ? 'none' : `drop-shadow(0 0 24px ${TEAL}44)`, transition: 'filter 600ms ease' }}>
+          <ProdictaLogo size={56} textColor={isEmployer ? NAVY : '#ffffff'} />
         </div>
 
         {/* Persona toggle */}
@@ -412,52 +483,58 @@ export default function LandingPage() {
 
         {/* Headline */}
         <h1 style={{
-          fontFamily: F, fontWeight: 900, color: '#fff', position: 'relative', zIndex: 1,
+          fontFamily: F, fontWeight: 900, color: isEmployer ? NAVY : '#fff',
+          position: 'relative', zIndex: 1,
           fontSize: 'clamp(36px, 5.5vw, 66px)', letterSpacing: '-2px', lineHeight: 1.05,
           maxWidth: 820, marginBottom: 24,
+          transition: 'color 600ms ease',
         }}>
           {heroPersona === 'agency' ? 'We tell you if a placement will fail' : 'We tell you if a hire will fail'}<br />
-          <span style={{ color: TEAL, textShadow: '0 0 40px rgba(0,191,165,0.35)' }}>before you make it.</span>
+          <span style={{ color: isEmployer ? TEALD : TEAL, textShadow: isEmployer ? 'none' : '0 0 40px rgba(0,191,165,0.35)', transition: 'color 600ms ease, text-shadow 600ms ease' }}>before you make it.</span>
         </h1>
 
         {/* Subheadline */}
         <p style={{
           fontFamily: F, fontSize: 'clamp(18px, 2.2vw, 28px)', fontWeight: 600,
-          color: '#fff', lineHeight: 1.4,
+          color: isEmployer ? '#1f2d3d' : '#fff', lineHeight: 1.4,
           maxWidth: 660, marginBottom: 32, position: 'relative', zIndex: 1,
+          transition: 'color 600ms ease',
         }}>
           {heroPersona === 'agency'
             ? 'Then we help you protect the fee.'
             : 'Then we help them perform from day one.'}
         </p>
 
-        {/* Toggle subtext */}
+        {/* Toggle subtext: dark slate body on light, soft white on dark */}
         <p style={{
           fontFamily: F, fontSize: 'clamp(14px, 1.5vw, 17px)', fontWeight: 500,
-          color: 'rgba(255,255,255,0.5)', lineHeight: 1.7,
+          color: isEmployer ? '#3a4a5e' : 'rgba(255,255,255,0.5)', lineHeight: 1.7,
           maxWidth: 620, marginBottom: 36, position: 'relative', zIndex: 1,
           minHeight: 72,
+          transition: 'color 600ms ease',
         }}>
           {heroPersona === 'agency'
             ? "PRODICTA doesn't test personality or theory. We put candidates into real job situations and measure how they actually perform. Whether you place permanent hires or temps, you get evidence not guesswork. Real work simulations. Placement health in real time. SSP and compliance handled automatically. When something goes wrong you know at week one, not month four."
             : "PRODICTA doesn't test personality or theory. We put candidates into real job situations and measure how they actually perform. Whether you're hiring permanent staff or temporary cover, you get evidence not guesswork. Real work simulations. Probation tracking with ERA 2025 compliance built in. A 90-day coaching plan for every line manager so onboarding is structured, not improvised."}
         </p>
 
-        {/* Fear line */}
+        {/* Fear line: amber stays amber on both palettes (it is a warning signal, not decoration) */}
         <p style={{
           fontFamily: F, fontSize: 'clamp(13px, 1.3vw, 15px)', fontWeight: 600,
-          color: '#D97706', lineHeight: 1.6,
+          color: isEmployer ? '#B45309' : '#D97706', lineHeight: 1.6,
           maxWidth: 620, marginBottom: 28, position: 'relative', zIndex: 1,
+          transition: 'color 600ms ease',
         }}>
           {heroPersona === 'agency'
             ? 'Every failed placement costs you the fee, the relationship, and the rebate. PRODICTA stops that before it starts.'
             : 'Every bad hire costs between \u00A312,000 and \u00A330,000. Most hiring decisions still rely on interviews and gut feel. PRODICTA replaces guesswork with evidence before you commit.'}
         </p>
 
-        {/* Proof points */}
+        {/* Proof points: pale cream cards with navy text and jade icons in employer view */}
         <div style={{
-          display: 'flex', gap: 28, justifyContent: 'center', flexWrap: 'wrap',
-          marginBottom: 44, position: 'relative', zIndex: 1, maxWidth: 720,
+          display: 'flex', gap: isEmployer ? 20 : 28, justifyContent: 'center', flexWrap: 'wrap',
+          marginBottom: 44, position: 'relative', zIndex: 1, maxWidth: 760,
+          transition: 'gap 600ms ease',
         }}>
           {(heroPersona === 'agency' ? [
             { label: 'Perm and Temp', sub: 'One platform for every type of placement' },
@@ -468,13 +545,21 @@ export default function LandingPage() {
             { label: 'ERA 2025 protected', sub: 'Every decision documented automatically' },
             { label: 'Probation early warning', sub: 'Catch problems at week three not month four' },
           ]).map((pt, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: '1 1 200px', maxWidth: 220 }}>
+            <div key={i} style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+              flex: '1 1 200px', maxWidth: 240,
+              padding: isEmployer ? '14px 16px' : 0,
+              background: isEmployer ? 'rgba(255,255,255,0.55)' : 'transparent',
+              border: isEmployer ? `1px solid ${TEAL}33` : 'none',
+              borderRadius: isEmployer ? 12 : 0,
+              transition: 'padding 600ms ease, background 600ms ease, border-color 600ms ease',
+            }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
                 <polyline points="20 6 9 17 4 12" />
               </svg>
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>{pt.label}</div>
-                <div style={{ fontFamily: F, fontSize: 12.5, fontWeight: 400, color: 'rgba(255,255,255,0.45)', lineHeight: 1.4, marginTop: 2 }}>{pt.sub}</div>
+                <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: isEmployer ? NAVY : '#fff', lineHeight: 1.3, transition: 'color 600ms ease' }}>{pt.label}</div>
+                <div style={{ fontFamily: F, fontSize: 12.5, fontWeight: 500, color: isEmployer ? '#46566b' : 'rgba(255,255,255,0.45)', lineHeight: 1.4, marginTop: 2, transition: 'color 600ms ease' }}>{pt.sub}</div>
               </div>
             </div>
           ))}
@@ -494,12 +579,13 @@ export default function LandingPage() {
             See the demo
           </a>
           <a href="/login" style={{
-            fontFamily: F, fontSize: 16, fontWeight: 600, color: '#fff',
+            fontFamily: F, fontSize: 16, fontWeight: 600,
+            color: isEmployer ? NAVY : '#fff',
             background: 'transparent', border: `1.5px solid ${NAVY}`,
             textDecoration: 'none', padding: '16px 40px', borderRadius: 12, display: 'inline-block',
-            transition: 'background 0.15s, border-color 0.15s',
+            transition: 'background 0.15s, border-color 0.15s, color 600ms ease',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.4)' }}
+          onMouseEnter={e => { e.currentTarget.style.background = isEmployer ? 'rgba(15,33,55,0.06)' : 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = isEmployer ? NAVY : 'rgba(255,255,255,0.4)' }}
           onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.borderColor=NAVY }}>
             Sign up
           </a>
@@ -570,30 +656,38 @@ export default function LandingPage() {
         </div>
 
         {/* Stats bar */}
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 40, flexWrap: 'wrap', justifyContent: 'center', padding: '20px 32px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14 }}>
+        <div style={{
+          position: 'relative', zIndex: 1, display: 'flex', gap: 40, flexWrap: 'wrap', justifyContent: 'center',
+          padding: '20px 32px',
+          background: isEmployer ? 'rgba(15,33,55,0.04)' : 'rgba(255,255,255,0.04)',
+          border: `1px solid ${isEmployer ? 'rgba(15,33,55,0.10)' : 'rgba(255,255,255,0.08)'}`,
+          borderRadius: 14,
+          transition: 'background 600ms ease, border-color 600ms ease',
+        }}>
           {[
             { to: null, display: 'From £99', label: 'Per month' },
             { to: 4,   suffix: '',  label: 'Scenario types' },
- { to: null, display: '15-45 min', label: 'Assessment time' },
+            { to: null, display: '15-45 min', label: 'Assessment time' },
             { to: null, display: 'UK-built', label: 'For ERA 2025 compliance' },
           ].map((item) => (
             <div key={item.label} style={{ textAlign: 'center', minWidth: 90 }}>
-              <div style={{ fontFamily: FM, fontSize: 31, fontWeight: 700, color: TEAL, letterSpacing: '-0.5px', lineHeight: 1 }}>
+              <div style={{ fontFamily: FM, fontSize: 31, fontWeight: 700, color: isEmployer ? TEALD : TEAL, letterSpacing: '-0.5px', lineHeight: 1, transition: 'color 600ms ease' }}>
                 <StatNumber to={item.to} suffix={item.suffix} display={item.display} />
               </div>
-              <div style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.42)', marginTop: 5, whiteSpace: 'nowrap' }}>{item.label}</div>
+              <div style={{ fontFamily: F, fontSize: 12, color: isEmployer ? '#46566b' : 'rgba(255,255,255,0.42)', marginTop: 5, whiteSpace: 'nowrap', transition: 'color 600ms ease' }}>{item.label}</div>
             </div>
           ))}
         </div>
 
         {/* Scroll indicator */}
-        <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: 0.35 }}>
-          <div style={{ fontFamily: F, fontSize: 11, color: '#fff', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Scroll</div>
-          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: 0.45 }}>
+          <div style={{ fontFamily: F, fontSize: 11, color: isEmployer ? NAVY : '#fff', letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'color 600ms ease' }}>Scroll</div>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={isEmployer ? NAVY : '#fff'} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <polyline points="6 9 12 15 18 9"/>
           </svg>
         </div>
       </section>
+      ) })()}
 
       {/* ════════════════════════════════════════════════════════════════════
           PERSONA VALUE PROPOSITIONS
