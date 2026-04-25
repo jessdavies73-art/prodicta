@@ -742,13 +742,18 @@ export default function LandingPage() {
         const order = ['agency_perm', 'agency_temp', 'employer_perm', 'employer_temp']
 
         return (
-          <section style={{ background: '#ffffff', padding: '72px 24px' }}>
+          <section style={{
+            background: '#EDF6F4',
+            padding: '78px 24px',
+            borderTop: '1px solid rgba(15,33,55,0.08)',
+            boxShadow: 'inset 0 12px 24px -16px rgba(15,33,55,0.10)',
+          }}>
             <div style={{ maxWidth: 1080, margin: '0 auto' }}>
               <Reveal>
                 <div style={{ textAlign: 'center', marginBottom: 32 }}>
                   <span style={{
                     display: 'inline-block', padding: '5px 12px', borderRadius: 999,
-                    background: TEALLT, color: TEALD,
+                    background: '#ffffff', color: TEALD, border: `1px solid ${TEAL}55`,
                     fontFamily: F, fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
                     marginBottom: 14,
                   }}>
@@ -820,10 +825,10 @@ export default function LandingPage() {
                   {current.exciters.map((e, i) => (
                     <div key={i} style={{
                       background: '#ffffff',
-                      border: '1px solid #e4e9f0',
+                      border: '1px solid rgba(15,33,55,0.08)',
                       borderLeft: `4px solid ${TEAL}`,
-                      borderRadius: 12, padding: '20px 22px',
-                      boxShadow: '0 4px 16px rgba(15,33,55,0.06)',
+                      borderRadius: 12, padding: '22px 24px',
+                      boxShadow: '0 6px 18px rgba(15,33,55,0.08), 0 1px 3px rgba(15,33,55,0.04)',
                     }}>
                       <h4 style={{
                         fontFamily: F, fontSize: 16, fontWeight: 800, color: NAVY,
