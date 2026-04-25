@@ -19,6 +19,7 @@ import {
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
   F, FM,
   riskBg, riskCol, riskBd,
+  PD_VERDICT_DISCLAIMER, PD_REPORT_DECISION_BASIS, PD_WATCHOUT_VERIFY,
 } from '@/lib/constants'
 
 /* ─────────────────────────────────────────────────────────────
@@ -2459,6 +2460,14 @@ export default function CandidateReportPage({ params }) {
                       accent={verdictBg}
                       compact
                     />
+                    {/* Standard verdict-card disclaimer, central wording from lib/constants. */}
+                    <div style={{
+                      marginTop: 14, padding: '10px 14px',
+                      background: BG, border: `1px solid ${BD}`, borderRadius: 8,
+                      fontFamily: F, fontSize: 12, color: TX2, lineHeight: 1.55,
+                    }}>
+                      {PD_VERDICT_DISCLAIMER}
+                    </div>
                     <div style={{ marginBottom: 16 }} />
                     {/* Strengths + Watch-outs */}
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 20 }}>
@@ -5144,6 +5153,14 @@ export default function CandidateReportPage({ params }) {
                               const variant = pickVerificationVariant(typeof w === 'object' ? w : null, ff)
                               return variant ? <AskAtInterviewBlock variant={variant} framedFor={ff} accent={sev.color} /> : null
                             })()}
+                            {/* Compliance: every watch-out carries a verification reminder. */}
+                            <div style={{
+                              marginTop: 10,
+                              fontFamily: F, fontSize: 11.5, color: TX3,
+                              fontStyle: 'italic', lineHeight: 1.55,
+                            }}>
+                              {PD_WATCHOUT_VERIFY}
+                            </div>
                           </div>
                         )
                       })}
@@ -5978,6 +5995,17 @@ export default function CandidateReportPage({ params }) {
                   onToggle={() => setValidationOpen(v => !v)}
                   isMobile={isMobile}
                 />
+
+                {/* Standard report footer with the central decision-basis line.
+                    Prints with the report and renders on the report page itself. */}
+                <div style={{
+                  marginBottom: 24,
+                  padding: '14px 18px',
+                  background: BG, border: `1px solid ${BD}`, borderRadius: 10,
+                  fontFamily: F, fontSize: 12, color: TX2, lineHeight: 1.6,
+                }}>
+                  PRODICTA reports describe assessment behaviour and surface risk indicators. They are not legal advice. Seek employment law advice where appropriate. {PD_REPORT_DECISION_BASIS}
+                </div>
 
                 {/* ══════════════════════════════════════════════════
                     TEAM NOTES
@@ -8006,7 +8034,7 @@ function WhatCouldChangePanel({ results, scenarioCount = 0, expanded, onToggle }
           {p2 && <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13.5, color: '#0f2137', margin: 0, lineHeight: 1.65 }}>{p2}</p>}
           {p3 && <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13.5, color: '#0f2137', margin: 0, lineHeight: 1.65 }}>{p3}</p>}
           <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 11.5, color: '#94a1b3', fontStyle: 'italic', margin: '6px 0 0', lineHeight: 1.55 }}>
-            These are predicted outcomes based on assessment behaviour. PRODICTA predictions are directional, not guaranteed. They are not legal advice.
+            These are risk indicators based on assessment behaviour. PRODICTA outputs are directional and are not legal advice. {PD_REPORT_DECISION_BASIS}
           </p>
         </div>
       </div>

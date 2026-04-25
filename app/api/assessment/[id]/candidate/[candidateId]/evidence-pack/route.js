@@ -554,9 +554,14 @@ export async function GET(request, { params }) {
     // ──────────────────────────────────────────────────────────────────────
     const totalPages = pages.length
     pages.forEach((p, i) => {
-      p.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: 30, color: navy })
-      p.drawText('PRODICTA  |  Probation Evidence Pack  |  Confidential', { x: MARGIN, y: 11, size: 8.5, font: helv, color: rgb(0.78, 0.85, 0.86) })
-      p.drawText(`${generatedAtLabel}  |  Page ${i + 1} of ${totalPages}`, { x: PAGE_W - MARGIN - 200, y: 11, size: 8.5, font: helv, color: rgb(0.78, 0.85, 0.86) })
+      // Taller footer to carry the standard compliance disclaimer above the
+      // page-meta line. Wording matches lib/constants PD_PDF_FOOTER.
+      p.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: 56, color: navy })
+      p.drawText('PRODICTA reports describe assessment behaviour and surface risk indicators.', { x: MARGIN, y: 40, size: 7.5, font: helv, color: rgb(0.78, 0.86, 0.84) })
+      p.drawText('They are not legal advice. Seek employment law advice where appropriate.', { x: MARGIN, y: 30, size: 7.5, font: helv, color: rgb(0.78, 0.86, 0.84) })
+      p.drawText('PRODICTA reports should be one input to your hiring decision, not the sole basis.', { x: MARGIN, y: 20, size: 7.5, font: helv, color: rgb(0.78, 0.86, 0.84) })
+      p.drawText('PRODICTA  |  Probation Evidence Pack  |  Confidential', { x: MARGIN, y: 7, size: 8, font: helv, color: rgb(0.78, 0.85, 0.86) })
+      p.drawText(`${generatedAtLabel}  |  Page ${i + 1} of ${totalPages}`, { x: PAGE_W - MARGIN - 200, y: 7, size: 8, font: helv, color: rgb(0.78, 0.85, 0.86) })
     })
 
     const bytes = await pdf.save()

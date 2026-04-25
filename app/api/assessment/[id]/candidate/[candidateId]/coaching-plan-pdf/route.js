@@ -253,9 +253,11 @@ export async function GET(request, { params }) {
       y -= 18
     })
 
-    // Footer on every page
+    // Footer on every page, including the standard PRODICTA compliance line.
     const pages = pdf.getPages()
     pages.forEach((pg, idx) => {
+      pg.drawText('PRODICTA reports describe assessment behaviour and surface risk indicators. They are not legal advice.', { x: MARGIN_L, y: 56, size: 7.5, font: helv, color: grey })
+      pg.drawText('Seek employment law advice where appropriate. PRODICTA reports should be one input to your hiring decision, not the sole basis.', { x: MARGIN_L, y: 46, size: 7.5, font: helv, color: grey })
       pg.drawText('PRODICTA x Alchemy Training UK | Book a coaching check-in: tidycal.com/m57e7l3/30-minute-coaching-check-in', { x: MARGIN_L, y: 30, size: 8, font: helv, color: grey })
       pg.drawText(`${idx + 1}`, { x: W - MARGIN_R, y: 30, size: 8, font: helv, color: grey })
     })

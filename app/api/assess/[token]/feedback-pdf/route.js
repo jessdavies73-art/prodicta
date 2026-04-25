@@ -240,11 +240,14 @@ export async function GET(request, { params }) {
       }
     }
 
-    // Footer
+    // Footer with the standard PRODICTA compliance disclaimer.
     const lastPage = pdf.getPages()[pdf.getPageCount() - 1]
-    lastPage.drawRectangle({ x: 0, y: 0, width: 595, height: 36, color: navy })
-    lastPage.drawText('Provided by PRODICTA', { x: 40, y: 13, size: 9, font: helv, color: rgb(0.85, 0.95, 0.95) })
-    lastPage.drawText('prodicta.co.uk', { x: 460, y: 13, size: 9, font: helvB, color: teal })
+    lastPage.drawRectangle({ x: 0, y: 0, width: 595, height: 56, color: navy })
+    lastPage.drawText('PRODICTA describes assessment behaviour and surfaces development indicators.', { x: 40, y: 40, size: 7.5, font: helv, color: rgb(0.78, 0.86, 0.84) })
+    lastPage.drawText('This feedback is directional, not a definitive assessment of your career or capability.', { x: 40, y: 30, size: 7.5, font: helv, color: rgb(0.78, 0.86, 0.84) })
+    lastPage.drawText('PRODICTA outputs are not legal advice. Seek independent advice where appropriate.', { x: 40, y: 20, size: 7.5, font: helv, color: rgb(0.78, 0.86, 0.84) })
+    lastPage.drawText('Provided by PRODICTA', { x: 40, y: 7, size: 8, font: helv, color: rgb(0.85, 0.95, 0.95) })
+    lastPage.drawText('prodicta.co.uk', { x: 460, y: 7, size: 8, font: helvB, color: teal })
 
     const bytes = await pdf.save()
     return new Response(bytes, {
