@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
+import { SCORING_DIMENSIONS, SCORING_DIMENSION_NAMES } from '@/lib/dimensions'
 
 // Scenario generation calls the Anthropic API which can take 30-60s for
 // Strategy-Fit (4 scenarios). Allow up to 120s before Vercel kills the function.
@@ -123,6 +124,181 @@ function formatJobBreakdownBlock(breakdown) {
   ].filter(Boolean)
   if (!sections.length) return ''
   return `\nJOB BREAKDOWN (extracted in a pre-pass, treat as authoritative):\n${sections.join('\n\n')}\nUse these tasks, disruptions, decisions, and failure points as the source of truth when building scenarios. Every scenario must trace back to at least one item from each bucket where possible.\n`
+}
+
+// Dynamic Dimension Detection. Picks 5 to 7 scoring dimensions from the master
+// list in lib/dimensions.js for this specific role, weights them to total 100,
+// and records a reason per dimension. Reads the Job Breakdown plus JD plus
+// hiring-manager context. Uses claude-sonnet-4-5, max_tokens 600, temperature
+// 0.3 for consistency. Returns null on any failure so the caller falls back
+// to legacy fixed-family scoring.
+async function detectScoringDimensions(client, role_title, job_description, context_answers, jobBreakdown) {
+  const breakdownBlock = formatJobBreakdownBlock(jobBreakdown)
+  const contextBlock = context_answers && Object.values(context_answers).some(v => v?.trim())
+    ? `\n\nADDITIONAL CONTEXT FROM HIRING MANAGER:\n${Object.entries(context_answers)
+        .map(([, v]) => v?.trim())
+        .filter(Boolean)
+        .map(v => `- ${v}`)
+        .join('\n')}`
+    : ''
+
+  const masterList = SCORING_DIMENSIONS
+    .map(d => `- ${d.name}: ${d.definition}`)
+    .join('\n')
+
+  const prompt = `You are an expert role analyst. Pick the scoring dimensions PRODICTA should use to score candidates for this specific role.
+
+ROLE: ${role_title}
+
+JOB DESCRIPTION:
+${job_description}${contextBlock}
+${breakdownBlock}
+
+MASTER LIST OF AVAILABLE DIMENSIONS (you MUST pick from this list, exact names only):
+${masterList}
+
+Your task:
+1. Pick the 5 to 7 dimensions from the master list above that matter most for THIS role. Do not invent new dimensions and do not rename existing ones.
+2. Assign a weight to each dimension. The weights MUST sum to exactly 100.
+3. Give a one-sentence reason per dimension explaining why it was selected for THIS role, citing the JD or the Job Breakdown explicitly. The reason is the audit trail when a hiring decision is challenged.
+
+Hard constraints:
+- Pick between 5 and 7 dimensions. No fewer, no more.
+- Weights must be integers and sum to exactly 100.
+- Use the exact dimension names from the master list. Names are case-sensitive.
+- Reasons must be concrete and reference the role. Do not write generic justifications like "important for any job".
+- UK English. No em dashes. No emoji.
+
+Return JSON only, no prose, no code fences:
+{
+  "dimensions": [
+    {"name": "string from master list", "weight": 25, "reason": "one sentence tied to this role"},
+    ...
+  ]
+}`
+
+  try {
+    const msg = await raceWithTimeout(
+      client.messages.create({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 600,
+        temperature: 0.3,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+      30000,
+      'dimension detection'
+    )
+    const text = msg?.content?.[0]?.text || ''
+    const match = text.match(/\{[\s\S]*\}/)
+    if (!match) return null
+    const parsed = JSON.parse(match[0])
+    if (!Array.isArray(parsed?.dimensions)) return null
+
+    const validNames = new Set(SCORING_DIMENSION_NAMES)
+    const cleaned = parsed.dimensions
+      .map(d => ({
+        name: typeof d?.name === 'string' ? d.name.trim() : '',
+        weight: Number.isFinite(d?.weight) ? Math.round(d.weight) : 0,
+        reason: typeof d?.reason === 'string' ? d.reason.trim() : '',
+      }))
+      .filter(d => validNames.has(d.name) && d.weight > 0 && d.reason)
+
+    if (cleaned.length < 5 || cleaned.length > 7) return null
+
+    // Normalise weights to total exactly 100. The model usually gets this
+    // right, but rounding drift can leave it at 99 or 101; correct on the
+    // largest entry without nudging anything below 5.
+    const total = cleaned.reduce((n, d) => n + d.weight, 0)
+    if (total !== 100) {
+      const drift = 100 - total
+      cleaned.sort((a, b) => b.weight - a.weight)
+      cleaned[0].weight = Math.max(5, cleaned[0].weight + drift)
+    }
+
+    return { dimensions: cleaned }
+  } catch (err) {
+    console.error('[generate] dimension detection failed', err?.message)
+    return null
+  }
+}
+
+// Generates High/Mid/Low scoring anchors for each detected dimension, tailored
+// to the actual role. "Accuracy" for a nuclear engineer differs from "Accuracy"
+// for a graphic designer; the anchors capture that. Stored on
+// assessments.dimension_rubrics for audit and used by lib/score-candidate.js
+// in the Call 1 scoring prompt.
+async function generateScoringRubrics(client, role_title, job_description, jobBreakdown, detectedDimensions) {
+  if (!detectedDimensions?.dimensions?.length) return null
+
+  const breakdownBlock = formatJobBreakdownBlock(jobBreakdown)
+  const dimList = detectedDimensions.dimensions
+    .map(d => `- ${d.name} (definition: ${SCORING_DIMENSIONS.find(x => x.name === d.name)?.definition || ''})`)
+    .join('\n')
+
+  const prompt = `You are writing scoring anchors for a candidate assessment.
+
+ROLE: ${role_title}
+
+JOB DESCRIPTION:
+${job_description}
+${breakdownBlock}
+
+DIMENSIONS TO ANCHOR (use these exact names, do not add or rename):
+${dimList}
+
+For each dimension, write three anchors that describe what HIGH (80 to 100), MID (50 to 79), and LOW (under 50) performance looks like SPECIFICALLY in this role. Anchors must be concrete and reference the actual work. "Accuracy" for a nuclear engineer must read differently from "Accuracy" for a graphic designer. Each anchor should be one or two short sentences and contain at least one role-specific signal (a tool, a deliverable, a stakeholder, a failure mode).
+
+Hard constraints:
+- One rubric per dimension, exactly the names listed above.
+- High, mid, and low anchors are required for every dimension.
+- UK English. No em dashes. No emoji.
+
+Return JSON only:
+{
+  "rubrics": [
+    {
+      "dimension": "string",
+      "high_anchor": "what 80+ looks like in this role",
+      "mid_anchor": "what 50 to 79 looks like in this role",
+      "low_anchor": "what under 50 looks like in this role"
+    },
+    ...
+  ]
+}`
+
+  try {
+    const msg = await raceWithTimeout(
+      client.messages.create({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 1200,
+        temperature: 0.3,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+      45000,
+      'rubric generation'
+    )
+    const text = msg?.content?.[0]?.text || ''
+    const match = text.match(/\{[\s\S]*\}/)
+    if (!match) return null
+    const parsed = JSON.parse(match[0])
+    if (!Array.isArray(parsed?.rubrics)) return null
+
+    const wantedNames = new Set(detectedDimensions.dimensions.map(d => d.name))
+    const cleaned = parsed.rubrics
+      .map(r => ({
+        dimension: typeof r?.dimension === 'string' ? r.dimension.trim() : '',
+        high_anchor: typeof r?.high_anchor === 'string' ? r.high_anchor.trim() : '',
+        mid_anchor: typeof r?.mid_anchor === 'string' ? r.mid_anchor.trim() : '',
+        low_anchor: typeof r?.low_anchor === 'string' ? r.low_anchor.trim() : '',
+      }))
+      .filter(r => wantedNames.has(r.dimension) && r.high_anchor && r.mid_anchor && r.low_anchor)
+
+    if (!cleaned.length) return null
+    return { rubrics: cleaned }
+  } catch (err) {
+    console.error('[generate] rubric generation failed', err?.message)
+    return null
+  }
 }
 
 export async function POST(request) {
@@ -461,6 +637,15 @@ ASSESSMENT STYLE: Stakeholder Conflict Navigation. Present two conflicting but e
     // fall back to the inline Job DNA extraction.
     const jobBreakdown = await extractJobBreakdown(client, role_title, job_description, context_answers)
     const jobBreakdownBlock = formatJobBreakdownBlock(jobBreakdown)
+
+    // Dynamic Dimension Detection. Picks the 5 to 7 dimensions PRODICTA will
+    // score on for THIS role and generates High/Mid/Low rubrics tailored to it.
+    // Results are persisted on the assessment row so scoring (in
+    // lib/score-candidate.js) and the Skills Breakdown panel both render from
+    // the same source of truth. Both calls are non-fatal: if either returns
+    // null, scoring falls back to the legacy fixed-family path.
+    const detectedDimensions = await detectScoringDimensions(client, role_title, job_description, context_answers, jobBreakdown)
+    const dimensionRubrics = await generateScoringRubrics(client, role_title, job_description, jobBreakdown, detectedDimensions)
 
     const standard3Prompt = `You are a specialist assessment designer for UK businesses. Your job is to create THREE work simulation scenarios for this role. These are for a 25-minute Depth-Fit Assessment, the right balance of depth and candidate experience for most roles.
 
@@ -1367,6 +1552,8 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         assessment_mode: mode,
         employment_type,
         ...(jobBreakdown && { job_breakdown: jobBreakdown }),
+        ...(detectedDimensions && { detected_dimensions: detectedDimensions }),
+        ...(dimensionRubrics && { dimension_rubrics: dimensionRubrics }),
         ...(location && { location }),
         ...(context_answers && Object.values(context_answers).some(v => v?.trim()) && {
           context_answers,

@@ -1203,14 +1203,18 @@ function DemoEvidencePill({ level }) {
 
 const DEMO_DIMENSION_EVIDENCE = {
   'demo-c1': {
-    'Strategic Communication': 'Wrote a three-option note to the CEO ranked by revenue and reputational risk, with a clear primary recommendation rather than an open question.',
-    'Stakeholder Management':  'Called the PR agency before drafting the CEO update so the written note contained a plan, not a problem. Reserved two tier-one exclusives for the actual product reveal.',
-    'Data & Analytics':        'Anchored the measurement framework around pipeline contribution and cost-per-acquisition rather than vanity metrics, with a specific 90-day target and weekly cadence.',
-    'Campaign Strategy':       'Proposed holding the launch date and converting the first ten days into a narrative teaser built around the founder story and two signed-off beta customer interviews.',
-    'Execution Reliability':   'Completed every scenario in full and maintained a consistent, structured response format across all four tasks.',
+    'Commercial Thinking':            'Anchored the measurement framework around pipeline contribution and cost-per-acquisition rather than vanity metrics, with a specific 90-day target and weekly cadence.',
+    'Stakeholder Management':         'Called the PR agency before drafting the CEO update so the written note contained a plan, not a problem. Reserved two tier-one exclusives for the actual product reveal.',
+    'Communication':                  'Wrote a three-option note to the CEO ranked by revenue and reputational risk, with a clear primary recommendation rather than an open question.',
+    'Adaptability':                   'Held the launch date and converted the first ten days into a founder-story teaser when supply broke, rather than scrapping the campaign or forcing the original plan.',
+    'Decision Making Under Pressure': 'Made a defensible call within hours of the supply issue surfacing. Trade-offs spelled out, named owners assigned, review point booked.',
   },
   'demo-c2': {
-    'Strategic Communication': 'Focused on alignment and keeping everyone informed. Did not specify what decisions were being asked for, or by when.',
+    'Commercial Thinking':            'Reported on impressions and engagement rate without connecting them to pipeline or cost-per-acquisition. Would benefit from structured measurement coaching.',
+    'Stakeholder Management':         'Diagnosed the cross-functional friction as a communication gap rather than a strategic disagreement. Proposed a coffee with the sales lead before any formal escalation.',
+    'Communication':                  'Drafted a clear, appropriately urgent email without becoming alarmist. Tone landed well for the audience, though decisions being asked for were not always specified.',
+    'Adaptability':                   'Pivoted his original campaign plan when budget was cut mid-scenario, but defaulted to a familiar channel mix rather than testing a new approach.',
+    'Decision Making Under Pressure': 'Reached a clear decision quickly under time pressure, though attributed part of a past failure to unclear briefs from the client rather than fully owning the call.',
   },
 }
 
