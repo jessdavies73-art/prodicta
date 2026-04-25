@@ -1086,7 +1086,7 @@ export default function LandingPage() {
                 From job description to hiring decision in minutes
               </h2>
               <p style={{ fontFamily: F, fontSize: 17, color: '#5e6b7f', lineHeight: 1.7, maxWidth: 520, margin: '0 auto' }}>
-                No personality tests. No guesswork. Real work simulations that show you exactly who will succeed.
+                No personality tests. No theory. Real work simulations that show you exactly who will succeed.
               </p>
             </div>
           </Reveal>
