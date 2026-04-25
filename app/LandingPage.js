@@ -41,9 +41,10 @@ function Reveal({ children, delay = 0, style = {} }) {
 
 // ── Floating dots (same as login) ─────────────────────────────────────────────
 function FloatingDots({ tone = 'dark' }) {
-  // tone: 'dark' uses the original white + jade dots for the dark hero.
-  // 'light' swaps the white dots for navy and slightly reduces opacity so
-  // they read against the cream/off-white employer palette.
+  // The lighter employer hero deliberately has no dots, so this component is
+  // only mounted on the dark agency hero (and on the dark login / sign-up /
+  // auth screens). Tone is kept as a prop for those callers and defaults to
+  // dark, which is the only style the landing hero now uses.
   const NEUTRAL = tone === 'light' ? NAVY : '#fff'
   const opMul = tone === 'light' ? 0.55 : 1
   const dots = [
@@ -59,7 +60,7 @@ function FloatingDots({ tone = 'dark' }) {
     { size: 4,  left: '95%', delay: '9s',   dur: '16s', opacity: 0.09, color: TEAL },
   ]
   return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }}>
       {dots.map((d, i) => (
         <div key={i} style={{
           position: 'absolute', bottom: -16, left: d.left,
@@ -99,10 +100,12 @@ function Nav() {
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
-      background: scrolled || menuOpen ? 'rgba(13,30,48,0.96)' : 'transparent',
-      backdropFilter: scrolled || menuOpen ? 'blur(20px)' : 'none',
-      borderBottom: scrolled ? '1px solid rgba(255,255,255,0.07)' : 'none',
-      transition: 'background 0.3s, border-color 0.3s',
+      // The header is global. It stays dark navy at all times so the lighter
+      // employer hero never shows through behind the wordmark on first load.
+      background: 'rgba(13,30,48,0.96)',
+      backdropFilter: 'blur(20px)',
+      borderBottom: scrolled ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(255,255,255,0.04)',
+      transition: 'border-color 0.3s',
       padding: isMobile ? '0 16px' : '0 48px', height: 68,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       flexWrap: isMobile && menuOpen ? 'wrap' : 'nowrap',
@@ -413,24 +416,26 @@ export default function LandingPage() {
       }}>
         {/* Two stacked animated gradient layers, cross-faded by opacity. */}
         <div aria-hidden="true" style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
+          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
           background: 'linear-gradient(-45deg, #0f2137, #1a3a5c, #0a2a2e, #0f2137)',
           backgroundSize: '400% 400%', animation: 'gradShift 12s ease infinite',
           opacity: isEmployer ? 0 : 1,
           transition: 'opacity 600ms ease',
         }} />
         <div aria-hidden="true" style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
+          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
           background: 'linear-gradient(-45deg, #F8F6F2, #FAFAF7, #E6F4F1, #F8F6F2)',
           backgroundSize: '400% 400%', animation: 'gradShiftLight 12s ease infinite',
           opacity: isEmployer ? 1 : 0,
           transition: 'opacity 600ms ease',
         }} />
 
-        <FloatingDots tone={isEmployer ? 'light' : 'dark'} />
+        {/* Floating dots only on the dark agency hero. The lighter employer
+            treatment is intentionally dot-free. */}
+        {!isEmployer && <FloatingDots tone="dark" />}
 
         {/* Radial glow, slightly softer on the light treatment so it does not bloom. */}
-        <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}${isEmployer ? '0c' : '14'} 0%, transparent 65%)`, pointerEvents: 'none', transition: 'background 600ms ease' }} />
+        <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}${isEmployer ? '0c' : '14'} 0%, transparent 65%)`, pointerEvents: 'none', transition: 'background 600ms ease', zIndex: 0 }} />
 
         {/* Badge: jade-on-dark for agency, navy-on-jade-tint for employer */}
         <div style={{
@@ -445,8 +450,17 @@ export default function LandingPage() {
           <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: isEmployer ? NAVY : TEAL, transition: 'color 600ms ease' }}>Built for the Employment Rights Act 2025</span>
         </div>
 
-        {/* Logo mark: white wordmark on dark, navy wordmark on light */}
-        <div style={{ marginBottom: 28, position: 'relative', zIndex: 1, filter: isEmployer ? 'none' : `drop-shadow(0 0 24px ${TEAL}44)`, transition: 'filter 600ms ease' }}>
+        {/* Logo mark: white "PRO" + jade "DICTA" on dark, navy "PRO" + jade
+            "DICTA" on light. A soft jade halo on the light view ties the
+            wordmark to the brand colour and prevents it reading as pasted in. */}
+        <div style={{
+          marginTop: 4, marginBottom: 32,
+          position: 'relative', zIndex: 1,
+          filter: isEmployer
+            ? `drop-shadow(0 1px 0 rgba(15,33,55,0.04)) drop-shadow(0 0 18px ${TEAL}22)`
+            : `drop-shadow(0 0 24px ${TEAL}44)`,
+          transition: 'filter 600ms ease',
+        }}>
           <ProdictaLogo size={56} textColor={isEmployer ? NAVY : '#ffffff'} />
         </div>
 
