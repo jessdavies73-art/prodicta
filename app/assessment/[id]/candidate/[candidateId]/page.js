@@ -2450,6 +2450,16 @@ export default function CandidateReportPage({ params }) {
                         {results.ai_summary.split(/[.!?]/)[0].trim().slice(0, 120)}{results.ai_summary.split(/[.!?]/)[0].trim().length > 0 ? '.' : ''}
                       </div>
                     )}
+                    {/* Three-part chain on the verdict card itself, framed for the viewer */}
+                    <EvidenceAnalysisPrediction
+                      evidence={`Overall ${score}/100 with ${results.confidence_level || 'standard'} confidence. ${(results.strengths || []).length} named strengths and ${(results.watchouts || []).length} watch-outs in the report.`}
+                      analysis={`Verdict reflects the balance of demonstrated capability against documented risks and the consistency of the response pattern.`}
+                      predictionVariants={results.predictions?._panels?.verdict}
+                      framedFor={framedForKey(profile?.account_type, candidate?.assessments?.employment_type)}
+                      accent={verdictBg}
+                      compact
+                    />
+                    <div style={{ marginBottom: 16 }} />
                     {/* Strengths + Watch-outs */}
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 20 }}>
                       {(results.strengths || []).length > 0 && (
@@ -2939,7 +2949,7 @@ export default function CandidateReportPage({ params }) {
                     SIGNS THIS HIRE IS ON TRACK AT DAY 30 (derived)
                 ══════════════════════════════════════════════════ */}
                 {results && (
-                  <FirstThirtyDaysPanel results={results} />
+                  <FirstThirtyDaysPanel results={results} accountType={profile?.account_type} employmentType={candidate?.assessments?.employment_type} />
                 )}
 
                 {/* ══════════════════════════════════════════════════
@@ -3007,6 +3017,13 @@ export default function CandidateReportPage({ params }) {
                       <p style={{ fontFamily: F, fontSize: 14, color: TX, lineHeight: 1.75, margin: 0 }}>
                         {results.leave_analysis}
                       </p>
+                      <EvidenceAnalysisPrediction
+                        evidence={(results.watchouts || []).slice(0, 2).map(w => w.evidence || w.text).filter(Boolean).join(' / ') || null}
+                        analysis={'Pattern of disengagement risk traced to specific scenario behaviours and role-fit gaps.'}
+                        predictionVariants={results.predictions?._panels?.leave_analysis}
+                        framedFor={framedForKey(profile?.account_type, candidate?.assessments?.employment_type)}
+                        accent={AMB}
+                      />
                     </Card>
                   </ScrollReveal>
                 )}
@@ -3092,6 +3109,13 @@ export default function CandidateReportPage({ params }) {
                             {results.counter_offer_narrative}
                           </p>
                         )}
+                        <EvidenceAnalysisPrediction
+                          evidence={results.counter_offer_narrative || null}
+                          analysis={`Counter-offer resilience score ${cor}% reflects the candidate's stated motivation strength and pull factors.`}
+                          predictionVariants={results.predictions?._panels?.counter_offer}
+                          framedFor={framedForKey(profile?.account_type, candidate?.assessments?.employment_type)}
+                          accent={accent}
+                        />
                       </Card>
                     </ScrollReveal>
                   )
@@ -3154,6 +3178,13 @@ export default function CandidateReportPage({ params }) {
                             })}
                           </div>
                         )}
+                        <EvidenceAnalysisPrediction
+                          evidence={Array.isArray(cf.points) && cf.points.length > 0 ? cf.points.map(p => `${p.type === 'friction' ? 'Friction' : 'Alignment'}: ${p.text}`).join(' / ') : null}
+                          analysis={`Culture fit score ${cf.score ?? 'pending'}% across the structure, collaboration, pace, communication and process axes.`}
+                          predictionVariants={results.predictions?._panels?.culture_fit}
+                          framedFor={framedForKey(profile?.account_type, candidate?.assessments?.employment_type)}
+                          accent={accent}
+                        />
                       </Card>
                     </ScrollReveal>
                   )
@@ -4242,6 +4273,15 @@ export default function CandidateReportPage({ params }) {
                       Skills Breakdown
                     </SectionHeading>
                     <RadarChart scores={results.scores} />
+                    <EvidenceAnalysisPrediction
+                      evidence={Object.entries(results.scores).slice(0, 4).map(([k, v]) => `${k} ${v}`).join(', ')}
+                      analysis={`Profile shows ${Object.values(results.scores).filter(v => v >= 75).length} strong dimensions and ${Object.values(results.scores).filter(v => v < 60).length} below-bar dimensions.`}
+                      predictionVariants={results.predictions?._panels?.skills_breakdown}
+                      framedFor={framedForKey(profile?.account_type, candidate?.assessments?.employment_type)}
+                      accent={TEAL}
+                      compact
+                    />
+                    <div style={{ marginBottom: 14 }} />
                     <div className="skills-detail-cards" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 16 }}>
                       {Object.entries(results.scores).map(([skill, skillScore]) => {
                         const displaySkill = skill === 'Execution Reliability' ? 'Will they deliver consistently?' : skill
@@ -4340,6 +4380,13 @@ export default function CandidateReportPage({ params }) {
                         summary={results.consistency_summary}
                         flag={results.consistency_flag}
                       />
+                      <EvidenceAnalysisPrediction
+                        evidence={results.consistency_summary?.summary_text || results.consistency_notes || `Score ${results.execution_reliability}/100 across the four scenarios.`}
+                        analysis={`Reflects how completely instructions were followed and how stable behaviour stayed under sustained effort.`}
+                        predictionVariants={results.predictions?._panels?.execution_reliability}
+                        framedFor={framedForKey(profile?.account_type, candidate?.assessments?.employment_type)}
+                        accent={sc(results.execution_reliability)}
+                      />
                     </Card>
                   </ScrollReveal>
                 ) : (
@@ -4397,6 +4444,13 @@ export default function CandidateReportPage({ params }) {
                             ? 'Moderate development signal. Will benefit from a structured 30-60-90 plan with regular feedback.'
                             : 'Limited development signal in this assessment. May be a fixed performer at current capability.')}
                         </p>
+                        <EvidenceAnalysisPrediction
+                          evidence={results.training_potential_narrative || `Trainability score ${tp}/100 derived from improvement across scenarios, adaptability and self-awareness about gaps.`}
+                          analysis={`Higher scores indicate quicker uptake of new concepts and willingness to adjust under feedback.`}
+                          predictionVariants={results.predictions?._panels?.training_potential}
+                          framedFor={framedForKey(profile?.account_type, candidate?.assessments?.employment_type)}
+                          accent={sc(tp)}
+                        />
                       </Card>
                     </ScrollReveal>
                   )
@@ -7960,7 +8014,7 @@ function WhatCouldChangePanel({ results, scenarioCount = 0, expanded, onToggle }
   )
 }
 
-function FirstThirtyDaysPanel({ results }) {
+function FirstThirtyDaysPanel({ results, accountType, employmentType }) {
   const strengths = Array.isArray(results?.strengths) ? results.strengths : []
   const watchouts = Array.isArray(results?.watchouts) ? results.watchouts : []
   const onboarding = Array.isArray(results?.onboarding_plan) ? results.onboarding_plan : []
@@ -8015,6 +8069,13 @@ function FirstThirtyDaysPanel({ results }) {
           </li>
         ))}
       </ul>
+      <EvidenceAnalysisPrediction
+        evidence={topStrengthTitle && topWatchoutTitle ? `Strength: ${topStrengthTitle}. Watch-out: ${topWatchoutTitle}.` : (topStrengthTitle || topWatchoutTitle || null)}
+        analysis={'These checkpoints translate the assessed strengths and watch-outs into observable day-30 signals.'}
+        predictionVariants={results?.predictions?._panels?.first_thirty_days}
+        framedFor={framedForKey(accountType, employmentType)}
+        accent={TEAL}
+      />
     </div>
   )
 }
@@ -8987,6 +9048,66 @@ function pickVerificationVariant(node, framedFor) {
   }
   if (node.verification_question) return node.verification_question
   return null
+}
+
+// Pick the prediction variant matching the viewer's account/employment from a
+// {agency_permanent, agency_temporary, employer_permanent, employer_temporary}
+// object. Falls back to whichever key is present.
+function pickPredictionVariant(variants, framedFor) {
+  if (!variants || typeof variants !== 'object') return null
+  if (variants[framedFor]) return { text: variants[framedFor], framed_for: framedFor }
+  const fallback = Object.keys(variants)[0]
+  return fallback ? { text: variants[fallback], framed_for: fallback } : null
+}
+
+// Three-part chain: Evidence > What this shows > Likely impact. The prediction
+// text is selected from a four-variant object so it speaks the right
+// vocabulary for the viewer's account/employment combination. Used across the
+// verdict card, skills breakdown, predicted outcomes, counter-offer, culture
+// fit, execution reliability, training potential, leave analysis, and first
+// 30 days panels.
+function EvidenceAnalysisPrediction({ evidence, analysis, predictionVariants, framedFor, accent, compact }) {
+  const a = accent || TEAL
+  const variant = pickPredictionVariant(predictionVariants, framedFor)
+  const labelStyle = {
+    fontFamily: F, fontSize: 10.5, fontWeight: 800, color: TX3,
+    textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4,
+    display: 'inline-flex', alignItems: 'center', gap: 6,
+  }
+  const bodyStyle = {
+    fontFamily: F, fontSize: compact ? 12.5 : 13, color: TX,
+    lineHeight: 1.65, margin: 0,
+  }
+  const blockStyle = {
+    borderLeft: `2px solid ${a}55`,
+    paddingLeft: 12,
+    marginTop: compact ? 8 : 10,
+  }
+  return (
+    <div style={{ marginTop: compact ? 10 : 12 }}>
+      {evidence && (
+        <div style={blockStyle}>
+          <div style={labelStyle}>Evidence</div>
+          <p style={bodyStyle}>{evidence}</p>
+        </div>
+      )}
+      {analysis && (
+        <div style={blockStyle}>
+          <div style={labelStyle}>What this shows</div>
+          <p style={bodyStyle}>{analysis}</p>
+        </div>
+      )}
+      {variant && variant.text && (
+        <div style={{ ...blockStyle, borderLeftColor: a }}>
+          <div style={labelStyle}>
+            Likely impact
+            <FramedForLabel framedFor={variant.framed_for} />
+          </div>
+          <p style={bodyStyle}>{variant.text}</p>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function FramedForLabel({ framedFor }) {
