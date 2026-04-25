@@ -113,11 +113,6 @@ button:not([disabled]):not([data-no-lift]):active {
   70%  { transform: scale(1.12) }
   100% { transform: scale(1);   opacity: 1 }
 }
-@keyframes floatDot {
-  0%   { transform: translateY(110vh) }
-  100% { transform: translateY(-60px) }
-}
-
 /* ── Smooth focus outlines ─────────────────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid #00BFA5;

@@ -33,7 +33,8 @@ function FloatingDots() {
           borderRadius: '50%',
           background: d.color,
           opacity: d.opacity,
-          animation: `floatDot ${d.dur} linear ${d.delay} infinite`,
+          ['--op']: d.opacity,
+          animation: `pdFloatDot ${d.dur} linear ${d.delay} infinite`,
         }} />
       ))}
     </div>
@@ -122,7 +123,7 @@ function ConfirmationHandler() {
           50%  { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
-        @keyframes floatDot {
+        @keyframes pdFloatDot {
           0%   { transform: translateY(0) scale(1);       opacity: var(--op, 0.1); }
           50%  { transform: translateY(-55vh) scale(1.1); opacity: calc(var(--op, 0.1) * 0.5); }
           100% { transform: translateY(-110vh) scale(0.8); opacity: 0; }

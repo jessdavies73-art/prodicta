@@ -65,7 +65,8 @@ function FloatingDots({ tone = 'dark' }) {
           position: 'absolute', bottom: -16, left: d.left,
           width: d.size, height: d.size, borderRadius: '50%',
           background: d.color, opacity: d.opacity * opMul,
-          animation: `floatDot ${d.dur} linear ${d.delay} infinite`,
+          ['--op']: d.opacity * opMul,
+          animation: `pdFloatDot ${d.dur} linear ${d.delay} infinite`,
         }} />
       ))}
     </div>
@@ -330,7 +331,7 @@ export default function LandingPage() {
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body { overflow-x: hidden; }
-        @keyframes floatDot {
+        @keyframes pdFloatDot {
           0%   { transform: translateY(0) scale(1);   opacity: var(--op, 0.12); }
           50%  { transform: translateY(-60vh) scale(1.1); opacity: calc(var(--op, 0.12) * 0.6); }
           100% { transform: translateY(-120vh) scale(0.8); opacity: 0; }
