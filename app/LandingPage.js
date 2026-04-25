@@ -476,7 +476,9 @@ export default function LandingPage() {
           color: '#fff', lineHeight: 1.4,
           maxWidth: 660, marginBottom: 32, position: 'relative', zIndex: 1,
         }}>
-          And we stop it failing after you do.
+          {heroPersona === 'agency'
+            ? 'Then we help you protect the fee.'
+            : 'And we stop it failing after you do.'}
         </p>
 
         {/* Toggle subtext */}
@@ -487,7 +489,7 @@ export default function LandingPage() {
           minHeight: 72,
         }}>
           {heroPersona === 'agency'
-            ? 'Whether you place permanent hires or temps, PRODICTA gives you evidence not guesswork. Real work simulations. Placement health in real time. SSP and compliance handled automatically. When something goes wrong you know at week one not month four.'
+            ? "PRODICTA doesn't test personality or theory. We put candidates into real job situations and measure how they actually perform. Whether you place permanent hires or temps, you get evidence not guesswork. Real work simulations. Placement health in real time. SSP and compliance handled automatically. When something goes wrong you know at week one, not month four."
             : 'Whether you are hiring permanently or using temps, PRODICTA puts every candidate through real work scenarios built from the role itself. Predict who will pass probation or succeed on assignment. Generate ERA 2025 compliance documentation automatically. Track every hire through probation with early warning alerts. Manage SSP, holiday pay, and Fair Work Agency compliance. From first assessment to end of probation \u2014 fully covered.'}
         </p>
 
