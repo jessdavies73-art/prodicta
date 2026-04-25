@@ -39,35 +39,104 @@ function Reveal({ children, delay = 0, style = {} }) {
   )
 }
 
-// ── Floating dots (same as login) ─────────────────────────────────────────────
-function FloatingDots({ tone = 'dark' }) {
-  // The lighter employer hero deliberately has no dots, so this component is
-  // only mounted on the dark agency hero (and on the dark login / sign-up /
-  // auth screens). Tone is kept as a prop for those callers and defaults to
-  // dark, which is the only style the landing hero now uses.
-  const NEUTRAL = tone === 'light' ? NAVY : '#fff'
-  const opMul = tone === 'light' ? 0.55 : 1
-  const dots = [
-    { size: 4,  left: '6%',  delay: '0s',   dur: '18s', opacity: 0.18, color: TEAL },
-    { size: 3,  left: '14%', delay: '4s',   dur: '22s', opacity: 0.09, color: NEUTRAL },
-    { size: 6,  left: '24%', delay: '8s',   dur: '15s', opacity: 0.12, color: TEAL },
-    { size: 3,  left: '35%', delay: '2s',   dur: '24s', opacity: 0.07, color: NEUTRAL },
-    { size: 5,  left: '48%', delay: '11s',  dur: '17s', opacity: 0.10, color: TEAL },
-    { size: 4,  left: '58%', delay: '5s',   dur: '20s', opacity: 0.08, color: NEUTRAL },
-    { size: 7,  left: '68%', delay: '1s',   dur: '14s', opacity: 0.13, color: TEAL },
-    { size: 3,  left: '78%', delay: '7s',   dur: '19s', opacity: 0.08, color: NEUTRAL },
-    { size: 5,  left: '88%', delay: '3s',   dur: '21s', opacity: 0.11, color: TEAL },
-    { size: 4,  left: '95%', delay: '9s',   dur: '16s', opacity: 0.09, color: TEAL },
+
+// ── Convergence lines (agency hero only) ──────────────────────────────────────
+// SVG-based animated network. Thin jade lines slowly draw from outer anchors
+// toward a centre node, hold briefly, then dissolve. Echoes the PRODICTA logo
+// convergence theme without competing with the hero copy.
+function ConvergenceLines() {
+  // Each entry is one line drawn between two anchor points (% of viewBox).
+  // dur = full cycle in seconds, delay staggers the cycles so lines never all
+  // fire at once. Cycles range 6 to 8s per the brief.
+  const lines = [
+    { x1: 8,  y1: 22, x2: 50, y2: 50, dur: 7,   delay: 0    },
+    { x1: 92, y1: 18, x2: 50, y2: 50, dur: 6.5, delay: 1.2  },
+    { x1: 12, y1: 78, x2: 50, y2: 50, dur: 7.5, delay: 2.4  },
+    { x1: 88, y1: 82, x2: 50, y2: 50, dur: 6,   delay: 3.6  },
+    { x1: 28, y1: 12, x2: 70, y2: 88, dur: 8,   delay: 0.8  },
+    { x1: 72, y1: 14, x2: 30, y2: 86, dur: 7.2, delay: 2.0  },
+    { x1: 4,  y1: 50, x2: 50, y2: 50, dur: 7.8, delay: 4.4  },
+    { x1: 96, y1: 50, x2: 50, y2: 50, dur: 6.8, delay: 5.0  },
+    { x1: 22, y1: 38, x2: 78, y2: 62, dur: 7,   delay: 3.2  },
+    { x1: 78, y1: 38, x2: 22, y2: 62, dur: 7.4, delay: 4.0  },
+  ]
+  // Unique anchor coordinates (deduplicated) for the pulse dots.
+  const anchorSet = new Map()
+  lines.forEach((l, i) => {
+    anchorSet.set(`${l.x1},${l.y1}`, { x: l.x1, y: l.y1, delay: l.delay })
+    anchorSet.set(`${l.x2},${l.y2}`, { x: l.x2, y: l.y2, delay: l.delay + 0.5 })
+  })
+  const anchors = Array.from(anchorSet.values())
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      style={{
+        position: 'absolute', inset: 0, width: '100%', height: '100%',
+        pointerEvents: 'none', zIndex: 0,
+      }}
+    >
+      {lines.map((l, i) => (
+        <line
+          key={`l${i}`}
+          x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+          stroke={TEAL}
+          strokeWidth="0.18"
+          strokeLinecap="round"
+          pathLength="1"
+          style={{
+            strokeDasharray: '1 1',
+            strokeDashoffset: 1,
+            animation: `pdLineDraw ${l.dur}s ease-in-out ${l.delay}s infinite`,
+            opacity: 0,
+            // Slightly thicker line on small screens so the strokes still read.
+            // (vector-effect keeps stroke widths consistent under preserveAspectRatio="none".)
+            vectorEffect: 'non-scaling-stroke',
+          }}
+        />
+      ))}
+      {anchors.map((a, i) => (
+        <circle
+          key={`a${i}`}
+          cx={a.x} cy={a.y} r="0.55"
+          fill={TEAL}
+          style={{
+            transformOrigin: `${a.x}px ${a.y}px`,
+            animation: `pdAnchorPulse ${7}s ease-in-out ${a.delay}s infinite`,
+            opacity: 0,
+          }}
+        />
+      ))}
+    </svg>
+  )
+}
+
+// ── Gradient orbs (employer hero only) ───────────────────────────────────────
+// Four heavily blurred jade-tinted radial gradients drifting on independent
+// 22-30s loops. Pure CSS transforms, GPU-friendly, no JS animation loop.
+function GradientOrbs() {
+  const orbs = [
+    { size: 520, color: '#A8D9D0', top: '12%', left:  '4%',  dur: '24s', delay: '0s',  anim: 'pdOrbDrift1' },
+    { size: 420, color: '#C9E8E2', top: '-8%', left:  '62%', dur: '28s', delay: '4s',  anim: 'pdOrbDrift2' },
+    { size: 560, color: '#A8D9D0', top: '58%', left:  '24%', dur: '30s', delay: '2s',  anim: 'pdOrbDrift3' },
+    { size: 460, color: '#C9E8E2', top: '50%', left:  '70%', dur: '26s', delay: '6s',  anim: 'pdOrbDrift4' },
   ]
   return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }}>
-      {dots.map((d, i) => (
+    <div aria-hidden="true" style={{
+      position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0,
+    }}>
+      {orbs.map((o, i) => (
         <div key={i} style={{
-          position: 'absolute', bottom: -16, left: d.left,
-          width: d.size, height: d.size, borderRadius: '50%',
-          background: d.color, opacity: d.opacity * opMul,
-          ['--op']: d.opacity * opMul,
-          animation: `pdFloatDot ${d.dur} linear ${d.delay} infinite`,
+          position: 'absolute',
+          top: o.top, left: o.left,
+          width: o.size, height: o.size,
+          borderRadius: '50%',
+          background: `radial-gradient(circle, ${o.color} 0%, ${o.color}88 35%, transparent 72%)`,
+          filter: 'blur(56px)',
+          opacity: 0.65,
+          willChange: 'transform',
+          animation: `${o.anim} ${o.dur} ease-in-out ${o.delay} infinite`,
         }} />
       ))}
     </div>
@@ -334,11 +403,6 @@ export default function LandingPage() {
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body { overflow-x: hidden; }
-        @keyframes pdFloatDot {
-          0%   { transform: translateY(0) scale(1);   opacity: var(--op, 0.12); }
-          50%  { transform: translateY(-60vh) scale(1.1); opacity: calc(var(--op, 0.12) * 0.6); }
-          100% { transform: translateY(-120vh) scale(0.8); opacity: 0; }
-        }
         @keyframes gradShift {
           0%   { background-position: 0% 50%; }
           50%  { background-position: 100% 50%; }
@@ -355,6 +419,57 @@ export default function LandingPage() {
           50% { box-shadow: 0 8px 48px rgba(0,191,165,0.6), 0 0 0 10px rgba(0,191,165,0.1); }
         }
         @keyframes goldPulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+        /* Hero, agency view: convergence-line treatment. The line draws
+           from one anchor to the other (stroke-dashoffset 1 to 0), then
+           dissolves (0 to -1), and idles for the rest of the cycle. The
+           anchor circle pulses while its line is drawing. */
+        @keyframes pdLineDraw {
+          0%   { stroke-dashoffset: 1; opacity: 0; }
+          15%  { stroke-dashoffset: 1; opacity: 0.18; }
+          50%  { stroke-dashoffset: 0; opacity: 0.18; }
+          85%  { stroke-dashoffset: -1; opacity: 0; }
+          100% { stroke-dashoffset: -1; opacity: 0; }
+        }
+        @keyframes pdAnchorPulse {
+          0%, 12%   { opacity: 0; transform: scale(0.6); }
+          22%       { opacity: 0.5; transform: scale(1); }
+          60%       { opacity: 0.35; transform: scale(1); }
+          85%, 100% { opacity: 0; transform: scale(0.6); }
+        }
+
+        /* Hero, employer view: gradient-orb treatment. Four heavily blurred
+           orbs drift across the hero on independent slow loops. Pure CSS
+           transforms, no JS. */
+        @keyframes pdOrbDrift1 {
+          0%   { transform: translate(0, 0); }
+          25%  { transform: translate(8vw, 6vh); }
+          50%  { transform: translate(-2vw, 12vh); }
+          75%  { transform: translate(-10vw, 4vh); }
+          100% { transform: translate(0, 0); }
+        }
+        @keyframes pdOrbDrift2 {
+          0%   { transform: translate(0, 0); }
+          30%  { transform: translate(-7vw, 9vh); }
+          60%  { transform: translate(4vw, 14vh); }
+          85%  { transform: translate(11vw, 5vh); }
+          100% { transform: translate(0, 0); }
+        }
+        @keyframes pdOrbDrift3 {
+          0%   { transform: translate(0, 0); }
+          25%  { transform: translate(-9vw, -5vh); }
+          55%  { transform: translate(6vw, -10vh); }
+          80%  { transform: translate(10vw, 4vh); }
+          100% { transform: translate(0, 0); }
+        }
+        @keyframes pdOrbDrift4 {
+          0%   { transform: translate(0, 0); }
+          20%  { transform: translate(7vw, -7vh); }
+          45%  { transform: translate(-4vw, -12vh); }
+          75%  { transform: translate(-9vw, -3vh); }
+          100% { transform: translate(0, 0); }
+        }
+
 
         /* Direct Employer view: warm the light section backgrounds and add
            a touch more breathing room. The dark gradient sections and the
@@ -433,10 +548,27 @@ export default function LandingPage() {
           transition: 'opacity 600ms ease',
         }} />
 
-        {/* Floating dots on both heroes. Agency uses the dark tone (white +
-            jade), employer uses the light tone (navy + jade) so the dots read
-            as subtle navy specks across the new jade-led gradient. */}
-        <FloatingDots tone={isEmployer ? 'light' : 'dark'} />
+        {/* Two atmospheric overlays cross-faded by opacity. Agency gets the
+            convergence-line network (echoes the PRODICTA logo); employer gets
+            soft drifting jade orbs. Both layers stay mounted so the toggle
+            cross-fades smoothly over 600ms without a re-mount flicker. The
+            login and sign-up pages keep their FloatingDots treatment. */}
+        <div aria-hidden="true" style={{
+          position: 'absolute', inset: 0, zIndex: 0,
+          opacity: isEmployer ? 0 : 1,
+          transition: 'opacity 600ms ease',
+          pointerEvents: 'none',
+        }}>
+          <ConvergenceLines />
+        </div>
+        <div aria-hidden="true" style={{
+          position: 'absolute', inset: 0, zIndex: 0,
+          opacity: isEmployer ? 1 : 0,
+          transition: 'opacity 600ms ease',
+          pointerEvents: 'none',
+        }}>
+          <GradientOrbs />
+        </div>
 
         {/* Radial glow, slightly softer on the light treatment so it does not bloom. */}
         <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle, ${TEAL}${isEmployer ? '0c' : '14'} 0%, transparent 65%)`, pointerEvents: 'none', transition: 'background 600ms ease', zIndex: 0 }} />
