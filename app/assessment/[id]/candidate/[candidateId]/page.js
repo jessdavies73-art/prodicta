@@ -3806,6 +3806,11 @@ export default function CandidateReportPage({ params }) {
                 <EngagementSignalsPanel signals={candidate?.micro_signals} />
 
                 {/* ══════════════════════════════════════════════════
+                    ANSWER AUTHENTICITY (anti-generic-answer detection)
+                ══════════════════════════════════════════════════ */}
+                <AuthenticityPanel generic={results.generic_detection} />
+
+                {/* ══════════════════════════════════════════════════
                     PRESSURE-FIT , dark navy, 2×2 grid
                 ══════════════════════════════════════════════════ */}
                 <ScrollReveal id="pressure-fit" delay={60}>
@@ -8182,6 +8187,66 @@ function engagementPatternLabel(p) {
   if (p === 'immediate') return 'Immediate'
   if (p === 'minimal') return 'Minimal response'
   return 'Not recorded'
+}
+
+// Anti-generic-answer detection panel. Renders an inverted authenticity score
+// (100 minus the generic_detection.score), a colour-coded tone band, and the
+// per-flag evidence quotes that drove the score. Silent when the row has no
+// generic_detection (legacy candidates scored before this column shipped).
+const AUTH_FLAG_LABELS = {
+  vague_language:           'Vague language',
+  buzzword_heavy:           'Buzzword-heavy phrasing',
+  suspiciously_perfect:     'Suspiciously perfect',
+  inconsistent_style:       'Inconsistent style across scenarios',
+  missing_concrete_actions: 'Missing concrete actions',
+  missing_role_terminology: 'Missing role-specific language',
+}
+
+function AuthenticityPanel({ generic }) {
+  if (!generic || typeof generic !== 'object' || !Number.isFinite(generic.score)) return null
+  const auth = Math.max(0, Math.min(100, 100 - generic.score))
+  const tone = auth >= 70 ? { c: TEAL, bg: TEALLT, label: 'High authenticity' }
+             : auth >= 40 ? { c: AMB,  bg: AMBBG,  label: 'Moderate generic patterns' }
+             :              { c: RED,  bg: REDBG,  label: 'High generic score' }
+  const flags = Array.isArray(generic.flags) ? generic.flags : []
+  const evidence = (generic.evidence_per_flag && typeof generic.evidence_per_flag === 'object') ? generic.evidence_per_flag : {}
+  return (
+    <div style={{
+      background: '#fff', border: `1px solid ${BD}`, borderLeft: `4px solid ${tone.c}`,
+      borderRadius: 12, padding: '16px 20px', marginBottom: 20,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 10 }}>
+        <h3 style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 13, fontWeight: 800, color: NAVY, margin: 0, letterSpacing: '0.02em' }}>Answer Authenticity</h3>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 22, fontWeight: 800, color: tone.c, lineHeight: 1 }}>{auth}</span>
+          <span style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12, fontWeight: 600, color: TX3 }}>/ 100</span>
+          <span style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 11, fontWeight: 700, color: tone.c, background: tone.bg, padding: '3px 10px', borderRadius: 50, marginLeft: 6 }}>{tone.label}</span>
+        </div>
+      </div>
+      <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, color: TX2, lineHeight: 1.6, margin: '0 0 10px' }}>
+        Inverted from the generic-detection score ({generic.score}/100). High authenticity means specific, role-aware, evidence-rich responses; low authenticity means vague or rehearsed language.
+      </p>
+      {flags.length > 0 ? (
+        <ul style={{ margin: '6px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {flags.map(f => (
+            <li key={f} style={{ background: '#f8fafc', border: `1px solid ${BD}`, borderRadius: 8, padding: '8px 12px' }}>
+              <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12, fontWeight: 700, color: NAVY, marginBottom: 2 }}>{AUTH_FLAG_LABELS[f] || f}</div>
+              {evidence[f] && (
+                <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12, color: TX2, fontStyle: 'italic', lineHeight: 1.55 }}>&ldquo;{evidence[f]}&rdquo;</div>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12, color: TX2, fontStyle: 'italic' }}>
+          No generic-pattern flags raised on these responses.
+        </div>
+      )}
+      <p style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 11.5, color: TX3, fontStyle: 'italic', lineHeight: 1.55, margin: '12px 0 0' }}>
+        Generic-detection scores at or above 41 cap scoring confidence at MEDIUM. Scores at or above 61 force LOW.
+      </p>
+    </div>
+  )
 }
 
 function EngagementSignalsPanel({ signals }) {
