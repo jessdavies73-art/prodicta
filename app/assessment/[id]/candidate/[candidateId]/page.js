@@ -2897,6 +2897,7 @@ export default function CandidateReportPage({ params }) {
                     return ''
                   }
                   const displayPreds = p ? {...p, churn_risk: p.pass_probation > 70 ? Math.min(p.churn_risk, 19) : p.churn_risk} : null
+                  const predVerification = (results.predictions && typeof results.predictions === 'object') ? results.predictions._verification : null
                   return (
                     <ScrollReveal delay={60}>
                     <Card style={{ marginBottom: 20 }}>
@@ -2910,6 +2911,10 @@ export default function CandidateReportPage({ params }) {
                           const bg = panelBg(type, val, key)
                           const bd = panelBd(type, val, key)
                           const context = panelContext(key, val)
+                          const ff = framedForKey(profile?.account_type, candidate?.assessments?.employment_type)
+                          const variant = predVerification && predVerification[key]
+                            ? pickVerificationVariant(predVerification[key], ff)
+                            : null
                           return (
                             <div key={key} style={{ background: bg, border: `1px solid ${bd}`, borderRadius: 10, padding: '14px 18px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -2920,6 +2925,7 @@ export default function CandidateReportPage({ params }) {
                                 <div style={{ position: 'absolute', inset: 0, width: `${val}%`, background: color, borderRadius: 4 }} />
                               </div>
                               <div style={{ fontFamily: F, fontSize: 11.5, color: TX3, lineHeight: 1.4 }}>{context}</div>
+                              {variant && <AskAtInterviewBlock variant={variant} framedFor={ff} accent={color} />}
                             </div>
                           )
                         })}
@@ -5078,6 +5084,12 @@ export default function CandidateReportPage({ params }) {
                                 </p>
                               </div>
                             </div>
+                            {/* Inline paired verification question, framed for this account/employment */}
+                            {(() => {
+                              const ff = framedForKey(profile?.account_type, candidate?.assessments?.employment_type)
+                              const variant = pickVerificationVariant(typeof w === 'object' ? w : null, ff)
+                              return variant ? <AskAtInterviewBlock variant={variant} framedFor={ff} accent={sev.color} /> : null
+                            })()}
                           </div>
                         )
                       })}
@@ -5487,14 +5499,66 @@ export default function CandidateReportPage({ params }) {
 
                 {/* ══════════════════════════════════════════════════
                     INTERVIEW VERIFICATION QUESTIONS
+                    Derived from the verification_question_variants attached
+                    to each watch-out and prediction. The variant matching the
+                    viewer's account_type and employment_type is selected so
+                    the bottom section never duplicates or drifts from the
+                    inline "Ask at interview" blocks above. Falls back to the
+                    saved interview_questions for legacy results.
                 ══════════════════════════════════════════════════ */}
-                {results.interview_questions?.length > 0 ? (
-                  <ScrollReveal id="questions" delay={60}>
-                  <Card style={{ marginBottom: 20 }}>
-                    <InterviewVerificationMode questions={results.interview_questions} isMobile={isMobile} />
-                  </Card>
-                  </ScrollReveal>
-                ) : (
+                {(() => {
+                  const ff = framedForKey(profile?.account_type, candidate?.assessments?.employment_type)
+                  const built = []
+                  for (const w of (results.watchouts || [])) {
+                    if (!w || typeof w !== 'object') continue
+                    const v = pickVerificationVariant(w, ff)
+                    if (!v || !v.question) continue
+                    built.push({
+                      question: v.question,
+                      verification_type: 'watch_out',
+                      linked_to: w.watchout || w.title || w.text || '',
+                      framed_for: v.framed_for || ff,
+                      strong_answer_signs: v.strong_answer_signs || [],
+                      weak_answer_signs:   v.weak_answer_signs   || [],
+                      follow_up_probe:     v.follow_up_probe     || '',
+                      reassuring_answer: (v.strong_answer_signs && v.strong_answer_signs.length)
+                        ? `Strong signs: ${v.strong_answer_signs.join('; ')}.` : '',
+                      concerning_answer: (v.weak_answer_signs && v.weak_answer_signs.length)
+                        ? `Weak signs: ${v.weak_answer_signs.join('; ')}.` : '',
+                      confidence_level: w.severity === 'High' ? 'high' : 'medium',
+                    })
+                  }
+                  const predVer = (results.predictions && typeof results.predictions === 'object') ? results.predictions._verification : null
+                  if (predVer) {
+                    for (const [predKey, pv] of Object.entries(predVer)) {
+                      const v = pickVerificationVariant(pv, ff)
+                      if (!v || !v.question) continue
+                      built.push({
+                        question: v.question,
+                        verification_type: 'prediction',
+                        linked_to: pv.linked_to || predKey,
+                        framed_for: v.framed_for || ff,
+                        strong_answer_signs: v.strong_answer_signs || [],
+                        weak_answer_signs:   v.weak_answer_signs   || [],
+                        follow_up_probe:     v.follow_up_probe     || '',
+                        reassuring_answer: (v.strong_answer_signs && v.strong_answer_signs.length)
+                          ? `Strong signs: ${v.strong_answer_signs.join('; ')}.` : '',
+                        concerning_answer: (v.weak_answer_signs && v.weak_answer_signs.length)
+                          ? `Weak signs: ${v.weak_answer_signs.join('; ')}.` : '',
+                        confidence_level: 'medium',
+                      })
+                    }
+                  }
+                  const list = built.length > 0 ? built : (results.interview_questions || [])
+                  if (list.length === 0) return null
+                  return (
+                    <ScrollReveal id="questions" delay={60}>
+                      <Card style={{ marginBottom: 20 }}>
+                        <InterviewVerificationMode questions={list} isMobile={isMobile} />
+                      </Card>
+                    </ScrollReveal>
+                  )
+                })() || (
                   <ScrollReveal id="questions" delay={60}>
                     <Card style={{ marginBottom: 20 }}>
                       <SectionHeading tooltip="Interview verification questions drawn from the candidate's responses, targeting areas that warrant probing in person.">
@@ -8896,6 +8960,118 @@ function InterviewVerificationMode({ questions = [], isMobile }) {
           )
         })}
       </div>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Ask at interview, inline collapsible used inside watch-out
+   and predicted outcome cards. Renders the variant matching the
+   viewer's account_type and employment_type. The variants live on
+   each watchout (verification_question_variants) and on
+   predictions._verification keyed by prediction name.
+───────────────────────────────────────────────────────────── */
+function framedForKey(accountType, employmentType) {
+  const a = String(accountType   || '').toLowerCase() === 'agency'    ? 'agency'    : 'employer'
+  const e = String(employmentType || '').toLowerCase() === 'temporary' ? 'temporary' : 'permanent'
+  return `${a}_${e}`
+}
+
+function pickVerificationVariant(node, framedFor) {
+  if (!node) return null
+  const variants = node.verification_question_variants || node.variants
+  if (variants && typeof variants === 'object') {
+    if (variants[framedFor]) return { ...variants[framedFor], framed_for: framedFor }
+    const firstKey = Object.keys(variants)[0]
+    if (firstKey) return { ...variants[firstKey], framed_for: firstKey }
+  }
+  if (node.verification_question) return node.verification_question
+  return null
+}
+
+function FramedForLabel({ framedFor }) {
+  const map = {
+    agency_permanent:  'Agency, permanent',
+    agency_temporary:  'Agency, temporary',
+    employer_permanent:'Employer, permanent',
+    employer_temporary:'Employer, temporary',
+  }
+  const label = map[framedFor] || 'Default framing'
+  return (
+    <span style={{
+      display: 'inline-block', padding: '2px 8px', borderRadius: 999,
+      background: `${TEAL}15`, color: TEALD, border: `1px solid ${TEAL}55`,
+      fontFamily: F, fontSize: 10.5, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase',
+    }}>{label}</span>
+  )
+}
+
+function AskAtInterviewBlock({ variant, framedFor, accent }) {
+  const [open, setOpen] = useState(false)
+  if (!variant || !variant.question) return null
+  const a = accent || TEAL
+  const strong = Array.isArray(variant.strong_answer_signs) ? variant.strong_answer_signs.filter(Boolean) : []
+  const weak   = Array.isArray(variant.weak_answer_signs)   ? variant.weak_answer_signs.filter(Boolean)   : []
+  const probe  = typeof variant.follow_up_probe === 'string' ? variant.follow_up_probe : ''
+  return (
+    <div className="no-print-friendly" style={{
+      marginTop: 12,
+      background: '#fff', border: `1px solid ${BD}`, borderLeft: `3px solid ${a}`,
+      borderRadius: 10, overflow: 'hidden',
+    }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'none', border: 'none', cursor: 'pointer',
+          padding: '10px 14px',
+          fontFamily: F, fontSize: 12.5, fontWeight: 800, color: NAVY, textAlign: 'left',
+        }}
+      >
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <Ic name="search" size={13} color={a} />
+          Ask at interview
+          <FramedForLabel framedFor={framedFor || variant.framed_for} />
+        </span>
+        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={NAVY} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'none' }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && (
+        <div style={{ padding: '0 14px 14px' }}>
+          <p style={{ fontFamily: F, fontSize: 13.5, fontWeight: 700, color: NAVY, margin: '4px 0 12px', lineHeight: 1.6 }}>
+            {variant.question}
+          </p>
+          {(strong.length > 0 || weak.length > 0) && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {strong.length > 0 && (
+                <div style={{ background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 8, padding: '10px 12px' }}>
+                  <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 800, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Strong answer signs</div>
+                  <ul style={{ margin: 0, padding: '0 0 0 16px', fontFamily: F, fontSize: 12.5, color: TX, lineHeight: 1.55 }}>
+                    {strong.map((s, i) => <li key={i}>{s}</li>)}
+                  </ul>
+                </div>
+              )}
+              {weak.length > 0 && (
+                <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, padding: '10px 12px' }}>
+                  <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 800, color: AMB, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Weak answer signs</div>
+                  <ul style={{ margin: 0, padding: '0 0 0 16px', fontFamily: F, fontSize: 12.5, color: TX, lineHeight: 1.55 }}>
+                    {weak.map((s, i) => <li key={i}>{s}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+          {probe && (
+            <div style={{ marginTop: 10, background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '10px 12px' }}>
+              <div style={{ fontFamily: F, fontSize: 10.5, fontWeight: 800, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Follow-up probe</div>
+              <p style={{ margin: 0, fontFamily: F, fontSize: 12.5, color: TX, lineHeight: 1.55 }}>{probe}</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
