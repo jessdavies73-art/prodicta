@@ -42,6 +42,36 @@ const MAX_TOKENS_BY_MODE = {
 const JD_MAX_CHARS = 2000
 const CONTEXT_ANSWER_MAX_CHARS = 200
 
+// Required addition to every scenario JSON. Tells the model to design the
+// scenario so a three-action ranked answer is the natural response, and to
+// emit an `interruption` field that the candidate-side runtime can choose to
+// fire (with ~30% probability) after the first ranked answer is submitted.
+// Persisted as `responses.ranked_actions` and `responses.interruption_response`
+// per the migration in supabase/migrations/add_ranked_actions.sql.
+const RANKED_ACTIONS_AND_INTERRUPTION_BLOCK = `
+═══════════════════════════════════════════
+RANKED ACTIONS PLUS IN-SCENARIO INTERRUPTION
+═══════════════════════════════════════════
+
+Every scenario in this assessment is answered as THREE RANKED ACTIONS plus a written justification per action, not as a single block of free text. The candidate writes:
+- Action 1, their first move, plus a 1 to 2 sentence justification
+- Action 2, their second move, plus a 1 to 2 sentence justification
+- Action 3, their third move, plus a 1 to 2 sentence justification
+
+Design every scenario so that three discrete, sequenced actions form a natural answer. Avoid scenarios where the right answer is a single decision or a long meeting plan. The trade-off described in LAYER B must be reflected in the order: a candidate who picks a defensible ranking will sequence the higher-cost or higher-information action correctly.
+
+Additionally, every scenario MUST carry an "interruption" field. The interruption is a short role-specific event (one or two sentences) that the platform may fire after the candidate has submitted their first action, asking them to reconsider their ranking. The interruption must be plausible for THIS scenario (not a generic "your manager calls"), and it should genuinely test whether the original ranking holds up.
+
+Add this field to EVERY scenario object alongside the existing fields and the forced_choice slot:
+
+"interruption": {
+  "event": "One or two sentences describing what has just happened, role-specific to this scenario, written so it could plausibly land mid-task.",
+  "question": "Does this change your ranking? If so, restate your new top three in order and explain why."
+}
+
+Do NOT include the candidate's three ranked actions in the scenario JSON. Those are the candidate's work. Your output describes the situation, the trade-off, and the possible interruption only.
+`
+
 // Pre-scenario pipeline. Pulls a structured Job Breakdown from the JD using
 // claude-sonnet-4-5 so scenarios are built from the actual tasks, disruptions,
 // decisions, and failure points specific to this role. Returns null on any
@@ -859,6 +889,7 @@ TYPE 3, FORCED TRADE-OFF (exactly 3 pairs, every option has a downside):
 
 OUTPUT FORMAT
 
+${RANKED_ACTIONS_AND_INTERRUPTION_BLOCK}
 Return ONLY a JSON array with exactly 3 objects. No preamble, no explanation, no markdown.
 
 [
@@ -970,6 +1001,7 @@ If the scenario fails any test, rewrite it before output.
 
 OUTPUT FORMAT
 
+${RANKED_ACTIONS_AND_INTERRUPTION_BLOCK}
 Return ONLY a JSON array with exactly 1 object. No preamble, no explanation, no markdown.
 
 [
@@ -1152,6 +1184,7 @@ Test 6, Trade-off check: Does every available option in this scenario have a rea
 
 OUTPUT FORMAT
 
+${RANKED_ACTIONS_AND_INTERRUPTION_BLOCK}
 Return ONLY a JSON array with exactly 2 objects. No preamble, no explanation, no markdown.
 
 [
@@ -1463,6 +1496,7 @@ TYPE 3, FORCED TRADE-OFF (exactly 3 pairs, every option has a downside):
 
 OUTPUT FORMAT
 
+${RANKED_ACTIONS_AND_INTERRUPTION_BLOCK}
 Return ONLY a JSON array with exactly 4 objects. No preamble, no explanation, no markdown.
 
 [

@@ -26,6 +26,37 @@ function formatTime(seconds) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
+// Deterministic 30%-chance gate for the in-scenario interruption. Same
+// candidate + same scenario yields the same result so a refresh does not
+// surprise the candidate, but two candidates on the same assessment will see
+// different patterns. Returns true on roughly 30% of (assessmentId, index)
+// pairs across the population.
+function shouldFireInterruption(assessmentId, scenarioIndex) {
+  const seed = String(assessmentId || '') + '|' + String(scenarioIndex || 0)
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0
+  }
+  return Math.abs(hash) % 100 < 30
+}
+
+function rankedSlotsHaveAtLeastOneAction(slots) {
+  return Array.isArray(slots) && slots.length > 0 && (slots[0]?.action || '').trim().length > 0
+}
+
+function rankedSlotsAreFullyFilled(slots) {
+  return Array.isArray(slots) && slots.length === 3 && slots.every(s =>
+    (s?.action || '').trim().length > 0 && (s?.justification || '').trim().length > 0
+  )
+}
+
+function rankedActionsToText(slots) {
+  if (!Array.isArray(slots) || slots.length === 0) return ''
+  return slots
+    .map((s, i) => `Action ${i + 1}: ${s?.action || ''}\nWhy: ${s?.justification || ''}`)
+    .join('\n\n')
+}
+
 function wordCount(text) {
   if (!text || !text.trim()) return 0
   return text.trim().split(/\s+/).length
@@ -390,6 +421,29 @@ function ActivePage({ candidate, assessment, onSubmit }) {
   //   trade_off:      { type: 'trade_off',      response: { choices: [...strings] } }
   const [forcedChoiceResponses, setForcedChoiceResponses] = useState({})
 
+  // Ranked-actions state, keyed by scenario index. Each entry holds three
+  // slots; each slot has an action label and a 1 to 2 sentence justification.
+  // Persisted on the response row as `responses.ranked_actions`.
+  const [rankedActions, setRankedActions] = useState(() => Object.fromEntries(
+    scenarios.map((_, i) => [i, { slots: [
+      { action: '', justification: '' },
+      { action: '', justification: '' },
+      { action: '', justification: '' },
+    ]}])
+  ))
+
+  // In-scenario interruption state. After the candidate has filled in all
+  // three ranked-action slots, a deterministic 30% gate per scenario fires
+  // an interruption modal. Persisted as `responses.interruption_response`.
+  const [scenarioInterruption, setScenarioInterruption] = useState({})
+  const [interruptionModalOpen, setInterruptionModalOpen] = useState(false)
+  const [interruptionDraftSlots, setInterruptionDraftSlots] = useState([
+    { action: '', justification: '' },
+    { action: '', justification: '' },
+    { action: '', justification: '' },
+  ])
+  const [interruptionDraftReasoning, setInterruptionDraftReasoning] = useState('')
+
   // Micro-behaviour signal tracking, one entry per scenario.
   // Raw tracking state: captured as the candidate interacts with the scenario.
   // Final computed signals are derived on scenario advance inside handleNext.
@@ -534,7 +588,26 @@ function ActivePage({ candidate, assessment, onSubmit }) {
     return () => clearInterval(intervalRef.current)
   }, [scenarioIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Gate the in-scenario interruption: fires once per scenario, only when the
+  // candidate has filled all three ranked slots and the deterministic 30%
+  // gate based on (assessment.id, scenarioIndex) returns true. Opens the
+  // modal seeded with the candidate's current slots; resolution writes to
+  // scenarioInterruption[scenarioIndex] and the candidate continues.
+  function maybeFireInterruption() {
+    if (interruptionModalOpen) return false
+    if (scenarioInterruption[scenarioIndex]?.fired) return false
+    const slots = rankedActions[scenarioIndex]?.slots || []
+    if (!rankedSlotsAreFullyFilled(slots)) return false
+    if (!scenarios[scenarioIndex]?.interruption) return false
+    if (!shouldFireInterruption(assessment.id, scenarioIndex)) return false
+    setInterruptionDraftSlots(slots.map(s => ({ action: s.action, justification: s.justification })))
+    setInterruptionDraftReasoning('')
+    setInterruptionModalOpen(true)
+    return true
+  }
+
   async function handleNext() {
+    if (maybeFireInterruption()) return
     // Snapshot current time taken before switching
     const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000)
     setTimeTakens(prev => {
@@ -599,21 +672,42 @@ function ActivePage({ candidate, assessment, onSubmit }) {
         }
       }
 
-      const payload = scenarios.map((_, i) => ({
-        scenario_index: i,
-        response_text: responses[i] || (audioBlobs[i] ? '[Voice response recorded]' : ''),
-        time_taken_seconds: i === scenarioIndex ? elapsed : timeTakens[i],
-        audio_url: uploadedAudioUrls[i] || null,
-        input_mode: inputModes[i],
-        inbox_responses: currentInbox ? (currentInbox.inbox_items || []).map((item, idx) => ({
-          item: item.subject,
-          action: inboxActions[`${i}-${idx}`] || 'no_action',
-        })) : null,
-        interruption_response: interruptionResponse[i] || null,
-        interruption_reply: interruptionReply[i] || null,
-        inbox_note: inboxNotes[i] || null,
-        forced_choice_response: forcedChoiceResponses[i] || null,
-      }))
+      const payload = scenarios.map((_, i) => {
+        const slots = rankedActions[i]?.slots || []
+        const rankedActionsPayload = rankedSlotsHaveAtLeastOneAction(slots)
+          ? { slots: slots.map((s, idx) => ({
+                rank: idx + 1,
+                action: (s?.action || '').trim(),
+                justification: (s?.justification || '').trim(),
+              })),
+              submitted_at: new Date().toISOString() }
+          : null
+        // Compose the free-text response: if the candidate also wrote text,
+        // use that; otherwise derive a readable text representation from the
+        // ranked actions so downstream code (scoring, narrative rendering)
+        // still has a `response_text` to read.
+        const freeText = (responses[i] || '').trim()
+        const responseText = freeText
+          ? (rankedActionsPayload ? `${rankedActionsToText(slots)}\n\nAdditional context:\n${freeText}` : freeText)
+          : (rankedActionsPayload ? rankedActionsToText(slots) : (audioBlobs[i] ? '[Voice response recorded]' : ''))
+        return {
+          scenario_index: i,
+          response_text: responseText,
+          time_taken_seconds: i === scenarioIndex ? elapsed : timeTakens[i],
+          audio_url: uploadedAudioUrls[i] || null,
+          input_mode: inputModes[i],
+          inbox_responses: currentInbox ? (currentInbox.inbox_items || []).map((item, idx) => ({
+            item: item.subject,
+            action: inboxActions[`${i}-${idx}`] || 'no_action',
+          })) : null,
+          interruption_response: interruptionResponse[i] || null,
+          interruption_reply: interruptionReply[i] || null,
+          inbox_note: inboxNotes[i] || null,
+          forced_choice_response: forcedChoiceResponses[i] || null,
+          ranked_actions: rankedActionsPayload,
+          scenario_interruption: scenarioInterruption[i] || null,
+        }
+      })
       // Build the final micro_signals array. Include the signals we just froze
       // for the last scenario even though setMicroSignals above is async.
       const finalMicroSignals = microSignals.map((s, idx) =>
@@ -899,6 +993,28 @@ function ActivePage({ candidate, assessment, onSubmit }) {
               />
             )}
 
+            {/* Ranked actions: three slots, action plus 1 to 2 sentence justification, reorderable */}
+            <RankedActionsBlock
+              slots={rankedActions[scenarioIndex]?.slots || []}
+              onChange={(nextSlots) => setRankedActions(prev => ({
+                ...prev,
+                [scenarioIndex]: { slots: nextSlots },
+              }))}
+            />
+            {scenarioInterruption[scenarioIndex]?.fired && (
+              <div style={{
+                background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 10,
+                padding: '12px 16px', marginTop: 12,
+              }}>
+                <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TEALD, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 4 }}>
+                  Interruption logged
+                </div>
+                <div style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>
+                  Your response to the in-scenario interruption has been recorded. {scenarioInterruption[scenarioIndex]?.changedRanking ? 'You revised your ranking.' : 'You held your original ranking.'}
+                </div>
+              </div>
+            )}
+
             {/* Textarea */}
             <div>
               <label style={{
@@ -1114,6 +1230,105 @@ function ActivePage({ candidate, assessment, onSubmit }) {
           </Card>
         </div>
       </div>
+
+      {/* In-scenario interruption modal: appears once per scenario, when the
+          candidate has filled all three ranked slots and the deterministic
+          gate (~30% per scenario) returns true. Captures whether the
+          candidate revises their ranking or holds it under new information. */}
+      {interruptionModalOpen && scenarios[scenarioIndex]?.interruption && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 20, zIndex: 1000,
+        }}>
+          <div style={{
+            background: '#fff', maxWidth: 640, width: '100%',
+            maxHeight: '90vh', overflow: 'auto',
+            border: `1px solid ${BD}`, borderTop: `4px solid ${AMB}`, borderRadius: 14,
+            padding: '28px 32px',
+          }}>
+            <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 800, color: AMB, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+              Mid-task interruption
+            </div>
+            <h3 style={{ fontFamily: F, fontSize: 19, fontWeight: 800, color: NAVY, margin: '0 0 12px', lineHeight: 1.3 }}>
+              While you were doing your first action, this just happened
+            </h3>
+            <p style={{ fontFamily: F, fontSize: 15, color: TX, lineHeight: 1.65, margin: '0 0 14px' }}>
+              {scenarios[scenarioIndex].interruption.event}
+            </p>
+            <p style={{ fontFamily: F, fontSize: 14, color: TX2, lineHeight: 1.65, margin: '0 0 18px' }}>
+              {scenarios[scenarioIndex].interruption.question || 'Does this change your ranking? If so, restate your new top three in order and explain why.'}
+            </p>
+
+            {interruptionDraftSlots.map((slot, i) => (
+              <div key={i} style={{
+                background: '#f7f9fb', border: `1px solid ${BD}`, borderRadius: 10,
+                padding: '12px 14px', marginBottom: 10,
+              }}>
+                <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: NAVY, letterSpacing: '0.04em', marginBottom: 6 }}>Action {i + 1}</div>
+                <input
+                  value={slot.action}
+                  onChange={e => setInterruptionDraftSlots(prev => prev.map((s, idx) => idx === i ? { ...s, action: e.target.value } : s))}
+                  placeholder="What you do"
+                  style={{ width: '100%', fontFamily: F, fontSize: 14, padding: '8px 10px', border: `1px solid ${BD}`, borderRadius: 7, marginBottom: 6, color: TX, background: '#fff' }}
+                />
+                <textarea
+                  value={slot.justification}
+                  onChange={e => setInterruptionDraftSlots(prev => prev.map((s, idx) => idx === i ? { ...s, justification: e.target.value } : s))}
+                  placeholder="Why this slot, 1 to 2 sentences"
+                  rows={2}
+                  style={{ width: '100%', fontFamily: F, fontSize: 13.5, padding: '8px 10px', border: `1px solid ${BD}`, borderRadius: 7, color: TX, background: '#fff', resize: 'vertical' }}
+                />
+              </div>
+            ))}
+
+            <label style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX2, display: 'block', marginTop: 8, marginBottom: 6 }}>
+              Why are you holding or changing the ranking?
+            </label>
+            <textarea
+              value={interruptionDraftReasoning}
+              onChange={e => setInterruptionDraftReasoning(e.target.value)}
+              placeholder="Two or three sentences."
+              rows={3}
+              style={{ width: '100%', fontFamily: F, fontSize: 14, padding: '10px 12px', border: `1px solid ${BD}`, borderRadius: 8, color: TX, background: '#fff', resize: 'vertical' }}
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 18 }}>
+              <button
+                onClick={() => {
+                  // Persist the response and continue.
+                  const original = rankedActions[scenarioIndex]?.slots || []
+                  const revised = interruptionDraftSlots.map(s => ({
+                    action: (s.action || '').trim(),
+                    justification: (s.justification || '').trim(),
+                  }))
+                  const changedRanking = revised.some((s, idx) =>
+                    s.action !== ((original[idx]?.action || '').trim()) ||
+                    s.justification !== ((original[idx]?.justification || '').trim())
+                  )
+                  setScenarioInterruption(prev => ({
+                    ...prev,
+                    [scenarioIndex]: {
+                      fired: true,
+                      prompt: scenarios[scenarioIndex].interruption?.event || '',
+                      revised_slots: revised.map((s, idx) => ({ rank: idx + 1, ...s })),
+                      changed_ranking: changedRanking,
+                      reasoning: interruptionDraftReasoning.trim(),
+                      responded_at: new Date().toISOString(),
+                    },
+                  }))
+                  setInterruptionModalOpen(false)
+                  // Auto-trigger handleNext after the interruption is closed.
+                  setTimeout(() => { handleNext() }, 0)
+                }}
+                style={{ background: TEAL, color: '#fff', fontFamily: F, fontWeight: 700, fontSize: 15, border: 'none', borderRadius: 10, padding: '12px 24px', cursor: 'pointer' }}
+              >
+                Save and continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -2491,6 +2706,93 @@ export default function AssessPage({ params }) {
 
 const FC_SLATE = '#64748B'
 const FC_RED = '#dc2626'
+
+// Three-slot ranked-decision input. Each slot holds an action label and a
+// 1 to 2 sentence justification. Up/down arrows reorder the slots without
+// pulling in a drag-drop dependency. The block sits above the optional
+// free-text response so candidates lead with structured ranking and only
+// add free text as context.
+function RankedActionsBlock({ slots, onChange }) {
+  const set = (i, field, val) => {
+    const next = (slots || []).map((s, idx) => idx === i ? { ...s, [field]: val } : s)
+    onChange(next)
+  }
+  const move = (from, to) => {
+    if (!Array.isArray(slots)) return
+    if (to < 0 || to >= slots.length) return
+    const next = slots.map(s => ({ ...s }))
+    const [item] = next.splice(from, 1)
+    next.splice(to, 0, item)
+    onChange(next)
+  }
+  const labels = ['First action', 'Second action', 'Third action']
+  return (
+    <div style={{
+      background: '#f7f9fb', border: `1px solid ${BD}`, borderRadius: 12,
+      padding: '20px 22px', marginBottom: 18,
+    }}>
+      <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 800, color: NAVY, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 4 }}>
+        Step 1: Rank your top three actions
+      </div>
+      <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, lineHeight: 1.6, margin: '0 0 16px' }}>
+        Order matters. Action 1 fires first. For each action add a 1 to 2 sentence justification explaining why it sits in this slot.
+      </p>
+      {(slots || []).map((slot, i) => (
+        <div key={i} style={{
+          background: '#fff', border: `1px solid ${BD}`, borderRadius: 10,
+          padding: '12px 14px', marginBottom: 10, display: 'flex', gap: 10, alignItems: 'flex-start',
+        }}>
+          <div style={{
+            background: TEAL, color: '#fff', fontFamily: F, fontWeight: 800, fontSize: 14,
+            width: 28, height: 28, borderRadius: 8, display: 'flex',
+            alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>{i + 1}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TX2, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 5 }}>{labels[i] || `Action ${i + 1}`}</div>
+            <input
+              value={slot?.action || ''}
+              onChange={e => set(i, 'action', e.target.value)}
+              placeholder="What you do"
+              style={{ width: '100%', fontFamily: F, fontSize: 14, padding: '8px 10px', border: `1px solid ${BD}`, borderRadius: 7, marginBottom: 6, color: TX, background: '#fff' }}
+            />
+            <textarea
+              value={slot?.justification || ''}
+              onChange={e => set(i, 'justification', e.target.value)}
+              placeholder="Why this is in this slot. 1 to 2 sentences."
+              rows={2}
+              style={{ width: '100%', fontFamily: F, fontSize: 13.5, padding: '8px 10px', border: `1px solid ${BD}`, borderRadius: 7, color: TX, background: '#fff', resize: 'vertical' }}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <button
+              type="button"
+              onClick={() => move(i, i - 1)}
+              disabled={i === 0}
+              aria-label="Move up"
+              style={{
+                background: i === 0 ? '#f0f3f7' : '#fff', border: `1px solid ${BD}`, borderRadius: 6,
+                width: 28, height: 24, fontFamily: F, fontSize: 13, fontWeight: 700, color: i === 0 ? TX3 : NAVY,
+                cursor: i === 0 ? 'not-allowed' : 'pointer',
+              }}
+            >↑</button>
+            <button
+              type="button"
+              onClick={() => move(i, i + 1)}
+              disabled={i === (slots?.length || 0) - 1}
+              aria-label="Move down"
+              style={{
+                background: i === (slots?.length || 0) - 1 ? '#f0f3f7' : '#fff', border: `1px solid ${BD}`, borderRadius: 6,
+                width: 28, height: 24, fontFamily: F, fontSize: 13, fontWeight: 700,
+                color: i === (slots?.length || 0) - 1 ? TX3 : NAVY,
+                cursor: i === (slots?.length || 0) - 1 ? 'not-allowed' : 'pointer',
+              }}
+            >↓</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 function ForcedChoiceBlock({ scenarioIndex, spec, value, onChange }) {
   const wrapper = (children) => (

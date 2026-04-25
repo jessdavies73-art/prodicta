@@ -78,6 +78,8 @@ export async function POST(request, { params }) {
     }
 
     // -- ALTER TABLE responses ADD COLUMN IF NOT EXISTS forced_choice_response JSONB;
+    // -- ALTER TABLE responses ADD COLUMN IF NOT EXISTS ranked_actions JSONB;
+    // -- ALTER TABLE responses ADD COLUMN IF NOT EXISTS interruption_response JSONB;
     const baseRows = responses.map(r => ({
       candidate_id: candidate.id,
       scenario_index: r.scenario_index,
@@ -86,20 +88,23 @@ export async function POST(request, { params }) {
       audio_url: r.audio_url || null,
       input_mode: r.input_mode || 'type',
     }))
-    const rowsWithForcedChoice = baseRows.map((row, i) => (
-      responses[i]?.forced_choice_response
-        ? { ...row, forced_choice_response: responses[i].forced_choice_response }
-        : row
-    ))
+    const rowsWithExtras = baseRows.map((row, i) => {
+      const r = responses[i] || {}
+      const extras = {}
+      if (r.forced_choice_response) extras.forced_choice_response = r.forced_choice_response
+      if (r.ranked_actions) extras.ranked_actions = r.ranked_actions
+      if (r.scenario_interruption) extras.interruption_response = r.scenario_interruption
+      return Object.keys(extras).length ? { ...row, ...extras } : row
+    })
 
     let { error: respError } = await adminClient
       .from('responses')
-      .insert(rowsWithForcedChoice)
+      .insert(rowsWithExtras)
 
-    // Retry without the new column if the migration has not been applied yet.
+    // Retry without new columns if any migration has not been applied yet.
     // Keeps submissions working when the DB schema is behind the code.
-    if (respError && /forced_choice_response/i.test(respError.message || '')) {
-      console.warn('[submit] forced_choice_response column missing, retrying without it.')
+    if (respError && /forced_choice_response|ranked_actions|interruption_response/i.test(respError.message || '')) {
+      console.warn('[submit] new column missing, retrying with base rows only:', respError.message)
       const retry = await adminClient.from('responses').insert(baseRows)
       respError = retry.error
     }
