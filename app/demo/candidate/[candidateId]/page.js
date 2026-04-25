@@ -2941,31 +2941,41 @@ function DemoCandidateInner({ params }) {
                     return null
                   }
                 })()}
-                {/* Scoring confidence indicator (demo hardcoded) */}
-                {params.candidateId === 'demo-c1' && (
-                  <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center' }}>
-                    <span title="Responses were detailed enough for reliable scoring." style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      padding: '4px 10px', borderRadius: 999,
-                      fontFamily: F, fontSize: 11, fontWeight: 800, letterSpacing: '0.03em',
-                      background: 'rgba(0,191,165,0.18)', color: '#7ef4d8', border: '1px solid rgba(0,191,165,0.5)',
-                    }}>
-                      High Confidence
-                    </span>
-                  </div>
-                )}
-                {params.candidateId === 'demo-c2' && (
-                  <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center' }}>
-                    <span title="Response depth suggests some dimensions may benefit from interview verification." style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      padding: '4px 10px', borderRadius: 999,
-                      fontFamily: F, fontSize: 11, fontWeight: 800, letterSpacing: '0.03em',
-                      background: 'rgba(232,184,75,0.18)', color: '#fde68a', border: '1px solid rgba(232,184,75,0.5)',
-                    }}>
-                      Verify at Interview
-                    </span>
-                  </div>
-                )}
+                {/* Scoring confidence indicator: reads from results.scoring_confidence
+                    and picks the framed reason text matching the current account
+                    and employment combination. */}
+                {results?.scoring_confidence?.level && (() => {
+                  const lvl = String(results.scoring_confidence.level).toLowerCase()
+                  const pill = lvl === 'high'
+                    ? { label: 'High Confidence',                        bg: 'rgba(0,191,165,0.18)',  color: '#7ef4d8',  bd: 'rgba(0,191,165,0.5)' }
+                    : lvl === 'low'
+                    ? { label: 'Additional Verification Recommended',    bg: 'rgba(248,113,113,0.18)', color: '#fecaca', bd: 'rgba(248,113,113,0.5)' }
+                    : { label: 'Verify at Interview',                    bg: 'rgba(232,184,75,0.18)',  color: '#fde68a', bd: 'rgba(232,184,75,0.5)' }
+                  const variants = results.scoring_confidence.confidence_reason_variants
+                  const key = `${isAgency ? 'agency' : 'employer'}_${isTemp ? 'temporary' : 'permanent'}`
+                  const reasonText = (variants && variants[key]) || results.scoring_confidence.confidence_reason || ''
+                  return (
+                    <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        padding: '4px 10px', borderRadius: 999,
+                        fontFamily: F, fontSize: 11, fontWeight: 800, letterSpacing: '0.03em',
+                        background: pill.bg, color: pill.color, border: `1px solid ${pill.bd}`,
+                      }}>
+                        {pill.label}
+                      </span>
+                      {reasonText && (
+                        <p style={{
+                          fontFamily: F, fontSize: 12.5, fontStyle: 'italic',
+                          color: 'rgba(255,255,255,0.72)', lineHeight: 1.55,
+                          margin: 0, padding: '0 12px', maxWidth: 560, textAlign: 'center',
+                        }}>
+                          {reasonText}
+                        </p>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
               {/* White content (non-rapid only) */}
               {!isRapidScreen && (

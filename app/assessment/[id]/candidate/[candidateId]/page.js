@@ -8533,8 +8533,9 @@ function ConfidenceIndicator({ confidence }) {
     low:    { label: 'Additional Verification Recommended', bg: 'rgba(248,113,113,0.18)', color: '#fecaca', bd: 'rgba(248,113,113,0.5)', tip: 'Responses were brief. We recommend a structured interview before making a final decision.' },
   }
   const s = map[level] || map.medium
+  const reasonText = (confidence.confidence_reason || '').trim()
   return (
-    <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center' }}>
+    <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
       <span title={confidence.reason || s.tip} style={{
         display: 'inline-flex', alignItems: 'center', gap: 6,
         padding: '4px 10px', borderRadius: 999,
@@ -8543,6 +8544,15 @@ function ConfidenceIndicator({ confidence }) {
       }}>
         {s.label}
       </span>
+      {reasonText && (
+        <p style={{
+          fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 12.5, fontStyle: 'italic',
+          color: 'rgba(255,255,255,0.72)', lineHeight: 1.55,
+          margin: 0, padding: '0 12px', maxWidth: 540, textAlign: 'center',
+        }}>
+          {reasonText}
+        </p>
+      )}
     </div>
   )
 }
