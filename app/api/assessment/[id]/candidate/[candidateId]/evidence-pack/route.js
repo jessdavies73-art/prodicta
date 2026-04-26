@@ -562,6 +562,29 @@ export async function GET(request, { params }) {
     drawKV('Candidate completed at', candidate.completed_at ? new Date(candidate.completed_at).toLocaleString('en-GB') : 'Not recorded')
     drawKV('Report generated at', result.created_at ? new Date(result.created_at).toLocaleString('en-GB') : 'Not recorded')
 
+    // Modular Workspace audit-trail extension. Three additional rows render
+    // only when the assessment used the modular Workspace, identified by
+    // the presence of workspace_block_scores. Legacy evidence packs stop
+    // at the 12 rows above; modular packs show 12 + 3 = 15 rows.
+    //
+    // Section sub-label varies by employment_type to match the rest of
+    // the evidence pack framing (hiring decision vs cover assignment).
+    const blockScores = Array.isArray(result.workspace_block_scores) ? result.workspace_block_scores : null
+    if (blockScores && blockScores.length > 0) {
+      const modularLabel = isEmployerTemp
+        ? 'Cover assignment Day 1 simulation results'
+        : 'Hiring decision Day 1 simulation results'
+      drawSubLabel(modularLabel)
+      const blockNames = blockScores.map(b => {
+        const id = (b?.block_id || '').toString()
+        const score = Number.isFinite(b?.score) ? ` (${b.score})` : ''
+        return id ? `${id}${score}` : null
+      }).filter(Boolean).join(', ')
+      drawKV('Day 1 simulation evaluated as part of hiring decision', blockNames || 'No blocks recorded')
+      drawKV('Workspace scoring rubric version applied', result.workspace_rubric_version || 'Not recorded (legacy workspace)')
+      drawKV('Workspace block library version', result.workspace_block_library_version || 'Not recorded (legacy workspace)')
+    }
+
     // ──────────────────────────────────────────────────────────────────────
  // SECTION 6, RECOMMENDATION FOR LEGAL USE
     // ──────────────────────────────────────────────────────────────────────

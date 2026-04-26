@@ -285,6 +285,32 @@ export async function GET(request, { params }) {
     drawAuditRow('Candidate completed at', candidate.completed_at ? new Date(candidate.completed_at).toLocaleString('en-GB') : 'Not recorded')
     drawAuditRow('Report generated at', result.created_at ? new Date(result.created_at).toLocaleString('en-GB') : 'Not recorded')
 
+    // Modular Workspace audit-trail extension. Three additional rows render
+    // only when the assessment used the modular Workspace, identified by
+    // the presence of workspace_block_scores. Legacy reports stop at the
+    // 12 rows above; modular reports show 12 + 3 = 15 rows.
+    //
+    // Section sub-label varies by employment_type so the framing matches
+    // the rest of the audit trail (placement vs assignment for agency).
+    const blockScores = Array.isArray(result.workspace_block_scores) ? result.workspace_block_scores : null
+    if (blockScores && blockScores.length > 0) {
+      const modularLabel = isAgencyTemp
+        ? 'Assignment Day 1 simulation results'
+        : 'Placement Day 1 simulation results'
+      if (ay >= 110) {
+        auditPage.drawText(modularLabel, { x: 40, y: ay, size: 9.5, font: helvB, color: teal })
+        ay -= 18
+      }
+      const blockNames = blockScores.map(b => {
+        const id = (b?.block_id || '').toString()
+        const score = Number.isFinite(b?.score) ? ` (${b.score})` : ''
+        return id ? `${id}${score}` : null
+      }).filter(Boolean).join(', ')
+      drawAuditRow('Day 1 Workspace simulation evaluated', blockNames || 'No blocks recorded')
+      drawAuditRow('Workspace scoring rubric version', result.workspace_rubric_version || 'Not recorded (legacy workspace)')
+      drawAuditRow('Workspace block library version', result.workspace_block_library_version || 'Not recorded (legacy workspace)')
+    }
+
     // Footer with the standard PRODICTA compliance disclaimer applied to
     // every page (page 1, audit trail, plus any additional content pages
     // pdf-lib later splits into).
