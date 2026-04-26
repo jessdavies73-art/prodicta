@@ -8,81 +8,82 @@
 // "Preview Workspace" button mounts ModularWorkspace inline with a
 // synthetic assessment so the admin can walk through the stub blocks.
 //
+// Refinements in this revision:
+//   - Role dropdown sourced from the canonical mapping in
+//     lib/scenario-generator (so labels and groupings match the engine).
+//   - After the API returns, we surface the canonical match diagnostics
+//     (matched id, label, match_type, level) so it's clear whether the
+//     role hit verbatim, fuzzy-matched on function+seniority, or fell
+//     through to the level default.
+//   - "Override blocks" toggle that exposes all 14 stubs as a checklist
+//     so admins can force a custom block list for edge-case testing.
+//
 // Auth: gated behind authenticated users (any signed-in account). There
 // is no admin-role table yet; tighten when that lands.
 //
 // IMPORTANT: this page does NOT create real assessment records. It only
 // runs the in-memory detector and generator and renders their output.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ModularWorkspace from '@/app/assess/[uniqueToken]/components/ModularWorkspace'
+import { CANONICAL_ROLE_MAPPING } from '@/lib/scenario-generator'
+import { BLOCK_CATALOGUE } from '@/lib/workspace-blocks/office/catalogue'
 
 const NAVY = '#0f2137'
 const TEAL = '#00BFA5'
 const F = "'Outfit', system-ui, sans-serif"
 const FM = "'IBM Plex Mono', monospace"
 
-const ROLE_GROUPS = [
-  {
-    label: 'Office support',
-    roles: ['Receptionist', 'PA to CEO', 'Office Manager', 'Operations Coordinator', 'General Administrator', 'Office Junior', 'Team Assistant'],
-  },
-  {
-    label: 'Software',
-    roles: ['Junior Developer', 'Software Developer', 'Senior Developer', 'Tech Lead', 'Engineering Manager', 'CTO'],
-  },
-  {
-    label: 'Customer service',
-    roles: ['Customer Service Advisor', 'Customer Service Team Leader', 'Customer Service Manager'],
-  },
-  {
-    label: 'Operations',
-    roles: ['Operations Analyst', 'Operations Manager', 'Operations Director', 'COO'],
-  },
-  {
-    label: 'Finance',
-    roles: ['Junior Accountant', 'Finance Manager', 'Financial Controller', 'FD', 'CFO'],
-  },
-  {
-    label: 'Marketing',
-    roles: ['Marketing Coordinator', 'Marketing Manager', 'Head of Marketing', 'CMO'],
-  },
-  {
-    label: 'HR',
-    roles: ['HR Coordinator', 'HR Manager', 'HR Director', 'CPO'],
-  },
-  {
-    label: 'Recruitment',
-    roles: ['Recruitment Resourcer', 'Recruitment Consultant', 'Senior Recruitment Consultant', 'Recruitment Director'],
-  },
-  {
-    label: 'Legal',
-    roles: ['Junior Solicitor', 'Solicitor', 'Senior Solicitor', 'Legal Director', 'General Counsel'],
-  },
-  {
-    label: 'Sales',
-    roles: ['Sales Executive', 'Account Manager', 'Sales Manager', 'Sales Director', 'Commercial Director'],
-  },
-  {
-    label: 'Project',
-    roles: ['Project Coordinator', 'Project Manager', 'Senior PM', 'PMO Director'],
-  },
-  {
-    label: 'Top of house',
-    roles: ['MD', 'CEO', 'Chair'],
-  },
-  {
-    label: 'Out of scope (should fall back)',
-    roles: ['Warehouse Operative', 'HGV Driver', 'Bartender', 'Hairdresser'],
-  },
+// Canonical level -> display label.
+const LEVEL_LABELS = {
+  1: 'Level 1: Front desk / Coordination (4 blocks)',
+  2: 'Level 2: Execution + Judgement (4 blocks)',
+  3: 'Level 3: Management (5 blocks)',
+  4: 'Level 4: Senior / Leadership (4 blocks)',
+}
+
+// Out-of-scope roles for verifying the legacy fallback path.
+const OUT_OF_SCOPE_ROLES = [
+  'Warehouse Operative', 'HGV Driver', 'Bartender', 'Hairdresser', 'Cleaner',
+]
+
+// Extrapolation roles to verify the function+seniority and level fallback
+// passes. None of these match a canonical role_title verbatim.
+const EXTRAPOLATION_ROLES = [
+  'Procurement Manager',
+  'Investor Relations Manager',
+  'Compliance Officer',
+  'Internal Auditor',
+  'BD Manager',
 ]
 
 export default function WorkspaceTestHarness() {
   const router = useRouter()
   const [authChecked, setAuthChecked] = useState(false)
   const [authed, setAuthed] = useState(false)
+
+  // Build the preset list from the canonical mapping plus extrapolation
+  // and out-of-scope examples. Each entry is { value, label, group }.
+  const presetGroups = useMemo(() => {
+    const byLevel = { 1: [], 2: [], 3: [], 4: [] }
+    for (const entry of CANONICAL_ROLE_MAPPING) {
+      const exemplar = entry.role_titles[0]
+        .split(/\s+/)
+        .map(w => w.length <= 3 ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1))
+        .join(' ')
+      byLevel[entry.level].push({ value: exemplar, label: `${exemplar} (canonical: ${entry.id})` })
+    }
+    return [
+      { label: LEVEL_LABELS[1], options: byLevel[1] },
+      { label: LEVEL_LABELS[2], options: byLevel[2] },
+      { label: LEVEL_LABELS[3], options: byLevel[3] },
+      { label: LEVEL_LABELS[4], options: byLevel[4] },
+      { label: 'Extrapolation tests (function + seniority match)', options: EXTRAPOLATION_ROLES.map(r => ({ value: r, label: r })) },
+      { label: 'Out of scope (should fall back to legacy)', options: OUT_OF_SCOPE_ROLES.map(r => ({ value: r, label: r })) },
+    ]
+  }, [])
 
   const [roleTitle, setRoleTitle] = useState('Marketing Manager')
   const [customRole, setCustomRole] = useState('')
@@ -91,13 +92,15 @@ export default function WorkspaceTestHarness() {
   const [companySize, setCompanySize] = useState('')
   const [employmentType, setEmploymentType] = useState('permanent')
 
+  const [overrideEnabled, setOverrideEnabled] = useState(false)
+  const [overrideBlocks, setOverrideBlocks] = useState([])
+
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState(null)
-  const [result, setResult] = useState(null) // { profile, shell_family, scenario, fallback_reason }
+  const [result, setResult] = useState(null) // { profile, shell_family, preview, scenario, fallback_reason }
 
   const [previewing, setPreviewing] = useState(false)
 
-  // Auth gate. Redirect to /login if not signed in.
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -121,15 +124,15 @@ export default function WorkspaceTestHarness() {
 
   const effectiveTitle = customRole.trim() || roleTitle
 
-  async function handleGenerate() {
+  async function runRequest({ dryRun }) {
     setError(null)
-    setResult(null)
     setPreviewing(false)
     if (!effectiveTitle) {
       setError('Pick or type a role title.')
       return
     }
     setGenerating(true)
+    if (!dryRun) setResult(null)
     try {
       const res = await fetch('/api/admin/workspace-test', {
         method: 'POST',
@@ -137,6 +140,8 @@ export default function WorkspaceTestHarness() {
         body: JSON.stringify({
           roleTitle: effectiveTitle,
           jobDescription,
+          dry_run: !!dryRun,
+          ...(overrideEnabled && overrideBlocks.length > 0 ? { block_override: overrideBlocks } : {}),
           profileOverrides: {
             ...(sectorContext.trim() ? { sector_context: sectorContext.trim() } : {}),
             ...(companySize ? { company_size: companySize } : {}),
@@ -157,6 +162,9 @@ export default function WorkspaceTestHarness() {
     }
   }
 
+  const handleGenerate = () => runRequest({ dryRun: false })
+  const handlePreviewBlocks = () => runRequest({ dryRun: true })
+
   if (!authChecked) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: F, color: NAVY }}>
@@ -166,7 +174,6 @@ export default function WorkspaceTestHarness() {
   }
   if (!authed) return null
 
-  // Preview mode mounts ModularWorkspace inline with a synthetic assessment.
   if (previewing && result?.scenario) {
     const fakeAssessment = {
       id: 'admin-test',
@@ -227,9 +234,9 @@ export default function WorkspaceTestHarness() {
                 onChange={(e) => { setRoleTitle(e.target.value); setCustomRole('') }}
                 style={selectStyle}
               >
-                {ROLE_GROUPS.map(group => (
+                {presetGroups.map(group => (
                   <optgroup key={group.label} label={group.label}>
-                    {group.roles.map(r => (<option key={r} value={r}>{r}</option>))}
+                    {group.options.map(o => (<option key={o.value} value={o.value}>{o.label}</option>))}
                   </optgroup>
                 ))}
               </select>
@@ -282,7 +289,14 @@ export default function WorkspaceTestHarness() {
             </Field>
           </div>
 
-          <div style={{ marginTop: 18 }}>
+          <BlockOverridePanel
+            enabled={overrideEnabled}
+            onToggle={(v) => setOverrideEnabled(v)}
+            selected={overrideBlocks}
+            onChange={setOverrideBlocks}
+          />
+
+          <div style={{ marginTop: 18, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <button
               onClick={handleGenerate}
               disabled={generating}
@@ -293,10 +307,23 @@ export default function WorkspaceTestHarness() {
                 cursor: generating ? 'not-allowed' : 'pointer',
               }}
             >
-              {generating ? 'Generating...' : 'Generate scenario'}
+              {generating ? 'Working...' : 'Generate scenario'}
+            </button>
+            <button
+              onClick={handlePreviewBlocks}
+              disabled={generating}
+              style={{
+                fontFamily: F, fontSize: 14, fontWeight: 600,
+                padding: '11px 18px', borderRadius: 8,
+                background: 'transparent', border: '1px solid #cbd5e1',
+                color: '#475569',
+                cursor: generating ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Preview block selection only (no AI call)
             </button>
             {error ? (
-              <span style={{ marginLeft: 14, fontFamily: F, fontSize: 13, color: '#dc2626' }}>
+              <span style={{ marginLeft: 6, fontFamily: F, fontSize: 13, color: '#dc2626' }}>
                 {error}
               </span>
             ) : null}
@@ -311,8 +338,69 @@ export default function WorkspaceTestHarness() {
   )
 }
 
+function BlockOverridePanel({ enabled, onToggle, selected, onChange }) {
+  const allBlocks = Object.values(BLOCK_CATALOGUE)
+  const toggle = (id) => {
+    if (selected.includes(id)) onChange(selected.filter(s => s !== id))
+    else onChange([...selected, id])
+  }
+  const move = (id, dir) => {
+    const idx = selected.indexOf(id)
+    if (idx === -1) return
+    const next = [...selected]
+    const target = idx + dir
+    if (target < 0 || target >= next.length) return
+    ;[next[idx], next[target]] = [next[target], next[idx]]
+    onChange(next)
+  }
+  return (
+    <div style={{ marginTop: 18, padding: 16, background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 10 }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: '#92400e', cursor: 'pointer' }}>
+        <input type="checkbox" checked={enabled} onChange={(e) => onToggle(e.target.checked)} />
+        Override block selection (testing only)
+      </label>
+      {enabled ? (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: '#78350f', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+            Pick blocks in execution order. The canonical lookup is bypassed.
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, marginBottom: 10 }}>
+            {allBlocks.map(b => (
+              <label key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: F, fontSize: 13, color: '#1f2937', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(b.id)}
+                  onChange={() => toggle(b.id)}
+                />
+                <span style={{ fontFamily: FM, fontSize: 11, color: '#475569' }}>{b.id}</span>
+                <span style={{ fontSize: 12, color: '#64748b' }}>&middot; {b.category}</span>
+              </label>
+            ))}
+          </div>
+          {selected.length > 0 ? (
+            <div style={{ background: '#fff', border: '1px solid #fde68a', borderRadius: 8, padding: 10 }}>
+              <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: '#78350f', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+                Order ({selected.length} blocks)
+              </div>
+              {selected.map((id, i) => (
+                <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontFamily: F, fontSize: 13, color: NAVY }}>
+                  <span style={{ fontFamily: FM, fontSize: 11, color: '#64748b', width: 22 }}>{i + 1}.</span>
+                  <span style={{ flex: 1 }}>{BLOCK_CATALOGUE[id]?.name || id}</span>
+                  <button onClick={() => move(id, -1)} disabled={i === 0} style={tinyBtn}>up</button>
+                  <button onClick={() => move(id, 1)} disabled={i === selected.length - 1} style={tinyBtn}>down</button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function ResultPanel({ result, effectiveTitle, onPreview }) {
-  const { profile, shell_family, scenario, fallback_reason } = result
+  const { profile, shell_family, preview, scenario, fallback_reason } = result
+  const matchInfo = scenario?.match_info || preview
   return (
     <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24, marginBottom: 32 }}>
       <h2 style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: NAVY, marginBottom: 14 }}>Output</h2>
@@ -335,6 +423,35 @@ function ResultPanel({ result, effectiveTitle, onPreview }) {
         )}
       </Section>
 
+      {matchInfo ? (
+        <Section title="Canonical match">
+          <div style={{ background: matchInfo.match_type === 'role_title' ? '#ecfdf5' : matchInfo.match_type === 'override' ? '#fff7ed' : '#eff6ff', border: '1px solid', borderColor: matchInfo.match_type === 'role_title' ? '#a7f3d0' : matchInfo.match_type === 'override' ? '#fdba74' : '#bfdbfe', borderRadius: 8, padding: 14 }}>
+            <KV k="canonical_id" v={matchInfo.canonical_id || matchInfo.canonical_id} mono />
+            {matchInfo.canonical_label ? <KV k="canonical_label" v={matchInfo.canonical_label} /> : null}
+            <KV k="match_type" v={matchTypeLabel(matchInfo.match_type)} />
+            {matchInfo.level ? <KV k="level" v={`L${matchInfo.level}`} /> : null}
+          </div>
+        </Section>
+      ) : null}
+
+      {preview && !scenario ? (
+        <Section title="Block selection (preview)">
+          <ol style={{ margin: 0, paddingLeft: 18, fontFamily: F, fontSize: 14, color: NAVY, lineHeight: 1.7 }}>
+            {(preview.blocks || []).map(b => (
+              <li key={b.block_id}>
+                <b>{b.block_id}</b>
+                <span style={{ color: '#64748b', marginLeft: 6, fontFamily: FM, fontSize: 12 }}>
+                  ({Math.round((b.duration_seconds || 0) / 60)} min)
+                </span>
+              </li>
+            ))}
+          </ol>
+          <div style={{ marginTop: 8, fontFamily: F, fontSize: 12, color: '#64748b' }}>
+            Total target: {Math.round((preview.blocks || []).reduce((s, b) => s + (b.duration_seconds || 0), 0) / 60)} min across {preview.blocks?.length || 0} blocks.
+          </div>
+        </Section>
+      ) : null}
+
       {scenario ? (
         <>
           <Section title="Scenario header">
@@ -355,6 +472,9 @@ function ResultPanel({ result, effectiveTitle, onPreview }) {
                 </li>
               ))}
             </ol>
+            <div style={{ marginTop: 8, fontFamily: F, fontSize: 12, color: '#64748b' }}>
+              Total: {Math.round((scenario.selected_blocks || []).reduce((s, b) => s + (b.duration_seconds || 0), 0) / 60)} min across {scenario.selected_blocks?.length || 0} blocks.
+            </div>
           </Section>
 
           <Section title="Scenario arc">
@@ -383,6 +503,16 @@ function ResultPanel({ result, effectiveTitle, onPreview }) {
       ) : null}
     </div>
   )
+}
+
+function matchTypeLabel(type) {
+  switch (type) {
+    case 'role_title': return 'role_title (exact substring match)'
+    case 'function_seniority': return 'function_seniority (extrapolated by function + seniority)'
+    case 'level_fallback': return 'level_fallback (no specific match, defaulted by level)'
+    case 'override': return 'override (admin-supplied block list)'
+    default: return type || 'unknown'
+  }
 }
 
 function Field({ label, children }) {
@@ -432,3 +562,10 @@ const inputStyle = {
 }
 
 const selectStyle = { ...inputStyle, cursor: 'pointer' }
+
+const tinyBtn = {
+  fontFamily: FM, fontSize: 11, fontWeight: 700,
+  padding: '4px 8px', borderRadius: 6,
+  background: '#fff', border: '1px solid #cbd5e1', color: '#475569',
+  cursor: 'pointer',
+}

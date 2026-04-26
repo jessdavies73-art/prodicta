@@ -2,12 +2,21 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { detectRoleProfile } from '@/lib/role-profile-detector'
-import { generateScenario } from '@/lib/scenario-generator'
+import { generateScenario, selectBlocks, findCanonicalEntry } from '@/lib/scenario-generator'
 
-// Phase 1 admin test harness API. Runs the detector + scenario generator
-// for a hand-picked role and returns the result without writing anything
-// to the database. Used by /admin/workspace-test to preview what the live
-// generate flow would produce for a given role title and override set.
+// Phase 1 admin test harness API. Runs the detector + canonical block
+// selection + scenario generator for a hand-picked role and returns the
+// result without writing anything to the database. Used by
+// /admin/workspace-test to preview what the live generate flow would
+// produce for a given role title and override set.
+//
+// Optional flags in the request body:
+//   dry_run: true  -> skip the scenario generator, just return the
+//                     detected profile and the canonical block selection
+//                     (fast path for "what blocks would this role get?")
+//   block_override: [string]  -> bypass the canonical lookup and use
+//                                these block ids in this order. Used to
+//                                test edge cases.
 //
 // Auth: requires an authenticated user. There is no admin-role table in
 // this codebase yet, so we stop at "must be signed in". Tighten to an
@@ -31,7 +40,7 @@ export async function POST(req) {
   if (!body || typeof body !== 'object') {
     return NextResponse.json({ error: 'invalid_body' }, { status: 400 })
   }
-  const { roleTitle, jobDescription, profileOverrides } = body
+  const { roleTitle, jobDescription, profileOverrides, dry_run, block_override } = body
   if (!roleTitle || typeof roleTitle !== 'string') {
     return NextResponse.json({ error: 'roleTitle_required' }, { status: 400 })
   }
@@ -41,10 +50,7 @@ export async function POST(req) {
   }
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-  // Step 1: detector. The harness lets the admin override fields after
-  // detection so the UI can experiment with different sector contexts and
-  // employment types without re-running the model. Detector still runs so
-  // the admin can see the raw classification.
+  // Detector always runs so the admin can see the raw classification.
   const detected = await detectRoleProfile(client, {
     roleTitle,
     jobDescription: jobDescription || '',
@@ -55,7 +61,7 @@ export async function POST(req) {
     return NextResponse.json({ error: 'detector_failed' }, { status: 500 })
   }
 
-  // Apply UI overrides on top of the detected profile.
+  // UI overrides applied on top of the detected profile.
   const profile = {
     ...detected.profile,
     ...(profileOverrides?.sector_context ? { sector_context: profileOverrides.sector_context } : {}),
@@ -64,20 +70,52 @@ export async function POST(req) {
   }
   const shell_family = detected.shell_family
 
-  // Step 2: scenario generator runs only for the Office shell. Other
-  // shells (Phase 2/3) and out-of-scope roles return without a scenario
-  // so the harness can demonstrate the legacy fallback path.
+  // Canonical lookup runs even on dry_run so the harness can show the
+  // chosen blocks without burning a generator call. Only meaningful for
+  // the Office shell.
+  let preview = null
+  if (shell_family === 'office') {
+    const { entry, match_type } = findCanonicalEntry(roleTitle, profile)
+    const selected = selectBlocks(profile, roleTitle)
+    preview = {
+      canonical_id: entry?.id || null,
+      canonical_label: entry?.label || null,
+      match_type,
+      level: entry?.level || null,
+      blocks: selected.map(s => ({
+        block_id: s.block_id,
+        order: s.order,
+        duration_seconds: s.suggested_duration_seconds,
+      })),
+    }
+  }
+
+  // Dry run stops here.
+  if (dry_run) {
+    return NextResponse.json({
+      profile,
+      shell_family,
+      preview,
+      scenario: null,
+      fallback_reason: shell_family !== 'office' ? `${shell_family}_shell_not_yet_built` : null,
+    })
+  }
+
+  // Full generation only runs for the Office shell. Other shells get
+  // legacy fallback notice without an AI call.
   let scenario = null
   if (shell_family === 'office') {
     scenario = await generateScenario(client, profile, {
       roleTitle,
       jobDescription: jobDescription || '',
+      ...(Array.isArray(block_override) && block_override.length > 0 ? { blockOverride: block_override } : {}),
     })
   }
 
   return NextResponse.json({
     profile,
     shell_family,
+    preview,
     scenario,
     fallback_reason: shell_family === 'office' && !scenario ? 'generator_failed'
       : shell_family === 'out_of_scope' ? 'out_of_scope_role'
