@@ -40,75 +40,166 @@ function Reveal({ children, delay = 0, style = {} }) {
 }
 
 
-// ── Convergence lines (agency hero only) ──────────────────────────────────────
-// SVG-based animated network. Thin jade lines slowly draw from outer anchors
-// toward a centre node, hold briefly, then dissolve. Echoes the PRODICTA logo
-// convergence theme without competing with the hero copy.
-function ConvergenceLines() {
-  // Each entry is one line drawn between two anchor points (% of viewBox).
-  // dur = full cycle in seconds, delay staggers the cycles so lines never all
-  // fire at once. Cycles range 6 to 8s per the brief.
-  const lines = [
-    { x1: 8,  y1: 22, x2: 50, y2: 50, dur: 7,   delay: 0    },
-    { x1: 92, y1: 18, x2: 50, y2: 50, dur: 6.5, delay: 1.2  },
-    { x1: 12, y1: 78, x2: 50, y2: 50, dur: 7.5, delay: 2.4  },
-    { x1: 88, y1: 82, x2: 50, y2: 50, dur: 6,   delay: 3.6  },
-    { x1: 28, y1: 12, x2: 70, y2: 88, dur: 8,   delay: 0.8  },
-    { x1: 72, y1: 14, x2: 30, y2: 86, dur: 7.2, delay: 2.0  },
-    { x1: 4,  y1: 50, x2: 50, y2: 50, dur: 7.8, delay: 4.4  },
-    { x1: 96, y1: 50, x2: 50, y2: 50, dur: 6.8, delay: 5.0  },
-    { x1: 22, y1: 38, x2: 78, y2: 62, dur: 7,   delay: 3.2  },
-    { x1: 78, y1: 38, x2: 22, y2: 62, dur: 7.4, delay: 4.0  },
+// ── Pipeline flow (agency hero only) ─────────────────────────────────────────
+// Diagonal jade streaks flow from bottom-left to top-right at three speed
+// layers. A subset bend toward a focal point near where the headline copy
+// lands (centre-right of the hero) and dissolve there: chaos to clarity.
+// Occasional jade signal pulses fire at random positions every 4-6s to read
+// as "insight detected" without crowding the field. Each streak is a thin
+// rounded div with a horizontal-fade gradient (the gradient is the motion
+// blur). Translation and rotation animate via CSS custom properties so all
+// streaks share two keyframes.
+function PipelineFlow() {
+  const [isMobile, setIsMobile] = useState(false)
+  const [pulses, setPulses] = useState([])
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  // Signal pulse scheduler. requestAnimationFrame-anchored setTimeout chain
+  // so we get genuinely random firing without a JS animation loop. Skipped
+  // entirely under prefers-reduced-motion.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    let cancelled = false
+    let timeoutId
+    const minDelay = isMobile ? 6000 : 4000
+    const jitter = 2000
+
+    function schedule() {
+      const delay = minDelay + Math.random() * jitter
+      timeoutId = setTimeout(() => {
+        if (cancelled) return
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+        // Bias the pulse position toward where streaks are densest (centre
+        // band of the hero) but allow some scatter so pulses don't always
+        // land in the same patch.
+        const x = 22 + Math.random() * 56
+        const y = 22 + Math.random() * 50
+        setPulses(prev => [...prev, { id, x, y }])
+        // The pulse animation is 1.4s; clean up shortly after to keep the
+        // pulses array small.
+        setTimeout(() => {
+          if (cancelled) return
+          setPulses(prev => prev.filter(p => p.id !== id))
+        }, 1600)
+        schedule()
+      }, delay)
+    }
+    schedule()
+
+    return () => {
+      cancelled = true
+      clearTimeout(timeoutId)
+    }
+  }, [isMobile])
+
+  // Focal point: centre-right of the hero, near where the second line of the
+  // headline ("before you make it.") lands. Tuned by eye against the existing
+  // hero layout.
+  const FOCAL_X = 62
+  const FOCAL_Y = 40
+
+  // 15 streaks across three speed layers. Negative delays start each streak
+  // partway through its cycle so the field is already populated on first
+  // paint instead of building up over the first few seconds.
+  // sx/sy are start translate values in vw/vh; len/w are pixel dimensions
+  // of the streak rectangle; op is peak opacity; dur is full traverse time;
+  // conv = true means the streak bends toward the focal point and dissolves.
+  const streakDefs = [
+    // Fast layer: short, thin, low opacity (4-5s)
+    { sx: -20, sy: 110, len: 80,  w: 1.0, op: 0.18, dur: 4.5,  delay: -1.0,  conv: false },
+    { sx: -15, sy: 75,  len: 75,  w: 1.0, op: 0.18, dur: 4.0,  delay: -2.5,  conv: false },
+    { sx: -10, sy: 45,  len: 90,  w: 1.0, op: 0.18, dur: 5.0,  delay: -0.5,  conv: true  },
+    { sx: 10,  sy: 110, len: 80,  w: 1.0, op: 0.18, dur: 4.2,  delay: -3.5,  conv: false },
+    { sx: 35,  sy: 110, len: 75,  w: 1.0, op: 0.18, dur: 4.7,  delay: -1.8,  conv: true  },
+    { sx: 60,  sy: 110, len: 80,  w: 1.0, op: 0.18, dur: 4.3,  delay: -3.0,  conv: false },
+    // Medium layer: medium length and width (7-9s)
+    { sx: -20, sy: 90,  len: 120, w: 1.5, op: 0.22, dur: 8.0,  delay: -2.0,  conv: false },
+    { sx: -15, sy: 60,  len: 110, w: 1.5, op: 0.22, dur: 7.5,  delay: -4.5,  conv: true  },
+    { sx: 0,   sy: 30,  len: 130, w: 1.5, op: 0.22, dur: 9.0,  delay: -1.5,  conv: false },
+    { sx: 20,  sy: 110, len: 120, w: 1.5, op: 0.22, dur: 8.5,  delay: -6.0,  conv: false },
+    { sx: 45,  sy: 110, len: 110, w: 1.5, op: 0.22, dur: 7.8,  delay: -3.0,  conv: true  },
+    // Slow layer: long, thick, slightly higher opacity (12-15s)
+    { sx: -20, sy: 100, len: 180, w: 2.0, op: 0.25, dur: 13.0, delay: -5.0,  conv: false },
+    { sx: -10, sy: 70,  len: 170, w: 2.0, op: 0.25, dur: 14.0, delay: -8.0,  conv: true  },
+    { sx: 5,   sy: 110, len: 175, w: 2.0, op: 0.25, dur: 12.5, delay: -2.0,  conv: false },
+    { sx: 30,  sy: 110, len: 170, w: 2.0, op: 0.25, dur: 13.5, delay: -10.0, conv: false },
   ]
-  // Unique anchor coordinates (deduplicated) for the pulse dots.
-  const anchorSet = new Map()
-  lines.forEach((l, i) => {
-    anchorSet.set(`${l.x1},${l.y1}`, { x: l.x1, y: l.y1, delay: l.delay })
-    anchorSet.set(`${l.x2},${l.y2}`, { x: l.x2, y: l.y2, delay: l.delay + 0.5 })
-  })
-  const anchors = Array.from(anchorSet.values())
+  // Mobile keeps a representative cross-section: mix of speed layers and
+  // some convergent streaks so the focal-point bend still reads.
+  const mobilePick = [0, 2, 6, 7, 9, 11, 13]
+  const streaks = isMobile ? mobilePick.map(i => streakDefs[i]) : streakDefs
+
   return (
-    <svg
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-      style={{
-        position: 'absolute', inset: 0, width: '100%', height: '100%',
-        pointerEvents: 'none', zIndex: 0,
-      }}
-    >
-      {lines.map((l, i) => (
-        <line
-          key={`l${i}`}
-          x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-          stroke={TEAL}
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          pathLength="1"
+    <div aria-hidden="true" style={{
+      position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden',
+    }}>
+      {streaks.map((s, i) => {
+        // Non-convergent end: continue along -45deg trajectory off-screen.
+        const x1 = s.sx + 135
+        const y1 = s.sy - 135
+        // Convergent path bends through a midpoint sitting on the natural
+        // -45deg line, then curves to the focal point and fades there.
+        const xMid = s.sx + 35
+        const yMid = s.sy - 35
+        const cssVars = s.conv
+          ? {
+              '--x0': `${s.sx}vw`, '--y0': `${s.sy}vh`,
+              '--xMid': `${xMid}vw`, '--yMid': `${yMid}vh`,
+              '--xEnd': `${FOCAL_X}vw`, '--yEnd': `${FOCAL_Y}vh`,
+              '--peak': s.op,
+            }
+          : {
+              '--x0': `${s.sx}vw`, '--y0': `${s.sy}vh`,
+              '--x1': `${x1}vw`, '--y1': `${y1}vh`,
+              '--peak': s.op,
+            }
+        return (
+          <div
+            key={i}
+            className="pd-streak"
+            style={{
+              position: 'absolute',
+              left: 0, top: 0,
+              width: s.len, height: s.w,
+              borderRadius: s.w,
+              background: `linear-gradient(to right, transparent 0%, ${TEAL} 30%, ${TEAL} 70%, transparent 100%)`,
+              opacity: 0,
+              willChange: 'transform, opacity',
+              transformOrigin: '0 50%',
+              animation: `${s.conv ? 'pdStreakConverge' : 'pdStreakFlow'} ${s.dur}s linear ${s.delay}s infinite`,
+              ...cssVars,
+            }}
+          />
+        )
+      })}
+      {pulses.map(p => (
+        <div
+          key={p.id}
+          className="pd-signal-pulse"
           style={{
-            strokeDasharray: '1 1',
-            strokeDashoffset: 1,
-            animation: `pdLineDraw ${l.dur}s ease-in-out ${l.delay}s infinite`,
+            position: 'absolute',
+            left: `${p.x}vw`,
+            top: `${p.y}vh`,
+            width: 8, height: 8,
+            borderRadius: '50%',
+            background: TEAL,
+            boxShadow: `0 0 14px 3px ${TEAL}88, 0 0 28px 8px ${TEAL}44`,
+            transform: 'translate(-50%, -50%) scale(1)',
             opacity: 0,
-            // non-scaling-stroke keeps the width in device pixels regardless of
-            // the non-uniform viewBox-to-viewport scaling, so 1.6 reads as ~1.6px.
-            vectorEffect: 'non-scaling-stroke',
+            willChange: 'transform, opacity',
+            animation: 'pdSignalPulse 1.4s ease-out forwards',
           }}
         />
       ))}
-      {anchors.map((a, i) => (
-        <circle
-          key={`a${i}`}
-          cx={a.x} cy={a.y} r="0.8"
-          fill={TEAL}
-          style={{
-            transformOrigin: `${a.x}px ${a.y}px`,
-            animation: `pdAnchorPulse ${7}s ease-in-out ${a.delay}s infinite`,
-            opacity: 0,
-          }}
-        />
-      ))}
-    </svg>
+    </div>
   )
 }
 
@@ -505,22 +596,45 @@ export default function LandingPage() {
         }
         @keyframes goldPulse { 0%,100%{opacity:.5} 50%{opacity:1} }
 
-        /* Hero, agency view: convergence-line treatment. The line draws
-           from one anchor to the other (stroke-dashoffset 1 to 0), then
-           dissolves (0 to -1), and idles for the rest of the cycle. The
-           anchor circle pulses while its line is drawing. */
-        @keyframes pdLineDraw {
-          0%   { stroke-dashoffset: 1; opacity: 0; }
-          15%  { stroke-dashoffset: 1; opacity: 0.38; }
-          50%  { stroke-dashoffset: 0; opacity: 0.38; }
-          85%  { stroke-dashoffset: -1; opacity: 0; }
-          100% { stroke-dashoffset: -1; opacity: 0; }
+        /* Hero, agency view: pipeline-flow treatment. Streaks translate
+           bottom-left to top-right at -45deg. Non-convergent streaks travel
+           the full diagonal (off-screen to off-screen). Convergent streaks
+           travel half the diagonal at -45deg, then bend and curve toward the
+           focal point (var --xEnd, var --yEnd) where they fade. The rotation
+           change at 72% (-45deg to -28deg) is the visible "pull" of the
+           bend. Each streak's start/end positions live in CSS custom
+           properties on the inline style so all streaks share two keyframes. */
+        @keyframes pdStreakFlow {
+          0%   { transform: translate3d(var(--x0), var(--y0), 0) rotate(-45deg); opacity: 0; }
+          10%  { opacity: var(--peak); }
+          90%  { opacity: var(--peak); }
+          100% { transform: translate3d(var(--x1), var(--y1), 0) rotate(-45deg); opacity: 0; }
         }
-        @keyframes pdAnchorPulse {
-          0%, 12%   { opacity: 0; transform: scale(0.6); }
-          22%       { opacity: 0.7; transform: scale(1); }
-          60%       { opacity: 0.5; transform: scale(1); }
-          85%, 100% { opacity: 0; transform: scale(0.6); }
+        @keyframes pdStreakConverge {
+          0%   { transform: translate3d(var(--x0), var(--y0), 0) rotate(-45deg); opacity: 0; }
+          12%  { opacity: var(--peak); }
+          40%  { transform: translate3d(var(--xMid), var(--yMid), 0) rotate(-45deg); opacity: var(--peak); }
+          72%  { transform: translate3d(var(--xEnd), var(--yEnd), 0) rotate(-28deg); opacity: var(--peak); }
+          100% { transform: translate3d(var(--xEnd), var(--yEnd), 0) rotate(-28deg); opacity: 0; }
+        }
+        /* Signal pulse: small jade dot expands and fades with a soft glow.
+           Fires once per pulse instance (forwards), JS schedules new pulses. */
+        @keyframes pdSignalPulse {
+          0%   { transform: translate(-50%, -50%) scale(1);    opacity: 0;    }
+          20%  { transform: translate(-50%, -50%) scale(1.15); opacity: 0.85; }
+          100% { transform: translate(-50%, -50%) scale(1.4);  opacity: 0;    }
+        }
+        /* Reduced motion: pause streak motion but keep some present as static
+           jade hints. The pulse scheduler in PipelineFlow already short
+           circuits under prefers-reduced-motion so no pulse markup ever
+           mounts. Hold streaks at the position-and-opacity of the 40%
+           keyframe (mid-flight, peak alpha) so the layout still reads. */
+        @media (prefers-reduced-motion: reduce) {
+          .pd-streak {
+            animation: none !important;
+            opacity: var(--peak) !important;
+            transform: translate3d(calc(var(--x0) + 35vw), calc(var(--y0) - 35vh), 0) rotate(-45deg) !important;
+          }
         }
 
         /* Hero, employer view: system-mapping treatment. Each node sits at
@@ -606,7 +720,7 @@ export default function LandingPage() {
         <div aria-hidden="true" style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
           background: 'linear-gradient(-45deg, #0f2137, #1a3a5c, #0a2a2e, #0f2137)',
-          backgroundSize: '400% 400%', animation: 'gradShift 12s ease infinite',
+          backgroundSize: '400% 400%', animation: 'gradShift 18s ease-in-out infinite',
           opacity: isEmployer ? 0 : 1,
           transition: 'opacity 600ms ease',
         }} />
@@ -633,7 +747,7 @@ export default function LandingPage() {
           transition: 'opacity 600ms ease',
           pointerEvents: 'none',
         }}>
-          <ConvergenceLines />
+          <PipelineFlow />
         </div>
         <div aria-hidden="true" style={{
           position: 'absolute', inset: 0, zIndex: 0,
