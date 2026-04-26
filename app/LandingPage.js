@@ -92,24 +92,30 @@ function OutcomeEngine() {
   }, [])
 
   // Focal point: centre-right of the hero, on the line where "before you
-  // make it." sits in the headline.
+  // make it." sits in the headline. Percentages are relative to the hero
+  // section (the absolute container has inset: 0 inside the hero), so the
+  // focal stays aligned regardless of whether the hero is exactly 100vh
+  // or taller (mobile stacked content).
   const FX = 62
   const FY = 45
 
   // Noise streaks: 10 thin jade lines entering from various edges. dur is
   // varied across three speed bands (3.5-6.5s) so the field has depth.
-  // Negative delays seed the field on first paint.
+  // Negative delays seed the field on first paint. Coordinates are
+  // percentages of the hero section (not the viewport) so streaks span
+  // the full hero height even when the section grows past the viewport.
+  // sx/sy and dx/dy units: % of hero width / % of hero height.
   const noiseDefs = [
-    { sx: -10, sy: 22,  dx: 80,  dy: 12,  len: 70, w: 1,   op: 0.18, dur: 4.5, delay: -0.2 },
-    { sx: -10, sy: 50,  dx: 90,  dy: 0,   len: 80, w: 1,   op: 0.18, dur: 6.0, delay: -1.0 },
-    { sx: -10, sy: 78,  dx: 80,  dy: -25, len: 75, w: 1,   op: 0.18, dur: 3.5, delay: -0.6 },
-    { sx: 30,  sy: -10, dx: 25,  dy: 80,  len: 70, w: 1,   op: 0.18, dur: 4.5, delay: -1.5 },
-    { sx: 70,  sy: -10, dx: -10, dy: 80,  len: 65, w: 1,   op: 0.18, dur: 5.0, delay: -2.0 },
-    { sx: 110, sy: 30,  dx: -90, dy: 30,  len: 80, w: 1,   op: 0.18, dur: 4.5, delay: -0.8 },
-    { sx: 110, sy: 65,  dx: -100, dy: -10, len: 90, w: 1.2, op: 0.20, dur: 6.5, delay: -2.5 },
-    { sx: 20,  sy: 110, dx: 30,  dy: -80, len: 75, w: 1,   op: 0.18, dur: 4.0, delay: -1.2 },
-    { sx: -10, sy: 35,  dx: 70,  dy: 20,  len: 95, w: 1.2, op: 0.20, dur: 5.0, delay: -3.0 },
-    { sx: 80,  sy: 110, dx: -20, dy: -90, len: 70, w: 1,   op: 0.18, dur: 3.8, delay: -2.8 },
+    { sx: -10, sy: 8,   dx: 80,  dy: 12,  len: 70, w: 1,   op: 0.18, dur: 4.5, delay: -0.2 },
+    { sx: -10, sy: 26,  dx: 90,  dy: 0,   len: 80, w: 1,   op: 0.18, dur: 6.0, delay: -1.0 },
+    { sx: -10, sy: 45,  dx: 80,  dy: 8,   len: 75, w: 1,   op: 0.18, dur: 3.5, delay: -0.6 },
+    { sx: -10, sy: 70,  dx: 90,  dy: -10, len: 80, w: 1,   op: 0.18, dur: 5.0, delay: -1.4 },
+    { sx: -10, sy: 92,  dx: 75,  dy: -22, len: 70, w: 1,   op: 0.18, dur: 4.2, delay: -2.6 },
+    { sx: 110, sy: 18,  dx: -90, dy: 25,  len: 80, w: 1,   op: 0.18, dur: 4.5, delay: -0.8 },
+    { sx: 110, sy: 55,  dx: -100, dy: -10, len: 90, w: 1.2, op: 0.20, dur: 6.5, delay: -2.5 },
+    { sx: 110, sy: 82,  dx: -95, dy: -18, len: 75, w: 1,   op: 0.18, dur: 4.0, delay: -1.2 },
+    { sx: -10, sy: 60,  dx: 95,  dy: 20,  len: 95, w: 1.2, op: 0.20, dur: 5.0, delay: -3.0 },
+    { sx: 110, sy: 38,  dx: -100, dy: 14, len: 70, w: 1,   op: 0.18, dur: 3.8, delay: -2.8 },
   ]
   // Mobile keeps a 5-streak cross-section across the four entry edges.
   const mobilePick = [0, 2, 4, 6, 8]
@@ -146,17 +152,16 @@ function OutcomeEngine() {
             className="pd-oe-noise"
             style={{
               position: 'absolute',
-              left: 0, top: 0,
               width: s.len, height: s.w,
               borderRadius: s.w,
               background: `linear-gradient(to right, transparent 0%, ${TEAL} 30%, ${TEAL} 70%, transparent 100%)`,
               opacity: 0,
-              willChange: 'transform, opacity',
+              willChange: 'left, top, opacity',
+              transform: `rotate(${rot}deg)`,
               transformOrigin: '0 50%',
               animation: `pdOENoise ${dur}s ease-in-out ${s.delay}s infinite`,
-              '--x0': `${s.sx}vw`, '--y0': `${s.sy}vh`,
-              '--x1': `${x1}vw`, '--y1': `${y1}vh`,
-              '--rot': `${rot}deg`,
+              '--x0': `${s.sx}%`, '--y0': `${s.sy}%`,
+              '--x1': `${x1}%`, '--y1': `${y1}%`,
               '--peak': s.op,
             }}
           />
@@ -166,26 +171,25 @@ function OutcomeEngine() {
         className="pd-oe-winner"
         style={{
           position: 'absolute',
-          left: 0, top: 0,
+          left: winnerAtFocal ? `${FX}%` : `${winner.sx}%`,
+          top:  winnerAtFocal ? `${FY}%` : `${winner.sy}%`,
           width: 110, height: 1.5,
           borderRadius: 1,
           background: `linear-gradient(to right, transparent 0%, ${TEAL} 30%, ${TEAL} 70%, transparent 100%)`,
           opacity: winnerOpacity,
-          transform: winnerAtFocal
-            ? `translate3d(${FX}vw, ${FY}vh, 0) rotate(${winnerRot}deg)`
-            : `translate3d(${winner.sx}vw, ${winner.sy}vh, 0) rotate(${winnerRot}deg)`,
+          transform: `rotate(${winnerRot}deg)`,
           filter: winnerAtFocal ? `drop-shadow(0 0 6px ${TEAL}66)` : 'none',
-          willChange: 'transform, opacity',
+          willChange: 'left, top, opacity',
           transformOrigin: '0 50%',
-          transition: 'transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 600ms ease, filter 600ms ease',
+          transition: 'left 1.5s cubic-bezier(0.2, 0.8, 0.2, 1), top 1.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 600ms ease, filter 600ms ease',
         }}
       />
       <div
         className="pd-oe-focal"
         style={{
           position: 'absolute',
-          left: `${FX}vw`,
-          top: `${FY}vh`,
+          left: `${FX}%`,
+          top: `${FY}%`,
           width: 12, height: 12,
           borderRadius: '50%',
           background: TEAL,
@@ -200,8 +204,8 @@ function OutcomeEngine() {
         className="pd-oe-label"
         style={{
           position: 'absolute',
-          left: `${FX}vw`,
-          top: `calc(${FY}vh + 22px)`,
+          left: `${FX}%`,
+          top: `calc(${FY}% + 22px)`,
           transform: 'translate(-50%, 0)',
           display: 'flex', alignItems: 'center', gap: 6,
           fontFamily: F,
@@ -728,11 +732,11 @@ export default function LandingPage() {
            label are React-state-driven via inline transitions, fired by the
            event scheduler. */
         @keyframes pdOENoise {
-          0%   { opacity: 0; transform: translate3d(var(--x0), var(--y0), 0) rotate(var(--rot)); }
+          0%   { opacity: 0; left: var(--x0); top: var(--y0); }
           15%  { opacity: var(--peak); }
           45%  { opacity: var(--peak); }
           60%  { opacity: 0; }
-          100% { opacity: 0; transform: translate3d(var(--x1), var(--y1), 0) rotate(var(--rot)); }
+          100% { opacity: 0; left: var(--x1); top: var(--y1); }
         }
 
         /* Cycling label dot: three small dots fading in and out staggered by
@@ -751,7 +755,8 @@ export default function LandingPage() {
         @media (prefers-reduced-motion: reduce) {
           .pd-oe-noise { animation: none !important;
             opacity: var(--peak) !important;
-            transform: translate3d(var(--x0), var(--y0), 0) rotate(var(--rot)) !important;
+            left: var(--x0) !important;
+            top: var(--y0) !important;
           }
           .pd-oe-label, .pd-se-label { display: none !important; }
           .pd-se-node, .pd-se-edge { transition: none !important; }
