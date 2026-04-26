@@ -2631,6 +2631,27 @@ function DashboardPageInner() {
             </div>
 
             <button
+              onClick={() => router.push('/dashboard/drill-down')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                padding: '9px 14px', borderRadius: 8,
+                background: 'transparent',
+                border: `1px solid ${BD}`,
+                color: TX2,
+                fontFamily: F, fontSize: 13.5, fontWeight: 700,
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'border-color 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.color = NAVY }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = BD; e.currentTarget.style.color = TX2 }}
+              title="Slice the dashboard by role, client, team or location"
+            >
+              <Ic name="sliders" size={14} color="currentColor" />
+              Drill down
+            </button>
+
+            <button
               onClick={() => atLimit ? setShowUpgrade(true) : router.push('/assessment/new')}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 7,

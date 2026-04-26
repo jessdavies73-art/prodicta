@@ -19,8 +19,9 @@ function buildNav({ accountType, showTemp }) {
   const groups = []
 
   groups.push({ label: 'Main', items: [
-    { key: 'dashboard',  label: 'Dashboard',      icon: 'grid', href: '/dashboard' },
-    { key: 'assessment', label: 'New assessment', icon: 'plus', href: '/assessment/new' },
+    { key: 'dashboard',   label: 'Dashboard',      icon: 'grid',    href: '/dashboard' },
+    { key: 'drill-down',  label: 'Drill-down',     icon: 'sliders', href: '/dashboard/drill-down' },
+    { key: 'assessment',  label: 'New assessment', icon: 'plus',    href: '/assessment/new' },
   ]})
 
   const placement = [

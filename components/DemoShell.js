@@ -63,8 +63,9 @@ function buildDemoGroups({ showDocuments }) {
 
   return [
     { label: 'Main', items: [
-      { key: 'dashboard',  label: 'Dashboard',      icon: 'grid', href: '/demo' },
-      { key: 'assessment', label: 'New assessment', icon: 'plus', restricted: true },
+      { key: 'dashboard',  label: 'Dashboard',      icon: 'grid',    href: '/demo' },
+      { key: 'drill-down', label: 'Drill-down',     icon: 'sliders', href: '/demo/drill-down' },
+      { key: 'assessment', label: 'New assessment', icon: 'plus',    restricted: true },
     ]},
     { label: 'Placement', items: [
       { key: 'compare',  label: 'Compare',  icon: 'sliders', href: '/demo/compare' },
