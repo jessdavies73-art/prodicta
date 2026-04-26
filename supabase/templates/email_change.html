@@ -1,0 +1,76 @@
+<!--
+  PRODICTA Supabase Auth: Change email address.
+  Paste into Supabase Dashboard, Authentication, Email Templates, Change Email Address.
+  Every text element carries an inline color so the dark-card design
+  survives Gmail and Outlook web's CSS stripping.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="supported-color-schemes" content="light dark" />
+  <title>Confirm your new PRODICTA email address</title>
+</head>
+<body style="margin:0;padding:0;background:#f7f9fb;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;color:#0f172a;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f7f9fb;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;background:#0f2137;border-radius:14px;overflow:hidden;">
+          <tr>
+            <td style="padding:32px 36px 12px 36px;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;">
+              <span style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#FFFFFF;">PRO</span><span style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#00BFA5;">DICTA</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 36px 8px 36px;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;">
+              <h1 style="margin:0;font-size:24px;font-weight:800;line-height:1.25;color:#FFFFFF;letter-spacing:-0.4px;">Confirm your new email address</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:14px 36px 4px 36px;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;">
+              <p style="margin:0;font-size:15px;line-height:1.65;color:#E8EEF6;">
+                A request was made to change the email address on your PRODICTA account from <strong style="color:#FFFFFF;">{{ .Email }}</strong> to <strong style="color:#FFFFFF;">{{ .NewEmail }}</strong>. Confirm the change to switch your sign-in to the new address.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 36px 8px 36px;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;">
+              <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 26px;background:#00BFA5;color:#FFFFFF;text-decoration:none;font-weight:800;font-size:15px;border-radius:10px;">
+                Confirm new email
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 36px 8px 36px;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;">
+              <p style="margin:0;font-size:13px;line-height:1.6;color:#E8EEF6;">
+                If the button does not work, paste this link into your browser:
+              </p>
+              <p style="margin:6px 0 0 0;font-size:12.5px;line-height:1.55;color:#A8B6C8;word-break:break-all;">
+                <a href="{{ .ConfirmationURL }}" style="color:#A8B6C8;text-decoration:underline;">{{ .ConfirmationURL }}</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px 36px 32px 36px;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;border-top:1px solid rgba(255,255,255,0.08);">
+              <p style="margin:18px 0 0 0;font-size:12px;line-height:1.6;color:#A8B6C8;">
+                If you did not request this change, you can safely ignore this email. Your existing sign-in address remains active.
+              </p>
+            </td>
+          </tr>
+        </table>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;">
+          <tr>
+            <td style="padding:14px 8px;text-align:center;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;">
+              <p style="margin:0;font-size:11.5px;color:#94a3b8;">
+                Sent by PRODICTA &middot; <a href="https://prodicta.co.uk" style="color:#94a3b8;text-decoration:underline;">prodicta.co.uk</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -125,3 +125,36 @@ UPDATE assessments
 Adoption can be monitored by grepping `[generate] assessment_created`
 in the platform logs; each line carries `use_modular_workspace`,
 `shell_family`, `block_count`, and the canonical role match.
+
+---
+
+## 9. Auth email templates (paste from `supabase/templates/`)
+
+The Supabase Auth confirmation, password-reset, magic-link, email-change
+and invite emails are configured in the Supabase Dashboard, not in
+code. The repo carries the source-of-truth HTML in
+`supabase/templates/`. The previous live confirmation template relied
+on CSS inheritance for body-text colour, which Gmail and Outlook web
+strip, leaving the body paragraphs unreadable as black-on-navy. Each
+template now carries an inline `color` attribute on every text element
+so the design survives the strip.
+
+To apply a change:
+
+1. Edit the file in `supabase/templates/`.
+2. Open the Supabase Dashboard, **Authentication, Email Templates**.
+3. Pick the corresponding template:
+   - `confirmation.html` → **Confirm signup**
+   - `recovery.html` → **Reset password**
+   - `magic_link.html` → **Magic link**
+   - `email_change.html` → **Change email address**
+   - `invite.html` → **Invite user**
+4. Replace the existing template body with the file contents.
+5. Save.
+6. Trigger a test send (via the Dashboard test button or a real signup
+   from a test inbox) to confirm the rendering in Gmail (light + dark
+   mode) and Outlook web.
+
+There is no Supabase CLI `config.toml` in this repo, so the templates
+do not auto-sync. Repository edits are inert until pasted into the
+Dashboard.

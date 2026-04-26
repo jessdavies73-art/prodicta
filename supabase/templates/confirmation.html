@@ -1,0 +1,88 @@
+<!--
+  PRODICTA Supabase Auth: Confirm Signup email.
+
+  Source-of-truth for the template configured in the Supabase Dashboard
+  at Authentication, Email Templates, Confirm signup. The contents of
+  this file should be pasted into the dashboard verbatim. Supabase
+  template variables ({{ .ConfirmationURL }} etc.) render server-side
+  when the email is sent.
+
+  Why every text element carries an inline color attribute: Gmail and
+  Outlook web strip CSS classes and many inherited style rules, so the
+  white-on-navy contrast in the previous template collapsed to black-on-
+  navy and was unreadable. Every <p>, <span>, <a> and <td> now carries
+  an explicit color value so the contrast survives the strip.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="supported-color-schemes" content="light dark" />
+  <title>Confirm your PRODICTA account</title>
+</head>
+<body style="margin:0;padding:0;background:#f7f9fb;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;color:#0f172a;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f7f9fb;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;background:#0f2137;border-radius:14px;overflow:hidden;">
+          <tr>
+            <td style="padding:32px 36px 12px 36px;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;">
+              <span style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#FFFFFF;">PRO</span><span style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#00BFA5;">DICTA</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 36px 8px 36px;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;">
+              <h1 style="margin:0;font-size:24px;font-weight:800;line-height:1.25;color:#FFFFFF;letter-spacing:-0.4px;">Confirm your account</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:14px 36px 4px 36px;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;">
+              <p style="margin:0;font-size:15px;line-height:1.65;color:#E8EEF6;">
+                Welcome to PRODICTA. Confirm your email address to activate your account and start running scenario-based assessments.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 36px 8px 36px;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;">
+              <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 26px;background:#00BFA5;color:#FFFFFF;text-decoration:none;font-weight:800;font-size:15px;border-radius:10px;">
+                Confirm email address
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 36px 8px 36px;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;">
+              <p style="margin:0;font-size:13px;line-height:1.6;color:#E8EEF6;">
+                If the button does not work, paste this link into your browser:
+              </p>
+              <p style="margin:6px 0 0 0;font-size:12.5px;line-height:1.55;color:#A8B6C8;word-break:break-all;">
+                <a href="{{ .ConfirmationURL }}" style="color:#A8B6C8;text-decoration:underline;">{{ .ConfirmationURL }}</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px 36px 32px 36px;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;border-top:1px solid rgba(255,255,255,0.08);">
+              <p style="margin:18px 0 0 0;font-size:12px;line-height:1.6;color:#A8B6C8;">
+                If you did not create a PRODICTA account, you can safely ignore this email. The link expires automatically.
+              </p>
+              <p style="margin:10px 0 0 0;font-size:11.5px;line-height:1.55;color:#A8B6C8;">
+                PRODICTA reports describe assessment behaviour and surface risk indicators. They are not legal advice. PRODICTA reports should be one input to your hiring decision, not the sole basis.
+              </p>
+            </td>
+          </tr>
+        </table>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;">
+          <tr>
+            <td style="padding:14px 8px;text-align:center;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;">
+              <p style="margin:0;font-size:11.5px;color:#94a3b8;">
+                Sent by PRODICTA &middot; <a href="https://prodicta.co.uk" style="color:#94a3b8;text-decoration:underline;">prodicta.co.uk</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
