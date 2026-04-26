@@ -2,6 +2,7 @@
 // colour constants audit - all defined
 import { useState, useEffect, useRef } from 'react'
 import ProdictaLogo from '@/components/ProdictaLogo'
+import ModularWorkspace from './components/ModularWorkspace'
 
 // ─── Brand tokens ────────────────────────────────────────────────────────────
 const NAVY   = '#0f2137'
@@ -2661,6 +2662,31 @@ export default function AssessPage({ params }) {
       // Defer to avoid calling setState during render.
       setTimeout(() => doSubmit(pendingResponses || []), 0)
       return null
+    }
+    // Phase 1 modular Workspace gate. Only mount the new orchestrator when
+    // the feature flag is set, the connected scenario is populated, and the
+    // role classified into the in-scope Office shell. Out-of-scope roles
+    // (warehouse, driver, etc.) and Phase 2/3 shells (healthcare, education,
+    // field_ops) fall through to the legacy WorkspacePage.
+    const useModular = assessment?.use_modular_workspace === true
+      && assessment?.workspace_scenario
+      && assessment?.shell_family === 'office'
+    if (useModular) {
+      return (
+        <ModularWorkspace
+          assessment={assessment}
+          candidate={candidate}
+          onSubmit={(workspaceData) => {
+            doSubmit(pendingResponses)
+            fetch(`/api/assessment/${assessment.id}/calendar-score`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ candidate_id: candidate.id, calendar_layout: { workspace_data: workspaceData } }),
+            }).catch(() => {})
+          }}
+          onSkip={() => doSubmit(pendingResponses)}
+        />
+      )
     }
     return (
     <WorkspacePage

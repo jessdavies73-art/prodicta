@@ -3,6 +3,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { SCORING_DIMENSIONS, SCORING_DIMENSION_NAMES } from '@/lib/dimensions'
 import { PD_SCENARIO_VERSION } from '@/lib/constants'
+import { detectRoleProfile } from '@/lib/role-profile-detector'
+import { generateScenario } from '@/lib/scenario-generator'
 
 // Scenario generation calls the Anthropic API which can take 30-60s for
 // Strategy-Fit (4 scenarios). Allow up to 120s before Vercel kills the function.
@@ -1750,6 +1752,58 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
       } catch (inboxErr) {
         console.error('Inbox events generation error:', inboxErr)
       }
+    }
+
+    // -- ALTER TABLE assessments ADD COLUMN role_profile JSONB;
+    // -- ALTER TABLE assessments ADD COLUMN shell_family TEXT;
+    // -- ALTER TABLE assessments ADD COLUMN workspace_scenario JSONB;
+    // Phase 1 modular Workspace: detect role profile + shell family for every
+    // assessment (small Haiku call, useful downstream). For advanced
+    // (Strategy-Fit) office-shell assessments, also pre-generate the
+    // connected workspace_scenario so every candidate sees the same spine.
+    // Both calls are non-blocking; if they fail the assessment row is still
+    // valid and the legacy Workspace path will run.
+    try {
+      const detectorResult = await raceWithTimeout(
+        detectRoleProfile(client, {
+          roleTitle: role_title,
+          jobDescription: job_description,
+          contextAnswers: context_answers,
+          employmentType: employment_type,
+          mode,
+        }),
+        45000,
+        'role profile detection'
+      )
+      if (detectorResult) {
+        const { profile, shell_family } = detectorResult
+        await adminClient.from('assessments').update({
+          role_profile: profile,
+          shell_family,
+        }).eq('id', assessment.id)
+
+        if (shell_family === 'office' && mode === 'advanced') {
+          try {
+            const scenario = await raceWithTimeout(
+              generateScenario(client, profile, {
+                roleTitle: role_title,
+                jobDescription: job_description,
+              }),
+              90000,
+              'workspace scenario generation'
+            )
+            if (scenario) {
+              await adminClient.from('assessments').update({
+                workspace_scenario: scenario,
+              }).eq('id', assessment.id)
+            }
+          } catch (scenarioErr) {
+            console.error('Workspace scenario generation error:', scenarioErr)
+          }
+        }
+      }
+    } catch (profileErr) {
+      console.error('Role profile detection error:', profileErr)
     }
 
     return NextResponse.json({ id: assessment.id, scenarios }, { headers: keepAliveHeaders })
