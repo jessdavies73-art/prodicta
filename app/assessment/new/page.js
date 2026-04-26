@@ -686,6 +686,12 @@ export default function NewAssessmentPage() {
           employment_type: employmentType || undefined,
           location: location.trim() || undefined,
           interruption_keying: interruptionKeying,
+          // Phase 1 modular Workspace gate: signals that the buyer attached
+          // the Immersive add-on at create time. Together with mode and the
+          // server-side shell_family detection, this flips
+          // use_modular_workspace = true on the assessment row when the
+          // role classifies into the office shell.
+          immersive_enabled: immersiveOn,
         })
       })
       const data = await res.json()
@@ -1829,6 +1835,50 @@ export default function NewAssessmentPage() {
                   </button>
                 </div>
               )}
+            </div>
+          )
+        })()}
+
+        {/* Modular Workspace info pill. Phase 1 launch. The pill mirrors
+            what the server will do at create time: when the role classifies
+            into the office shell AND mode is Strategy-Fit OR the Immersive
+            add-on is on, the candidate gets the modular Workspace; otherwise
+            the legacy Day 1 simulation runs. We cannot detect shell_family
+            client-side without an extra round trip, so the pill softens
+            its wording for non-office roles, which the server will catch. */}
+        {(() => {
+          const modularLikely = mode === 'advanced' || immersiveOn
+          const label = modularLikely
+            ? 'Modular Workspace enabled (10 role-specific blocks)'
+            : 'Day 1 simulation enabled (legacy)'
+          const pillBg = modularLikely ? '#E6F4F1' : '#f1f5f9'
+          const pillFg = modularLikely ? '#009688' : '#475569'
+          const pillBd = modularLikely ? `${'#00BFA5'}55` : '#e2e8f0'
+          return (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24,
+              flexWrap: 'wrap',
+            }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '6px 14px', borderRadius: 50,
+                background: pillBg, color: pillFg,
+                border: `1px solid ${pillBd}`,
+                fontFamily: F, fontSize: 12, fontWeight: 700,
+                letterSpacing: '0.01em',
+              }}>
+                <span style={{
+                  width: 7, height: 7, borderRadius: '50%',
+                  background: modularLikely ? '#00BFA5' : '#94a3b8',
+                  display: 'inline-block',
+                }} />
+                {label}
+              </span>
+              {modularLikely ? (
+                <span style={{ fontFamily: F, fontSize: 12, color: '#5e6b7f', lineHeight: 1.5 }}>
+                  If the role is outside the office shell (clinical, education, field-ops), the legacy Day 1 simulation runs instead.
+                </span>
+              ) : null}
             </div>
           )
         })()}

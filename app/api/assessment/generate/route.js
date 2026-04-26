@@ -374,6 +374,13 @@ export async function POST(request) {
     // assessment hit the curveball on the same scenarios, used for
     // apples-to-apples bulk-invite comparison.
     const interruption_keying = body.interruption_keying === 'assessment' ? 'assessment' : 'candidate'
+    // Immersive add-on flag from the new-assessment page. Whether the buyer
+    // attached the £25 Immersive add-on at create time. Together with mode
+    // and the post-detection shell_family this drives the modular Workspace
+    // gate below: Strategy-Fit office roles get the modular path by default;
+    // cheaper-tier assessments get the modular path only when Immersive is
+    // attached. Anything else stays on the legacy WorkspacePage.
+    const immersive_enabled = body.immersive_enabled === true
     // Normalise mode: 'rapid' (1 scenario + prioritisation), 'quick' (2 scenarios), 'standard' (3 scenarios), 'advanced' (4 scenarios).
     const rawMode = (assessment_mode || 'standard').toLowerCase()
     let mode = ['rapid', 'quick', 'standard', 'advanced'].includes(rawMode) ? rawMode : 'standard'
@@ -1757,12 +1764,27 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
     // -- ALTER TABLE assessments ADD COLUMN role_profile JSONB;
     // -- ALTER TABLE assessments ADD COLUMN shell_family TEXT;
     // -- ALTER TABLE assessments ADD COLUMN workspace_scenario JSONB;
-    // Phase 1 modular Workspace: detect role profile + shell family for every
-    // assessment (small Haiku call, useful downstream). For advanced
-    // (Strategy-Fit) office-shell assessments, also pre-generate the
-    // connected workspace_scenario so every candidate sees the same spine.
-    // Both calls are non-blocking; if they fail the assessment row is still
-    // valid and the legacy Workspace path will run.
+    // -- ALTER TABLE assessments ADD COLUMN use_modular_workspace BOOLEAN
+    //    NOT NULL DEFAULT false;
+    //
+    // Phase 1 modular Workspace launch: detect role profile + shell family
+    // for every assessment (small Haiku call, useful downstream). The
+    // modular Workspace becomes the default path when:
+    //   - the role classified into the in-scope office shell, AND
+    //   - either mode is 'advanced' (Strategy-Fit, where Workspace is
+    //     always part of the package), OR the buyer attached the Immersive
+    //     add-on at create time (so cheaper tiers can opt in).
+    //
+    // Anything else (healthcare, education, field_ops, out_of_scope, or
+    // a Strategy-Fit role outside the office shell) stays on the legacy
+    // WorkspacePage until Phase 2 builds those shells. Existing
+    // assessments are not migrated; they keep whatever flag value the
+    // row was created with so in-flight candidates see no behaviour
+    // change mid-assessment.
+    //
+    // Both detect and generate calls are non-blocking; if either fails
+    // the assessment row is still valid and the legacy Workspace path
+    // will run.
     try {
       const detectorResult = await raceWithTimeout(
         detectRoleProfile(client, {
@@ -1777,12 +1799,18 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
       )
       if (detectorResult) {
         const { profile, shell_family } = detectorResult
+        const useModular =
+          shell_family === 'office' &&
+          (mode === 'advanced' || immersive_enabled === true)
         await adminClient.from('assessments').update({
           role_profile: profile,
           shell_family,
+          use_modular_workspace: useModular,
         }).eq('id', assessment.id)
 
-        if (shell_family === 'office' && mode === 'advanced') {
+        let blockCount = null
+        let canonicalLabel = null
+        if (useModular) {
           try {
             const scenario = await raceWithTimeout(
               generateScenario(client, profile, {
@@ -1793,6 +1821,8 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
               'workspace scenario generation'
             )
             if (scenario) {
+              blockCount = Array.isArray(scenario.selected_blocks) ? scenario.selected_blocks.length : null
+              canonicalLabel = scenario.match_info?.canonical_label || scenario.match_info?.canonical_id || null
               await adminClient.from('assessments').update({
                 workspace_scenario: scenario,
               }).eq('id', assessment.id)
@@ -1801,6 +1831,32 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
             console.error('Workspace scenario generation error:', scenarioErr)
           }
         }
+
+        // Structured launch-monitoring log. One line per created assessment
+        // so adoption of the modular path can be tracked in the first week
+        // by grepping `[generate] assessment_created` in the platform logs.
+        console.log('[generate] assessment_created', JSON.stringify({
+          assessment_id: assessment.id,
+          mode,
+          shell_family,
+          use_modular_workspace: useModular,
+          immersive_enabled,
+          canonical_match: canonicalLabel,
+          block_count: blockCount,
+          employment_type,
+        }))
+      } else {
+        console.log('[generate] assessment_created', JSON.stringify({
+          assessment_id: assessment.id,
+          mode,
+          shell_family: null,
+          use_modular_workspace: false,
+          immersive_enabled,
+          canonical_match: null,
+          block_count: null,
+          employment_type,
+          note: 'role profile detection returned null',
+        }))
       }
     } catch (profileErr) {
       console.error('Role profile detection error:', profileErr)

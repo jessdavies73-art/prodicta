@@ -85,3 +85,43 @@ ALTER TABLE results ADD COLUMN IF NOT EXISTS model_version TEXT;
 ```
 
 The scoring pipeline reads the canonical values from `lib/constants.js` (`PD_SCENARIO_VERSION`, `PD_RUBRIC_VERSION`, `PD_MODEL_DEFAULT`) and writes them through on every new scoring run. If the migration has not been applied the insert retries without those columns so scoring stays resilient.
+
+---
+
+## 8. Modular Workspace launch and rollback
+
+Phase 1 of the modular Workspace is enabled by default for any new
+assessment that classifies into the office shell AND is created in
+Strategy-Fit mode OR with the Immersive add-on attached. The flag
+that controls this is `assessments.use_modular_workspace`. Existing
+rows are not migrated; they keep whatever value they were created
+with so in-flight candidates do not see a behaviour change mid-run.
+
+If anything goes wrong post-launch and the modular Workspace needs
+to be turned off globally, run this single panic-button command
+against the production database. Replace `<launch_cutoff>` with the
+ISO timestamp of the launch (a safe default is the time the launch
+commit was deployed). Anything created before that timestamp is
+left untouched.
+
+```sql
+-- Disable modular Workspace for every assessment created since launch.
+-- In-flight candidates revert to the legacy WorkspacePage on next load.
+UPDATE assessments
+   SET use_modular_workspace = false
+ WHERE created_at > '<launch_cutoff>'::timestamptz;
+```
+
+To re-enable later (after the underlying issue is fixed):
+
+```sql
+UPDATE assessments
+   SET use_modular_workspace = true
+ WHERE created_at > '<launch_cutoff>'::timestamptz
+   AND shell_family = 'office'
+   AND workspace_scenario IS NOT NULL;
+```
+
+Adoption can be monitored by grepping `[generate] assessment_created`
+in the platform logs; each line carries `use_modular_workspace`,
+`shell_family`, `block_count`, and the canonical role match.
