@@ -587,14 +587,14 @@ export default function LandingPage() {
         </div>
 
         {/* Logo mark: white "PRO" + jade "DICTA" on dark, navy "PRO" + jade
-            "DICTA" on light. A soft jade halo on the light view ties the
-            wordmark to the brand colour and prevents it reading as pasted in. */}
+            "DICTA" on light. The agency view keeps a soft jade halo since it
+            pops against navy; on the lighter employer hero the same blur
+            softened the edges enough to read as faded, so it is removed. */}
         <div style={{
           marginTop: 4, marginBottom: 32,
           position: 'relative', zIndex: 1,
-          filter: isEmployer
-            ? `drop-shadow(0 1px 0 rgba(15,33,55,0.04)) drop-shadow(0 0 18px ${TEAL}22)`
-            : `drop-shadow(0 0 24px ${TEAL}44)`,
+          opacity: 1,
+          filter: isEmployer ? 'none' : `drop-shadow(0 0 24px ${TEAL}44)`,
           transition: 'filter 600ms ease',
         }}>
           <ProdictaLogo size={56} textColor={isEmployer ? NAVY : '#ffffff'} />
@@ -641,7 +641,7 @@ export default function LandingPage() {
           transition: 'color 600ms ease',
         }}>
           {heroPersona === 'agency' ? 'We tell you if a placement will fail' : 'We tell you if a hire will fail'}<br />
-          <span style={{ color: isEmployer ? '#00796B' : TEAL, textShadow: isEmployer ? 'none' : '0 0 40px rgba(0,191,165,0.35)', transition: 'color 600ms ease, text-shadow 600ms ease' }}>before you make it.</span>
+          <span style={{ color: isEmployer ? '#007F6E' : TEAL, textShadow: isEmployer ? 'none' : '0 0 40px rgba(0,191,165,0.35)', transition: 'color 600ms ease, text-shadow 600ms ease' }}>before you make it.</span>
         </h1>
 
         {/* Subheadline */}
@@ -669,12 +669,14 @@ export default function LandingPage() {
             : "PRODICTA doesn't test personality or theory. We put candidates into real job situations and measure how they actually perform. Whether you're hiring permanent staff or temporary cover, you get evidence not guesswork. Real work simulations. Probation tracking with ERA 2025 compliance built in. A 90-day coaching plan for every line manager so onboarding is structured, not improvised."}
         </p>
 
-        {/* Fear line: amber stays amber on both palettes (it is a warning signal, not decoration) */}
+        {/* Fear line: amber on the dark agency hero (premium accent against navy);
+            on the lighter employer hero amber clashes with the cool palette and
+            reads like a warning, so we swap to bold navy for emphasis. */}
         <p style={{
-          fontFamily: F, fontSize: 'clamp(13px, 1.3vw, 15px)', fontWeight: 600,
-          color: isEmployer ? '#92400E' : '#D97706', lineHeight: 1.6,
+          fontFamily: F, fontSize: 'clamp(13px, 1.3vw, 15px)', fontWeight: isEmployer ? 700 : 600,
+          color: isEmployer ? NAVY : '#D97706', lineHeight: 1.6,
           maxWidth: 620, marginBottom: 28, position: 'relative', zIndex: 1,
-          transition: 'color 600ms ease',
+          transition: 'color 600ms ease, font-weight 600ms ease',
         }}>
           {heroPersona === 'agency'
             ? 'Every failed placement costs you the fee, the relationship, and the rebate. PRODICTA stops that before it starts.'
@@ -822,7 +824,7 @@ export default function LandingPage() {
             { to: null, display: 'UK-built', label: 'For ERA 2025 compliance' },
           ].map((item) => (
             <div key={item.label} style={{ textAlign: 'center', minWidth: 90 }}>
-              <div style={{ fontFamily: FM, fontSize: 31, fontWeight: 700, color: isEmployer ? '#00796B' : TEAL, letterSpacing: '-0.5px', lineHeight: 1, transition: 'color 600ms ease' }}>
+              <div style={{ fontFamily: FM, fontSize: 31, fontWeight: 700, color: isEmployer ? '#007F6E' : TEAL, letterSpacing: '-0.5px', lineHeight: 1, transition: 'color 600ms ease' }}>
                 <StatNumber to={item.to} suffix={item.suffix} display={item.display} />
               </div>
               <div style={{ fontFamily: F, fontSize: 12, color: isEmployer ? '#46566b' : 'rgba(255,255,255,0.42)', marginTop: 5, whiteSpace: 'nowrap', transition: 'color 600ms ease' }}>{item.label}</div>
