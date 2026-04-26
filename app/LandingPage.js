@@ -2054,12 +2054,12 @@ export default function LandingPage() {
             <div style={{ textAlign: 'center', marginBottom: 60 }}>
               <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Who it's for</div>
               <h2 style={{ fontFamily: F, fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 800, color: NAVY, letterSpacing: '-1px', lineHeight: 1.15 }}>
-                Built for two types of hiring professional
+                Built for three types of hiring professional
               </h2>
             </div>
           </Reveal>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 440px), 1fr))', gap: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 24, alignItems: 'stretch' }}>
             {[
               {
                 tag: 'For Recruitment Agencies',
@@ -2076,6 +2076,24 @@ export default function LandingPage() {
                 more: 'And so much more. Rapid Screen at \u00A36, Replacement Trigger, Attendance Risk Signal, Client Visibility Layer, Document Templates, Holiday Pay Tracker, Assignment Review Tracker, and more.',
                 bg: NAVY,
                 dark: true,
+                href: '/login',
+              },
+              {
+                tag: 'For HR Teams',
+                headline: 'Defensible decisions. Consistent process.',
+                sub: 'Internal HR and Talent teams need evidence, not opinion. PRODICTA gives you both.',
+                points: [
+ 'Real work simulations, built from the actual role. Every candidate experiences the same fair Day 1 pressure, regardless of who interviewed them.',
+ 'ERA 2025 audit trail, every hiring decision documented with the evidence behind it. Defensible at tribunal from day one.',
+ '90-day coaching plans for line managers, onboarding becomes structured, not improvised. Every new hire supported through probation.',
+ 'Bias-Free Hiring built in, Equality Act 2010 and Fair Work Agency 2026 compliance handled automatically. Equal experience for every candidate.',
+ 'Team management, invite coordinators, business partners, and directors. Clear roles and permissions. See activity across the whole HR function.',
+ 'Drill-down by role and team, see how hires are performing by role, team, location, or hiring manager. Spot patterns before they become problems.',
+                ],
+                more: 'And so much more. Manager DNA Assessment, Highlight Reels, Probation Timeline Tracker with ERA 2025 danger line, Team Dynamics, Outcome Tracking, Candidate Development Portal, and more.',
+                bg: '#1f3450',
+                dark: true,
+                href: '/signup?account=hr',
               },
               {
                 tag: 'For Direct Employers',
@@ -2092,6 +2110,7 @@ export default function LandingPage() {
                 more: 'And so much more. Manager DNA Assessment, Team Dynamics, Probation Co-pilot, Outcome Tracking, Candidate Development Portal, Rejected Candidate Development Plan, and more.',
                 bg: '#f0fdf8',
                 dark: false,
+                href: '/login',
               },
             ].map((col, i) => (
               <Reveal key={col.tag} delay={i * 100}>
@@ -2134,7 +2153,7 @@ export default function LandingPage() {
                     </p>
                   )}
                   <div style={{ marginTop: 28 }}>
-                    <a href="/login" style={{
+                    <a href={col.href} style={{
                       display: 'inline-block', fontFamily: F, fontSize: 14, fontWeight: 700,
                       color: col.dark ? NAVY : '#fff',
                       background: TEAL,
@@ -2163,7 +2182,7 @@ export default function LandingPage() {
                 Test how they work. Not how they interview.
               </h2>
               <p style={{ fontFamily: F, fontSize: 17, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, maxWidth: 500, margin: '0 auto' }}>
-                Designed for UK employers and recruitment agencies.
+                Designed for UK employers, HR teams, and recruitment agencies.
               </p>
             </div>
           </Reveal>
@@ -2858,7 +2877,7 @@ export default function LandingPage() {
               Stop guessing. Start knowing.
             </h2>
             <p style={{ fontFamily: F, fontSize: 17, color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: 40 }}>
-              Join employers and recruitment agencies across the UK using PRODICTA to hire with confidence.
+              Join employers, HR teams, and recruitment agencies across the UK using PRODICTA to hire with confidence.
             </p>
             <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
               <a href="/login" style={{
