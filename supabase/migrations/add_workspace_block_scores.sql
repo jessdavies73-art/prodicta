@@ -1,0 +1,31 @@
+-- Per-block AI scoring for the modular Workspace.
+--
+-- The legacy Strategy-Fit Workspace produces a single workspace_score /
+-- workspace_narrative / workspace_signals / workspace_watch_out triple
+-- that already lives on the results table. The modular Office shell,
+-- by contrast, breaks the candidate's morning into 4 to 6 typed blocks
+-- (inbox, task prioritisation, decision queue, etc.) and each block has
+-- its own captured candidate output and its own scoring criteria. The
+-- top-level workspace_score / workspace_narrative still aggregate to one
+-- number and one paragraph (so the existing report card keeps working),
+-- but the per-block drill-down also needs a place to live.
+--
+-- workspace_block_scores stores an array of objects, one per completed
+-- block, in the order the candidate worked through them. Shape:
+--   [
+--     {
+--       block_id: 'inbox',
+--       score: 0-100,
+--       strengths: [string, ...],
+--       watch_outs: [string, ...],
+--       narrative: string,
+--       signals: [{ type, evidence, weight }, ...]
+--     },
+--     ...
+--   ]
+--
+-- Legacy Strategy-Fit results leave this column null. The candidate
+-- report page renders the per-block drill-down only when the column is
+-- populated, so legacy reports stay visually identical.
+alter table public.results
+  add column if not exists workspace_block_scores jsonb;

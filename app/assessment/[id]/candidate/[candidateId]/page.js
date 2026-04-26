@@ -99,6 +99,137 @@ const Badge = ({ label, bg, color, border }) => (
   </span>
 )
 
+// Per-block drill-down card. Collapsible: collapsed shows the block name,
+// score, and band; expanded shows strengths (jade pills), watch-outs
+// (slate pills), and the italic narrative. Used in the Workspace section
+// of the candidate report when results.workspace_block_scores is present.
+const BLOCK_LABELS = {
+  'inbox':                   'Inbox',
+  'task-prioritisation':     'Task prioritisation',
+  'calendar-planning':       'Calendar planning',
+  'decision-queue':          'Decision queue',
+  'conversation-simulation': 'Conversation simulation',
+  'stakeholder-conflict':    'Stakeholder conflict',
+  'reading-summarising':     'Reading and summarising',
+  'document-writing':        'Document writing',
+  'spreadsheet-data':        'Spreadsheet and data',
+  'crisis-simulation':       'Crisis simulation',
+}
+
+const WorkspaceBlockDrillDown = ({ block }) => {
+  const [open, setOpen] = useState(false)
+  if (!block || typeof block !== 'object') return null
+  const score = Number.isFinite(block.score) ? block.score : null
+  const label = BLOCK_LABELS[block.block_id] || block.block_id || 'Block'
+  const band = score == null ? 'Unscored' : slbl(score)
+  const bandColor = score == null ? TX3 : sc(score)
+  const bandBg = score == null ? BG : sbg(score)
+  const bandBd = score == null ? BD : sbd(score)
+  const strengths = Array.isArray(block.strengths) ? block.strengths.slice(0, 3) : []
+  const watch_outs = Array.isArray(block.watch_outs) ? block.watch_outs.slice(0, 2) : []
+  const narrative = typeof block.narrative === 'string' ? block.narrative : ''
+  return (
+    <div style={{
+      background: CARD,
+      border: `1px solid ${BD}`,
+      borderRadius: 10,
+      overflow: 'hidden',
+    }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          padding: '12px 16px',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+          fontFamily: F,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', minWidth: 0 }}>
+          <span style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY, letterSpacing: '-0.1px' }}>
+            {label}
+          </span>
+          {score != null ? (
+            <span style={{
+              fontFamily: FM, fontSize: 12, fontWeight: 700,
+              padding: '3px 10px', borderRadius: 50,
+              background: bandBg, color: bandColor,
+              border: `1px solid ${bandBd}`,
+            }}>
+              {score} &middot; {band}
+            </span>
+          ) : null}
+        </div>
+        <span style={{
+          fontFamily: FM, fontSize: 11, fontWeight: 700,
+          color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em',
+          flexShrink: 0,
+        }}>
+          {open ? 'Collapse' : 'Expand'}
+        </span>
+      </button>
+      {open ? (
+        <div style={{ padding: '4px 16px 16px', borderTop: `1px solid ${BD}` }}>
+          {strengths.length ? (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+                Strengths
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {strengths.map((s, i) => (
+                  <span key={i} style={{
+                    fontFamily: F, fontSize: 12, fontWeight: 600, color: TEALD,
+                    padding: '6px 12px', borderRadius: 16,
+                    background: TEALLT, border: `1px solid ${TEAL}55`,
+                    lineHeight: 1.45, maxWidth: '100%',
+                  }}>
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {watch_outs.length ? (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+                Watch-outs
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {watch_outs.map((w, i) => (
+                  <span key={i} style={{
+                    fontFamily: F, fontSize: 12, fontWeight: 600, color: TX,
+                    padding: '6px 12px', borderRadius: 16,
+                    background: '#f1f5f9', border: `1px solid ${BD}`,
+                    lineHeight: 1.45, maxWidth: '100%',
+                  }}>
+                    {w}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {narrative ? (
+            <p style={{
+              fontFamily: F, fontSize: 13, color: TX, lineHeight: 1.65,
+              margin: '14px 0 0', fontStyle: 'italic',
+            }}>
+              {narrative}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 const EvidenceBox = ({ children, color = TEAL }) => (
   <div style={{
     background: '#f8fafc',
@@ -4961,6 +5092,27 @@ export default function CandidateReportPage({ params }) {
                     </Card>
                   </ScrollReveal>
                 )}
+
+                {/* ══════════════════════════════════════════════════
+                    WORKSPACE BLOCK DRILL-DOWN (modular Office shell only)
+                ══════════════════════════════════════════════════ */}
+                {Array.isArray(results.workspace_block_scores) && results.workspace_block_scores.length > 0 ? (
+                  <ScrollReveal delay={70}>
+                    <Card style={{ marginBottom: 20 }} topColor={NAVY}>
+                      <SectionHeading tooltip="Per-block scoring detail for the modular Workspace simulation. Each block is scored against role-appropriate criteria; expand a block to see strengths, watch-outs, and the AI's narrative.">
+                        Workspace, block by block
+                      </SectionHeading>
+                      <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 14px', lineHeight: 1.6 }}>
+                        How they performed on each component of the morning, in the order they did them.
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {results.workspace_block_scores.map((b, i) => (
+                          <WorkspaceBlockDrillDown key={b.block_id || i} block={b} />
+                        ))}
+                      </div>
+                    </Card>
+                  </ScrollReveal>
+                ) : null}
 
                 {/* ══════════════════════════════════════════════════
                     STRENGTHS
