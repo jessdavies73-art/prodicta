@@ -79,7 +79,9 @@ function OutcomeEngine() {
           setEventState('matching')
           wait(1500, () => {
             setEventState('matched')
-            wait(2500, () => {
+            // Hold "matched" for 3s (was 2.5s) so visitors have a moment to
+            // register the resolution before the field returns to baseline.
+            wait(3000, () => {
               setEventState('idle')
               schedule()
             })
@@ -128,9 +130,9 @@ function OutcomeEngine() {
   const winnerRot = Math.atan2(wdy, wdx) * 180 / Math.PI
 
   const winnerAtFocal = eventState === 'matching' || eventState === 'matched'
-  const winnerOpacity = eventState === 'matching' ? 0.5 : eventState === 'matched' ? 0.5 : 0
-  const focalOpacity  = eventState === 'matched' ? 0.85 : eventState === 'matching' ? 0.4 : 0
-  const focalScale    = eventState === 'matched' ? 1.4 : 1
+  const winnerOpacity = eventState === 'matching' ? 0.75 : eventState === 'matched' ? 0.75 : 0
+  const focalOpacity  = eventState === 'matched' ? 1.0 : eventState === 'matching' ? 0.5 : 0
+  const focalScale    = eventState === 'matched' ? 1.7 : 1
 
   const showLabel = eventState !== 'idle'
   const labelText = eventState === 'matched' ? 'Top Match Identified' : 'Filtering candidates'
@@ -178,7 +180,7 @@ function OutcomeEngine() {
           background: `linear-gradient(to right, transparent 0%, ${TEAL} 30%, ${TEAL} 70%, transparent 100%)`,
           opacity: winnerOpacity,
           transform: `rotate(${winnerRot}deg)`,
-          filter: winnerAtFocal ? `drop-shadow(0 0 6px ${TEAL}66)` : 'none',
+          filter: winnerAtFocal ? `drop-shadow(0 0 8px ${TEAL}99)` : 'none',
           willChange: 'left, top, opacity',
           transformOrigin: '0 50%',
           transition: 'left 1.5s cubic-bezier(0.2, 0.8, 0.2, 1), top 1.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 600ms ease, filter 600ms ease',
@@ -209,9 +211,9 @@ function OutcomeEngine() {
           transform: 'translate(-50%, 0)',
           display: 'flex', alignItems: 'center', gap: 6,
           fontFamily: F,
-          fontSize: isMobile ? 9.5 : 10.5,
-          fontWeight: 600,
-          letterSpacing: '0.08em',
+          fontSize: isMobile ? 11 : 12.5,
+          fontWeight: 700,
+          letterSpacing: '0.1em',
           textTransform: 'uppercase',
           color: labelColor,
           opacity: showLabel ? 0.92 : 0,
@@ -315,7 +317,9 @@ function StabilityEngine({ heroPersona }) {
         const count = isMobileRef.current ? 6 : 10
         const idx = Math.floor(Math.random() * count)
         const angle = Math.random() * Math.PI * 2
-        const distance = 2 + Math.random() * 2
+        // Visual-strength dial-up: node shift now travels 6-10px instead of
+        // 2-4px so the movement is perceptible without crossing into busy.
+        const distance = 6 + Math.random() * 4
         setActiveNode(idx)
         setShift({ dx: Math.cos(angle) * distance, dy: Math.sin(angle) * distance })
         setEventState('detecting')
@@ -327,7 +331,9 @@ function StabilityEngine({ heroPersona }) {
             setEventState('stable')
             setShift({ dx: 0, dy: 0 })
             console.log('[StabilityEngine] stable')
-            wait(1500, () => {
+            // Hold "stable" for 2s (was 1.5s) so users have a moment to
+            // register the resolution before the field returns to baseline.
+            wait(2000, () => {
               setEventState('idle')
               setActiveNode(null)
               console.log('[StabilityEngine] idle')
@@ -404,11 +410,11 @@ function StabilityEngine({ heroPersona }) {
               className="pd-se-edge"
               x1={a.x} y1={a.y} x2={b.x} y2={b.y}
               stroke="#0f2137"
-              strokeWidth="1"
+              strokeWidth={isActive ? '1.5' : '1'}
               vectorEffect="non-scaling-stroke"
               style={{
-                opacity: isActive ? 0.22 : 0.07,
-                transition: 'opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                opacity: isActive ? 0.40 : 0.07,
+                transition: 'opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), stroke-width 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
             />
           )
@@ -427,11 +433,11 @@ function StabilityEngine({ heroPersona }) {
               width: 6, height: 6,
               borderRadius: '50%',
               transform: isActive
-                ? `translate(calc(-50% + ${shift.dx}px), calc(-50% + ${shift.dy}px)) scale(1.3)`
+                ? `translate(calc(-50% + ${shift.dx}px), calc(-50% + ${shift.dy}px)) scale(1.5)`
                 : 'translate(-50%, -50%) scale(1)',
               background: '#0f2137',
-              opacity: isActive ? 0.35 : 0.10,
-              boxShadow: isActive ? '0 0 8px 1px rgba(15,33,55,0.18)' : 'none',
+              opacity: isActive ? 0.55 : 0.10,
+              boxShadow: isActive ? '0 0 10px 2px rgba(15,33,55,0.28)' : 'none',
               willChange: 'transform, opacity',
               transition: 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
@@ -448,9 +454,9 @@ function StabilityEngine({ heroPersona }) {
             transform: 'translate(-50%, 0)',
             display: 'flex', alignItems: 'center', gap: 6,
             fontFamily: F,
-            fontSize: isMobile ? 9.5 : 10.5,
-            fontWeight: 600,
-            letterSpacing: '0.08em',
+            fontSize: isMobile ? 11 : 12.5,
+            fontWeight: 700,
+            letterSpacing: '0.1em',
             textTransform: 'uppercase',
             color: labelColor,
             opacity: showLabel ? 0.85 : 0,
@@ -473,14 +479,14 @@ function StabilityEngine({ heroPersona }) {
             <span style={{
               width: 6, height: 6, borderRadius: '50%',
               background: '#D4A06B',
-              opacity: 0.5,
+              opacity: 0.85,
             }} />
           ) : eventState === 'stable' ? (
             <span style={{
               width: 6, height: 6, borderRadius: '50%',
               background: TEAL,
-              opacity: 0.7,
-              boxShadow: `0 0 6px ${TEAL}66`,
+              opacity: 1.0,
+              boxShadow: `0 0 12px ${TEAL}99`,
             }} />
           ) : null}
           {labelText}
