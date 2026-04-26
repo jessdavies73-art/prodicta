@@ -112,33 +112,118 @@ function ConvergenceLines() {
   )
 }
 
-// ── Gradient orbs (employer hero only) ───────────────────────────────────────
-// Four heavily blurred jade-tinted radial gradients drifting on independent
-// 22-30s loops. Pure CSS transforms, GPU-friendly, no JS animation loop.
-function GradientOrbs() {
-  const orbs = [
-    { size: 520, color: '#A8D9D0', top: '12%', left:  '4%',  dur: '24s', delay: '0s',  anim: 'pdOrbDrift1' },
-    { size: 420, color: '#C9E8E2', top: '-8%', left:  '62%', dur: '28s', delay: '4s',  anim: 'pdOrbDrift2' },
-    { size: 560, color: '#A8D9D0', top: '58%', left:  '24%', dur: '30s', delay: '2s',  anim: 'pdOrbDrift3' },
-    { size: 460, color: '#C9E8E2', top: '50%', left:  '70%', dur: '26s', delay: '6s',  anim: 'pdOrbDrift4' },
+// ── System mapping (employer hero only) ──────────────────────────────────────
+// A sparse navy network of nodes and edges that reads as a workflow map, not
+// a tech grid. Layout flows left to right in four loose vertical bands so
+// the eye reads progression. Nodes pulse one at a time on a long stagger
+// (~one pulse every 4s across the network); edges occasionally light up at
+// an even slower cadence (~one every 8s). Baseline alpha sits at 7-10% so
+// the network is barely there until something pulses.
+function SystemMapping() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  // Node coordinates as percent of the hero (left, top). Four loose bands:
+  // input (left), mid-left, mid-right, output (right). Vertical scatter
+  // breaks the grid feel.
+  const allNodes = [
+    { x: 8,  y: 38 },  // n0  input top
+    { x: 10, y: 64 },  // n1  input bottom
+    { x: 28, y: 22 },  // n2  mid-left top
+    { x: 30, y: 52 },  // n3  mid-left centre
+    { x: 32, y: 78 },  // n4  mid-left bottom
+    { x: 55, y: 30 },  // n5  mid-right top
+    { x: 58, y: 62 },  // n6  mid-right bottom
+    { x: 78, y: 20 },  // n7  output top
+    { x: 80, y: 50 },  // n8  output centre
+    { x: 82, y: 78 },  // n9  output bottom
   ]
+  // Mobile keeps a representative subset of 6 nodes so the network still
+  // reads left to right without crowding the narrower viewport.
+  const mobilePick = [0, 1, 3, 5, 8, 9]
+  const nodes = isMobile ? mobilePick.map(i => allNodes[i]) : allNodes
+
+  // Edges flow forward only (lower index to higher index) so the eye
+  // reads progression rather than a web. Mobile filters to edges whose
+  // endpoints both survive the subset and remaps indices.
+  const allEdges = [
+    { a: 0, b: 2 }, { a: 0, b: 3 },
+    { a: 1, b: 3 }, { a: 1, b: 4 },
+    { a: 2, b: 5 }, { a: 3, b: 5 }, { a: 3, b: 6 },
+    { a: 4, b: 6 },
+    { a: 5, b: 7 }, { a: 5, b: 8 },
+    { a: 6, b: 8 }, { a: 6, b: 9 },
+    { a: 7, b: 8 }, { a: 8, b: 9 },
+  ]
+  const edges = isMobile
+    ? allEdges
+        .filter(e => mobilePick.includes(e.a) && mobilePick.includes(e.b))
+        .map(e => ({ a: mobilePick.indexOf(e.a), b: mobilePick.indexOf(e.b) }))
+    : allEdges
+
+  // 80s edge cycle, stagger uses a non-integer multiplier so two pulses
+  // never line up. With 14 edges that's ~one edge every 5.7s on desktop.
+  const EDGE_DUR = 80
+  // 40s node cycle, prime-ish 3.8s stagger keeps pulses arrhythmic.
+  // With 10 nodes that's one pulse every 4s on desktop.
+  const NODE_DUR = 40
+
   return (
     <div aria-hidden="true" style={{
-      position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0,
+      position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden',
     }}>
-      {orbs.map((o, i) => (
-        <div key={i} style={{
-          position: 'absolute',
-          top: o.top, left: o.left,
-          width: o.size, height: o.size,
-          borderRadius: '50%',
-          background: `radial-gradient(circle, ${o.color} 0%, ${o.color}88 35%, transparent 72%)`,
-          filter: 'blur(56px)',
-          opacity: 0.65,
-          willChange: 'transform',
-          animation: `${o.anim} ${o.dur} ease-in-out ${o.delay} infinite`,
-        }} />
-      ))}
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+      >
+        {edges.map((e, i) => {
+          const a = nodes[e.a]
+          const b = nodes[e.b]
+          const delay = (i * 7.7) % EDGE_DUR
+          return (
+            <line
+              key={`e${i}`}
+              className="pd-map-edge"
+              x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+              stroke="#0f2137"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+              style={{
+                opacity: 0.07,
+                animation: `pdMapEdge ${EDGE_DUR}s ease-in-out ${delay}s infinite`,
+              }}
+            />
+          )
+        })}
+      </svg>
+      {nodes.map((n, i) => {
+        const delay = (i * 3.8) % NODE_DUR
+        return (
+          <span
+            key={`n${i}`}
+            className="pd-map-node"
+            style={{
+              position: 'absolute',
+              left: `${n.x}%`,
+              top: `${n.y}%`,
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: '#0f2137',
+              opacity: 0.10,
+              willChange: 'transform, opacity',
+              animation: `pdMapNode ${NODE_DUR}s ease-in-out ${delay}s infinite`,
+            }}
+          />
+        )
+      })}
     </div>
   )
 }
@@ -438,36 +523,24 @@ export default function LandingPage() {
           85%, 100% { opacity: 0; transform: scale(0.6); }
         }
 
-        /* Hero, employer view: gradient-orb treatment. Four heavily blurred
-           orbs drift across the hero on independent slow loops. Pure CSS
-           transforms, no JS. */
-        @keyframes pdOrbDrift1 {
-          0%   { transform: translate(0, 0); }
-          25%  { transform: translate(8vw, 6vh); }
-          50%  { transform: translate(-2vw, 12vh); }
-          75%  { transform: translate(-10vw, 4vh); }
-          100% { transform: translate(0, 0); }
+        /* Hero, employer view: system-mapping treatment. Each node sits at
+           10% baseline alpha and briefly scales to 1.18 with 22% alpha for a
+           ~1.6s window once per 40s cycle; staggered delays mean roughly one
+           node pulses every 4s across the network. Edges sit at 7% baseline
+           and brighten to 14% for ~1.6s once per 80s cycle (~one every 8s).
+           Most of every cycle is rest, so the network is mostly still. */
+        @keyframes pdMapNode {
+          0%, 92%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.10; }
+          96%           { transform: translate(-50%, -50%) scale(1.18); opacity: 0.22; }
         }
-        @keyframes pdOrbDrift2 {
-          0%   { transform: translate(0, 0); }
-          30%  { transform: translate(-7vw, 9vh); }
-          60%  { transform: translate(4vw, 14vh); }
-          85%  { transform: translate(11vw, 5vh); }
-          100% { transform: translate(0, 0); }
+        @keyframes pdMapEdge {
+          0%, 94%, 100% { opacity: 0.07; }
+          98%           { opacity: 0.14; }
         }
-        @keyframes pdOrbDrift3 {
-          0%   { transform: translate(0, 0); }
-          25%  { transform: translate(-9vw, -5vh); }
-          55%  { transform: translate(6vw, -10vh); }
-          80%  { transform: translate(10vw, 4vh); }
-          100% { transform: translate(0, 0); }
-        }
-        @keyframes pdOrbDrift4 {
-          0%   { transform: translate(0, 0); }
-          20%  { transform: translate(7vw, -7vh); }
-          45%  { transform: translate(-4vw, -12vh); }
-          75%  { transform: translate(-9vw, -3vh); }
-          100% { transform: translate(0, 0); }
+        /* Reduced motion: keep the static layout visible at baseline alpha,
+           just stop the pulses. */
+        @media (prefers-reduced-motion: reduce) {
+          .pd-map-node, .pd-map-edge { animation: none !important; }
         }
 
 
@@ -539,11 +612,12 @@ export default function LandingPage() {
         }} />
         <div aria-hidden="true" style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
-          // Jade-led palette. Three pale jade stops shift across 12 seconds.
-          // None of the stops approach the brand jade #00BFA5 saturation, so
-          // the jade CTAs and accent type still pop against this background.
-          background: 'linear-gradient(-45deg, #E6F4F1, #C9E8E2, #A8D9D0, #E6F4F1)',
-          backgroundSize: '400% 400%', animation: 'gradShiftLight 12s ease infinite',
+          // Jade-led palette. Three pale stops drift across 24 seconds, slow
+          // enough that the movement is almost imperceptible. None of the
+          // stops approach the brand jade #00BFA5 saturation, so the jade
+          // CTAs and accent type still pop against this background.
+          background: 'linear-gradient(-45deg, #E6F4F1, #DCEDE7, #F4F8F6, #E6F4F1)',
+          backgroundSize: '400% 400%', animation: 'gradShiftLight 24s ease-in-out infinite',
           opacity: isEmployer ? 1 : 0,
           transition: 'opacity 600ms ease',
         }} />
@@ -567,7 +641,7 @@ export default function LandingPage() {
           transition: 'opacity 600ms ease',
           pointerEvents: 'none',
         }}>
-          <GradientOrbs />
+          <SystemMapping />
         </div>
 
         {/* Radial glow, slightly softer on the light treatment so it does not bloom. */}
