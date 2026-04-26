@@ -253,7 +253,14 @@ function OutcomeEngine() {
 //   stable      (1.5s) - node settles back, label "Stable" with jade dot
 // 600ms fade back to baseline calm. Long quiet sells the "in control" feel.
 // Reduced motion short-circuits the scheduler so the layout stays at baseline.
-function StabilityEngine() {
+function StabilityEngine({ heroPersona }) {
+  // Mount/render diagnostic. Fires on every render including the first
+  // paint. If this line is absent from DevTools the component never
+  // mounted; if it is present the component is alive and any subsequent
+  // missing event logs come from the prefers-reduced-motion gate or a
+  // console-filter setting in the user's browser.
+  console.log('[StabilityEngine] component rendered, heroPersona:', heroPersona)
+
   const [isMobile, setIsMobile] = useState(false)
   const [activeNode, setActiveNode] = useState(null)
   const [shift, setShift] = useState({ dx: 0, dy: 0 })
@@ -893,7 +900,7 @@ export default function LandingPage() {
           transition: 'opacity 600ms ease',
           pointerEvents: 'none',
         }}>
-          <StabilityEngine />
+          <StabilityEngine heroPersona={heroPersona} />
         </div>
 
         {/* Radial glow, slightly softer on the light treatment so it does not bloom. */}
