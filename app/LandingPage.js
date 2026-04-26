@@ -259,8 +259,19 @@ function StabilityEngine() {
   const [shift, setShift] = useState({ dx: 0, dy: 0 })
   const [eventState, setEventState] = useState('idle')
 
+  // Stable ref so the scheduler effect can read the current isMobile without
+  // re-running on every viewport flip (which would cancel any in-flight
+  // event and leave a stale node visible until the next 12-18s quiet
+  // expired). Keeping the scheduler effect's dep array empty also avoids
+  // double-mount churn under React StrictMode in dev.
+  const isMobileRef = useRef(false)
+
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 768)
+    const check = () => {
+      const mob = window.innerWidth <= 768
+      isMobileRef.current = mob
+      setIsMobile(mob)
+    }
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
@@ -268,33 +279,51 @@ function StabilityEngine() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-
-    let cancelled = false
-    const tids = []
-    const wait = (ms, fn) => {
-      const id = setTimeout(() => { if (!cancelled) fn() }, ms)
-      tids.push(id)
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      console.log('[StabilityEngine] reduced motion: scheduler skipped')
+      return
     }
 
+    let cancelled = false
+    const tids = new Set()
+    const wait = (ms, fn) => {
+      const id = setTimeout(() => {
+        tids.delete(id)
+        if (!cancelled) fn()
+      }, ms)
+      tids.add(id)
+    }
+
+    let firstRun = true
     function schedule() {
-      const quiet = 12000 + Math.random() * 6000
+      // First event fires after 8-10s so the page does not look static; all
+      // subsequent events sit in the original 12-18s quiet so the field
+      // still feels like a calm control panel rather than a screensaver.
+      const quiet = firstRun
+        ? 8000 + Math.random() * 2000
+        : 12000 + Math.random() * 6000
+      firstRun = false
+      console.log(`[StabilityEngine] idle, next event in ${Math.round(quiet)}ms`)
       wait(quiet, () => {
-        const count = isMobile ? 6 : 10
+        const count = isMobileRef.current ? 6 : 10
         const idx = Math.floor(Math.random() * count)
         const angle = Math.random() * Math.PI * 2
         const distance = 2 + Math.random() * 2
         setActiveNode(idx)
         setShift({ dx: Math.cos(angle) * distance, dy: Math.sin(angle) * distance })
         setEventState('detecting')
+        console.log('[StabilityEngine] detecting (node', idx, ')')
         wait(1500, () => {
           setEventState('stabilising')
+          console.log('[StabilityEngine] stabilising')
           wait(2500, () => {
             setEventState('stable')
             setShift({ dx: 0, dy: 0 })
+            console.log('[StabilityEngine] stable')
             wait(1500, () => {
               setEventState('idle')
               setActiveNode(null)
+              console.log('[StabilityEngine] idle')
               schedule()
             })
           })
@@ -303,8 +332,12 @@ function StabilityEngine() {
     }
     schedule()
 
-    return () => { cancelled = true; tids.forEach(clearTimeout) }
-  }, [isMobile])
+    return () => {
+      cancelled = true
+      tids.forEach(clearTimeout)
+      tids.clear()
+    }
+  }, [])
 
   // 10 nodes in 4 loose vertical bands with vertical scatter so the layout
   // reads as a structured but organic network, not a regular grid.
