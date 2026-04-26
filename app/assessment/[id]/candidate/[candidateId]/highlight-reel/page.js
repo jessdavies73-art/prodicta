@@ -17,13 +17,13 @@ export default function HighlightReelPage({ params }) {
 
       const { data: candidate } = await supabase
         .from('candidates')
-        .select('id, name, assessments(role_title, role_level)')
+        .select('id, name, assessments(role_title, role_level, employment_type, users(account_type))')
         .eq('id', params.candidateId)
         .single()
 
       const { data: result } = await supabase
         .from('results')
-        .select('overall_score, risk_level, hiring_confidence, strengths, watchouts, pressure_fit_score, execution_reliability, spoken_delivery_score, ai_summary, interview_questions, candidate_type')
+        .select('overall_score, risk_level, hiring_confidence, strengths, watchouts, pressure_fit_score, execution_reliability, spoken_delivery_score, ai_summary, interview_questions, candidate_type, workspace_block_scores')
         .eq('candidate_id', params.candidateId)
         .maybeSingle()
 
@@ -33,6 +33,12 @@ export default function HighlightReelPage({ params }) {
         name: candidate.name,
         role: candidate.assessments?.role_title,
         roleLevel: candidate.assessments?.role_level || 'MID_LEVEL',
+        // Surface the assessment owner's account type (agency vs employer)
+        // and employment_type so the Share modal can render the right
+        // copy variant. Only used on the signed-in path; the public
+        // /reel/[token] route never opens the Share modal.
+        accountType: candidate.assessments?.users?.account_type || null,
+        employmentType: candidate.assessments?.employment_type || null,
         assessmentId: params.id,
         candidateId: params.candidateId,
         ...result,

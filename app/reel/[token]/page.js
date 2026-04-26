@@ -11,7 +11,7 @@ export default function SharedReelPage({ params }) {
       const supabase = createClient()
       const { data: result } = await supabase
         .from('results')
-        .select('candidate_id, overall_score, risk_level, hiring_confidence, strengths, watchouts, pressure_fit_score, execution_reliability, spoken_delivery_score, ai_summary, interview_questions, candidate_type, candidates(name, assessments(role_title, role_level))')
+        .select('candidate_id, overall_score, risk_level, hiring_confidence, strengths, watchouts, pressure_fit_score, execution_reliability, spoken_delivery_score, ai_summary, interview_questions, candidate_type, workspace_block_scores, candidates(name, assessments(role_title, role_level))')
         .eq('highlight_reel_token', params.token)
         .maybeSingle()
 
@@ -33,6 +33,7 @@ export default function SharedReelPage({ params }) {
         ai_summary: result.ai_summary,
         interview_questions: result.interview_questions,
         candidate_type: result.candidate_type,
+        workspace_block_scores: result.workspace_block_scores,
       })
       setLoading(false)
     }
