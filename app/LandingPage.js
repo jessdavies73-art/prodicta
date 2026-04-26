@@ -82,7 +82,7 @@ function ConvergenceLines() {
           key={`l${i}`}
           x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
           stroke={TEAL}
-          strokeWidth="0.18"
+          strokeWidth="1.6"
           strokeLinecap="round"
           pathLength="1"
           style={{
@@ -90,8 +90,8 @@ function ConvergenceLines() {
             strokeDashoffset: 1,
             animation: `pdLineDraw ${l.dur}s ease-in-out ${l.delay}s infinite`,
             opacity: 0,
-            // Slightly thicker line on small screens so the strokes still read.
-            // (vector-effect keeps stroke widths consistent under preserveAspectRatio="none".)
+            // non-scaling-stroke keeps the width in device pixels regardless of
+            // the non-uniform viewBox-to-viewport scaling, so 1.6 reads as ~1.6px.
             vectorEffect: 'non-scaling-stroke',
           }}
         />
@@ -99,7 +99,7 @@ function ConvergenceLines() {
       {anchors.map((a, i) => (
         <circle
           key={`a${i}`}
-          cx={a.x} cy={a.y} r="0.55"
+          cx={a.x} cy={a.y} r="0.8"
           fill={TEAL}
           style={{
             transformOrigin: `${a.x}px ${a.y}px`,
@@ -426,15 +426,15 @@ export default function LandingPage() {
            anchor circle pulses while its line is drawing. */
         @keyframes pdLineDraw {
           0%   { stroke-dashoffset: 1; opacity: 0; }
-          15%  { stroke-dashoffset: 1; opacity: 0.18; }
-          50%  { stroke-dashoffset: 0; opacity: 0.18; }
+          15%  { stroke-dashoffset: 1; opacity: 0.38; }
+          50%  { stroke-dashoffset: 0; opacity: 0.38; }
           85%  { stroke-dashoffset: -1; opacity: 0; }
           100% { stroke-dashoffset: -1; opacity: 0; }
         }
         @keyframes pdAnchorPulse {
           0%, 12%   { opacity: 0; transform: scale(0.6); }
-          22%       { opacity: 0.5; transform: scale(1); }
-          60%       { opacity: 0.35; transform: scale(1); }
+          22%       { opacity: 0.7; transform: scale(1); }
+          60%       { opacity: 0.5; transform: scale(1); }
           85%, 100% { opacity: 0; transform: scale(0.6); }
         }
 
