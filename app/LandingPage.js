@@ -40,18 +40,17 @@ function Reveal({ children, delay = 0, style = {} }) {
 }
 
 
-// ── Pipeline flow (agency hero only) ─────────────────────────────────────────
-// Diagonal jade streaks flow from bottom-left to top-right at three speed
-// layers. A subset bend toward a focal point near where the headline copy
-// lands (centre-right of the hero) and dissolve there: chaos to clarity.
-// Occasional jade signal pulses fire at random positions every 4-6s to read
-// as "insight detected" without crowding the field. Each streak is a thin
-// rounded div with a horizontal-fade gradient (the gradient is the motion
-// blur). Translation and rotation animate via CSS custom properties so all
-// streaks share two keyframes.
-function PipelineFlow() {
+// ── Outcome Engine (agency hero only) ────────────────────────────────────────
+// Brand story: signal to selection. Loop cycle ~4.5s.
+//   1. Faint jade noise streaks drift in from various edges (candidates flow in)
+//   2. Around 60% of cycle the noise fades (the system filters)
+//   3. A single brighter "winner" streak emerges from the left and converges
+//      on the focal point (best candidate emerges and locks)
+//   4. The focal point pulses on lock-in, then everything resets
+// Same start position for the winner each cycle reinforces "every time, fast".
+// All motion is CSS keyframes on transform and opacity, GPU-composited.
+function OutcomeEngine() {
   const [isMobile, setIsMobile] = useState(false)
-  const [pulses, setPulses] = useState([])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768)
@@ -60,111 +59,50 @@ function PipelineFlow() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // Signal pulse scheduler. requestAnimationFrame-anchored setTimeout chain
-  // so we get genuinely random firing without a JS animation loop. Skipped
-  // entirely under prefers-reduced-motion.
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  // Focal point: centre-right of the hero, on the line where "before you
+  // make it." sits in the headline.
+  const FX = 62
+  const FY = 45
 
-    let cancelled = false
-    let timeoutId
-    const minDelay = isMobile ? 6000 : 4000
-    const jitter = 2000
-
-    function schedule() {
-      const delay = minDelay + Math.random() * jitter
-      timeoutId = setTimeout(() => {
-        if (cancelled) return
-        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-        // Bias the pulse position toward where streaks are densest (centre
-        // band of the hero) but allow some scatter so pulses don't always
-        // land in the same patch.
-        const x = 22 + Math.random() * 56
-        const y = 22 + Math.random() * 50
-        setPulses(prev => [...prev, { id, x, y }])
-        // The pulse animation is 1.4s; clean up shortly after to keep the
-        // pulses array small.
-        setTimeout(() => {
-          if (cancelled) return
-          setPulses(prev => prev.filter(p => p.id !== id))
-        }, 1600)
-        schedule()
-      }, delay)
-    }
-    schedule()
-
-    return () => {
-      cancelled = true
-      clearTimeout(timeoutId)
-    }
-  }, [isMobile])
-
-  // Focal point: centre-right of the hero, near where the second line of the
-  // headline ("before you make it.") lands. Tuned by eye against the existing
-  // hero layout.
-  const FOCAL_X = 62
-  const FOCAL_Y = 40
-
-  // 15 streaks across three speed layers. Negative delays start each streak
-  // partway through its cycle so the field is already populated on first
-  // paint instead of building up over the first few seconds.
-  // sx/sy are start translate values in vw/vh; len/w are pixel dimensions
-  // of the streak rectangle; op is peak opacity; dur is full traverse time;
-  // conv = true means the streak bends toward the focal point and dissolves.
-  const streakDefs = [
-    // Fast layer: short, thin, low opacity (4-5s)
-    { sx: -20, sy: 110, len: 80,  w: 1.0, op: 0.18, dur: 4.5,  delay: -1.0,  conv: false },
-    { sx: -15, sy: 75,  len: 75,  w: 1.0, op: 0.18, dur: 4.0,  delay: -2.5,  conv: false },
-    { sx: -10, sy: 45,  len: 90,  w: 1.0, op: 0.18, dur: 5.0,  delay: -0.5,  conv: true  },
-    { sx: 10,  sy: 110, len: 80,  w: 1.0, op: 0.18, dur: 4.2,  delay: -3.5,  conv: false },
-    { sx: 35,  sy: 110, len: 75,  w: 1.0, op: 0.18, dur: 4.7,  delay: -1.8,  conv: true  },
-    { sx: 60,  sy: 110, len: 80,  w: 1.0, op: 0.18, dur: 4.3,  delay: -3.0,  conv: false },
-    // Medium layer: medium length and width (7-9s)
-    { sx: -20, sy: 90,  len: 120, w: 1.5, op: 0.22, dur: 8.0,  delay: -2.0,  conv: false },
-    { sx: -15, sy: 60,  len: 110, w: 1.5, op: 0.22, dur: 7.5,  delay: -4.5,  conv: true  },
-    { sx: 0,   sy: 30,  len: 130, w: 1.5, op: 0.22, dur: 9.0,  delay: -1.5,  conv: false },
-    { sx: 20,  sy: 110, len: 120, w: 1.5, op: 0.22, dur: 8.5,  delay: -6.0,  conv: false },
-    { sx: 45,  sy: 110, len: 110, w: 1.5, op: 0.22, dur: 7.8,  delay: -3.0,  conv: true  },
-    // Slow layer: long, thick, slightly higher opacity (12-15s)
-    { sx: -20, sy: 100, len: 180, w: 2.0, op: 0.25, dur: 13.0, delay: -5.0,  conv: false },
-    { sx: -10, sy: 70,  len: 170, w: 2.0, op: 0.25, dur: 14.0, delay: -8.0,  conv: true  },
-    { sx: 5,   sy: 110, len: 175, w: 2.0, op: 0.25, dur: 12.5, delay: -2.0,  conv: false },
-    { sx: 30,  sy: 110, len: 170, w: 2.0, op: 0.25, dur: 13.5, delay: -10.0, conv: false },
+  // Noise streaks: 10 thin jade lines entering from various edges. dur is
+  // varied across three speed bands (3.5-6.5s) so the field has depth.
+  // Negative delays seed the field on first paint.
+  const noiseDefs = [
+    { sx: -10, sy: 22,  dx: 80,  dy: 12,  len: 70, w: 1,   op: 0.18, dur: 4.5, delay: -0.2 },
+    { sx: -10, sy: 50,  dx: 90,  dy: 0,   len: 80, w: 1,   op: 0.18, dur: 6.0, delay: -1.0 },
+    { sx: -10, sy: 78,  dx: 80,  dy: -25, len: 75, w: 1,   op: 0.18, dur: 3.5, delay: -0.6 },
+    { sx: 30,  sy: -10, dx: 25,  dy: 80,  len: 70, w: 1,   op: 0.18, dur: 4.5, delay: -1.5 },
+    { sx: 70,  sy: -10, dx: -10, dy: 80,  len: 65, w: 1,   op: 0.18, dur: 5.0, delay: -2.0 },
+    { sx: 110, sy: 30,  dx: -90, dy: 30,  len: 80, w: 1,   op: 0.18, dur: 4.5, delay: -0.8 },
+    { sx: 110, sy: 65,  dx: -100, dy: -10, len: 90, w: 1.2, op: 0.20, dur: 6.5, delay: -2.5 },
+    { sx: 20,  sy: 110, dx: 30,  dy: -80, len: 75, w: 1,   op: 0.18, dur: 4.0, delay: -1.2 },
+    { sx: -10, sy: 35,  dx: 70,  dy: 20,  len: 95, w: 1.2, op: 0.20, dur: 5.0, delay: -3.0 },
+    { sx: 80,  sy: 110, dx: -20, dy: -90, len: 70, w: 1,   op: 0.18, dur: 3.8, delay: -2.8 },
   ]
-  // Mobile keeps a representative cross-section: mix of speed layers and
-  // some convergent streaks so the focal-point bend still reads.
-  const mobilePick = [0, 2, 6, 7, 9, 11, 13]
-  const streaks = isMobile ? mobilePick.map(i => streakDefs[i]) : streakDefs
+  // Mobile keeps a 5-streak cross-section across the four entry edges.
+  const mobilePick = [0, 2, 4, 6, 8]
+  const noise = isMobile ? mobilePick.map(i => noiseDefs[i]) : noiseDefs
+
+  // Winner: single bright streak. Same start each cycle by design.
+  const winner = { sx: -8, sy: 30 }
+  const winnerDur = isMobile ? 6 : 4.5
+  const wdx = FX - winner.sx
+  const wdy = FY - winner.sy
+  const winnerRot = Math.atan2(wdy, wdx) * 180 / Math.PI
 
   return (
     <div aria-hidden="true" style={{
       position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden',
     }}>
-      {streaks.map((s, i) => {
-        // Non-convergent end: continue along -45deg trajectory off-screen.
-        const x1 = s.sx + 135
-        const y1 = s.sy - 135
-        // Convergent path bends through a midpoint sitting on the natural
-        // -45deg line, then curves to the focal point and fades there.
-        const xMid = s.sx + 35
-        const yMid = s.sy - 35
-        const cssVars = s.conv
-          ? {
-              '--x0': `${s.sx}vw`, '--y0': `${s.sy}vh`,
-              '--xMid': `${xMid}vw`, '--yMid': `${yMid}vh`,
-              '--xEnd': `${FOCAL_X}vw`, '--yEnd': `${FOCAL_Y}vh`,
-              '--peak': s.op,
-            }
-          : {
-              '--x0': `${s.sx}vw`, '--y0': `${s.sy}vh`,
-              '--x1': `${x1}vw`, '--y1': `${y1}vh`,
-              '--peak': s.op,
-            }
+      {noise.map((s, i) => {
+        const x1 = s.sx + s.dx
+        const y1 = s.sy + s.dy
+        const rot = Math.atan2(s.dy, s.dx) * 180 / Math.PI
+        const dur = isMobile ? s.dur * 1.3 : s.dur
         return (
           <div
-            key={i}
-            className="pd-streak"
+            key={`n${i}`}
+            className="pd-oe-noise"
             style={{
               position: 'absolute',
               left: 0, top: 0,
@@ -174,44 +112,64 @@ function PipelineFlow() {
               opacity: 0,
               willChange: 'transform, opacity',
               transformOrigin: '0 50%',
-              animation: `${s.conv ? 'pdStreakConverge' : 'pdStreakFlow'} ${s.dur}s linear ${s.delay}s infinite`,
-              ...cssVars,
+              animation: `pdOENoise ${dur}s ease-in-out ${s.delay}s infinite`,
+              '--x0': `${s.sx}vw`, '--y0': `${s.sy}vh`,
+              '--x1': `${x1}vw`, '--y1': `${y1}vh`,
+              '--rot': `${rot}deg`,
+              '--peak': s.op,
             }}
           />
         )
       })}
-      {pulses.map(p => (
-        <div
-          key={p.id}
-          className="pd-signal-pulse"
-          style={{
-            position: 'absolute',
-            left: `${p.x}vw`,
-            top: `${p.y}vh`,
-            width: 8, height: 8,
-            borderRadius: '50%',
-            background: TEAL,
-            boxShadow: `0 0 14px 3px ${TEAL}88, 0 0 28px 8px ${TEAL}44`,
-            transform: 'translate(-50%, -50%) scale(1)',
-            opacity: 0,
-            willChange: 'transform, opacity',
-            animation: 'pdSignalPulse 1.4s ease-out forwards',
-          }}
-        />
-      ))}
+      <div
+        className="pd-oe-winner"
+        style={{
+          position: 'absolute',
+          left: 0, top: 0,
+          width: 110, height: 1.5,
+          borderRadius: 1,
+          background: `linear-gradient(to right, transparent 0%, ${TEAL} 30%, ${TEAL} 70%, transparent 100%)`,
+          opacity: 0,
+          willChange: 'transform, opacity',
+          transformOrigin: '0 50%',
+          animation: `pdOEWinner ${winnerDur}s ease-out infinite`,
+          '--x0': `${winner.sx}vw`, '--y0': `${winner.sy}vh`,
+          '--xF': `${FX}vw`, '--yF': `${FY}vh`,
+          '--rot': `${winnerRot}deg`,
+        }}
+      />
+      <div
+        className="pd-oe-focal"
+        style={{
+          position: 'absolute',
+          left: `${FX}vw`,
+          top: `${FY}vh`,
+          width: 12, height: 12,
+          borderRadius: '50%',
+          background: TEAL,
+          boxShadow: `0 0 16px 4px ${TEAL}88, 0 0 28px 6px ${TEAL}44`,
+          transform: 'translate(-50%, -50%) scale(1)',
+          opacity: 0,
+          willChange: 'transform, opacity',
+          animation: `pdOEFocal ${winnerDur}s ease-out infinite`,
+        }}
+      />
     </div>
   )
 }
 
-// ── System mapping (employer hero only) ──────────────────────────────────────
-// A sparse navy network of nodes and edges that reads as a workflow map, not
-// a tech grid. Layout flows left to right in four loose vertical bands so
-// the eye reads progression. Nodes pulse one at a time on a long stagger
-// (~one pulse every 4s across the network); edges occasionally light up at
-// an even slower cadence (~one every 8s). Baseline alpha sits at 7-10% so
-// the network is barely there until something pulses.
-function SystemMapping() {
+// ── Stability Engine (employer hero only) ────────────────────────────────────
+// Brand story: detect, correct, settle. Loop cycle 9-12s (long calm + short
+// event). A structured navy network sits still most of the time. Periodically
+// JS picks a random node, shifts it 2-4px and brightens it (problem detected),
+// the connected edges brighten in response (system adjusts), then after a
+// brief hold everything settles back (returned to stable). The pause between
+// events is intentional - calm reads as "in control".
+function StabilityEngine() {
   const [isMobile, setIsMobile] = useState(false)
+  const [activeNode, setActiveNode] = useState(null)
+  const [shift, setShift] = useState({ dx: 0, dy: 0 })
+
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768)
     check()
@@ -219,50 +177,71 @@ function SystemMapping() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // Node coordinates as percent of the hero (left, top). Four loose bands:
-  // input (left), mid-left, mid-right, output (right). Vertical scatter
-  // breaks the grid feel.
+  // Drift event scheduler. Long rest, single brief event, repeat. Each event
+  // picks a different random node and a random 2-4px offset direction. The
+  // CSS transitions on the node and edge elements handle the visual easing
+  // (1.2s ease-in-out on entry and exit). Skipped under prefers-reduced-motion.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    let cancelled = false
+    let outerTid = null
+    let innerTid = null
+
+    function schedule() {
+      const restMin = isMobile ? 6000 : 5000
+      const rest = restMin + Math.random() * 3000
+      outerTid = setTimeout(() => {
+        if (cancelled) return
+        const count = isMobile ? 6 : 10
+        const idx = Math.floor(Math.random() * count)
+        const angle = Math.random() * Math.PI * 2
+        const distance = 2 + Math.random() * 2
+        setActiveNode(idx)
+        setShift({ dx: Math.cos(angle) * distance, dy: Math.sin(angle) * distance })
+        innerTid = setTimeout(() => {
+          if (cancelled) return
+          setActiveNode(null)
+          setShift({ dx: 0, dy: 0 })
+          schedule()
+        }, 3000)
+      }, rest)
+    }
+    schedule()
+
+    return () => {
+      cancelled = true
+      if (outerTid) clearTimeout(outerTid)
+      if (innerTid) clearTimeout(innerTid)
+    }
+  }, [isMobile])
+
+  // 10 nodes in 4 loose vertical bands with vertical scatter so the layout
+  // reads as a structured but organic network, not a regular grid.
   const allNodes = [
-    { x: 8,  y: 38 },  // n0  input top
-    { x: 10, y: 64 },  // n1  input bottom
-    { x: 28, y: 22 },  // n2  mid-left top
-    { x: 30, y: 52 },  // n3  mid-left centre
-    { x: 32, y: 78 },  // n4  mid-left bottom
-    { x: 55, y: 30 },  // n5  mid-right top
-    { x: 58, y: 62 },  // n6  mid-right bottom
-    { x: 78, y: 20 },  // n7  output top
-    { x: 80, y: 50 },  // n8  output centre
-    { x: 82, y: 78 },  // n9  output bottom
+    { x: 8,  y: 25 }, { x: 10, y: 60 }, { x: 12, y: 88 },
+    { x: 35, y: 15 }, { x: 38, y: 50 }, { x: 36, y: 82 },
+    { x: 65, y: 22 }, { x: 68, y: 58 },
+    { x: 88, y: 30 }, { x: 90, y: 70 },
   ]
-  // Mobile keeps a representative subset of 6 nodes so the network still
-  // reads left to right without crowding the narrower viewport.
-  const mobilePick = [0, 1, 3, 5, 8, 9]
+  const mobilePick = [1, 3, 5, 7, 8, 9]
   const nodes = isMobile ? mobilePick.map(i => allNodes[i]) : allNodes
 
-  // Edges flow forward only (lower index to higher index) so the eye
-  // reads progression rather than a web. Mobile filters to edges whose
-  // endpoints both survive the subset and remaps indices.
+  // Edges only connect adjacent bands so the eye reads structure not chaos.
   const allEdges = [
-    { a: 0, b: 2 }, { a: 0, b: 3 },
-    { a: 1, b: 3 }, { a: 1, b: 4 },
-    { a: 2, b: 5 }, { a: 3, b: 5 }, { a: 3, b: 6 },
-    { a: 4, b: 6 },
-    { a: 5, b: 7 }, { a: 5, b: 8 },
-    { a: 6, b: 8 }, { a: 6, b: 9 },
-    { a: 7, b: 8 }, { a: 8, b: 9 },
+    { a: 0, b: 3 }, { a: 0, b: 4 },
+    { a: 1, b: 4 }, { a: 1, b: 5 },
+    { a: 2, b: 5 },
+    { a: 3, b: 6 }, { a: 4, b: 6 }, { a: 4, b: 7 },
+    { a: 5, b: 7 },
+    { a: 6, b: 8 }, { a: 7, b: 8 }, { a: 7, b: 9 },
   ]
   const edges = isMobile
     ? allEdges
         .filter(e => mobilePick.includes(e.a) && mobilePick.includes(e.b))
         .map(e => ({ a: mobilePick.indexOf(e.a), b: mobilePick.indexOf(e.b) }))
     : allEdges
-
-  // 80s edge cycle, stagger uses a non-integer multiplier so two pulses
-  // never line up. With 14 edges that's ~one edge every 5.7s on desktop.
-  const EDGE_DUR = 80
-  // 40s node cycle, prime-ish 3.8s stagger keeps pulses arrhythmic.
-  // With 10 nodes that's one pulse every 4s on desktop.
-  const NODE_DUR = 40
 
   return (
     <div aria-hidden="true" style={{
@@ -274,43 +253,44 @@ function SystemMapping() {
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
       >
         {edges.map((e, i) => {
-          const a = nodes[e.a]
-          const b = nodes[e.b]
-          const delay = (i * 7.7) % EDGE_DUR
+          const isActive = activeNode === e.a || activeNode === e.b
+          const a = nodes[e.a], b = nodes[e.b]
           return (
             <line
               key={`e${i}`}
-              className="pd-map-edge"
+              className="pd-se-edge"
               x1={a.x} y1={a.y} x2={b.x} y2={b.y}
               stroke="#0f2137"
               strokeWidth="1"
               vectorEffect="non-scaling-stroke"
               style={{
-                opacity: 0.07,
-                animation: `pdMapEdge ${EDGE_DUR}s ease-in-out ${delay}s infinite`,
+                opacity: isActive ? 0.22 : 0.07,
+                transition: 'opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
             />
           )
         })}
       </svg>
       {nodes.map((n, i) => {
-        const delay = (i * 3.8) % NODE_DUR
+        const isActive = activeNode === i
         return (
           <span
             key={`n${i}`}
-            className="pd-map-node"
+            className="pd-se-node"
             style={{
               position: 'absolute',
               left: `${n.x}%`,
               top: `${n.y}%`,
-              width: 6,
-              height: 6,
+              width: 6, height: 6,
               borderRadius: '50%',
-              transform: 'translate(-50%, -50%)',
+              transform: isActive
+                ? `translate(calc(-50% + ${shift.dx}px), calc(-50% + ${shift.dy}px)) scale(1.3)`
+                : 'translate(-50%, -50%) scale(1)',
               background: '#0f2137',
-              opacity: 0.10,
+              opacity: isActive ? 0.35 : 0.10,
+              boxShadow: isActive ? '0 0 8px 1px rgba(15,33,55,0.18)' : 'none',
               willChange: 'transform, opacity',
-              animation: `pdMapNode ${NODE_DUR}s ease-in-out ${delay}s infinite`,
+              transition: 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           />
         )
@@ -596,65 +576,57 @@ export default function LandingPage() {
         }
         @keyframes goldPulse { 0%,100%{opacity:.5} 50%{opacity:1} }
 
-        /* Hero, agency view: pipeline-flow treatment. Streaks translate
-           bottom-left to top-right at -45deg. Non-convergent streaks travel
-           the full diagonal (off-screen to off-screen). Convergent streaks
-           travel half the diagonal at -45deg, then bend and curve toward the
-           focal point (var --xEnd, var --yEnd) where they fade. The rotation
-           change at 72% (-45deg to -28deg) is the visible "pull" of the
-           bend. Each streak's start/end positions live in CSS custom
-           properties on the inline style so all streaks share two keyframes. */
-        @keyframes pdStreakFlow {
-          0%   { transform: translate3d(var(--x0), var(--y0), 0) rotate(-45deg); opacity: 0; }
-          10%  { opacity: var(--peak); }
-          90%  { opacity: var(--peak); }
-          100% { transform: translate3d(var(--x1), var(--y1), 0) rotate(-45deg); opacity: 0; }
+        /* Hero, agency view: Outcome Engine. Three keyframes, all on a
+           winnerDur cycle (4.5s desktop, 6s mobile). Noise: streak fades in
+           at 15%, holds peak alpha, fades out at 60% (the visible "filter"
+           event), continues drifting invisibly to its end position. Winner:
+           invisible until 55% of cycle, then emerges from start position,
+           drifts to focal at 78% with bumped alpha (the lock-in moment),
+           holds, then fades. Focal pulse: idle until 70%, then jade dot
+           expands and fades by 92% - synced with the winner lock-in. */
+        @keyframes pdOENoise {
+          0%   { opacity: 0; transform: translate3d(var(--x0), var(--y0), 0) rotate(var(--rot)); }
+          15%  { opacity: var(--peak); }
+          45%  { opacity: var(--peak); }
+          60%  { opacity: 0; }
+          100% { opacity: 0; transform: translate3d(var(--x1), var(--y1), 0) rotate(var(--rot)); }
         }
-        @keyframes pdStreakConverge {
-          0%   { transform: translate3d(var(--x0), var(--y0), 0) rotate(-45deg); opacity: 0; }
-          12%  { opacity: var(--peak); }
-          40%  { transform: translate3d(var(--xMid), var(--yMid), 0) rotate(-45deg); opacity: var(--peak); }
-          72%  { transform: translate3d(var(--xEnd), var(--yEnd), 0) rotate(-28deg); opacity: var(--peak); }
-          100% { transform: translate3d(var(--xEnd), var(--yEnd), 0) rotate(-28deg); opacity: 0; }
+        @keyframes pdOEWinner {
+          0%, 55%   { opacity: 0;    transform: translate3d(var(--x0), var(--y0), 0) rotate(var(--rot)); }
+          62%       { opacity: 0.20; }
+          78%       { opacity: 0.40; transform: translate3d(var(--xF), var(--yF), 0) rotate(var(--rot)); }
+          85%       { opacity: 0.40; transform: translate3d(var(--xF), var(--yF), 0) rotate(var(--rot)); }
+          95%       { opacity: 0; }
+          100%      { opacity: 0;    transform: translate3d(var(--xF), var(--yF), 0) rotate(var(--rot)); }
         }
-        /* Signal pulse: small jade dot expands and fades with a soft glow.
-           Fires once per pulse instance (forwards), JS schedules new pulses. */
-        @keyframes pdSignalPulse {
-          0%   { transform: translate(-50%, -50%) scale(1);    opacity: 0;    }
-          20%  { transform: translate(-50%, -50%) scale(1.15); opacity: 0.85; }
-          100% { transform: translate(-50%, -50%) scale(1.4);  opacity: 0;    }
+        @keyframes pdOEFocal {
+          0%, 70%, 100% { opacity: 0;    transform: translate(-50%, -50%) scale(1);   }
+          78%           { opacity: 0.85; transform: translate(-50%, -50%) scale(1.4); }
+          92%           { opacity: 0;    transform: translate(-50%, -50%) scale(1.8); }
         }
-        /* Reduced motion: pause streak motion but keep some present as static
-           jade hints. The pulse scheduler in PipelineFlow already short
-           circuits under prefers-reduced-motion so no pulse markup ever
-           mounts. Hold streaks at the position-and-opacity of the 40%
-           keyframe (mid-flight, peak alpha) so the layout still reads. */
+        /* Reduced motion: pause all motion but keep a static jade field
+           visible. Noise pinned at start positions at peak alpha, winner
+           pinned at focal at mid alpha, focal point steady at half alpha. */
         @media (prefers-reduced-motion: reduce) {
-          .pd-streak {
-            animation: none !important;
+          .pd-oe-noise, .pd-oe-winner, .pd-oe-focal { animation: none !important; }
+          .pd-oe-noise {
             opacity: var(--peak) !important;
-            transform: translate3d(calc(var(--x0) + 35vw), calc(var(--y0) - 35vh), 0) rotate(-45deg) !important;
+            transform: translate3d(var(--x0), var(--y0), 0) rotate(var(--rot)) !important;
           }
+          .pd-oe-winner {
+            opacity: 0.30 !important;
+            transform: translate3d(var(--xF), var(--yF), 0) rotate(var(--rot)) !important;
+          }
+          .pd-oe-focal { opacity: 0.5 !important; }
         }
 
-        /* Hero, employer view: system-mapping treatment. Each node sits at
-           10% baseline alpha and briefly scales to 1.18 with 22% alpha for a
-           ~1.6s window once per 40s cycle; staggered delays mean roughly one
-           node pulses every 4s across the network. Edges sit at 7% baseline
-           and brighten to 14% for ~1.6s once per 80s cycle (~one every 8s).
-           Most of every cycle is rest, so the network is mostly still. */
-        @keyframes pdMapNode {
-          0%, 92%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.10; }
-          96%           { transform: translate(-50%, -50%) scale(1.18); opacity: 0.22; }
-        }
-        @keyframes pdMapEdge {
-          0%, 94%, 100% { opacity: 0.07; }
-          98%           { opacity: 0.14; }
-        }
-        /* Reduced motion: keep the static layout visible at baseline alpha,
-           just stop the pulses. */
+        /* Hero, employer view: Stability Engine. No keyframes - all motion
+           is React-state-driven CSS transitions on the .pd-se-node and
+           .pd-se-edge elements (transition is set inline). Reduced motion
+           short circuits the JS scheduler so the layout stays at baseline
+           opacity with no transitions firing. */
         @media (prefers-reduced-motion: reduce) {
-          .pd-map-node, .pd-map-edge { animation: none !important; }
+          .pd-se-node, .pd-se-edge { transition: none !important; }
         }
 
 
@@ -747,7 +719,7 @@ export default function LandingPage() {
           transition: 'opacity 600ms ease',
           pointerEvents: 'none',
         }}>
-          <PipelineFlow />
+          <OutcomeEngine />
         </div>
         <div aria-hidden="true" style={{
           position: 'absolute', inset: 0, zIndex: 0,
@@ -755,7 +727,7 @@ export default function LandingPage() {
           transition: 'opacity 600ms ease',
           pointerEvents: 'none',
         }}>
-          <SystemMapping />
+          <StabilityEngine />
         </div>
 
         {/* Radial glow, slightly softer on the light treatment so it does not bloom. */}
