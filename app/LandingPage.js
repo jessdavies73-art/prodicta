@@ -41,22 +41,54 @@ function Reveal({ children, delay = 0, style = {} }) {
 
 
 // ── Outcome Engine (agency hero only) ────────────────────────────────────────
-// Brand story: signal to selection. Loop cycle ~4.5s.
-//   1. Faint jade noise streaks drift in from various edges (candidates flow in)
-//   2. Around 60% of cycle the noise fades (the system filters)
-//   3. A single brighter "winner" streak emerges from the left and converges
-//      on the focal point (best candidate emerges and locks)
-//   4. The focal point pulses on lock-in, then everything resets
-// Same start position for the winner each cycle reinforces "every time, fast".
-// All motion is CSS keyframes on transform and opacity, GPU-composited.
+// Live shortlisting moment. Continuous noise baseline (CSS-driven) plus a
+// JS-scheduled event every 6-8 seconds:
+//   filtering (1s) - label "Filtering candidates" with cycling dots
+//   matching  (1.5s) - winner streak strengthens to 0.5 alpha and locks at focal
+//   matched   (2.5s) - label switches to "Top Match Identified", focal pulses
+// Then 600ms fade back to baseline. Long quiet between events is what makes it
+// feel like a live system, not a screensaver. Reduced motion short-circuits
+// the scheduler so only the static baseline remains.
 function OutcomeEngine() {
   const [isMobile, setIsMobile] = useState(false)
+  const [eventState, setEventState] = useState('idle')
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768)
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    let cancelled = false
+    const tids = []
+    const wait = (ms, fn) => {
+      const id = setTimeout(() => { if (!cancelled) fn() }, ms)
+      tids.push(id)
+    }
+
+    function schedule() {
+      const quiet = 6000 + Math.random() * 2000
+      wait(quiet, () => {
+        setEventState('filtering')
+        wait(1000, () => {
+          setEventState('matching')
+          wait(1500, () => {
+            setEventState('matched')
+            wait(2500, () => {
+              setEventState('idle')
+              schedule()
+            })
+          })
+        })
+      })
+    }
+    schedule()
+    return () => { cancelled = true; tids.forEach(clearTimeout) }
   }, [])
 
   // Focal point: centre-right of the hero, on the line where "before you
@@ -83,12 +115,21 @@ function OutcomeEngine() {
   const mobilePick = [0, 2, 4, 6, 8]
   const noise = isMobile ? mobilePick.map(i => noiseDefs[i]) : noiseDefs
 
-  // Winner: single bright streak. Same start each cycle by design.
+  // Winner: single bright streak. Same start each event by design.
   const winner = { sx: -8, sy: 30 }
-  const winnerDur = isMobile ? 6 : 4.5
   const wdx = FX - winner.sx
   const wdy = FY - winner.sy
   const winnerRot = Math.atan2(wdy, wdx) * 180 / Math.PI
+
+  const winnerAtFocal = eventState === 'matching' || eventState === 'matched'
+  const winnerOpacity = eventState === 'matching' ? 0.5 : eventState === 'matched' ? 0.5 : 0
+  const focalOpacity  = eventState === 'matched' ? 0.85 : eventState === 'matching' ? 0.4 : 0
+  const focalScale    = eventState === 'matched' ? 1.4 : 1
+
+  const showLabel = eventState !== 'idle'
+  const labelText = eventState === 'matched' ? 'Top Match Identified' : 'Filtering candidates'
+  const labelColor = eventState === 'matched' ? TEAL : '#5A6B7A'
+  const showCyclingDots = eventState === 'filtering' || eventState === 'matching'
 
   return (
     <div aria-hidden="true" style={{
@@ -129,13 +170,14 @@ function OutcomeEngine() {
           width: 110, height: 1.5,
           borderRadius: 1,
           background: `linear-gradient(to right, transparent 0%, ${TEAL} 30%, ${TEAL} 70%, transparent 100%)`,
-          opacity: 0,
+          opacity: winnerOpacity,
+          transform: winnerAtFocal
+            ? `translate3d(${FX}vw, ${FY}vh, 0) rotate(${winnerRot}deg)`
+            : `translate3d(${winner.sx}vw, ${winner.sy}vh, 0) rotate(${winnerRot}deg)`,
+          filter: winnerAtFocal ? `drop-shadow(0 0 6px ${TEAL}66)` : 'none',
           willChange: 'transform, opacity',
           transformOrigin: '0 50%',
-          animation: `pdOEWinner ${winnerDur}s ease-out infinite`,
-          '--x0': `${winner.sx}vw`, '--y0': `${winner.sy}vh`,
-          '--xF': `${FX}vw`, '--yF': `${FY}vh`,
-          '--rot': `${winnerRot}deg`,
+          transition: 'transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 600ms ease, filter 600ms ease',
         }}
       />
       <div
@@ -148,27 +190,70 @@ function OutcomeEngine() {
           borderRadius: '50%',
           background: TEAL,
           boxShadow: `0 0 16px 4px ${TEAL}88, 0 0 28px 6px ${TEAL}44`,
-          transform: 'translate(-50%, -50%) scale(1)',
-          opacity: 0,
+          transform: `translate(-50%, -50%) scale(${focalScale})`,
+          opacity: focalOpacity,
           willChange: 'transform, opacity',
-          animation: `pdOEFocal ${winnerDur}s ease-out infinite`,
+          transition: 'transform 1.2s ease, opacity 600ms ease',
         }}
       />
+      <div
+        className="pd-oe-label"
+        style={{
+          position: 'absolute',
+          left: `${FX}vw`,
+          top: `calc(${FY}vh + 22px)`,
+          transform: 'translate(-50%, 0)',
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontFamily: F,
+          fontSize: isMobile ? 9.5 : 10.5,
+          fontWeight: 600,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: labelColor,
+          opacity: showLabel ? 0.92 : 0,
+          willChange: 'opacity',
+          transition: 'opacity 600ms ease, color 600ms ease',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {showCyclingDots ? (
+          <span style={{ display: 'inline-flex', gap: 2, alignItems: 'center' }}>
+            {[0, 1, 2].map(i => (
+              <span key={i} style={{
+                width: 3, height: 3, borderRadius: '50%',
+                background: '#5A6B7A',
+                animation: `pdLabelDot 1.2s ease-in-out ${i * 0.15}s infinite`,
+              }} />
+            ))}
+          </span>
+        ) : (
+          <span style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: TEAL,
+            boxShadow: `0 0 6px ${TEAL}88`,
+          }} />
+        )}
+        {labelText}
+      </div>
     </div>
   )
 }
 
 // ── Stability Engine (employer hero only) ────────────────────────────────────
-// Brand story: detect, correct, settle. Loop cycle 9-12s (long calm + short
-// event). A structured navy network sits still most of the time. Periodically
-// JS picks a random node, shifts it 2-4px and brightens it (problem detected),
-// the connected edges brighten in response (system adjusts), then after a
-// brief hold everything settles back (returned to stable). The pause between
-// events is intentional - calm reads as "in control".
+// Live control panel feel. Network sits still 12-18 seconds at a time, then
+// fires one event:
+//   detecting   (1.5s) - random node shifts and brightens, label "Risk detected"
+//                        with a muted jade-amber dot (#D4A06B at 0.5 alpha)
+//   stabilising (2.5s) - connected edges brighten, label switches to
+//                        "Stabilising" with cycling dots
+//   stable      (1.5s) - node settles back, label "Stable" with jade dot
+// 600ms fade back to baseline calm. Long quiet sells the "in control" feel.
+// Reduced motion short-circuits the scheduler so the layout stays at baseline.
 function StabilityEngine() {
   const [isMobile, setIsMobile] = useState(false)
   const [activeNode, setActiveNode] = useState(null)
   const [shift, setShift] = useState({ dx: 0, dy: 0 })
+  const [eventState, setEventState] = useState('idle')
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768)
@@ -177,44 +262,44 @@ function StabilityEngine() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // Drift event scheduler. Long rest, single brief event, repeat. Each event
-  // picks a different random node and a random 2-4px offset direction. The
-  // CSS transitions on the node and edge elements handle the visual easing
-  // (1.2s ease-in-out on entry and exit). Skipped under prefers-reduced-motion.
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
     let cancelled = false
-    let outerTid = null
-    let innerTid = null
+    const tids = []
+    const wait = (ms, fn) => {
+      const id = setTimeout(() => { if (!cancelled) fn() }, ms)
+      tids.push(id)
+    }
 
     function schedule() {
-      const restMin = isMobile ? 6000 : 5000
-      const rest = restMin + Math.random() * 3000
-      outerTid = setTimeout(() => {
-        if (cancelled) return
+      const quiet = 12000 + Math.random() * 6000
+      wait(quiet, () => {
         const count = isMobile ? 6 : 10
         const idx = Math.floor(Math.random() * count)
         const angle = Math.random() * Math.PI * 2
         const distance = 2 + Math.random() * 2
         setActiveNode(idx)
         setShift({ dx: Math.cos(angle) * distance, dy: Math.sin(angle) * distance })
-        innerTid = setTimeout(() => {
-          if (cancelled) return
-          setActiveNode(null)
-          setShift({ dx: 0, dy: 0 })
-          schedule()
-        }, 3000)
-      }, rest)
+        setEventState('detecting')
+        wait(1500, () => {
+          setEventState('stabilising')
+          wait(2500, () => {
+            setEventState('stable')
+            setShift({ dx: 0, dy: 0 })
+            wait(1500, () => {
+              setEventState('idle')
+              setActiveNode(null)
+              schedule()
+            })
+          })
+        })
+      })
     }
     schedule()
 
-    return () => {
-      cancelled = true
-      if (outerTid) clearTimeout(outerTid)
-      if (innerTid) clearTimeout(innerTid)
-    }
+    return () => { cancelled = true; tids.forEach(clearTimeout) }
   }, [isMobile])
 
   // 10 nodes in 4 loose vertical bands with vertical scatter so the layout
@@ -243,6 +328,20 @@ function StabilityEngine() {
         .map(e => ({ a: mobilePick.indexOf(e.a), b: mobilePick.indexOf(e.b) }))
     : allEdges
 
+  // Node is shifted/bright only during detecting and stabilising. During
+  // 'stable' the shift resets and the node returns to baseline via the 1.2s
+  // CSS easing while the "Stable" label still floats nearby.
+  const nodeShifted = eventState === 'detecting' || eventState === 'stabilising'
+  const showLabel = eventState !== 'idle' && activeNode != null
+  const activePos = activeNode != null ? nodes[activeNode] : null
+
+  const labelText = eventState === 'detecting' ? 'Risk detected'
+                  : eventState === 'stabilising' ? 'Stabilising'
+                  : eventState === 'stable' ? 'Stable'
+                  : ''
+  const showCyclingDots = eventState === 'stabilising'
+  const labelColor = eventState === 'stabilising' ? NAVY : '#5A6B7A'
+
   return (
     <div aria-hidden="true" style={{
       position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden',
@@ -253,7 +352,7 @@ function StabilityEngine() {
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
       >
         {edges.map((e, i) => {
-          const isActive = activeNode === e.a || activeNode === e.b
+          const isActive = nodeShifted && (activeNode === e.a || activeNode === e.b)
           const a = nodes[e.a], b = nodes[e.b]
           return (
             <line
@@ -272,7 +371,7 @@ function StabilityEngine() {
         })}
       </svg>
       {nodes.map((n, i) => {
-        const isActive = activeNode === i
+        const isActive = nodeShifted && activeNode === i
         return (
           <span
             key={`n${i}`}
@@ -295,6 +394,54 @@ function StabilityEngine() {
           />
         )
       })}
+      {activePos && (
+        <div
+          className="pd-se-label"
+          style={{
+            position: 'absolute',
+            left: `${activePos.x}%`,
+            top: `calc(${activePos.y}% + 14px)`,
+            transform: 'translate(-50%, 0)',
+            display: 'flex', alignItems: 'center', gap: 6,
+            fontFamily: F,
+            fontSize: isMobile ? 9.5 : 10.5,
+            fontWeight: 600,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: labelColor,
+            opacity: showLabel ? 0.85 : 0,
+            willChange: 'opacity',
+            transition: 'opacity 600ms ease, color 600ms ease',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {showCyclingDots ? (
+            <span style={{ display: 'inline-flex', gap: 2, alignItems: 'center' }}>
+              {[0, 1, 2].map(i => (
+                <span key={i} style={{
+                  width: 3, height: 3, borderRadius: '50%',
+                  background: NAVY,
+                  animation: `pdLabelDot 1.2s ease-in-out ${i * 0.15}s infinite`,
+                }} />
+              ))}
+            </span>
+          ) : eventState === 'detecting' ? (
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: '#D4A06B',
+              opacity: 0.5,
+            }} />
+          ) : eventState === 'stable' ? (
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: TEAL,
+              opacity: 0.7,
+              boxShadow: `0 0 6px ${TEAL}66`,
+            }} />
+          ) : null}
+          {labelText}
+        </div>
+      )}
     </div>
   )
 }
@@ -576,14 +723,10 @@ export default function LandingPage() {
         }
         @keyframes goldPulse { 0%,100%{opacity:.5} 50%{opacity:1} }
 
-        /* Hero, agency view: Outcome Engine. Three keyframes, all on a
-           winnerDur cycle (4.5s desktop, 6s mobile). Noise: streak fades in
-           at 15%, holds peak alpha, fades out at 60% (the visible "filter"
-           event), continues drifting invisibly to its end position. Winner:
-           invisible until 55% of cycle, then emerges from start position,
-           drifts to focal at 78% with bumped alpha (the lock-in moment),
-           holds, then fades. Focal pulse: idle until 70%, then jade dot
-           expands and fades by 92% - synced with the winner lock-in. */
+        /* Hero, agency view: Outcome Engine. Noise streaks loop on a CSS
+           keyframe (continuous baseline). Winner streak, focal point, and
+           label are React-state-driven via inline transitions, fired by the
+           event scheduler. */
         @keyframes pdOENoise {
           0%   { opacity: 0; transform: translate3d(var(--x0), var(--y0), 0) rotate(var(--rot)); }
           15%  { opacity: var(--peak); }
@@ -591,41 +734,26 @@ export default function LandingPage() {
           60%  { opacity: 0; }
           100% { opacity: 0; transform: translate3d(var(--x1), var(--y1), 0) rotate(var(--rot)); }
         }
-        @keyframes pdOEWinner {
-          0%, 55%   { opacity: 0;    transform: translate3d(var(--x0), var(--y0), 0) rotate(var(--rot)); }
-          62%       { opacity: 0.20; }
-          78%       { opacity: 0.40; transform: translate3d(var(--xF), var(--yF), 0) rotate(var(--rot)); }
-          85%       { opacity: 0.40; transform: translate3d(var(--xF), var(--yF), 0) rotate(var(--rot)); }
-          95%       { opacity: 0; }
-          100%      { opacity: 0;    transform: translate3d(var(--xF), var(--yF), 0) rotate(var(--rot)); }
+
+        /* Cycling label dot: three small dots fading in and out staggered by
+           150ms each. Used in "Filtering candidates" and "Stabilising"
+           label states to signal active work. */
+        @keyframes pdLabelDot {
+          0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+          40%           { opacity: 1;    transform: translateY(-1px); }
         }
-        @keyframes pdOEFocal {
-          0%, 70%, 100% { opacity: 0;    transform: translate(-50%, -50%) scale(1);   }
-          78%           { opacity: 0.85; transform: translate(-50%, -50%) scale(1.4); }
-          92%           { opacity: 0;    transform: translate(-50%, -50%) scale(1.8); }
-        }
-        /* Reduced motion: pause all motion but keep a static jade field
-           visible. Noise pinned at start positions at peak alpha, winner
-           pinned at focal at mid alpha, focal point steady at half alpha. */
+
+        /* Reduced motion. Noise streaks freeze at start positions at peak
+           alpha so the static jade field stays visible. The event scheduler
+           is short-circuited in JS, so winner, focal, and label all stay
+           hidden (opacity 0). Same for StabilityEngine: scheduler short
+           circuits, layout stays at baseline, no transitions fire. */
         @media (prefers-reduced-motion: reduce) {
-          .pd-oe-noise, .pd-oe-winner, .pd-oe-focal { animation: none !important; }
-          .pd-oe-noise {
+          .pd-oe-noise { animation: none !important;
             opacity: var(--peak) !important;
             transform: translate3d(var(--x0), var(--y0), 0) rotate(var(--rot)) !important;
           }
-          .pd-oe-winner {
-            opacity: 0.30 !important;
-            transform: translate3d(var(--xF), var(--yF), 0) rotate(var(--rot)) !important;
-          }
-          .pd-oe-focal { opacity: 0.5 !important; }
-        }
-
-        /* Hero, employer view: Stability Engine. No keyframes - all motion
-           is React-state-driven CSS transitions on the .pd-se-node and
-           .pd-se-edge elements (transition is set inline). Reduced motion
-           short circuits the JS scheduler so the layout stays at baseline
-           opacity with no transitions firing. */
-        @media (prefers-reduced-motion: reduce) {
+          .pd-oe-label, .pd-se-label { display: none !important; }
           .pd-se-node, .pd-se-edge { transition: none !important; }
         }
 
