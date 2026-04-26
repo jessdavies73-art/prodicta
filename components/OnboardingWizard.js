@@ -102,8 +102,8 @@ export default function OnboardingWizard({ userId, initialAccountType, onComplet
                 {[
                   {
                     value: 'employer',
-                    title: 'Direct Employer',
-                    desc: 'I hire for my own company or team.',
+                    title: 'HR & Direct Employer',
+                    desc: 'I hire for my own company or team, or run an internal HR function.',
                     icon: (
                       <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                         <rect x={2} y={7} width={20} height={14} rx={2}/>

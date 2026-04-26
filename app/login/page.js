@@ -546,7 +546,7 @@ function SignUpForm() {
           <label style={styles.label}>Account type</label>
           <div style={{ display: 'flex', gap: 8 }}>
             {[
-              { value: 'employer', label: 'Direct Employer'      },
+              { value: 'employer', label: 'HR & Direct Employer' },
               { value: 'agency',   label: 'Recruitment Agency'   },
             ].map(opt => {
               const active = accountType === opt.value

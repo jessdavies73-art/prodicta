@@ -816,7 +816,7 @@ function DemoDashboardInner() {
 
         {/* Account type toggle */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 24, background: CARD, borderRadius: 10, border: `1.5px solid ${BD}`, padding: 3, width: 'fit-content' }}>
-          {[{ key: 'agency', label: 'Recruitment Agency' }, { key: 'employer', label: 'Direct Employer' }].map(opt => (
+          {[{ key: 'agency', label: 'Recruitment Agency' }, { key: 'employer', label: 'HR & Direct Employer' }].map(opt => (
             <button
               key={opt.key}
               onClick={() => { setDemoType(opt.key); localStorage.setItem('prodicta_demo_account_type', opt.key); window.history.replaceState(null, '', `/demo?type=${opt.key}`) }}

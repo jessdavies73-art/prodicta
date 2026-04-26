@@ -834,6 +834,12 @@ export default function LandingPage() {
           padding-bottom: 90px !important;
           transition: background 600ms ease, padding 600ms ease;
         }
+        .pd-toggle-label-full { display: inline; }
+        .pd-toggle-label-short { display: none; }
+        @media (max-width: 480px) {
+          .pd-toggle-label-full { display: none; }
+          .pd-toggle-label-short { display: inline; }
+        }
         @media (max-width: 768px) {
           .cv-vs-prodicta {
             grid-template-columns: 1fr !important;
@@ -946,8 +952,8 @@ export default function LandingPage() {
           overflow: 'hidden',
         }}>
           {[
-            { key: 'agency', label: 'Recruitment Agencies' },
-            { key: 'employer', label: 'Direct Employers' },
+            { key: 'agency', label: 'Recruitment Agencies', short: 'Agencies' },
+            { key: 'employer', label: 'HR & Direct Employers', short: 'HR & Employers' },
           ].map(p => {
             const active = heroPersona === p.key
             return (
@@ -965,7 +971,8 @@ export default function LandingPage() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {p.label}
+                <span className="pd-toggle-label-full">{p.label}</span>
+                <span className="pd-toggle-label-short">{p.short}</span>
               </button>
             )
           })}
