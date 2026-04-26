@@ -489,6 +489,12 @@ function ResultPanel({ result, effectiveTitle, onPreview }) {
             <Pre json={scenario.block_content} />
           </Section>
 
+          <PractitionerTestPanel
+            key={scenario.scenario_id}
+            scenario={scenario}
+            roleTitle={effectiveTitle}
+          />
+
           <button
             onClick={onPreview}
             style={{
@@ -502,6 +508,146 @@ function ResultPanel({ result, effectiveTitle, onPreview }) {
         </>
       ) : null}
     </div>
+  )
+}
+
+// Practitioner test: would someone who actually does this job recognise
+// their work in each block? Tri-state per block (yes / partial / no) plus
+// a free-text note. State is local to the panel; resets when a new
+// scenario is generated (parent re-keys on scenario_id). Phase 1 does not
+// persist this anywhere — it is a structured way for an admin to capture
+// what's missing while reviewing a draft scenario.
+function PractitionerTestPanel({ scenario, roleTitle }) {
+  const blocks = scenario.selected_blocks || []
+  const initial = {}
+  for (const b of blocks) initial[b.block_id] = { verdict: null, note: '' }
+  const [verdicts, setVerdicts] = useState(initial)
+
+  const setVerdict = (blockId, verdict) => {
+    setVerdicts(prev => ({
+      ...prev,
+      [blockId]: { ...(prev[blockId] || {}), verdict },
+    }))
+  }
+  const setNote = (blockId, note) => {
+    setVerdicts(prev => ({
+      ...prev,
+      [blockId]: { ...(prev[blockId] || {}), note },
+    }))
+  }
+
+  const yesCount = blocks.filter(b => verdicts[b.block_id]?.verdict === 'yes').length
+  const partialCount = blocks.filter(b => verdicts[b.block_id]?.verdict === 'partial').length
+  const noCount = blocks.filter(b => verdicts[b.block_id]?.verdict === 'no').length
+  const ratedCount = yesCount + partialCount + noCount
+  const passing = yesCount === blocks.length && blocks.length > 0
+  const failing = noCount > 0
+  const summaryColour = passing ? '#047857' : failing ? '#b91c1c' : ratedCount > 0 ? '#92400e' : '#475569'
+
+  return (
+    <div style={{ marginTop: 22, marginBottom: 24, background: '#fff', border: `2px solid ${TEAL}33`, borderRadius: 12, padding: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', marginBottom: 6 }}>
+        <h3 style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: NAVY, margin: 0 }}>
+          Practitioner test
+        </h3>
+        <span style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: summaryColour }}>
+          {ratedCount === 0
+            ? `Not yet rated (0 of ${blocks.length})`
+            : `${yesCount}/${blocks.length} yes${partialCount ? `, ${partialCount} partial` : ''}${noCount ? `, ${noCount} no` : ''}`}
+        </span>
+      </div>
+      <p style={{ fontFamily: F, fontSize: 13, color: '#475569', marginBottom: 14, lineHeight: 1.5 }}>
+        Would someone who actually does this job recognise their work in each block? Mark yes if a real {roleTitle || 'practitioner'} would say "this is what I do". Mark partial or no if the block reads as generic office work. Capture what's missing in the note.
+      </p>
+      {blocks.map(b => {
+        const v = verdicts[b.block_id] || {}
+        const meta = BLOCK_CATALOGUE[b.block_id]
+        return (
+          <div
+            key={b.block_id}
+            style={{
+              padding: '14px 0',
+              borderTop: '1px solid #e2e8f0',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: NAVY }}>
+                Block {b.order}: {meta?.name || b.block_id}
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <VerdictButton
+                  label="Yes"
+                  active={v.verdict === 'yes'}
+                  activeColour="#047857"
+                  onClick={() => setVerdict(b.block_id, 'yes')}
+                />
+                <VerdictButton
+                  label="Partial"
+                  active={v.verdict === 'partial'}
+                  activeColour="#b45309"
+                  onClick={() => setVerdict(b.block_id, 'partial')}
+                />
+                <VerdictButton
+                  label="No"
+                  active={v.verdict === 'no'}
+                  activeColour="#b91c1c"
+                  onClick={() => setVerdict(b.block_id, 'no')}
+                />
+              </div>
+            </div>
+            {(v.verdict === 'partial' || v.verdict === 'no') ? (
+              <textarea
+                value={v.note}
+                onChange={(e) => setNote(b.block_id, e.target.value)}
+                rows={2}
+                placeholder={v.verdict === 'no' ? 'What makes this read as generic office work?' : 'What is partial or missing?'}
+                style={{
+                  width: '100%',
+                  fontFamily: F, fontSize: 13, color: NAVY,
+                  padding: '8px 10px', borderRadius: 6,
+                  border: '1px solid #cbd5e1', background: '#f8fafc',
+                  outline: 'none', resize: 'vertical',
+                }}
+              />
+            ) : null}
+          </div>
+        )
+      })}
+      {ratedCount === blocks.length && blocks.length > 0 ? (
+        <div style={{
+          marginTop: 12, padding: 12, borderRadius: 8,
+          background: passing ? '#ecfdf5' : failing ? '#fef2f2' : '#fffbeb',
+          border: '1px solid',
+          borderColor: passing ? '#a7f3d0' : failing ? '#fecaca' : '#fde68a',
+          fontFamily: F, fontSize: 13, color: passing ? '#047857' : failing ? '#b91c1c' : '#92400e', lineHeight: 1.5,
+        }}>
+          {passing
+            ? 'All blocks pass the practitioner test.'
+            : failing
+              ? 'One or more blocks fail the test. Capture the notes; the prompt or canonical mapping likely needs further tightening for this function.'
+              : 'Some blocks are partial. Worth a tightening pass before flipping use_modular_workspace on for this role.'}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function VerdictButton({ label, active, activeColour, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        fontFamily: F, fontSize: 12, fontWeight: 700,
+        padding: '6px 14px', borderRadius: 6,
+        border: '1px solid', borderColor: active ? activeColour : '#cbd5e1',
+        background: active ? activeColour : '#fff',
+        color: active ? '#fff' : '#475569',
+        cursor: 'pointer',
+      }}
+    >
+      {label}
+    </button>
   )
 }
 
