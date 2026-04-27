@@ -608,12 +608,36 @@ export async function POST(request) {
     }
 
     // ── Sector detection (drives sector-specific scenario guidance) ─────────────
+    //
+    // Order matters: setting context (residential care home, NHS hospital,
+    // school) wins over role title (HCA, Nurse, Teacher) when both keywords
+    // appear in the JD. Without this ordering, an HCA in a residential care
+    // home falls into 'healthcare' (NHS framing) instead of 'social_care'
+    // (residential / dignity / lone-working framing).
+    //
+    // Routing precedence:
+    //   1. Social-care SETTING context wins -> social_care
+    //   2. NHS / hospital SETTING context wins -> healthcare
+    //   3. Education SETTING context wins -> education
+    //   4. Social-care ROLE keywords (care worker, support worker)
+    //   5. Healthcare ROLE keywords (nurse, HCA without setting signal)
+    //   6. Education ROLE keywords (teacher without setting signal)
+    //   7. Other sectors as before
     const sectorText = `${role_title} ${job_description}`.toLowerCase()
     const sectorHas = (...words) => words.some(w => sectorText.includes(w))
     let sector = 'general'
-    if (sectorHas('nurse', 'midwife', 'paramedic', 'healthcare assistant', 'hca ', 'physiotherap', 'occupational therap', 'radiograph', 'pharmacist', 'ward manager', 'clinical lead', 'mental health support', 'nhs', 'a&e', 'a & e', 'emergency department')) sector = 'healthcare'
-    else if (sectorHas('care worker', 'senior carer', 'support worker', 'domiciliary', 'registered manager', 'care assistant', 'residential care', 'supported living', 'safeguarding adults')) sector = 'social_care'
-    else if (sectorHas('teaching assistant', 'hlta', 'sen support', 'school administrator', 'pastoral lead', 'cover supervisor', 'teacher', 'classroom', 'pupil', 'safeguarding children', 'sendco', 'send ')) sector = 'education'
+    // 1. Social-care setting context - residential care home, domiciliary, supported living
+    if (sectorHas('residential care', 'care home', 'domiciliary care', 'social care', 'supported living', 'residential setting', 'nursing home')) sector = 'social_care'
+    // 2. NHS / hospital setting context
+    else if (sectorHas('nhs', 'hospital ', 'hospital,', 'hospital trust', 'on the ward', 'a&e', 'a & e', 'emergency department', 'gp surgery', 'gp practice', 'community trust', 'mental health trust')) sector = 'healthcare'
+    // 3. Education setting context
+    else if (sectorHas('primary school', 'secondary school', 'multi-academy trust', 'multi academy trust', 'mat school', ' academy ', 'sixth form', 'further education college', 'pupil referral unit')) sector = 'education'
+    // 4. Social-care role keywords
+    else if (sectorHas('care worker', 'senior carer', 'support worker', 'domiciliary', 'registered manager', 'care assistant', 'safeguarding adults', 'care home manager')) sector = 'social_care'
+    // 5. Healthcare role keywords (no setting signal -> default to NHS framing)
+    else if (sectorHas('nurse', 'midwife', 'paramedic', 'healthcare assistant', 'hca ', 'physiotherap', 'occupational therap', 'radiograph', 'pharmacist', 'ward manager', 'clinical lead', 'mental health support')) sector = 'healthcare'
+    // 6. Education role keywords
+    else if (sectorHas('teaching assistant', 'hlta', 'sen support', 'school administrator', 'pastoral lead', 'cover supervisor', 'teacher', 'classroom', 'pupil', 'safeguarding children', 'sendco', 'send ', 'headteacher', 'deputy head')) sector = 'education'
     else if (sectorHas('council officer', 'benefits advisor', 'planning officer', 'social worker', 'housing officer', 'civil servant', 'local authority', 'central government', 'public sector')) sector = 'public_sector'
     else if (sectorHas('electrician', 'plumber', 'gas engineer', 'maintenance technician', 'site manager', 'facilities manager', 'tradesperson', 'on site', 'engineer technician')) sector = 'trades'
     else if (sectorHas('restaurant manager', 'hotel receptionist', 'bar manager', 'retail manager', 'store supervisor', 'duty manager', 'hospitality', 'front of house', 'hotel ', 'shop floor', 'merchand', 'concession')) sector = 'hospitality_retail'
@@ -1590,15 +1614,20 @@ Write in UK English throughout. No Americanisms. No generic scenarios. No abstra
 
 FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in the output. Use commas, full stops, or rewrite the sentence instead.`
 
-    // Rapid Screen only needs a single scenario + a prioritisation test, so
-    // skip the heavy sector / seniority guidance blocks and cap output tokens.
-    // Other modes still get the full guidance injected before FORMATTING RULE.
-    const finalPrompt = isRapid
-      ? prompt
-      : prompt.replace(
-          'FORMATTING RULE: Never use em dash',
-          `${sectorGuidanceBlock}${seniorityGuidanceBlock}\nFORMATTING RULE: Never use em dash`
-        )
+    // Rapid Screen gets sector guidance so an HCA's rapid scenario is
+    // care-home-flavoured and a Class Teacher's rapid scenario is
+    // school-flavoured. Seniority guidance stays out of Rapid: by design
+    // the rapid prompt forces OPERATIONAL framing regardless of seniority
+    // (it is a 5-8 minute filter, not a seniority calibration tool).
+    // Speed-Fit, Depth-Fit and Strategy-Fit get both sector and seniority
+    // guidance injected as before.
+    const guidanceInjection = isRapid
+      ? sectorGuidanceBlock
+      : `${sectorGuidanceBlock}${seniorityGuidanceBlock}`
+    const finalPrompt = prompt.replace(
+      'FORMATTING RULE: Never use em dash',
+      `${guidanceInjection}\nFORMATTING RULE: Never use em dash`
+    )
 
     const scenarioModel = 'claude-sonnet-4-5'
     const scenarioMaxTokens = MAX_TOKENS_BY_MODE[mode] ?? 3000
