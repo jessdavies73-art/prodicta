@@ -175,11 +175,15 @@ export default function SettingsPage() {
   // assessments rows where workspace_addon_purchased = true and
   // workspace_addon_charged_pence > 0 (Strategy-Fit included rows
   // record charged_pence = 0 and are excluded from the paid-add-on
-  // count). { paid_count, paid_total_pence, free_strategy_fit_count }.
+  // count). highlight_reel_included_count counts every subscriber
+  // assessment with highlight_reel_addon_purchased = true so the
+  // bundled-Highlight-Reel value is visible.
   const [workspaceAddonStats, setWorkspaceAddonStats] = useState({
     paid_count: 0,
     paid_total_pence: 0,
     free_strategy_fit_count: 0,
+    strategy_fit_count: 0,
+    highlight_reel_included_count: 0,
   })
   const [buyQty, setBuyQty] = useState({}) // { [credit_type]: number }
   const [buyingType, setBuyingType] = useState(null)
@@ -269,28 +273,39 @@ export default function SettingsPage() {
         //     Workspace at no charge (workspace_addon_purchased = true,
         //     charged_pence = 0). Surfaces the Business tier marketing
         //     line without needing a separate column.
+        // Pull every assessment this month so we can break down both
+        // the Workspace add-on stats (existing) and the new
+        // Highlight-Reel and Strategy-Fit-cap stats. Single query.
         const { data: addonRows } = await supabase.from('assessments')
-          .select('workspace_addon_purchased, workspace_addon_charged_pence, assessment_mode')
+          .select('assessment_mode, workspace_addon_purchased, workspace_addon_charged_pence, highlight_reel_addon_purchased')
           .eq('user_id', user.id)
-          .eq('workspace_addon_purchased', true)
           .gte('created_at', startOfMonth)
         if (Array.isArray(addonRows)) {
           let paidCount = 0
           let paidTotal = 0
           let freeSfCount = 0
+          let sfCount = 0
+          let hrCount = 0
           for (const r of addonRows) {
             const charged = Number(r.workspace_addon_charged_pence) || 0
-            if (charged > 0) {
-              paidCount += 1
-              paidTotal += charged
-            } else if ((r.assessment_mode || '').toLowerCase() === 'advanced') {
-              freeSfCount += 1
+            const isAdvanced = (r.assessment_mode || '').toLowerCase() === 'advanced'
+            if (isAdvanced) sfCount += 1
+            if (r.highlight_reel_addon_purchased === true) hrCount += 1
+            if (r.workspace_addon_purchased === true) {
+              if (charged > 0) {
+                paidCount += 1
+                paidTotal += charged
+              } else if (isAdvanced) {
+                freeSfCount += 1
+              }
             }
           }
           setWorkspaceAddonStats({
             paid_count: paidCount,
             paid_total_pence: paidTotal,
             free_strategy_fit_count: freeSfCount,
+            strategy_fit_count: sfCount,
+            highlight_reel_included_count: hrCount,
           })
         }
 
@@ -960,37 +975,50 @@ export default function SettingsPage() {
             {!isPayg && (() => {
               const isBusinessTier = (planKey === 'business' || planKey === 'agency' || planKey === 'scale')
               const paidPounds = (workspaceAddonStats.paid_total_pence / 100).toFixed(2)
+              const sfCap = isBusinessTier ? 30 : null
               return (
                 <div style={{ ...cs, marginBottom: 16 }}>
-                  <h2 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: TX }}>Workspace simulation</h2>
+                  <h2 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: TX }}>Workspace and Highlight Reel</h2>
                   <p style={{ margin: '0 0 14px', fontSize: 12.5, color: TX3, lineHeight: 1.55 }}>
-                    {isBusinessTier
-                      ? 'Included free on every Strategy-Fit assessment as part of the Business tier. £25 add-on per Speed-Fit or Depth-Fit assessment, billed on your next invoice.'
-                      : 'Included free on every Strategy-Fit assessment. £25 add-on per Speed-Fit or Depth-Fit assessment, billed on your next subscription invoice.'}
+                    Highlight Reel is included on every assessment on your subscription. Workspace simulation is included on every Strategy-Fit; £25 add-on per Speed-Fit or Depth-Fit, billed on your next invoice.
+                    {isBusinessTier ? ' Business tier is capped at 30 Strategy-Fit assessments per month.' : ''}
                   </p>
                   <div style={{
                     display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10,
                   }}>
                     <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '12px 14px' }}>
                       <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 2 }}>
-                        Paid add-ons this month
+                        Workspace add-ons this month
                       </div>
                       <div style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, letterSpacing: '-0.3px' }}>
                         {workspaceAddonStats.paid_count} <span style={{ fontSize: 13, fontWeight: 600, color: TX2 }}>· £{paidPounds}</span>
                       </div>
                       <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 4 }}>
-                        Speed-Fit and Depth-Fit add-ons, billed on next invoice
+                        Speed-Fit / Depth-Fit £25 add-ons, billed on next invoice
                       </div>
                     </div>
                     <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '12px 14px' }}>
                       <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 2 }}>
-                        Strategy-Fit Workspace this month
+                        Strategy-Fit this month
                       </div>
                       <div style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, letterSpacing: '-0.3px' }}>
-                        {workspaceAddonStats.free_strategy_fit_count}
+                        {workspaceAddonStats.strategy_fit_count}{sfCap ? <span style={{ fontSize: 13, fontWeight: 600, color: TX2 }}> · of {sfCap}</span> : null}
                       </div>
                       <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 4 }}>
-                        Included with each Strategy-Fit, no separate charge
+                        {sfCap
+                          ? `Business tier is capped at ${sfCap} Strategy-Fits per month`
+                          : 'Workspace and Highlight Reel both included on each'}
+                      </div>
+                    </div>
+                    <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '12px 14px' }}>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 2 }}>
+                        Highlight Reels included this month
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, letterSpacing: '-0.3px' }}>
+                        {workspaceAddonStats.highlight_reel_included_count}
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 4 }}>
+                        Free on every assessment on your subscription
                       </div>
                     </div>
                   </div>

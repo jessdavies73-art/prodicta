@@ -381,6 +381,13 @@ export async function POST(request) {
     // cheaper-tier assessments get the modular path only when Immersive is
     // attached. Anything else stays on the legacy WorkspacePage.
     const immersive_enabled = body.immersive_enabled === true
+    // PAYG Highlight Reel add-on flag. New in the pricing-alignment
+    // launch: PAYG buyers on Speed-Fit and Depth-Fit can attach a £10
+    // Highlight Reel separately from the £25 Immersive Workspace
+    // add-on. Strategy-Fit PAYG always includes Highlight Reel and
+    // ignores this flag. Subscribers always get Highlight Reel free
+    // and ignore this flag too.
+    const highlight_reel_addon_requested = body.highlight_reel_addon_requested === true
     // Subscriber Workspace add-on flag from the new-assessment page.
     // True when a Starter / Professional / Business subscriber toggled
     // the Workspace simulation add-on on for a Speed-Fit or Depth-Fit
@@ -430,6 +437,39 @@ export async function POST(request) {
       .select('plan, subscription_status')
       .eq('id', user.id)
       .maybeSingle()
+
+    // ── Business tier Strategy-Fit cap check ──────────────────────────────────
+    // Business tier (and the legacy `agency` / `scale` aliases) is hard
+    // capped at 30 Strategy-Fit assessments per calendar month. Beyond
+    // the cap they must run a Speed-Fit or Depth-Fit (with the £25
+    // Workspace add-on if needed). We check before the assessment row
+    // is inserted so the candidate never sees a half-created scenario.
+    // Starter and Professional carry no per-mode cap; they're bounded
+    // only by the total assessmentLimit (10 / 30) which the existing
+    // credit check enforces.
+    const planKeyForCap = ((userProfile?.plan) || (userRow?.plan) || '').toLowerCase()
+    const businessCap = (planKeyForCap === 'business' || planKeyForCap === 'agency' || planKeyForCap === 'scale')
+      ? 30
+      : null
+    if (businessCap && mode === 'advanced') {
+      const monthStart = new Date()
+      monthStart.setUTCDate(1)
+      monthStart.setUTCHours(0, 0, 0, 0)
+      const { count: strategyFitCount } = await adminClient
+        .from('assessments')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('assessment_mode', 'advanced')
+        .gte('created_at', monthStart.toISOString())
+      if ((strategyFitCount || 0) >= businessCap) {
+        return NextResponse.json({
+          error: 'strategy_fit_cap_reached',
+          message: `You have used your ${businessCap} Strategy-Fit assessments for this month. Please use a Speed-Fit or Depth-Fit assessment, or contact us about an enterprise plan.`,
+          cap: businessCap,
+          used: strategyFitCount,
+        }, { status: 400 })
+      }
+    }
 
 
     const PLAN_LIMITS = { starter: 10, professional: 30, business: 100, founding: null, growth: 30, agency: 100, scale: 100, payg: null }
@@ -1906,6 +1946,18 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
         const strategyFitIncluded = (mode === 'advanced')
         const workspaceAddonPersisted = workspaceAddonBilled || strategyFitIncluded
 
+        // Highlight Reel entitlement at creation time. Set true when:
+        //   - the buyer is a subscriber (Highlight Reel is bundled into
+        //     every subscriber assessment regardless of mode), OR
+        //   - the assessment is Strategy-Fit (Highlight Reel always
+        //     included in the £65 PAYG price), OR
+        //   - the PAYG buyer attached the £10 Highlight Reel add-on
+        //     (Speed-Fit / Depth-Fit only; Rapid Screen PAYG buyers
+        //     don't see the toggle per the pricing spec).
+        const highlightReelPersisted = isSubscriber
+          || strategyFitIncluded
+          || (highlight_reel_addon_requested && (mode === 'quick' || mode === 'standard'))
+
         const isAdvancedOrImmersive = (
           mode === 'advanced'
           || immersive_enabled === true
@@ -1921,6 +1973,7 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
           healthcare_workspace_enabled: useHealthcareModular,
           workspace_addon_purchased: workspaceAddonPersisted,
           workspace_addon_charged_pence: workspaceAddonChargedPence,
+          highlight_reel_addon_purchased: highlightReelPersisted,
         }).eq('id', assessment.id)
 
         let blockCount = null
@@ -2008,6 +2061,9 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
           workspace_addon_billed: workspaceAddonBilled,
           workspace_addon_charged_pence: workspaceAddonChargedPence,
           workspace_addon_invoice_item_id: workspaceAddonInvoiceItemId,
+          highlight_reel_addon_purchased: highlightReelPersisted,
+          highlight_reel_addon_requested,
+          is_subscriber: isSubscriber,
           canonical_match: canonicalLabel,
           block_count: blockCount,
           strategic_thinking_generated: strategicThinkingGenerated,

@@ -190,54 +190,57 @@ UPDATE assessments
 
 ---
 
-## 9. Pricing structure and Workspace add-on billing
+## 9. Pricing structure (final)
 
-Four assessment types, four price points, two ways to attach Workspace
-simulation. The pricing is the same across PAYG and subscription tiers;
-the difference is how the £25 Workspace add-on is billed.
+Four assessment types, four price points, two add-ons (Workspace and
+Highlight Reel), two billing paths (PAYG one-time vs subscription
+invoice line items).
 
-### Assessment types and Workspace defaults
+### Assessment types
 
-| Mode (DB) | Public name      | Headline price | Workspace simulation                  |
-| --------- | ---------------- | -------------- | ------------------------------------- |
-| `rapid`   | Rapid Screen     | £6             | Optional, £25 add-on (Immersive)       |
-| `quick`   | Speed-Fit        | £18            | Optional, £25 add-on                   |
-| `standard`| Depth-Fit        | £35            | Optional, £25 add-on                   |
-| `advanced`| Strategy-Fit     | £65            | Always included, no extra charge       |
+| Mode (DB) | Public name      | Headline price | Workspace simulation                  | Highlight Reel                         |
+| --------- | ---------------- | -------------- | ------------------------------------- | -------------------------------------- |
+| `rapid`   | Rapid Screen     | £6 PAYG        | Not offered to PAYG; included for subscribers via add-on flow | Free for subscribers; not offered for PAYG |
+| `quick`   | Speed-Fit        | £18 PAYG       | Optional, £25 add-on (Immersive credit for PAYG; invoice line for subscribers) | Optional £10 PAYG add-on; free for subscribers |
+| `standard`| Depth-Fit        | £35 PAYG       | Optional, £25 add-on                   | Optional £10 PAYG add-on; free for subscribers |
+| `advanced`| Strategy-Fit     | £65 PAYG       | Always included, no extra charge       | Always included, no extra charge       |
 
 ### Pay-as-you-go (`plan_type = 'payg'`)
 
-PAYG buyers attach Workspace via the existing one-time Immersive
-credit purchase. The flow is:
+- Workspace simulation: £25 Immersive credit purchased via
+  `app/api/stripe/credit-bundle/route.js` with `credit_type: 'immersive'`.
+  Sets `assessments.workspace_addon_purchased = true` and flips the
+  modular Workspace gate at create time.
+- Highlight Reel: separately at £10 (Speed-Fit and Depth-Fit only) via
+  the same credit-bundle endpoint with `credit_type: 'highlight-reel'`.
+  Sets `assessments.highlight_reel_addon_purchased = true`. Strategy-Fit
+  £65 always bundles Highlight Reel, no toggle shown. Rapid Screen PAYG
+  does not offer the £10 Highlight Reel.
 
-1. On the new-assessment page, the Immersive toggle shows for any
-   non-Strategy-Fit mode. Strategy-Fit shows the Highlight Reel toggle
-   instead.
-2. Clicking "Add Immersive, £25" redirects to a Stripe Checkout
-   session created by `app/api/stripe/credit-bundle/route.js` with
-   `credit_type: 'immersive'`.
-3. After Checkout, the user returns with one Immersive credit on
-   their `assessment_credits` row. Creating the assessment with
-   `immersive_enabled: true` consumes the credit and flips
-   `use_modular_workspace = true` (or `healthcare_workspace_enabled`)
-   on the assessment row.
+### Subscription tiers
 
-This flow is unchanged by the subscriber Workspace add-on launch.
+| Tier         | Monthly | Assessments | Users | Strategy-Fit cap | Workspace on Speed-Fit/Depth-Fit | Highlight Reel        |
+| ------------ | ------- | ----------- | ----- | ---------------- | -------------------------------- | --------------------- |
+| Starter      | £99     | 10          | 2     | none beyond 10   | £25 invoice line item            | Free on every assessment |
+| Professional | £299    | 30          | 5     | none beyond 30   | £25 invoice line item            | Free on every assessment |
+| Business     | £499    | 100         | 15    | hard cap at 30   | £25 invoice line item            | Free on every assessment |
 
-### Subscription tiers (`plan_type = 'subscription'`)
+The Business tier 30/month Strategy-Fit cap is enforced at assessment
+creation time in `app/api/assessment/generate/route.js`. Beyond the
+cap the API returns a 400 with `error: 'strategy_fit_cap_reached'` and
+a helpful message; the candidate row is never inserted. The
+new-assessment page surfaces a courtesy banner when the user is
+approaching or at the cap so they don't hit the API error blind.
 
-| Tier         | Monthly | Assessments | Users | Workspace on Speed-Fit / Depth-Fit | Workspace on Strategy-Fit            |
-| ------------ | ------- | ----------- | ----- | ---------------------------------- | ------------------------------------ |
-| Starter      | £99     | 10          | 2     | £25 add-on, billed on next invoice | Included free                         |
-| Professional | £299    | 30          | 5     | £25 add-on, billed on next invoice | Included free                         |
-| Business     | £499    | 100         | 15    | £25 add-on, billed on next invoice | Included free, marketed as unlimited |
+Strategy-Fit assessments on any tier always bundle Workspace and
+Highlight Reel inside the plan slot (one assessment slot consumed,
+no extra charge).
 
-The Business tier "FREE unlimited Workspace on Strategy-Fit
-assessments" line is a marketing framing of the same gate behaviour
-that applies to every tier: Strategy-Fit always includes Workspace at
-no additional charge. The Business signal is the larger plan
-allowance (100 assessments) which in practice means Business
-subscribers can run more Strategy-Fits within their plan.
+The subscriber Workspace add-on is billed via
+`stripe.invoiceItems.create` with the `subscription` parameter. The
+Highlight Reel inclusion is implicit in the subscription cost (no
+per-assessment Stripe call); it surfaces at scoring time when
+`results.highlight_reel_token` is minted.
 
 The subscriber add-on is billed via `stripe.invoiceItems.create` with
 the `subscription` parameter set so the £25 lands on the customer's

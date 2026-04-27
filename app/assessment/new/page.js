@@ -285,6 +285,11 @@ export default function NewAssessmentPage() {
   // next subscription invoice. Strategy-Fit subscribers don't see this
   // toggle (Workspace included). PAYG users continue to use immersiveOn.
   const [workspaceAddonOn, setWorkspaceAddonOn] = useState(false)
+  // Business tier 30/month Strategy-Fit cap usage. Loaded once on the
+  // user-profile fetch alongside the monthly assessment count. Drives
+  // the warning banner near Strategy-Fit selection and (when at cap)
+  // the disabled state on the Strategy-Fit option.
+  const [strategyFitUsage, setStrategyFitUsage] = useState(null) // { used, cap } | null
   const [immersiveBuying, setImmersiveBuying] = useState(false)
   const [smartQuestions, setSmartQuestions] = useState(null) // null = not yet loaded
   const [smartLoading, setSmartLoading] = useState(false)
@@ -461,6 +466,19 @@ export default function NewAssessmentPage() {
         const used = count || 0
         setLimitInfo({ used, limit: planLimit })
         if (used >= planLimit) setAtLimit(true)
+
+        // Business tier: also count Strategy-Fit assessments this month
+        // against the 30/month cap. Surfaces a warning banner before
+        // the candidate hits the API error at create time.
+        const isBusinessTier = (planKey === 'business' || planKey === 'agency' || planKey === 'scale')
+        if (isBusinessTier) {
+          const { count: sfCount } = await supabase.from('assessments')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('assessment_mode', 'advanced')
+            .gte('created_at', startOfMonth)
+          setStrategyFitUsage({ used: sfCount || 0, cap: 30 })
+        }
       } else if (!isActiveSub) {
         // PAYG / pay-per-assessment branch. Load credits but do NOT gate the
  // page behind atLimit, a zero-credit PAYG user should still see the
@@ -707,12 +725,19 @@ export default function NewAssessmentPage() {
           // alongside immersive_enabled. Strategy-Fit assessments
           // ignore this flag (Workspace is included).
           workspace_addon_purchased: workspaceAddonOn,
+          // PAYG Highlight Reel add-on flag for Speed-Fit / Depth-Fit
+          // PAYG buyers. The toggle for this lives in the credits
+          // purchase flow rather than the inline assessment creation
+          // UI; this flag is provided for future inline integration.
+          // Subscribers always get Highlight Reel free regardless.
+          highlight_reel_addon_requested: false,
         })
       })
       const data = await res.json()
       if (!data.id) {
         if (data.error === 'unsuitable_role') setError(data.message || 'This role type may not be suitable for scenario-based assessment.')
         else if (data.error === 'no_credits' || data.error === 'limit_reached') setError(data.message || 'No credits remaining.')
+        else if (data.error === 'strategy_fit_cap_reached') setError(data.message || 'Strategy-Fit cap reached for this month.')
         else setError(data.error || 'Failed to generate')
         return null
       }
@@ -1645,6 +1670,39 @@ export default function NewAssessmentPage() {
           <p style={{ margin: '0 0 14px', fontSize: 12.5, color: '#5e6b7f', fontFamily: F }}>
             PRODICTA recommends a depth based on the seniority detected in the job description. You can override this.
           </p>
+          {/* Business tier 30/month Strategy-Fit cap banner. Only renders
+              for Business subscribers; shows current usage and warns
+              when approaching or at the cap. The API enforces the cap
+              at create time; this is the courtesy warning. */}
+          {strategyFitUsage ? (() => {
+            const used = strategyFitUsage.used
+            const cap = strategyFitUsage.cap
+            const remaining = Math.max(0, cap - used)
+            const atCap = used >= cap
+            const approaching = used >= cap - 2 && used < cap
+            const tone = atCap
+              ? { bg: '#FAF1E4', border: '#D4A06B', text: '#8a5d24', label: 'Cap reached' }
+              : approaching
+                ? { bg: '#FAF1E4', border: '#D4A06B', text: '#8a5d24', label: 'Approaching cap' }
+                : { bg: '#E1E7EE', border: '#cbd5e1', text: '#0f2137', label: 'Strategy-Fit usage' }
+            return (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14,
+                padding: '10px 14px', borderRadius: 10,
+                background: tone.bg, border: `1px solid ${tone.border}`,
+                fontFamily: F, fontSize: 13, color: tone.text, lineHeight: 1.5,
+              }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: tone.border, display: 'inline-block', flexShrink: 0 }} />
+                <span>
+                  <b>{tone.label}:</b>{' '}
+                  {atCap
+                    ? `You have used all ${cap} Strategy-Fit assessments for this month. Run a Speed-Fit or Depth-Fit instead, or contact us about an enterprise plan.`
+                    : `${used} of ${cap} Strategy-Fit assessments used this month. ${remaining} remaining.`}
+                </span>
+              </div>
+            )
+          })() : null}
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
             {[
               {
@@ -1829,12 +1887,14 @@ export default function NewAssessmentPage() {
           )
         })()}
 
-        {/* Strategy-Fit Workspace included pill. Subscribers on
-            Strategy-Fit see this affirmation that Workspace is already
-            covered, before the Highlight Reel toggle below. */}
+        {/* Strategy-Fit "both included" pill. Visible for every buyer
+            (PAYG and subscriber) when mode is Strategy-Fit. Strategy-Fit
+            always bundles the modular Workspace and the 60-second
+            Highlight Reel; the £65 PAYG price covers both, and inside
+            a subscription the assessment slot covers both. */}
         {(() => {
           const isStrategyFit = mode === 'advanced'
-          if (!isStrategyFit || isPaygUser) return null
+          if (!isStrategyFit) return null
           return (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
@@ -1847,7 +1907,34 @@ export default function NewAssessmentPage() {
                 background: '#00BFA5', display: 'inline-block',
               }} />
               <span>
-                <b>Workspace simulation included.</b> Strategy-Fit assessments always include the modular Workspace at no additional charge.
+                <b>Workspace simulation and Highlight Reel included.</b> Strategy-Fit always bundles both at no additional charge.
+              </span>
+            </div>
+          )
+        })()}
+
+        {/* Subscriber Highlight Reel included pill. Visible for any
+            non-Strategy-Fit subscriber (Rapid Screen, Speed-Fit,
+            Depth-Fit). Strategy-Fit subscribers see the combined pill
+            above instead. PAYG buyers don't see this; their Highlight
+            Reel either comes with Strategy-Fit or via the £10
+            standalone add-on toggle below. */}
+        {(() => {
+          const isStrategyFit = mode === 'advanced'
+          if (isStrategyFit || isPaygUser) return null
+          return (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
+              padding: '10px 14px', borderRadius: 10,
+              background: '#E6F4F1', border: '1px solid #00BFA555',
+              fontFamily: F, fontSize: 13, color: '#0f6e63',
+            }}>
+              <span style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: '#00BFA5', display: 'inline-block',
+              }} />
+              <span>
+                <b>Highlight Reel included.</b> Every assessment on your subscription includes the 60-second shareable Highlight Reel at no additional charge.
               </span>
             </div>
           )
@@ -1868,6 +1955,15 @@ export default function NewAssessmentPage() {
           // toggle above instead.
           const hideForSubscriberSpeedOrDepth = !isPaygUser && isSpeedOrDepth
           if (hideForSubscriberSpeedOrDepth) return null
+          // Hide the legacy £10 Highlight Reel toggle for PAYG Strategy-Fit
+          // buyers. Under the final pricing model, Strategy-Fit £65 always
+          // includes the Highlight Reel; the "both included" pill above
+          // already communicates this and a £10 add-on toggle would let
+          // someone double-pay by accident.
+          if (isStrategyFit && isPaygUser) return null
+          // Hide the toggle for subscribers on Strategy-Fit too; they see
+          // the "both included" pill above and don't need a toggle.
+          if (isStrategyFit && !isPaygUser) return null
           const addOnType = isStrategyFit ? 'highlight-reel' : 'immersive'
           const addOnPrice = isStrategyFit ? 10 : 25
           const heading = isStrategyFit ? 'Add Highlight Reel, £10' : 'Add Immersive, £25'
