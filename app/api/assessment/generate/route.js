@@ -4,7 +4,7 @@ import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-
 import { SCORING_DIMENSIONS, SCORING_DIMENSION_NAMES } from '@/lib/dimensions'
 import { PD_SCENARIO_VERSION } from '@/lib/constants'
 import { detectRoleProfile } from '@/lib/role-profile-detector'
-import { generateScenario } from '@/lib/scenario-generator'
+import { generateScenario, generateHealthcareScenario } from '@/lib/scenario-generator'
 
 // Scenario generation calls the Anthropic API which can take 30-60s for
 // Strategy-Fit (4 scenarios). Allow up to 120s before Vercel kills the function.
@@ -1765,30 +1765,37 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
     // -- ALTER TABLE assessments ADD COLUMN shell_family TEXT;
     // -- ALTER TABLE assessments ADD COLUMN workspace_scenario JSONB;
     // -- ALTER TABLE assessments ADD COLUMN use_modular_workspace BOOLEAN
-    //    NOT NULL DEFAULT false;
+    //    NOT NULL DEFAULT false;                                          (Phase 1)
     // -- ALTER TABLE assessments ADD COLUMN healthcare_workspace_enabled
-    //    BOOLEAN NOT NULL DEFAULT false; (Phase 2)
+    //    BOOLEAN NOT NULL DEFAULT false;                                  (Phase 2)
     //
-    // Phase 1 + Phase 2 modular Workspace launch: detect role profile +
-    // shell family for every assessment (small Haiku call, useful
-    // downstream). The Office shell modular path becomes the default when:
-    //   - the role classified into the in-scope office shell, AND
-    //   - either mode is 'advanced' (Strategy-Fit, where Workspace is
-    //     always part of the package), OR the buyer attached the Immersive
-    //     add-on at create time (so cheaper tiers can opt in).
-    // The Healthcare shell stays on the legacy WorkspacePage at creation
-    // time and only switches to the modular orchestrator when an admin
-    // sets healthcare_workspace_enabled = true on the row. Phase 2 stub
-    // stage does not pre-generate healthcare workspace_scenario; admin
-    // testing uses /admin/workspace-test to preview healthcare scenarios
-    // without writing to the database.
+    // Modular Workspace launch. Detect role profile + shell family for
+    // every assessment, then route to the right shell:
     //
-    // Anything else (healthcare, education, field_ops, out_of_scope, or
-    // a Strategy-Fit role outside the office shell) stays on the legacy
-    // WorkspacePage until Phase 2 builds those shells. Existing
-    // assessments are not migrated; they keep whatever flag value the
-    // row was created with so in-flight candidates see no behaviour
-    // change mid-assessment.
+    //   shell_family === 'office'      AND (advanced OR immersive)
+    //     -> use_modular_workspace = true, generate office scenario,
+    //        modular Office Workspace mounts at assess time.
+    //
+    //   shell_family === 'healthcare'  AND (advanced OR immersive)
+    //     -> healthcare_workspace_enabled = true, generate healthcare
+    //        scenario via generateHealthcareScenario, modular Healthcare
+    //        Workspace mounts at assess time.
+    //
+    //   shell_family in {education, field_ops, out_of_scope}
+    //     -> both gates stay false, legacy WorkspacePage runs. These
+    //        shells ship in Phase 3.
+    //
+    // The two flags are independent. An assessment row carries one or
+    // the other true, never both, because shell_family is a single
+    // value. The assess-side gate in app/assess/[uniqueToken]/page.js
+    // already routes on (shell_family, use_modular_workspace,
+    // healthcare_workspace_enabled).
+    //
+    // Existing assessments are not migrated; they keep the flag values
+    // they were created with so in-flight candidates see no behaviour
+    // change mid-assessment. The rollback SQL in
+    // supabase-schema-notes.md Section 8 flips the gate per shell if
+    // anything goes wrong post-launch.
     //
     // Both detect and generate calls are non-blocking; if either fails
     // the assessment row is still valid and the legacy Workspace path
@@ -1807,24 +1814,32 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
       )
       if (detectorResult) {
         const { profile, shell_family } = detectorResult
-        const useModular =
-          shell_family === 'office' &&
-          (mode === 'advanced' || immersive_enabled === true)
+        const isAdvancedOrImmersive = (mode === 'advanced' || immersive_enabled === true)
+        const useModular = shell_family === 'office' && isAdvancedOrImmersive
+        const useHealthcareModular = shell_family === 'healthcare' && isAdvancedOrImmersive
+
         await adminClient.from('assessments').update({
           role_profile: profile,
           shell_family,
           use_modular_workspace: useModular,
+          healthcare_workspace_enabled: useHealthcareModular,
         }).eq('id', assessment.id)
 
         let blockCount = null
         let canonicalLabel = null
-        if (useModular) {
+        if (useModular || useHealthcareModular) {
           try {
+            const scenarioPromise = useModular
+              ? generateScenario(client, profile, {
+                  roleTitle: role_title,
+                  jobDescription: job_description,
+                })
+              : generateHealthcareScenario(client, profile, {
+                  roleTitle: role_title,
+                  jobDescription: job_description,
+                })
             const scenario = await raceWithTimeout(
-              generateScenario(client, profile, {
-                roleTitle: role_title,
-                jobDescription: job_description,
-              }),
+              scenarioPromise,
               90000,
               'workspace scenario generation'
             )
@@ -1841,13 +1856,17 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
         }
 
         // Structured launch-monitoring log. One line per created assessment
-        // so adoption of the modular path can be tracked in the first week
-        // by grepping `[generate] assessment_created` in the platform logs.
+        // so adoption of the modular path can be tracked by grepping
+        // `[generate] assessment_created` in the platform logs. Two gate
+        // fields are emitted (use_modular_workspace for the office shell,
+        // healthcare_workspace_enabled for the healthcare shell) so the
+        // launch dashboard can split adoption by shell.
         console.log('[generate] assessment_created', JSON.stringify({
           assessment_id: assessment.id,
           mode,
           shell_family,
           use_modular_workspace: useModular,
+          healthcare_workspace_enabled: useHealthcareModular,
           immersive_enabled,
           canonical_match: canonicalLabel,
           block_count: blockCount,
@@ -1859,6 +1878,7 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
           mode,
           shell_family: null,
           use_modular_workspace: false,
+          healthcare_workspace_enabled: false,
           immersive_enabled,
           canonical_match: null,
           block_count: null,

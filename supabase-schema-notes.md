@@ -90,41 +90,103 @@ The scoring pipeline reads the canonical values from `lib/constants.js` (`PD_SCE
 
 ## 8. Modular Workspace launch and rollback
 
-Phase 1 of the modular Workspace is enabled by default for any new
-assessment that classifies into the office shell AND is created in
-Strategy-Fit mode OR with the Immersive add-on attached. The flag
-that controls this is `assessments.use_modular_workspace`. Existing
-rows are not migrated; they keep whatever value they were created
-with so in-flight candidates do not see a behaviour change mid-run.
+The modular Workspace is enabled by default for any new assessment
+that classifies into a shipped shell (office or healthcare) AND is
+created in Strategy-Fit mode OR with the Immersive add-on attached.
+Two flags control this, one per shell, and they work independently:
 
-If anything goes wrong post-launch and the modular Workspace needs
-to be turned off globally, run this single panic-button command
-against the production database. Replace `<launch_cutoff>` with the
-ISO timestamp of the launch (a safe default is the time the launch
-commit was deployed). Anything created before that timestamp is
-left untouched.
+- `assessments.use_modular_workspace` — Phase 1, Office shell.
+- `assessments.healthcare_workspace_enabled` — Phase 2, Healthcare/Care shell.
+
+Both flags default to `false` on new rows. Existing rows are never
+migrated; they keep whatever value they were created with so
+in-flight candidates do not see a behaviour change mid-run.
+
+The assess-side gate at `app/assess/[uniqueToken]/page.js` routes on
+the combination of `shell_family`, `workspace_scenario`, and the
+matching gate flag:
+
+```
+shell_family === 'office'      AND use_modular_workspace      AND workspace_scenario  -> modular Office Workspace
+shell_family === 'healthcare'  AND healthcare_workspace_enabled AND workspace_scenario -> modular Healthcare Workspace
+otherwise                                                                              -> legacy WorkspacePage
+```
+
+A given row carries one gate true, never both, because shell_family
+is a single value. Education, field_ops, and out_of_scope shells
+continue to fall through to the legacy WorkspacePage; those shells
+ship in Phase 3.
+
+### Launch monitoring
+
+Adoption can be monitored by grepping `[generate] assessment_created`
+in the platform logs. Each line is structured JSON and carries:
+
+```
+{
+  assessment_id, mode, shell_family,
+  use_modular_workspace,            // office gate
+  healthcare_workspace_enabled,     // healthcare gate
+  immersive_enabled,
+  canonical_match,                  // canonical_label or canonical_id
+  block_count,                      // number of blocks selected
+  employment_type
+}
+```
+
+Sample healthcare line for a fresh Registered Nurse assessment:
+
+```
+[generate] assessment_created {"assessment_id":"...","mode":"advanced","shell_family":"healthcare","use_modular_workspace":false,"healthcare_workspace_enabled":true,"immersive_enabled":false,"canonical_match":"Registered Nurse (general / specialist)","block_count":4,"employment_type":"permanent"}
+```
+
+### Rollback panic buttons
+
+If anything goes wrong post-launch and one of the modular Workspaces
+needs to be turned off globally, run the matching SQL against the
+production database. Replace `<launch_cutoff>` with the ISO timestamp
+of the launch (a safe default is the time the launch commit was
+deployed). Anything created before that timestamp is left untouched.
+
+Office shell rollback:
 
 ```sql
--- Disable modular Workspace for every assessment created since launch.
+-- Disable modular Office Workspace for every assessment created since launch.
 -- In-flight candidates revert to the legacy WorkspacePage on next load.
 UPDATE assessments
    SET use_modular_workspace = false
- WHERE created_at > '<launch_cutoff>'::timestamptz;
+ WHERE created_at > '<launch_cutoff>'::timestamptz
+   AND shell_family = 'office';
 ```
 
-To re-enable later (after the underlying issue is fixed):
+Healthcare shell rollback:
 
 ```sql
+-- Disable modular Healthcare Workspace for every assessment created since launch.
+-- In-flight candidates revert to the legacy WorkspacePage on next load.
+UPDATE assessments
+   SET healthcare_workspace_enabled = false
+ WHERE created_at > '<launch_cutoff>'::timestamptz
+   AND shell_family = 'healthcare';
+```
+
+Re-enable after the underlying issue is fixed:
+
+```sql
+-- Office.
 UPDATE assessments
    SET use_modular_workspace = true
  WHERE created_at > '<launch_cutoff>'::timestamptz
    AND shell_family = 'office'
    AND workspace_scenario IS NOT NULL;
-```
 
-Adoption can be monitored by grepping `[generate] assessment_created`
-in the platform logs; each line carries `use_modular_workspace`,
-`shell_family`, `block_count`, and the canonical role match.
+-- Healthcare.
+UPDATE assessments
+   SET healthcare_workspace_enabled = true
+ WHERE created_at > '<launch_cutoff>'::timestamptz
+   AND shell_family = 'healthcare'
+   AND workspace_scenario IS NOT NULL;
+```
 
 ---
 

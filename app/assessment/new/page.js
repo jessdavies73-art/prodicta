@@ -1839,17 +1839,25 @@ export default function NewAssessmentPage() {
           )
         })()}
 
-        {/* Modular Workspace info pill. Phase 1 launch. The pill mirrors
-            what the server will do at create time: when the role classifies
-            into the office shell AND mode is Strategy-Fit OR the Immersive
-            add-on is on, the candidate gets the modular Workspace; otherwise
-            the legacy Day 1 simulation runs. We cannot detect shell_family
-            client-side without an extra round trip, so the pill softens
-            its wording for non-office roles, which the server will catch. */}
+        {/* Modular Workspace info pill. Phase 1 + Phase 2 launch. The pill
+            mirrors what the server will do at create time: when the role
+            classifies into the office or healthcare shell AND mode is
+            Strategy-Fit OR the Immersive add-on is on, the candidate gets
+            the modular Workspace; otherwise the legacy Day 1 simulation
+            runs. We cannot detect shell_family client-side without an
+            extra round trip, so we use a lightweight keyword heuristic on
+            the role title to pick the most likely shell label. The
+            server-side AI detector makes the final call; the pill is
+            informational only. */}
         {(() => {
           const modularLikely = mode === 'advanced' || immersiveOn
+          const titleLower = (roleTitle || '').toLowerCase()
+          const looksLikeHealthcare = modularLikely && /\b(?:nurse|nursing|hca|healthcare assistant|care assistant|care worker|support worker|care coordinator|care manager|care home|residential|domiciliary|ward manager|matron|doctor|gp\b|registrar|consultant|salaried gp|locum gp|junior doctor|foundation doctor|pharmacist|dentist|dental|veterinary|\bvet\b|physiotherapist|physio|occupational therapist|speech therapist|slt\b|dietitian|radiographer|paramedic|midwife|mental health|psychiatrist|clinical psychologist|psychologist|counsellor|therapist|social worker|social work|amhp|director of nursing|medical director|clinical director|clinical lead|practice manager|registered manager)\b/.test(titleLower)
+          const shellLabel = looksLikeHealthcare ? 'healthcare' : 'office'
           const label = modularLikely
-            ? 'Modular Workspace enabled (10 role-specific blocks)'
+            ? (looksLikeHealthcare
+                ? 'Modular Workspace enabled (10 healthcare blocks)'
+                : 'Modular Workspace enabled (10 role-specific blocks)')
             : 'Day 1 simulation enabled (legacy)'
           const pillBg = modularLikely ? '#E6F4F1' : '#f1f5f9'
           const pillFg = modularLikely ? '#009688' : '#475569'
@@ -1876,7 +1884,9 @@ export default function NewAssessmentPage() {
               </span>
               {modularLikely ? (
                 <span style={{ fontFamily: F, fontSize: 12, color: '#5e6b7f', lineHeight: 1.5 }}>
-                  If the role is outside the office shell (clinical, education, field-ops), the legacy Day 1 simulation runs instead.
+                  {looksLikeHealthcare
+                    ? 'If the role classifies outside the healthcare shell, the office shell or legacy Day 1 simulation runs instead.'
+                    : 'If the role classifies into the healthcare shell, the healthcare blocks run instead. Education and field-ops roles use the legacy Day 1 simulation.'}
                 </span>
               ) : null}
             </div>
