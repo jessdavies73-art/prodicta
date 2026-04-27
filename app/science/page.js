@@ -581,6 +581,22 @@ export default function SciencePage() {
           <Bullet>May not reflect real behaviour</Bullet>
         </ul>
 
+        <div style={SUBHEAD_STYLE}>Why trait-based models fall short</div>
+        <p style={PARA_STYLE}>
+          Research shows that hiring systems based on inferred traits or self-reported inputs:
+        </p>
+        <ul style={BULLET_LIST_STYLE}>
+          <Bullet>Can lack consistency</Bullet>
+          <Bullet>May not reflect real-world behaviour</Bullet>
+          <Bullet>Depend heavily on subjective interpretation</Bullet>
+        </ul>
+        <p style={PARA_STYLE}>
+          Understanding how someone behaves in theory is not the same as seeing how they perform
+          in practice. This is the limitation of personality assessments, behavioural
+          questionnaires, and trait inventories: they tell you what someone is like, not what they
+          will do.
+        </p>
+
         <div style={SUBHEAD_STYLE}>The PRODICTA approach</div>
         <p style={{ ...PARA_STYLE, margin: 0 }}>
           PRODICTA measures actual decisions, not stated intentions.
@@ -697,6 +713,60 @@ export default function SciencePage() {
         </ul>
       </Section>
 
+      {/* Section 11 */}
+      <Section number="11" title="Self-perception vs performance" bg="#fff">
+        <p style={PARA_STYLE}>
+          Research shows that self-reported ability does not reliably reflect real performance.
+          In some studies, individuals who rated themselves most highly performed worse in
+          practical assessments.
+        </p>
+
+        <div style={SUBHEAD_STYLE}>What this means</div>
+        <ul style={BULLET_LIST_STYLE}>
+          <Bullet>Confidence does not equal competence</Bullet>
+          <Bullet>CV claims do not guarantee performance</Bullet>
+          <Bullet>Interviews capture perception, not behaviour</Bullet>
+        </ul>
+
+        <div style={SUBHEAD_STYLE}>The PRODICTA approach</div>
+        <p style={{ ...PARA_STYLE, margin: 0 }}>
+          PRODICTA measures observed performance, not self-perception. The candidate who claims to
+          be &lsquo;great under pressure&rsquo; gets the same simulation as everyone else, and we
+          measure how they actually respond.
+        </p>
+      </Section>
+
+      {/* Section 12 */}
+      <Section number="12" title="Realism and ecological validity" bg={CREAM}>
+        <p style={PARA_STYLE}>
+          Research in psychology shows that assessments which reflect real-world conditions
+          provide more accurate insights. This concept, known as ecological validity, is one of
+          the strongest principles in modern assessment science.
+        </p>
+
+        <div style={SUBHEAD_STYLE}>What this means</div>
+        <p style={PARA_STYLE}>The closer an assessment is to real work:</p>
+        <ul style={BULLET_LIST_STYLE}>
+          <Bullet>The more accurate the prediction</Bullet>
+          <Bullet>The more meaningful the results</Bullet>
+          <Bullet>The higher the trust from employers, HR teams, and hiring managers</Bullet>
+        </ul>
+        <p style={PARA_STYLE}>
+          Generic personality tests, situational judgement questionnaires, and abstract
+          problem-solving exercises score low on ecological validity because they don&rsquo;t
+          resemble real work.
+        </p>
+
+        <div style={SUBHEAD_STYLE}>The PRODICTA approach</div>
+        <p style={{ ...PARA_STYLE, margin: 0 }}>
+          PRODICTA creates realistic, role-specific environments that mirror real decisions, real
+          constraints, and real job conditions. A Marketing Manager candidate works on actual
+          campaign briefs. A Finance Manager reviews actual variance data. A Solicitor advises on
+          actual contract clauses. The simulation environment matches the work environment, high
+          ecological validity, high predictive power.
+        </p>
+      </Section>
+
       {/* Bringing it together */}
       <PlainSection title="Bringing it together" bg="#fff" narrow>
         <p style={PARA_STYLE}>Across research and industry evidence:</p>
@@ -706,6 +776,8 @@ export default function SciencePage() {
           <Bullet>Real work reveals performance</Bullet>
           <Bullet>Experiential methods improve accuracy</Bullet>
           <Bullet>Observed behaviour during real tasks strengthens prediction (not self-reported answers or personality questionnaires)</Bullet>
+          <Bullet>Self-perception does not reliably predict real performance</Bullet>
+          <Bullet>Realistic, role-specific scenarios produce higher predictive validity than abstract testing</Bullet>
           <Bullet>AI enhances consistency and insight</Bullet>
         </ul>
       </PlainSection>
@@ -769,7 +841,7 @@ export default function SciencePage() {
           <Bullet>Abstract testing alone</Bullet>
         </ul>
         <p style={PARA_STYLE}>
-          It should be based on: How they actually perform when it matters.
+          It should be based on: What candidates actually do when placed in real job situations.
         </p>
         <p style={{ ...PARA_STYLE, margin: 0 }}>
           PRODICTA brings real work into the hiring process so decisions are based on evidence, not
