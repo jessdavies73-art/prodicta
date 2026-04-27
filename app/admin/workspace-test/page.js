@@ -145,6 +145,14 @@ export default function WorkspaceTestHarness() {
 
   const [previewing, setPreviewing] = useState(false)
 
+  // Depth-Fit components preview (Day One Planning calendar + Inbox
+  // Overload). Independent of the modular Workspace generation above so
+  // an admin can preview shell-aware candidate-facing content for any
+  // role without burning a full scenario call.
+  const [depthFitGenerating, setDepthFitGenerating] = useState(false)
+  const [depthFitError, setDepthFitError] = useState(null)
+  const [depthFitResult, setDepthFitResult] = useState(null)
+
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -208,6 +216,43 @@ export default function WorkspaceTestHarness() {
 
   const handleGenerate = () => runRequest({ dryRun: false })
   const handlePreviewBlocks = () => runRequest({ dryRun: true })
+
+  async function handleGenerateDepthFit() {
+    setDepthFitError(null)
+    if (!effectiveTitle) {
+      setDepthFitError('Pick or type a role title.')
+      return
+    }
+    setDepthFitGenerating(true)
+    setDepthFitResult(null)
+    try {
+      const res = await fetch('/api/admin/depth-fit-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roleTitle: effectiveTitle,
+          jobDescription,
+          scenarioCount: 3,
+          mode: 'standard',
+          profileOverrides: {
+            ...(sectorContext.trim() ? { sector_context: sectorContext.trim() } : {}),
+            ...(companySize ? { company_size: companySize } : {}),
+            ...(employmentType ? { employment_type: employmentType } : {}),
+          },
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setDepthFitError(body?.error || `Request failed: ${res.status}`)
+      } else {
+        setDepthFitResult(body)
+      }
+    } catch (e) {
+      setDepthFitError(e?.message || 'Network error')
+    } finally {
+      setDepthFitGenerating(false)
+    }
+  }
 
   if (!authChecked) {
     return (
@@ -372,9 +417,27 @@ export default function WorkspaceTestHarness() {
             >
               Preview block selection only (no AI call)
             </button>
+            <button
+              onClick={handleGenerateDepthFit}
+              disabled={depthFitGenerating}
+              style={{
+                fontFamily: F, fontSize: 14, fontWeight: 700,
+                padding: '11px 18px', borderRadius: 8,
+                background: depthFitGenerating ? '#94a3b8' : '#0f2137',
+                color: '#fff', border: 'none',
+                cursor: depthFitGenerating ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {depthFitGenerating ? 'Working...' : 'Generate Depth-Fit components'}
+            </button>
             {error ? (
               <span style={{ marginLeft: 6, fontFamily: F, fontSize: 13, color: '#dc2626' }}>
                 {error}
+              </span>
+            ) : null}
+            {depthFitError ? (
+              <span style={{ marginLeft: 6, fontFamily: F, fontSize: 13, color: '#dc2626' }}>
+                Depth-Fit: {depthFitError}
               </span>
             ) : null}
           </div>
@@ -382,6 +445,10 @@ export default function WorkspaceTestHarness() {
 
         {result ? (
           <ResultPanel result={result} effectiveTitle={effectiveTitle} onPreview={() => setPreviewing(true)} />
+        ) : null}
+
+        {depthFitResult ? (
+          <DepthFitPanel result={depthFitResult} effectiveTitle={effectiveTitle} />
         ) : null}
       </div>
     </div>
@@ -679,6 +746,159 @@ function PractitionerTestPanel({ scenario, roleTitle }) {
         </div>
       ) : null}
     </div>
+  )
+}
+
+// Depth-Fit components preview panel. Renders the Day One Planning
+// calendar (fixed events, interruption, deadline, unscheduled tasks)
+// and the Inbox Overload events (per-scenario inbox items + a mid-task
+// interruption). Mobile responsive: collapses to a single column under
+// 720px via a flex-wrap gap layout.
+function DepthFitPanel({ result, effectiveTitle }) {
+  const components = result?.components
+  const dop = components?.day_one_planning
+  const inbox = components?.inbox_overload
+  const seniority = components?.seniority || components?.diagnostics?.day_one_planning?.seniority
+    || components?.diagnostics?.inbox_overload?.seniority
+    || null
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24, marginBottom: 32 }}>
+      <h2 style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: NAVY, marginBottom: 14 }}>
+        Depth-Fit components for {effectiveTitle}
+      </h2>
+
+      <Section title="Routing">
+        <KV k="detected_shell_family" v={result.detected_shell_family} />
+        <KV k="effective_shell_family" v={result.effective_shell_family} />
+        {result.fallback_to_office ? (
+          <div style={{ background: '#fff7ed', border: '1px solid #fdba74', borderRadius: 8, padding: 10, fontFamily: F, fontSize: 13, color: '#9a3412', marginTop: 6 }}>
+            Detected shell <code style={{ fontFamily: FM }}>{result.detected_shell_family}</code> falls through to office templates for Depth-Fit.
+          </div>
+        ) : null}
+        <KV k="seniority_tier" v={seniority} />
+      </Section>
+
+      {result.error ? (
+        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 12, fontFamily: F, fontSize: 13, color: '#b91c1c', marginBottom: 14 }}>
+          Generation error: <code style={{ fontFamily: FM }}>{result.error}</code>
+        </div>
+      ) : null}
+
+      <Section title="Day One Planning">
+        {dop ? <DayOnePreview events={dop} /> : <Empty>No calendar events generated.</Empty>}
+      </Section>
+
+      <Section title="Inbox Overload">
+        {inbox ? <InboxPreview inbox={inbox} /> : <Empty>Inbox not generated (mode may be quick or generator failed).</Empty>}
+      </Section>
+
+      <Section title="Raw payload">
+        <Pre json={components} />
+      </Section>
+    </div>
+  )
+}
+
+function DayOnePreview({ events }) {
+  const fixed = Array.isArray(events?.fixed_events) ? events.fixed_events : []
+  const tasks = Array.isArray(events?.unscheduled_tasks) ? events.unscheduled_tasks : []
+  const card = (label, item, accent) => (
+    <div style={{
+      background: '#fff', border: `1px solid ${accent || '#e2e8f0'}`, borderRadius: 8,
+      padding: 12, minWidth: 200, flex: '1 1 220px',
+    }}>
+      <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+        {label}
+      </div>
+      {item?.time ? (
+        <div style={{ fontFamily: FM, fontSize: 12, fontWeight: 700, color: NAVY }}>{item.time}</div>
+      ) : null}
+      <div style={{ fontFamily: F, fontSize: 14, color: NAVY, lineHeight: 1.5 }}>
+        {item?.title || '—'}
+      </div>
+    </div>
+  )
+  return (
+    <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+        {fixed.map((ev, i) => card(`Fixed ${i + 1}`, ev, '#bae6fd'))}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+        {events?.interruption ? card('Interruption', events.interruption, '#fdba74') : null}
+        {events?.deadline ? card('Deadline', events.deadline, '#fecaca') : null}
+      </div>
+      <div style={{ background: '#f1f5f9', border: '1px dashed #94a3b8', borderRadius: 8, padding: 12 }}>
+        <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+          Unscheduled tasks (candidate places these into the day)
+        </div>
+        {tasks.length === 0 ? <Empty>No unscheduled tasks.</Empty> : (
+          <ol style={{ margin: 0, paddingLeft: 18, fontFamily: F, fontSize: 14, color: NAVY, lineHeight: 1.7 }}>
+            {tasks.map((t, i) => <li key={i}>{t?.title || '—'}</li>)}
+          </ol>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function InboxPreview({ inbox }) {
+  const scenarios = Array.isArray(inbox?.scenarios) ? inbox.scenarios : []
+  if (scenarios.length === 0) return <Empty>No scenario inbox blocks generated.</Empty>
+  const priorityColour = (priority) => {
+    if (priority === 'urgent') return { bg: '#fef2f2', bd: '#fecaca', fg: '#b91c1c' }
+    if (priority === 'action_needed') return { bg: '#fff7ed', bd: '#fdba74', fg: '#9a3412' }
+    return { bg: '#eff6ff', bd: '#bfdbfe', fg: '#1d4ed8' }
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {scenarios.map((s, idx) => (
+        <div key={idx} style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: 14 }}>
+          <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+            Scenario {Number.isFinite(s.scenario_index) ? s.scenario_index + 1 : idx + 1}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+            {(s.inbox_items || []).map((item, i) => {
+              const colours = priorityColour(item?.priority)
+              return (
+                <div key={i} style={{ background: colours.bg, border: `1px solid ${colours.bd}`, borderRadius: 8, padding: 10 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'baseline', marginBottom: 4 }}>
+                    <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY }}>{item?.sender || '—'}</span>
+                    <span style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: colours.fg, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      {item?.priority || ''}{item?.type ? ` · ${item.type}` : ''}
+                    </span>
+                  </div>
+                  <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>
+                    {item?.subject || ''}
+                  </div>
+                  <div style={{ fontFamily: F, fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
+                    {item?.preview || ''}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          {s.interruption ? (
+            <div style={{ background: '#0f2137', color: '#fff', borderRadius: 8, padding: 12 }}>
+              <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: '#00BFA5', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                Mid-task interruption
+              </div>
+              <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
+                {s.interruption.sender || '—'}{s.interruption.role ? ` · ${s.interruption.role}` : ''}
+              </div>
+              <div style={{ fontFamily: F, fontSize: 13, color: '#cbd5e1', lineHeight: 1.5 }}>
+                {s.interruption.message || ''}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function Empty({ children }) {
+  return (
+    <div style={{ fontFamily: F, fontSize: 13, color: '#64748b', fontStyle: 'italic' }}>{children}</div>
   )
 }
 

@@ -1724,91 +1724,18 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
       }
     }
 
-    // -- ALTER TABLE assessments ADD COLUMN calendar_events JSONB;
-    // Generate calendar events for Day One Planning (async, non-blocking)
-    try {
-      const calStream = client.messages.stream({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 800,
-        messages: [{
-          role: 'user',
-          content: `Generate realistic first-Monday calendar events for a "${role_title}" role (${roleLevel} level).
-
-Return JSON only. UK English. No emoji. No em dashes.
-{
-  "fixed_events": [
-    {"time": "09:00", "title": "string", "type": "meeting"},
-    {"time": "10:30", "title": "string", "type": "meeting"},
-    {"time": "15:30", "title": "string", "type": "meeting"}
-  ],
-  "interruption": {"time": "11:00", "title": "string", "type": "interruption"},
-  "deadline": {"time": "14:00", "title": "string", "type": "deadline"},
-  "unscheduled_tasks": [
-    {"title": "string", "type": "task"},
-    {"title": "string", "type": "task"},
-    {"title": "string", "type": "task"},
-    {"title": "string", "type": "task"}
-  ]
-}
-
-${roleLevel === 'OPERATIONAL' ? 'Use simple practical events: team briefing, floor walk, safety check, stock count. Tasks: check equipment, read safety notices, shadow experienced colleague, complete induction form.' : roleLevel === 'LEADERSHIP' ? 'Use board-level events: exec team meeting, board strategy session, investor call. Tasks: review board papers, prepare stakeholder map, draft 90-day priorities, schedule direct report introductions.' : 'Use mid-level events: team standup, client call, 1-to-1 with manager. Tasks: review team briefing docs, respond to client emails, prepare agenda for planning session, update project tracker.'}`
-        }],
-      })
-      const calMsg = await raceWithTimeout(calStream.finalMessage(), 90000, 'calendar generation')
-      const calText = calMsg.content[0]?.text || ''
-      const calMatch = calText.match(/\{[\s\S]*\}/)
-      if (calMatch) {
-        const calEvents = JSON.parse(calMatch[0].replace(/[\u2014\u2013]/g, ', '))
-        await adminClient.from('assessments').update({ calendar_events: calEvents }).eq('id', assessment.id)
-      }
-    } catch (calErr) {
-      console.error('Calendar events generation error:', calErr)
-    }
-
-    // -- ALTER TABLE assessments ADD COLUMN inbox_events JSONB;
-    // Generate inbox overload events for Depth-Fit and Strategy-Fit (non-blocking)
-    if (mode !== 'quick') {
-      try {
-        const inboxStream = client.messages.stream({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: `Generate realistic inbox overload items for each scenario in a "${role_title}" assessment (${roleLevel} level). There are ${scenarios.length} scenarios.
-
-For EACH scenario, generate:
-- 3 inbox items that land at the same time as the scenario (an urgent client/external request, a resource/budget constraint notification, and a team/internal message)
-- 1 interruption message from a manager or colleague that arrives mid-task
-
-Return JSON only. UK English. No emoji. No em dashes.
-{
-  "scenarios": [
-    {
-      "scenario_index": 0,
-      "inbox_items": [
-        {"sender": "string", "subject": "string", "preview": "string", "priority": "urgent", "type": "client"},
-        {"sender": "string", "subject": "string", "preview": "string", "priority": "action_needed", "type": "resource"},
-        {"sender": "string", "subject": "string", "preview": "string", "priority": "today", "type": "team"}
-      ],
-      "interruption": {"sender": "string", "role": "string", "message": "string"}
-    }
-  ]
-}
-
-${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor asking about shift cover, stock delivery query, colleague needing help on the floor.' : roleLevel === 'LEADERSHIP' ? 'Use executive-level messages: board member requesting data, investor relations query, HR escalation about a senior hire.' : 'Use mid-level workplace messages: client complaint, budget approval needed, team member asking for guidance on a project.'}`
-          }],
-        })
-        const inboxMsg = await raceWithTimeout(inboxStream.finalMessage(), 90000, 'inbox generation')
-        const inboxText = inboxMsg.content[0]?.text || ''
-        const inboxMatch = inboxText.match(/\{[\s\S]*\}/)
-        if (inboxMatch) {
-          const inboxEvents = JSON.parse(inboxMatch[0].replace(/[\u2014\u2013]/g, ', '))
-          await adminClient.from('assessments').update({ inbox_events: inboxEvents }).eq('id', assessment.id)
-        }
-      } catch (inboxErr) {
-        console.error('Inbox events generation error:', inboxErr)
-      }
-    }
+    // -- ALTER TABLE assessments ADD COLUMN depth_fit_components JSONB;
+    //
+    // Day One Planning calendar and Inbox Overload now generate inside
+    // the role-profile detection block below, so the generators can
+    // branch on shell_family x seniority. The legacy calendar_events
+    // and inbox_events columns stay populated only by reader fallback
+    // for assessments produced before this column existed; new
+    // assessments persist exclusively to depth_fit_components.
+    //
+    // See lib/depth-fit-components/ for the orchestrator and per-shell
+    // guidance. See readDayOnePlanning / readInboxOverload in that
+    // module for the read-side fallback used by the candidate flow.
 
     // -- ALTER TABLE assessments ADD COLUMN role_profile JSONB;
     // -- ALTER TABLE assessments ADD COLUMN shell_family TEXT;
@@ -1976,6 +1903,44 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
           highlight_reel_addon_purchased: highlightReelPersisted,
         }).eq('id', assessment.id)
 
+        // Kick off Depth-Fit components generation in parallel with any
+        // workspace scenario work below. Day One Planning + Inbox
+        // Overload run for every mode (calendar always, inbox skipped
+        // for quick/rapid). Failure is non-blocking: the assessment
+        // stays usable, and the read-side fallback uses the legacy
+        // calendar_events / inbox_events columns if either was set
+        // (in-flight assessments produced before this column existed).
+        let depthFitGenerated = false
+        let depthFitSeniority = null
+        const depthFitPromise = (async () => {
+          try {
+            const { generateDepthFitComponents } = await import('@/lib/depth-fit-components')
+            const components = await raceWithTimeout(
+              generateDepthFitComponents({
+                client,
+                role_title,
+                role_profile: profile,
+                shell_family,
+                role_level: roleLevel || null,
+                canonical_level: null,
+                scenarios,
+                mode,
+              }),
+              90000,
+              'depth-fit components generation'
+            )
+            if (components && (components.day_one_planning || components.inbox_overload)) {
+              await adminClient.from('assessments').update({
+                depth_fit_components: components,
+              }).eq('id', assessment.id)
+              depthFitGenerated = true
+              depthFitSeniority = components.seniority || null
+            }
+          } catch (depthFitErr) {
+            console.error('[generate] depth_fit_components generation error:', depthFitErr?.message)
+          }
+        })()
+
         let blockCount = null
         let canonicalLabel = null
         let strategicThinkingGenerated = false
@@ -2044,6 +2009,10 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
           }
         }
 
+        // Wait for the Depth-Fit components promise so the structured
+        // log line below reports the actual generation outcome.
+        await depthFitPromise
+
         // Structured launch-monitoring log. One line per created assessment
         // so adoption of the modular path can be tracked by grepping
         // `[generate] assessment_created` in the platform logs. Two gate
@@ -2067,6 +2036,8 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
           canonical_match: canonicalLabel,
           block_count: blockCount,
           strategic_thinking_generated: strategicThinkingGenerated,
+          depth_fit_generated: depthFitGenerated,
+          depth_fit_seniority: depthFitSeniority,
           employment_type,
         }))
       } else {

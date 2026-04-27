@@ -335,6 +335,53 @@ PDF summary panel skip cleanly when the columns are null.
 
 ---
 
+## 10b. Depth-Fit shell-aware components
+
+`assessments.depth_fit_components` (JSONB) holds the shell+seniority-aware
+**Day One Planning** calendar and **Inbox Overload** events the candidate
+sees. Shape:
+
+```
+{
+  "version": "depth-fit-components-v1.0",
+  "generated_at": "ISO timestamp",
+  "shell_family": "office | healthcare | education",
+  "seniority":    "junior | mid | manager | senior",
+  "day_one_planning": { fixed_events, interruption, deadline, unscheduled_tasks },
+  "inbox_overload":   { scenarios: [...] },
+  "diagnostics":      { day_one_planning: {...}, inbox_overload: {...} }
+}
+```
+
+The generator lives at `lib/depth-fit-components/`:
+- `_shared.js` resolves four-tier seniority (junior / mid / manager /
+  senior) and ships per-shell guidance lines that the prompts splice in.
+  Office shell folds manager into senior to match the platform's
+  shipped office content.
+- `day-one-planning.js` and `inbox-overload.js` build the prompts and
+  call Haiku.
+- `index.js` exports `generateDepthFitComponents` (orchestrator),
+  `readDayOnePlanning`, and `readInboxOverload` (read-side fallback to
+  legacy `assessments.calendar_events` / `assessments.inbox_events`
+  for in-flight assessments produced before this column existed).
+
+Reader fallback runs at the API boundary (`/api/assess/[token]/route.js`),
+so the candidate flow is unchanged — it still consumes
+`assessment.calendar_events` and `assessment.inbox_events` keys; those
+keys are now sourced from `depth_fit_components` when present.
+
+The Monday Morning Reality narrative still scores inline in
+`lib/score-candidate.js` and is intentionally untouched. Because it
+reads the candidate's behaviour against the calendar and inbox, which
+are now shell-aware, its output adapts naturally without its own
+generator.
+
+Test harness: `/admin/workspace-test` ships a "Generate Depth-Fit
+components" button that calls `/api/admin/depth-fit-test` to preview
+the calendar + inbox per role + shell without touching the database.
+
+---
+
 ## 11. Auth email templates (paste from `supabase/templates/`)
 
 The Supabase Auth confirmation, password-reset, magic-link, email-change
