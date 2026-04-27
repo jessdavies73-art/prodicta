@@ -2663,14 +2663,21 @@ export default function AssessPage({ params }) {
       setTimeout(() => doSubmit(pendingResponses || []), 0)
       return null
     }
-    // Phase 1 modular Workspace gate. Only mount the new orchestrator when
-    // the feature flag is set, the connected scenario is populated, and the
-    // role classified into the in-scope Office shell. Out-of-scope roles
-    // (warehouse, driver, etc.) and Phase 2/3 shells (healthcare, education,
-    // field_ops) fall through to the legacy WorkspacePage.
-    const useModular = assessment?.use_modular_workspace === true
-      && assessment?.workspace_scenario
+    // Modular Workspace gate. Office shell (Phase 1, live) requires
+    // use_modular_workspace = true. Healthcare shell (Phase 2, in build)
+    // requires the separate healthcare_workspace_enabled flag so we can
+    // ramp it independently and roll back without touching office.
+    // Education and field_ops, plus out-of-scope roles, continue to fall
+    // through to the legacy WorkspacePage until their respective shells
+    // ship.
+    const hasScenario = !!assessment?.workspace_scenario
+    const officeReady = hasScenario
       && assessment?.shell_family === 'office'
+      && assessment?.use_modular_workspace === true
+    const healthcareReady = hasScenario
+      && assessment?.shell_family === 'healthcare'
+      && assessment?.healthcare_workspace_enabled === true
+    const useModular = officeReady || healthcareReady
     if (useModular) {
       return (
         <ModularWorkspace

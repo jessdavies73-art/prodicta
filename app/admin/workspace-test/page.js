@@ -28,7 +28,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ModularWorkspace from '@/app/assess/[uniqueToken]/components/ModularWorkspace'
-import { CANONICAL_ROLE_MAPPING } from '@/lib/scenario-generator'
+import { CANONICAL_ROLE_MAPPING, HEALTHCARE_CANONICAL_ROLE_MAPPING } from '@/lib/scenario-generator'
 import { BLOCK_CATALOGUE } from '@/lib/workspace-blocks/office/catalogue'
 
 const NAVY = '#0f2137'
@@ -36,12 +36,22 @@ const TEAL = '#00BFA5'
 const F = "'Outfit', system-ui, sans-serif"
 const FM = "'IBM Plex Mono', monospace"
 
-// Canonical level -> display label.
+// Canonical level -> display label (office shell).
 const LEVEL_LABELS = {
-  1: 'Level 1: Front desk / Coordination (4 blocks)',
-  2: 'Level 2: Execution + Judgement (4 blocks)',
-  3: 'Level 3: Management (5 blocks)',
-  4: 'Level 4: Senior / Leadership (4 blocks)',
+  1: 'Office L1: Front desk / Coordination (4 blocks)',
+  2: 'Office L2: Execution + Judgement (4 blocks)',
+  3: 'Office L3: Management (5 blocks)',
+  4: 'Office L4: Senior / Leadership (4 blocks)',
+}
+
+// Healthcare shell levels mirror the office shape but with clinical and
+// care framing. Block counts per level match the office shell so the
+// orchestrator's duration scaler stays consistent across shells.
+const HEALTHCARE_LEVEL_LABELS = {
+  1: 'Healthcare L1: Direct care delivery (4 blocks)',
+  2: 'Healthcare L2: Experienced delivery + judgement (4 blocks)',
+  3: 'Healthcare L3: Clinical and team management (5 blocks)',
+  4: 'Healthcare L4: Senior leadership (4 blocks)',
 }
 
 // Out-of-scope roles for verifying the legacy fallback path.
@@ -64,22 +74,33 @@ export default function WorkspaceTestHarness() {
   const [authChecked, setAuthChecked] = useState(false)
   const [authed, setAuthed] = useState(false)
 
-  // Build the preset list from the canonical mapping plus extrapolation
-  // and out-of-scope examples. Each entry is { value, label, group }.
+  // Build the preset list from the office and healthcare canonical
+  // mappings plus extrapolation and out-of-scope examples.
   const presetGroups = useMemo(() => {
-    const byLevel = { 1: [], 2: [], 3: [], 4: [] }
+    const exemplarFor = (entry) => entry.role_titles[0]
+      .split(/\s+/)
+      .map(w => w.length <= 3 ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1))
+      .join(' ')
+
+    const officeByLevel = { 1: [], 2: [], 3: [], 4: [] }
     for (const entry of CANONICAL_ROLE_MAPPING) {
-      const exemplar = entry.role_titles[0]
-        .split(/\s+/)
-        .map(w => w.length <= 3 ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1))
-        .join(' ')
-      byLevel[entry.level].push({ value: exemplar, label: `${exemplar} (canonical: ${entry.id})` })
+      const exemplar = exemplarFor(entry)
+      officeByLevel[entry.level].push({ value: exemplar, label: `${exemplar} (canonical: ${entry.id})` })
+    }
+    const hcByLevel = { 1: [], 2: [], 3: [], 4: [] }
+    for (const entry of HEALTHCARE_CANONICAL_ROLE_MAPPING) {
+      const exemplar = exemplarFor(entry)
+      hcByLevel[entry.level].push({ value: exemplar, label: `${exemplar} (canonical: ${entry.id})` })
     }
     return [
-      { label: LEVEL_LABELS[1], options: byLevel[1] },
-      { label: LEVEL_LABELS[2], options: byLevel[2] },
-      { label: LEVEL_LABELS[3], options: byLevel[3] },
-      { label: LEVEL_LABELS[4], options: byLevel[4] },
+      { label: LEVEL_LABELS[1], options: officeByLevel[1] },
+      { label: LEVEL_LABELS[2], options: officeByLevel[2] },
+      { label: LEVEL_LABELS[3], options: officeByLevel[3] },
+      { label: LEVEL_LABELS[4], options: officeByLevel[4] },
+      { label: HEALTHCARE_LEVEL_LABELS[1], options: hcByLevel[1] },
+      { label: HEALTHCARE_LEVEL_LABELS[2], options: hcByLevel[2] },
+      { label: HEALTHCARE_LEVEL_LABELS[3], options: hcByLevel[3] },
+      { label: HEALTHCARE_LEVEL_LABELS[4], options: hcByLevel[4] },
       { label: 'Extrapolation tests (function + seniority match)', options: EXTRAPOLATION_ROLES.map(r => ({ value: r, label: r })) },
       { label: 'Out of scope (should fall back to legacy)', options: OUT_OF_SCOPE_ROLES.map(r => ({ value: r, label: r })) },
     ]
@@ -179,7 +200,11 @@ export default function WorkspaceTestHarness() {
       id: 'admin-test',
       role_title: effectiveTitle,
       assessment_mode: 'advanced',
+      // Office and healthcare shells each have their own modular gate
+      // flag. Set both so the preview mounts ModularWorkspace regardless
+      // of which shell the role classified into.
       use_modular_workspace: true,
+      healthcare_workspace_enabled: true,
       shell_family: result.shell_family,
       role_profile: result.profile,
       workspace_scenario: result.scenario,
@@ -220,7 +245,7 @@ export default function WorkspaceTestHarness() {
             Pick a role, generate a connected scenario
           </h1>
           <p style={{ fontFamily: F, fontSize: 14, color: '#475569', marginTop: 8, lineHeight: 1.5 }}>
-            Phase 1. Office shell only. Out-of-scope roles, healthcare, education, and field-ops fall back to the legacy WorkspacePage. Nothing is written to the database from this page.
+            Office shell (Phase 1, live) and Healthcare shell (Phase 2, in build) are previewable. Healthcare blocks render as stubs until each real component ships. Education, field-ops, and out-of-scope roles still fall back to the legacy WorkspacePage. Nothing is written to the database from this page.
           </p>
         </div>
 

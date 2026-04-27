@@ -1766,14 +1766,22 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
     // -- ALTER TABLE assessments ADD COLUMN workspace_scenario JSONB;
     // -- ALTER TABLE assessments ADD COLUMN use_modular_workspace BOOLEAN
     //    NOT NULL DEFAULT false;
+    // -- ALTER TABLE assessments ADD COLUMN healthcare_workspace_enabled
+    //    BOOLEAN NOT NULL DEFAULT false; (Phase 2)
     //
-    // Phase 1 modular Workspace launch: detect role profile + shell family
-    // for every assessment (small Haiku call, useful downstream). The
-    // modular Workspace becomes the default path when:
+    // Phase 1 + Phase 2 modular Workspace launch: detect role profile +
+    // shell family for every assessment (small Haiku call, useful
+    // downstream). The Office shell modular path becomes the default when:
     //   - the role classified into the in-scope office shell, AND
     //   - either mode is 'advanced' (Strategy-Fit, where Workspace is
     //     always part of the package), OR the buyer attached the Immersive
     //     add-on at create time (so cheaper tiers can opt in).
+    // The Healthcare shell stays on the legacy WorkspacePage at creation
+    // time and only switches to the modular orchestrator when an admin
+    // sets healthcare_workspace_enabled = true on the row. Phase 2 stub
+    // stage does not pre-generate healthcare workspace_scenario; admin
+    // testing uses /admin/workspace-test to preview healthcare scenarios
+    // without writing to the database.
     //
     // Anything else (healthcare, education, field_ops, out_of_scope, or
     // a Strategy-Fit role outside the office shell) stays on the legacy

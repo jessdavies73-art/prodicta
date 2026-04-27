@@ -25,7 +25,7 @@
 //   }
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { loadBlock, BLOCK_CATALOGUE } from '@/lib/workspace-blocks/office'
+import { loadBlockForShell, getBlockCatalogueForShell } from '@/lib/workspace-blocks'
 
 const NAVY = '#0f2137'
 const TEAL = '#00BFA5'
@@ -42,6 +42,16 @@ function formatTime(seconds) {
 export default function ModularWorkspace({ assessment, candidate, onSubmit, onSkip }) {
   const scenario = assessment?.workspace_scenario
   const role_profile = assessment?.role_profile
+  // Resolve the shell family with a defensive fallback. The gate at the
+  // call site requires assessment.shell_family to be 'office' (Phase 1)
+  // or 'healthcare' (Phase 2 with healthcare_workspace_enabled). If a
+  // mismatched scenario somehow lands here, prefer the scenario's own
+  // shell_family before falling through to office so the orchestrator
+  // does not crash on an unknown block id.
+  const shell_family = assessment?.shell_family
+    || scenario?.shell_family
+    || 'office'
+  const BLOCK_CATALOGUE = getBlockCatalogueForShell(shell_family) || {}
 
   // Defensive: if the gate at the call site somehow fails and we mount
   // without a usable scenario, render a "skip" affordance rather than a
@@ -200,7 +210,7 @@ export default function ModularWorkspace({ assessment, candidate, onSubmit, onSk
   // ─────────────────────────────────────────────────────────────────────
   if (stage === 'block') {
     const current = selected[currentIndex]
-    const BlockComponent = loadBlock(current.block_id)
+    const BlockComponent = loadBlockForShell(shell_family, current.block_id)
     const block_content = scenario.block_content?.[current.content_ref || current.block_id] || {}
     const scenario_context = {
       title: scenario.title,
