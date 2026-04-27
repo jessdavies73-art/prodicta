@@ -323,6 +323,64 @@ export default function SciencePage() {
         </div>
       </section>
 
+      {/* What we are not / what we are */}
+      <section style={{ background: '#fff', padding: 'clamp(56px, 7vw, 80px) 24px' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <div
+            style={{
+              background: '#EEF1F5',
+              border: `1px solid ${NAVY}1f`,
+              borderLeft: `4px solid ${NAVY}`,
+              borderRadius: 14,
+              padding: 'clamp(28px, 4vw, 40px)',
+            }}
+          >
+            <h2
+              style={{
+                fontFamily: F,
+                fontSize: 'clamp(20px, 2.4vw, 24px)',
+                fontWeight: 800,
+                color: NAVY,
+                letterSpacing: '-0.3px',
+                lineHeight: 1.25,
+                margin: '0 0 12px',
+              }}
+            >
+              What PRODICTA is not
+            </h2>
+            <p style={{ ...PARA_STYLE, color: NAVY }}>
+              PRODICTA is not a personality test. We do not ask candidates to rate themselves,
+              agree with statements, or describe their preferences. We do not measure traits,
+              types, or psychological profiles.
+            </p>
+            <h3
+              style={{
+                fontFamily: F,
+                fontSize: 'clamp(18px, 2.2vw, 22px)',
+                fontWeight: 800,
+                color: NAVY,
+                letterSpacing: '-0.2px',
+                lineHeight: 1.3,
+                margin: '24px 0 12px',
+              }}
+            >
+              What PRODICTA is
+            </h3>
+            <p style={{ ...PARA_STYLE, color: NAVY }}>
+              PRODICTA places candidates into realistic Day 1 scenarios and observes how they
+              actually perform. The behavioural data we analyse is what candidates do, decide,
+              write, and prioritise during real work simulations, not what they say about
+              themselves.
+            </p>
+            <p style={{ ...PARA_STYLE, color: NAVY, margin: 0 }}>
+              This is the difference between asking &lsquo;are you good under pressure?&rsquo; and
+              watching how someone actually responds when their inbox is overflowing, a deadline is
+              moving, and a stakeholder is pushing back.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Section 1 */}
       <Section number="1" title="Work sample simulations" bg="#fff">
         <p style={PARA_STYLE}>
@@ -510,6 +568,11 @@ export default function SciencePage() {
           self-perception.
         </p>
         <p style={{ ...PARA_STYLE, color: TX3, fontSize: 14 }}>Kahneman and Tversky</p>
+        <p style={PARA_STYLE}>
+          This is why personality tests, behavioural questionnaires, and self-assessment surveys
+          have limited predictive value. People answer how they imagine themselves, not how they
+          actually behave.
+        </p>
 
         <div style={SUBHEAD_STYLE}>What this means</div>
         <p style={PARA_STYLE}>Self-reported answers:</p>
@@ -526,6 +589,14 @@ export default function SciencePage() {
 
       {/* Section 8 */}
       <Section number="8" title="AI-driven behavioural analysis" bg={CREAM}>
+        <p style={PARA_STYLE}>
+          By &lsquo;behavioural analysis&rsquo; we do not mean personality questionnaires,
+          behavioural surveys, or self-reported preference tests. PRODICTA analyses observed
+          behaviour during real work simulations, what candidates actually do, decide, write, and
+          prioritise when faced with realistic job pressure. The difference is fundamental:
+          self-reported behavioural data tells you what someone says they would do, observed
+          behavioural data shows you what they actually did.
+        </p>
         <p style={PARA_STYLE}>
           PRODICTA combines behavioural science with modern AI to interpret candidate performance.
         </p>
@@ -546,21 +617,27 @@ export default function SciencePage() {
 
         <div style={SUBHEAD_STYLE}>What this means</div>
         <p style={PARA_STYLE}>
-          AI is most effective when applied to real behavioural data observed in context, rather
-          than relying solely on abstract or self-reported questionnaire responses.
+          AI is most effective when applied to observed behavioural data captured in real work
+          conditions, rather than relying on abstract or self-reported questionnaire responses.
+          The distinction matters: self-reported answers can be biased, rehearsed, or AI-generated.
+          Observed behaviour during actual work tasks cannot be faked the same way.
         </p>
 
         <div style={SUBHEAD_STYLE}>The PRODICTA application</div>
-        <p style={PARA_STYLE}>PRODICTA analyses:</p>
+        <p style={PARA_STYLE}>
+          PRODICTA analyses what candidates actually do during real work simulations:
+        </p>
         <ul style={BULLET_LIST_STYLE}>
-          <Bullet>Decision patterns</Bullet>
-          <Bullet>Prioritisation behaviour</Bullet>
-          <Bullet>Risk awareness</Bullet>
-          <Bullet>Consistency under pressure</Bullet>
-          <Bullet>Communication style</Bullet>
+          <Bullet>Decision patterns when facing trade-offs</Bullet>
+          <Bullet>Prioritisation behaviour under time pressure</Bullet>
+          <Bullet>Risk awareness when stakes are visible</Bullet>
+          <Bullet>Consistency under pressure across multiple tasks</Bullet>
+          <Bullet>Communication style in real workplace situations</Bullet>
         </ul>
         <p style={{ ...PARA_STYLE, margin: 0 }}>
-          Turning observed behaviour into structured, data-driven hiring insight.
+          This is observed performance, not self-reported preference. The data comes from how
+          candidates actually behave during the simulation, not from questions about how they
+          would behave.
         </p>
       </Section>
 
@@ -628,7 +705,7 @@ export default function SciencePage() {
           <Bullet>Behaviour depends on context</Bullet>
           <Bullet>Real work reveals performance</Bullet>
           <Bullet>Experiential methods improve accuracy</Bullet>
-          <Bullet>Behavioural data strengthens prediction</Bullet>
+          <Bullet>Observed behaviour during real tasks strengthens prediction (not self-reported answers or personality questionnaires)</Bullet>
           <Bullet>AI enhances consistency and insight</Bullet>
         </ul>
       </PlainSection>
