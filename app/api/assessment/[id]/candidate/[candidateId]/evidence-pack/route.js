@@ -33,6 +33,8 @@ const WORKSPACE_BLOCK_LABEL = {
   'safeguarding-incident':       'Safeguarding incident',
   'clinical-crisis-simulation':  'Clinical crisis',
   'patient-family-conversation': 'Patient / family conversation',
+  // Strategy-Fit components (Evidence Pack PDF section header).
+  'strategic-thinking':          'Strategic Thinking Evaluation',
 }
 
 function safe(text) {

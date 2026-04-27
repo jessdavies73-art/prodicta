@@ -126,6 +126,10 @@ const BLOCK_LABELS = {
   'safeguarding-incident':       'Safeguarding incident',
   'clinical-crisis-simulation':  'Clinical crisis',
   'patient-family-conversation': 'Patient / family conversation',
+  // Strategy-Fit components (rendered in the same drill-down list as
+  // Workspace blocks; block_id is the synthetic 'strategic-thinking'
+  // appended by lib/score-candidate.js after Workspace block scoring).
+  'strategic-thinking':          'Strategic Thinking Evaluation',
 }
 
 const WorkspaceBlockDrillDown = ({ block }) => {

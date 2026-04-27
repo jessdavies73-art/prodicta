@@ -1385,6 +1385,19 @@ function StrategicThinkingScreen({ component, responses, onChange, onSubmit, onS
   const allAnswered = questions.length > 0
     && questions.every(q => ((responses?.[q.id] || '').trim().length >= 12))
   const totalChars = questions.reduce((s, q) => s + ((responses?.[q.id] || '').trim().length), 0)
+  // Track the elapsed seconds the candidate spent on this screen. Captured
+  // on mount and read at submit/skip time; the parent merges it into the
+  // strategic_thinking_responses payload as time_in_component before the
+  // final submit POST.
+  const startedAtRef = useRef(Date.now())
+  const handleSubmit = () => {
+    const seconds = Math.max(0, Math.floor((Date.now() - startedAtRef.current) / 1000))
+    onSubmit?.(seconds)
+  }
+  const handleSkip = () => {
+    const seconds = Math.max(0, Math.floor((Date.now() - startedAtRef.current) / 1000))
+    onSkip?.(seconds)
+  }
   return (
     <>
       <NavBar />
@@ -1458,7 +1471,7 @@ function StrategicThinkingScreen({ component, responses, onChange, onSubmit, onS
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 type="button"
-                onClick={onSkip}
+                onClick={handleSkip}
                 style={{
                   fontFamily: F, fontSize: 13, fontWeight: 700, color: TX2,
                   background: 'transparent', border: `1px solid ${BD}`,
@@ -1469,7 +1482,7 @@ function StrategicThinkingScreen({ component, responses, onChange, onSubmit, onS
               </button>
               <button
                 type="button"
-                onClick={onSubmit}
+                onClick={handleSubmit}
                 disabled={!allAnswered}
                 style={{
                   fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff',
@@ -2593,6 +2606,10 @@ export default function AssessPage({ params }) {
   // to the final submit payload via doSubmit so scoring can read them
   // alongside the workspace_data.
   const [strategicThinkingResponses, setStrategicThinkingResponses] = useState({})
+  // Seconds the candidate spent on the Strategic Thinking screen.
+  // Captured from the screen's mount-to-submit timer and merged into
+  // the submit payload as strategic_thinking_responses.time_in_component.
+  const [strategicThinkingTime, setStrategicThinkingTime] = useState(0)
 
   useEffect(() => {
     if (!uniqueToken) {
@@ -2655,13 +2672,31 @@ export default function AssessPage({ params }) {
     const { responses, micro_signals } = Array.isArray(data)
       ? { responses: data, micro_signals: null }
       : (data || {})
+    // Strategy-Fit Strategic Thinking responses, when the candidate
+    // visited the Strategic Thinking screen and answered any question.
+    // Merged with time_in_component (mounted-to-submit elapsed seconds)
+    // and posted on the same call as the scenario responses; the
+    // server persists it to assessments.strategic_thinking_responses.
+    // Senders that didn't visit the screen send no key at all so the
+    // server skips persistence entirely.
+    const stKeys = Object.keys(strategicThinkingResponses || {})
+    const hasStrategicThinking = stKeys.some(
+      k => typeof strategicThinkingResponses[k] === 'string' && strategicThinkingResponses[k].trim().length > 0
+    )
+    const strategicThinkingPayload = hasStrategicThinking
+      ? { ...strategicThinkingResponses, time_in_component: strategicThinkingTime }
+      : null
     // 1) Submit responses. Server kicks off scoring in the background via
     //    waitUntil and returns quickly, so this request itself is fast.
     try {
       const res = await fetch(`/api/assess/${uniqueToken}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ responses, micro_signals }),
+        body: JSON.stringify({
+          responses,
+          micro_signals,
+          ...(strategicThinkingPayload ? { strategic_thinking_responses: strategicThinkingPayload } : {}),
+        }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
@@ -2811,8 +2846,14 @@ export default function AssessPage({ params }) {
         component={component}
         responses={strategicThinkingResponses}
         onChange={setStrategicThinkingResponses}
-        onSubmit={() => setUiState('workspace')}
-        onSkip={() => setUiState('workspace')}
+        onSubmit={(seconds) => {
+          if (Number.isFinite(seconds)) setStrategicThinkingTime(seconds)
+          setUiState('workspace')
+        }}
+        onSkip={(seconds) => {
+          if (Number.isFinite(seconds)) setStrategicThinkingTime(seconds)
+          setUiState('workspace')
+        }}
       />
     )
   }

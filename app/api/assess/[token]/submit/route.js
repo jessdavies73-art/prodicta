@@ -60,7 +60,7 @@ async function scoreAndNotify(candidateId, adminClient) {
 
 export async function POST(request, { params }) {
   try {
-    const { responses, micro_signals } = await request.json()
+    const { responses, micro_signals, strategic_thinking_responses } = await request.json()
     const adminClient = createServiceClient()
 
     const { data: candidate, error: candError } = await adminClient
@@ -75,6 +75,31 @@ export async function POST(request, { params }) {
 
     if (candidate.status === 'completed') {
       return NextResponse.json({ error: 'Already completed' }, { status: 400 })
+    }
+
+    // Strategy-Fit Strategic Thinking responses, when present, are
+    // persisted on the assessment row (not the candidate's responses
+    // table) because they belong to the Strategic Thinking component
+    // generated at assessment-create time. Failure here is non-fatal:
+    // the candidate's scenario submission still completes; only
+    // Strategic Thinking scoring is skipped if this write fails.
+    if (
+      strategic_thinking_responses
+      && typeof strategic_thinking_responses === 'object'
+      && !Array.isArray(strategic_thinking_responses)
+      && Object.keys(strategic_thinking_responses).length > 0
+    ) {
+      const { error: stError } = await adminClient
+        .from('assessments')
+        .update({ strategic_thinking_responses })
+        .eq('id', candidate.assessment_id)
+      if (stError) {
+        if (/strategic_thinking_responses/i.test(stError.message || '')) {
+          console.warn('[submit] strategic_thinking_responses column missing, continuing without persist')
+        } else {
+          console.error('[submit] strategic_thinking_responses persist failed', stError.message)
+        }
+      }
     }
 
     // -- ALTER TABLE responses ADD COLUMN IF NOT EXISTS forced_choice_response JSONB;

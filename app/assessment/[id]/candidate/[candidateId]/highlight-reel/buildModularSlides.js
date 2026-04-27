@@ -46,6 +46,10 @@ const BLOCK_LABELS = {
   'safeguarding-incident':       'Safeguarding incident',
   'clinical-crisis-simulation':  'Clinical crisis',
   'patient-family-conversation': 'Patient / family conversation',
+  // Strategy-Fit components (synthetic block_id appended after Workspace
+  // scoring so the Highlight Reel slide builder picks up the strengths
+  // and signals from the Strategic Thinking score).
+  'strategic-thinking':          'Strategic Thinking Evaluation',
 }
 
 const WEIGHT_RANK = { high: 3, medium: 2, low: 1 }

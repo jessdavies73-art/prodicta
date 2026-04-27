@@ -153,6 +153,17 @@ export default function WorkspaceTestHarness() {
   const [depthFitError, setDepthFitError] = useState(null)
   const [depthFitResult, setDepthFitResult] = useState(null)
 
+  // Strategic Thinking Evaluation preview. Two-step: generate the
+  // component (questions, role context, scenario), then score a set
+  // of admin-typed responses. Lets us verify senior vs junior-mid
+  // calibration without running a full live Strategy-Fit assessment.
+  const [stGenerating, setStGenerating] = useState(false)
+  const [stScoring, setStScoring] = useState(false)
+  const [stError, setStError] = useState(null)
+  const [stComponent, setStComponent] = useState(null)
+  const [stResponses, setStResponses] = useState({})
+  const [stScore, setStScore] = useState(null)
+
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -251,6 +262,89 @@ export default function WorkspaceTestHarness() {
       setDepthFitError(e?.message || 'Network error')
     } finally {
       setDepthFitGenerating(false)
+    }
+  }
+
+  async function handleGenerateStrategicThinking() {
+    setStError(null)
+    if (!effectiveTitle) {
+      setStError('Pick or type a role title.')
+      return
+    }
+    setStGenerating(true)
+    setStComponent(null)
+    setStResponses({})
+    setStScore(null)
+    try {
+      const res = await fetch('/api/admin/strategic-thinking-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'generate',
+          roleTitle: effectiveTitle,
+          jobDescription,
+          profileOverrides: {
+            ...(sectorContext.trim() ? { sector_context: sectorContext.trim() } : {}),
+            ...(companySize ? { company_size: companySize } : {}),
+            ...(employmentType ? { employment_type: employmentType } : {}),
+          },
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setStError(body?.error || `Request failed: ${res.status}`)
+      } else {
+        setStComponent(body?.component || null)
+      }
+    } catch (e) {
+      setStError(e?.message || 'Network error')
+    } finally {
+      setStGenerating(false)
+    }
+  }
+
+  async function handleScoreStrategicThinking() {
+    setStError(null)
+    if (!stComponent || !Array.isArray(stComponent.evaluation_questions)) {
+      setStError('Generate a component first.')
+      return
+    }
+    const populated = Object.entries(stResponses || {}).filter(
+      ([, v]) => typeof v === 'string' && v.trim().length >= 12
+    )
+    if (populated.length === 0) {
+      setStError('Type a response of at least 12 characters into at least one question.')
+      return
+    }
+    setStScoring(true)
+    setStScore(null)
+    try {
+      const res = await fetch('/api/admin/strategic-thinking-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'score',
+          roleTitle: effectiveTitle,
+          jobDescription,
+          profileOverrides: {
+            ...(sectorContext.trim() ? { sector_context: sectorContext.trim() } : {}),
+            ...(companySize ? { company_size: companySize } : {}),
+            ...(employmentType ? { employment_type: employmentType } : {}),
+          },
+          component: stComponent,
+          responses: stResponses,
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setStError(body?.error || `Request failed: ${res.status}`)
+      } else {
+        setStScore(body?.score || null)
+      }
+    } catch (e) {
+      setStError(e?.message || 'Network error')
+    } finally {
+      setStScoring(false)
     }
   }
 
@@ -430,6 +524,19 @@ export default function WorkspaceTestHarness() {
             >
               {depthFitGenerating ? 'Working...' : 'Generate Depth-Fit components'}
             </button>
+            <button
+              onClick={handleGenerateStrategicThinking}
+              disabled={stGenerating}
+              style={{
+                fontFamily: F, fontSize: 14, fontWeight: 700,
+                padding: '11px 18px', borderRadius: 8,
+                background: stGenerating ? '#94a3b8' : '#0f2137',
+                color: '#fff', border: 'none',
+                cursor: stGenerating ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {stGenerating ? 'Working...' : 'Generate Strategic Thinking'}
+            </button>
             {error ? (
               <span style={{ marginLeft: 6, fontFamily: F, fontSize: 13, color: '#dc2626' }}>
                 {error}
@@ -438,6 +545,11 @@ export default function WorkspaceTestHarness() {
             {depthFitError ? (
               <span style={{ marginLeft: 6, fontFamily: F, fontSize: 13, color: '#dc2626' }}>
                 Depth-Fit: {depthFitError}
+              </span>
+            ) : null}
+            {stError ? (
+              <span style={{ marginLeft: 6, fontFamily: F, fontSize: 13, color: '#dc2626' }}>
+                Strategic Thinking: {stError}
               </span>
             ) : null}
           </div>
@@ -450,7 +562,130 @@ export default function WorkspaceTestHarness() {
         {depthFitResult ? (
           <DepthFitPanel result={depthFitResult} effectiveTitle={effectiveTitle} />
         ) : null}
+
+        {stComponent ? (
+          <StrategicThinkingPanel
+            effectiveTitle={effectiveTitle}
+            component={stComponent}
+            responses={stResponses}
+            onChangeResponses={setStResponses}
+            score={stScore}
+            scoring={stScoring}
+            onScore={handleScoreStrategicThinking}
+          />
+        ) : null}
       </div>
+    </div>
+  )
+}
+
+function StrategicThinkingPanel({ effectiveTitle, component, responses, onChangeResponses, score, scoring, onScore }) {
+  const questions = Array.isArray(component?.evaluation_questions) ? component.evaluation_questions : []
+  const setResp = (id, text) => onChangeResponses({ ...(responses || {}), [id]: text })
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24, marginBottom: 32 }}>
+      <h2 style={{ fontFamily: F, fontSize: 16, fontWeight: 800, color: NAVY, marginBottom: 14 }}>
+        Strategic Thinking Evaluation for {effectiveTitle}
+      </h2>
+
+      <Section title="Component">
+        <KV k="title" v={component?.title} />
+        <KV k="seniority_framing" v={component?.seniority_framing} />
+        {component?.role_context_summary ? (
+          <div style={{ fontFamily: F, fontSize: 13, color: '#475569', marginTop: 6, lineHeight: 1.55 }}>
+            {component.role_context_summary}
+          </div>
+        ) : null}
+        {component?.scenario_text ? (
+          <div style={{
+            background: '#FAEFD9', border: '1px solid #e6d6ad',
+            borderRadius: 8, padding: 12, marginTop: 10,
+            fontFamily: F, fontSize: 13, color: NAVY, lineHeight: 1.6,
+            whiteSpace: 'pre-wrap',
+          }}>
+            {component.scenario_text}
+          </div>
+        ) : null}
+      </Section>
+
+      <Section title="Type fake responses to score">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {questions.length === 0 ? <Empty>No evaluation questions returned.</Empty> : questions.map((q, i) => (
+            <div key={q.id || i}>
+              <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>
+                {i + 1}. {q.prompt}
+              </div>
+              <textarea
+                value={responses?.[q.id] || ''}
+                onChange={(e) => setResp(q.id, e.target.value)}
+                rows={3}
+                placeholder="Type a response of at least 12 characters."
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  fontFamily: F, fontSize: 13, color: NAVY,
+                  padding: '8px 10px', borderRadius: 6,
+                  border: '1px solid #cbd5e1', background: '#f8fafc',
+                  outline: 'none', resize: 'vertical',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={onScore}
+          disabled={scoring || questions.length === 0}
+          style={{
+            marginTop: 14,
+            fontFamily: F, fontSize: 14, fontWeight: 700,
+            padding: '10px 18px', borderRadius: 8,
+            background: scoring ? '#94a3b8' : '#00BFA5',
+            color: '#fff', border: 'none',
+            cursor: scoring ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {scoring ? 'Scoring...' : 'Score responses'}
+        </button>
+      </Section>
+
+      {score ? (
+        <Section title={`Score: ${score.score ?? 'unscored'}`}>
+          {score.narrative ? (
+            <div style={{ fontFamily: F, fontSize: 14, color: NAVY, fontStyle: 'italic', marginBottom: 10, lineHeight: 1.55 }}>
+              {score.narrative}
+            </div>
+          ) : null}
+          {Array.isArray(score.strengths) && score.strengths.length > 0 ? (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: '#0f6e63', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Strengths</div>
+              {score.strengths.map((s, i) => (
+                <div key={i} style={{ fontFamily: F, fontSize: 13, color: NAVY, padding: '4px 0' }}>· {s}</div>
+              ))}
+            </div>
+          ) : null}
+          {Array.isArray(score.watch_outs) && score.watch_outs.length > 0 ? (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Watch-outs</div>
+              {score.watch_outs.map((w, i) => (
+                <div key={i} style={{ fontFamily: F, fontSize: 13, color: NAVY, padding: '4px 0' }}>· {w}</div>
+              ))}
+            </div>
+          ) : null}
+          {Array.isArray(score.signals) && score.signals.length > 0 ? (
+            <div>
+              <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Signals</div>
+              {score.signals.map((s, i) => (
+                <div key={i} style={{ fontFamily: F, fontSize: 12.5, color: '#475569', padding: '4px 0', lineHeight: 1.5 }}>
+                  <b style={{ color: NAVY }}>{s.type}</b> ({s.weight}) — {s.evidence}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </Section>
+      ) : null}
+
+      <Section title="Raw payload">
+        <Pre json={{ component, responses, score }} />
+      </Section>
     </div>
   )
 }
