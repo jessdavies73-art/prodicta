@@ -329,10 +329,18 @@ export default function NewAssessmentPage() {
   const handleBuyAddOn = async (creditType) => {
     setImmersiveBuying(true)
     try {
+      // Immersive checkout returns to /assessment/new?im=1 so the toggle
+      // is restored on landing. Other credit types keep the legacy
+      // /settings landing handled by the credit-bundle endpoint.
+      const returnTo = creditType === 'immersive' ? '/assessment/new?im=1' : null
       const res = await fetch('/api/stripe/credit-bundle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credit_type: creditType, quantity: 1 }),
+        body: JSON.stringify({
+          credit_type: creditType,
+          quantity: 1,
+          ...(returnTo ? { return_to: returnTo } : {}),
+        }),
       })
       const body = await res.json()
       if (body?.url) { window.location.href = body.url; return }
@@ -427,13 +435,16 @@ export default function NewAssessmentPage() {
     // Invalidate any server-component cache Next.js might be holding for this
  // segment. One-shot on mount, no dependency so it can't fire in a loop.
     try { router.refresh() } catch {}
-    // Restore the £10 Highlight Reel toggle if the buyer is returning from
-    // a Stripe Checkout round-trip. The credit-bundle return URL (set in
-    // handleBuyHighlightReel below) carries `?hr=1` so the toggle stays
-    // ON and the buyer can submit straight away with the new credit.
+    // Restore the inline add-on toggles if the buyer is returning from
+    // a Stripe Checkout round-trip. The credit-bundle return URLs
+    // (set in handleBuyHighlightReel and handleBuyAddOn below) carry
+    // `?hr=1` for Highlight Reel and `?im=1` for Immersive so the
+    // toggles stay ON and the buyer can submit straight away with the
+    // newly granted credit.
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
       if (params.get('hr') === '1') setHighlightReelOn(true)
+      if (params.get('im') === '1') setImmersiveOn(true)
     }
     return () => { mountedRef.current = false }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -752,6 +763,21 @@ export default function NewAssessmentPage() {
         return null
       }
     }
+
+    // Pre-flight Immersive credit check. PAYG buyer with the £25
+    // toggle on, no 'immersive' credit on file, and a non-Strategy-Fit
+    // mode: bounce to Stripe Checkout via handleBuyAddOn('immersive')
+    // (which now passes return_to=/assessment/new?im=1 so the toggle
+    // is restored on landing). Strategy-Fit always includes Workspace;
+    // subscribers route through workspace_addon_purchased (Stripe
+    // invoice line items) and never hit this check.
+    if (immersiveOn && isPaygUser && isSpeedDepthOrRapid && !isStrategyFitMode) {
+      const immBalance = (userCredits || []).find(c => c.credit_type === 'immersive')?.credits_remaining || 0
+      if (immBalance <= 0) {
+        await handleBuyAddOn('immersive')
+        return null
+      }
+    }
     try {
       const contextQs = smartQuestions && smartQuestions.length > 0
         ? smartQuestions
@@ -804,6 +830,13 @@ export default function NewAssessmentPage() {
           // Bounce to Stripe Checkout the same way the pre-flight check
           // would have, preserving the toggle via ?hr=1.
           await handleBuyHighlightReel()
+          return null
+        }
+        else if (data.error === 'no_immersive_credit') {
+          // Server says no Immersive credit on file. Same pattern as
+          // the Highlight Reel branch above: redirect to Stripe Checkout
+          // for the £25 credit, preserving the toggle via ?im=1.
+          await handleBuyAddOn('immersive')
           return null
         }
         else setError(data.error || 'Failed to generate')

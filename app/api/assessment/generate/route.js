@@ -605,6 +605,36 @@ export async function POST(request) {
       highlightReelDeductCtx = { userId: user.id, preDeductionBalance: hrBalance, deducted: false }
     }
 
+    // PAYG £25 Immersive pre-check. Mirrors the Highlight Reel pattern
+    // above. Strategy-Fit (mode === 'advanced') always includes the
+    // Workspace simulation in the £65 price and never charges a separate
+    // Immersive credit. Subscribers route through the workspace_addon
+    // pathway (Stripe invoice line items, not credits) and so are
+    // skipped here too. Only PAYG buyers on Rapid Screen / Speed-Fit /
+    // Depth-Fit who toggled the £25 add-on need a credit deducted.
+    let immersiveDeductCtx = null
+    if (
+      isPaygUser
+      && immersive_enabled
+      && (mode === 'rapid' || mode === 'quick' || mode === 'standard')
+    ) {
+      const { data: immCredit } = await adminClient
+        .from('assessment_credits')
+        .select('credits_remaining')
+        .eq('user_id', user.id)
+        .eq('credit_type', 'immersive')
+        .maybeSingle()
+      const immBalance = immCredit?.credits_remaining || 0
+      if (immBalance <= 0) {
+        return NextResponse.json({
+          error: 'no_immersive_credit',
+          credit_type: 'immersive',
+          message: 'No Immersive credits remaining. Purchase a £25 Immersive credit to attach the Workspace simulation to this assessment.',
+        }, { status: 402 })
+      }
+      immersiveDeductCtx = { userId: user.id, preDeductionBalance: immBalance, deducted: false }
+    }
+
     // Re-derive mode flags now that `mode` is locked in for the rest of
     // the handler. These feed the prompt selector and the token budget.
     const isRapid    = mode === 'rapid'
@@ -1799,6 +1829,25 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         console.error('[generate] highlight-reel credit deduction failed after assessment insert', hrDeductError)
       } else {
         highlightReelDeductCtx.deducted = true
+      }
+    }
+
+    // PAYG £25 Immersive credit deduction. Mirrors the Highlight Reel
+    // deduction above. Pre-check guaranteed the credit exists when the
+    // flag is set; deducted after the assessment row is persisted so
+    // a failed insert doesn't burn the £25 credit. Failure logged but
+    // not fatal: the assessment row stays with immersive_enabled=true
+    // and the modular Workspace gates flip on as normal so the
+    // candidate experience and the report still render the simulation;
+    // ops reconciles the small £25 leak from the audit log.
+    if (immersiveDeductCtx && !immersiveDeductCtx.deducted) {
+      const { error: immDeductError } = await adminClient.from('assessment_credits').update({
+        credits_remaining: immersiveDeductCtx.preDeductionBalance - 1,
+      }).eq('user_id', immersiveDeductCtx.userId).eq('credit_type', 'immersive')
+      if (immDeductError) {
+        console.error('[generate] immersive credit deduction failed after assessment insert', immDeductError)
+      } else {
+        immersiveDeductCtx.deducted = true
       }
     }
 
