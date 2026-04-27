@@ -512,6 +512,7 @@ function Nav() {
 
   const navLinks = [
     { href: '#how-it-works', label: 'How it works' },
+    { href: '/science', label: 'The Science' },
     { href: '#pricing', label: 'Pricing' },
     { href: '#who-its-for', label: "Who it's for" },
     { href: '/audit', label: 'Free audit' },
@@ -1503,15 +1504,15 @@ export default function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
             {[
               {
-                stat: '£12,000\u201330,000+',
-                label: 'Cost of a bad hire',
-                body: 'Recruitment fees, onboarding, lost productivity, and management time. Before you even consider the cost of starting over.',
+                stat: '£30,000–£50,000+',
+                label: 'Cost of a bad hire (REC benchmarks)',
+                body: 'REC reports a typical bad hire costs between £30,000 and £50,000. Mid-management failures can exceed £100,000. CIPD data shows average cost per hire is £6,000 for general roles and £19,000 for manager-level positions. Even small improvements in hiring accuracy reduce cost, protect revenue, and improve retention.',
                 accent: '#EF4444',
               },
               {
-                stat: '87%',
-                label: 'of hiring decisions are based on interview performance',
-                body: 'But confidence in an interview is not the same as competence in the role. PRODICTA tests what actually matters: how they handle pressure, make decisions, and perform when nobody is watching.',
+                stat: '0.18',
+                label: 'Predictive value of years of experience',
+                body: 'Schmidt and Hunter’s meta-analysis (1998; updated 2016) shows years of experience has weak predictive power for job performance. Education level scores even lower at 0.10. CVs and interviews tell you what someone has done, not how they will perform. PRODICTA measures observed behaviour in realistic job scenarios.',
                 accent: '#F59E0B',
               },
               {
@@ -1550,6 +1551,18 @@ export default function LandingPage() {
                 </div>
               </Reveal>
             ))}
+          </div>
+          <div style={{ textAlign: 'center', marginTop: 36 }}>
+            <a href="/science" style={{
+              fontFamily: F, fontSize: 14, fontWeight: 700, color: TEAL,
+              textDecoration: 'none', borderBottom: `1px solid ${TEAL}55`,
+              paddingBottom: 2, transition: 'border-color 0.2s, color 0.2s',
+            }}
+              onMouseEnter={e => { e.target.style.borderColor = TEAL; e.target.style.color = TEALD }}
+              onMouseLeave={e => { e.target.style.borderColor = `${TEAL}55`; e.target.style.color = TEAL }}
+            >
+              Read the science behind PRODICTA →
+            </a>
           </div>
         </div>
       </section>
