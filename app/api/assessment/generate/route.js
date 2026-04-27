@@ -574,6 +574,37 @@ export async function POST(request) {
       mode = 'rapid'
     }
 
+    // PAYG £10 Highlight Reel pre-check. The client (/assessment/new)
+    // verifies the credit balance before submit and bounces to Stripe
+    // Checkout when none is on file, so by the time we get here a PAYG
+    // buyer with this flag should always have a 'highlight-reel' credit
+    // available. We re-check defensively because anyone can post the
+    // flag (we never trust the client). When the flag is set without a
+    // credit, return 402 'no_highlight_reel_credit' so the UI can
+    // redirect even if its local userCredits cache is stale.
+    let highlightReelDeductCtx = null
+    if (
+      isPaygUser
+      && highlight_reel_addon_requested
+      && (mode === 'rapid' || mode === 'quick' || mode === 'standard')
+    ) {
+      const { data: hrCredit } = await adminClient
+        .from('assessment_credits')
+        .select('credits_remaining')
+        .eq('user_id', user.id)
+        .eq('credit_type', 'highlight-reel')
+        .maybeSingle()
+      const hrBalance = hrCredit?.credits_remaining || 0
+      if (hrBalance <= 0) {
+        return NextResponse.json({
+          error: 'no_highlight_reel_credit',
+          credit_type: 'highlight-reel',
+          message: 'No Highlight Reel credits remaining. Purchase a £10 Highlight Reel credit to attach the reel to this assessment.',
+        }, { status: 402 })
+      }
+      highlightReelDeductCtx = { userId: user.id, preDeductionBalance: hrBalance, deducted: false }
+    }
+
     // Re-derive mode flags now that `mode` is locked in for the rest of
     // the handler. These feed the prompt selector and the token budget.
     const isRapid    = mode === 'rapid'
@@ -1753,6 +1784,24 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
       }
     }
 
+    // PAYG £10 Highlight Reel credit deduction. Pre-check above guarantees
+    // the credit exists when the flag is set; we deduct after assessment
+    // insertion (same ordering as the assessment-tier credit) so a failed
+    // insert doesn't burn the credit. Failure here is logged but not
+    // fatal; the report will still render the reel because
+    // highlight_reel_addon_purchased is persisted on the assessment row,
+    // and ops can reconcile the small £10 leak from the audit log.
+    if (highlightReelDeductCtx && !highlightReelDeductCtx.deducted) {
+      const { error: hrDeductError } = await adminClient.from('assessment_credits').update({
+        credits_remaining: highlightReelDeductCtx.preDeductionBalance - 1,
+      }).eq('user_id', highlightReelDeductCtx.userId).eq('credit_type', 'highlight-reel')
+      if (hrDeductError) {
+        console.error('[generate] highlight-reel credit deduction failed after assessment insert', hrDeductError)
+      } else {
+        highlightReelDeductCtx.deducted = true
+      }
+    }
+
     // -- ALTER TABLE assessments ADD COLUMN depth_fit_components JSONB;
     //
     // Day One Planning calendar and Inbox Overload now generate inside
@@ -1912,7 +1961,7 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         //     don't see the toggle per the pricing spec).
         const highlightReelPersisted = isSubscriber
           || strategyFitIncluded
-          || (highlight_reel_addon_requested && (mode === 'quick' || mode === 'standard'))
+          || (highlight_reel_addon_requested && (mode === 'rapid' || mode === 'quick' || mode === 'standard'))
 
         const isAdvancedOrImmersive = (
           mode === 'advanced'

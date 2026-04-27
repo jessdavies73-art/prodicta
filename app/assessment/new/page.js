@@ -285,6 +285,14 @@ export default function NewAssessmentPage() {
   // next subscription invoice. Strategy-Fit subscribers don't see this
   // toggle (Workspace included). PAYG users continue to use immersiveOn.
   const [workspaceAddonOn, setWorkspaceAddonOn] = useState(false)
+  // PAYG £10 Highlight Reel inline toggle. Visible only for PAYG buyers
+  // on Rapid Screen / Speed-Fit / Depth-Fit (Strategy-Fit already
+  // includes the reel; subscribers always get it free). When the buyer
+  // toggles this ON and clicks Create Assessment we either deduct an
+  // existing 'highlight-reel' credit or bounce to Stripe Checkout for
+  // £10 with a return URL that preserves the toggle state.
+  const [highlightReelOn, setHighlightReelOn] = useState(false)
+  const [highlightReelBuying, setHighlightReelBuying] = useState(false)
   // Business tier 30/month Strategy-Fit cap usage. Loaded once on the
   // user-profile fetch alongside the monthly assessment count. Drives
   // the warning banner near Strategy-Fit selection and (when at cap)
@@ -332,6 +340,32 @@ export default function NewAssessmentPage() {
     } catch (err) {
       setError(err?.message || 'Could not start checkout. Please try again.')
       setImmersiveBuying(false)
+    }
+  }
+
+  // Highlight Reel (£10) PAYG checkout. Distinct from handleBuyAddOn so the
+  // return URL can route back to /assessment/new?hr=1 (preserving the
+  // toggle state) rather than the default /settings landing. Webhook
+  // grants the 'highlight-reel' credit on completion; the buyer then
+  // re-clicks Create Assessment which deducts that credit server-side.
+  const handleBuyHighlightReel = async () => {
+    setHighlightReelBuying(true)
+    try {
+      const res = await fetch('/api/stripe/credit-bundle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          credit_type: 'highlight-reel',
+          quantity: 1,
+          return_to: '/assessment/new?hr=1',
+        }),
+      })
+      const body = await res.json()
+      if (body?.url) { window.location.href = body.url; return }
+      throw new Error(body?.error || 'Could not start checkout.')
+    } catch (err) {
+      setError(err?.message || 'Could not start checkout. Please try again.')
+      setHighlightReelBuying(false)
     }
   }
 
@@ -393,6 +427,14 @@ export default function NewAssessmentPage() {
     // Invalidate any server-component cache Next.js might be holding for this
  // segment. One-shot on mount, no dependency so it can't fire in a loop.
     try { router.refresh() } catch {}
+    // Restore the £10 Highlight Reel toggle if the buyer is returning from
+    // a Stripe Checkout round-trip. The credit-bundle return URL (set in
+    // handleBuyHighlightReel below) carries `?hr=1` so the toggle stays
+    // ON and the buyer can submit straight away with the new credit.
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('hr') === '1') setHighlightReelOn(true)
+    }
     return () => { mountedRef.current = false }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -694,6 +736,22 @@ export default function NewAssessmentPage() {
       return createdAssessmentId
     }
     setError('')
+
+    // Pre-flight Highlight Reel credit check. PAYG buyer with the £10
+    // toggle on, no 'highlight-reel' credit on file, and a non-Strategy-Fit
+    // mode: bounce to Stripe Checkout for the credit before the assessment
+    // is created. The return URL preserves the toggle (?hr=1) so the
+    // buyer can resubmit straight away once the credit lands. Strategy-Fit
+    // already includes the reel; subscribers always have it free.
+    const isStrategyFitMode = mode === 'advanced'
+    const isSpeedDepthOrRapid = mode === 'rapid' || mode === 'quick' || mode === 'standard'
+    if (highlightReelOn && isPaygUser && isSpeedDepthOrRapid && !isStrategyFitMode) {
+      const hrBalance = (userCredits || []).find(c => c.credit_type === 'highlight-reel')?.credits_remaining || 0
+      if (hrBalance <= 0) {
+        await handleBuyHighlightReel()
+        return null
+      }
+    }
     try {
       const contextQs = smartQuestions && smartQuestions.length > 0
         ? smartQuestions
@@ -725,12 +783,14 @@ export default function NewAssessmentPage() {
           // alongside immersive_enabled. Strategy-Fit assessments
           // ignore this flag (Workspace is included).
           workspace_addon_purchased: workspaceAddonOn,
-          // PAYG Highlight Reel add-on flag for Speed-Fit / Depth-Fit
-          // PAYG buyers. The toggle for this lives in the credits
-          // purchase flow rather than the inline assessment creation
-          // UI; this flag is provided for future inline integration.
-          // Subscribers always get Highlight Reel free regardless.
-          highlight_reel_addon_requested: false,
+          // PAYG Highlight Reel add-on flag for Rapid Screen / Speed-Fit /
+          // Depth-Fit PAYG buyers. Driven by the inline £10 toggle below;
+          // the server deducts a 'highlight-reel' credit when this is
+          // true. If the buyer toggled ON without a credit, the submit
+          // path bounces them to Stripe Checkout via handleBuyHighlightReel
+          // before reaching this request. Subscribers always get Highlight
+          // Reel free regardless and never set this flag.
+          highlight_reel_addon_requested: highlightReelOn && isPaygUser,
         })
       })
       const data = await res.json()
@@ -738,6 +798,14 @@ export default function NewAssessmentPage() {
         if (data.error === 'unsuitable_role') setError(data.message || 'This role type may not be suitable for scenario-based assessment.')
         else if (data.error === 'no_credits' || data.error === 'limit_reached') setError(data.message || 'No credits remaining.')
         else if (data.error === 'strategy_fit_cap_reached') setError(data.message || 'Strategy-Fit cap reached for this month.')
+        else if (data.error === 'no_highlight_reel_credit') {
+          // Server says no Highlight Reel credit on file. Client cache was
+          // stale (or server time-of-check beat the in-flight purchase).
+          // Bounce to Stripe Checkout the same way the pre-flight check
+          // would have, preserving the toggle via ?hr=1.
+          await handleBuyHighlightReel()
+          return null
+        }
         else setError(data.error || 'Failed to generate')
         return null
       }
@@ -1887,6 +1955,37 @@ export default function NewAssessmentPage() {
           )
         })()}
 
+        {/* PAYG add-on credit balance summary. Visible to PAYG buyers
+            on Rapid Screen / Speed-Fit / Depth-Fit so they can see at
+            a glance whether toggling an add-on on will deduct an
+            existing credit or trigger a Stripe Checkout. Hidden for
+            subscribers (their add-ons are billed differently) and for
+            Strategy-Fit (Strategy-Fit includes both add-ons). */}
+        {(() => {
+          const isStrategyFit = mode === 'advanced'
+          const isRapidSpeedOrDepth = mode === 'rapid' || mode === 'quick' || mode === 'standard'
+          if (!isPaygUser || isStrategyFit || !isRapidSpeedOrDepth) return null
+          const immersiveBalance = (userCredits || []).find(c => c.credit_type === 'immersive')?.credits_remaining || 0
+          const hrBalance = (userCredits || []).find(c => c.credit_type === 'highlight-reel')?.credits_remaining || 0
+          return (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, flexWrap: 'wrap',
+              padding: '10px 14px', borderRadius: 10,
+              background: '#f8fafc', border: '1px solid #e4e9f0',
+              fontFamily: F, fontSize: 12.5, color: '#475569',
+            }}>
+              <span style={{ fontWeight: 700, color: '#0f2137' }}>Add-on credits:</span>
+              <span>
+                Immersive (Workspace simulation): <b style={{ color: immersiveBalance > 0 ? '#0f6e63' : '#475569' }}>{immersiveBalance}</b>
+              </span>
+              <span style={{ color: '#cbd5e1' }}>·</span>
+              <span>
+                Highlight Reel: <b style={{ color: hrBalance > 0 ? '#0f6e63' : '#475569' }}>{hrBalance}</b>
+              </span>
+            </div>
+          )
+        })()}
+
         {/* Strategy-Fit "both included" pill. Visible for every buyer
             (PAYG and subscriber) when mode is Strategy-Fit. Strategy-Fit
             always bundles the modular Workspace and the 60-second
@@ -2040,6 +2139,122 @@ export default function NewAssessmentPage() {
                   </button>
                 </div>
               )}
+            </div>
+          )
+        })()}
+
+        {/* PAYG £10 Highlight Reel inline toggle. Visible to PAYG buyers
+            on Rapid Screen / Speed-Fit / Depth-Fit. Strategy-Fit PAYG
+            buyers see the "both included" pill above (Strategy-Fit £65
+            already covers the reel). Subscribers see the "Highlight
+            Reel included" pill above and never see this toggle.
+
+            Behaviour: toggle ON, click Create Assessment. The
+            ensureAssessment pre-flight check redirects to Stripe
+            Checkout when the buyer has no 'highlight-reel' credit.
+            With a credit on file, the server deducts on assessment
+            create and persists highlight_reel_addon_purchased = true. */}
+        {(() => {
+          const isStrategyFit = mode === 'advanced'
+          const isRapidSpeedOrDepth = mode === 'rapid' || mode === 'quick' || mode === 'standard'
+          if (!isPaygUser) return null
+          if (isStrategyFit) return null
+          if (!isRapidSpeedOrDepth) return null
+          const hrBalance = (userCredits || []).find(c => c.credit_type === 'highlight-reel')?.credits_remaining || 0
+          return (
+            <div style={{
+              background: '#fff', borderRadius: 14, border: `1.5px solid ${highlightReelOn ? '#00BFA5' : '#e4e9f0'}`,
+              padding: '22px 26px', marginBottom: 24,
+              boxShadow: highlightReelOn ? '0 4px 14px rgba(0,191,165,0.12)' : 'none',
+              transition: 'border-color 0.15s, box-shadow 0.15s',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 240 }}>
+                  <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, color: '#0f2137', fontFamily: F }}>
+                    Add 60-second Highlight Reel: £10
+                  </h2>
+                  <p style={{ margin: '0 0 10px', fontSize: 13, color: '#5e6b7f', fontFamily: F, lineHeight: 1.6 }}>
+                    Get a shareable 60-second video summary you can send to clients in one click. Independent of the £25 Immersive add-on, attach either, both, or neither.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={highlightReelOn}
+                  onClick={() => setHighlightReelOn(v => !v)}
+                  style={{
+                    width: 44, height: 26, borderRadius: 999,
+                    background: highlightReelOn ? '#00BFA5' : '#e4e9f0',
+                    border: 'none', position: 'relative', cursor: 'pointer',
+                    transition: 'background 0.15s', flexShrink: 0,
+                  }}
+                >
+                  <span style={{
+                    position: 'absolute', top: 3, left: highlightReelOn ? 21 : 3,
+                    width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                    transition: 'left 0.15s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  }} />
+                </button>
+              </div>
+              {highlightReelOn && (
+                <div style={{
+                  marginTop: 14, paddingTop: 14, borderTop: '1px solid #e4e9f0',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 12, flexWrap: 'wrap',
+                }}>
+                  <p style={{ margin: 0, fontSize: 12.5, color: '#5e6b7f', fontFamily: F, flex: 1, minWidth: 200, lineHeight: 1.55 }}>
+                    {hrBalance > 0
+                      ? `You have ${hrBalance} Highlight Reel credit${hrBalance === 1 ? '' : 's'}. One credit will be deducted when this assessment is created.`
+                      : 'No Highlight Reel credits on file. Click Create Assessment and we’ll route you through a £10 Stripe Checkout, then return you here with the toggle still on.'}
+                  </p>
+                  {hrBalance === 0 && (
+                    <button
+                      type="button"
+                      onClick={handleBuyHighlightReel}
+                      disabled={highlightReelBuying}
+                      style={{
+                        fontFamily: F, fontSize: 13, fontWeight: 800, color: '#0f2137',
+                        background: '#00BFA5', border: 'none',
+                        padding: '9px 18px', borderRadius: 8,
+                        cursor: highlightReelBuying ? 'default' : 'pointer',
+                        opacity: highlightReelBuying ? 0.7 : 1, flexShrink: 0,
+                      }}
+                    >
+                      {highlightReelBuying ? 'Redirecting…' : 'Buy Highlight Reel credit, £10'}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })()}
+
+        {/* Add-on running total. Visible to PAYG buyers on Rapid /
+            Speed-Fit / Depth-Fit when at least one inline add-on is on.
+            Surfaces the combined £25 + £10 cost so the buyer sees what
+            they are committing to before clicking Create Assessment. */}
+        {(() => {
+          const isStrategyFit = mode === 'advanced'
+          const isRapidSpeedOrDepth = mode === 'rapid' || mode === 'quick' || mode === 'standard'
+          if (!isPaygUser || isStrategyFit || !isRapidSpeedOrDepth) return null
+          const total = (immersiveOn ? 25 : 0) + (highlightReelOn ? 10 : 0)
+          if (total === 0) return null
+          return (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              gap: 10, marginBottom: 24, padding: '12px 16px', borderRadius: 10,
+              background: '#f0fbf9', border: '1px solid #00BFA555',
+              fontFamily: F, fontSize: 13, color: '#0f6e63',
+            }}>
+              <span>
+                <b>Add-ons: £{total}</b>
+                <span style={{ marginLeft: 10, fontSize: 12, color: '#5e6b7f' }}>
+                  {immersiveOn && highlightReelOn ? 'Immersive + Highlight Reel' : immersiveOn ? 'Immersive' : 'Highlight Reel'}
+                </span>
+              </span>
+              <span style={{ fontSize: 12, color: '#5e6b7f' }}>
+                Charged separately at Stripe Checkout
+              </span>
             </div>
           )
         })()}

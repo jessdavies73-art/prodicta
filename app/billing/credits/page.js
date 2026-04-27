@@ -42,7 +42,7 @@ const ADDON_TYPES = [
   },
   {
     type: 'highlight-reel', label: 'Highlight Reel only', unit: 10,
-    description: 'A 60-second shareable summary of how the candidate performed. For Strategy-Fit accounts, the workspace simulation is already included, this is the Highlight Reel only.',
+    description: 'Add to a Rapid Screen, Speed-Fit, or Depth-Fit assessment for a 60-second client video. A shareable summary of how the candidate performed, sent as a link your client can view without logging in. Strategy-Fit assessments already include the Highlight Reel.',
   },
 ]
 

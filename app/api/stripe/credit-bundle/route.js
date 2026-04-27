@@ -55,7 +55,22 @@ export async function POST(request) {
         quantity: qty,
       }
       metadata = { ...metadata, credit_type: body.credit_type, quantity: String(qty) }
-      successPath = `/settings?purchase=success&type=${body.credit_type}&qty=${qty}`
+      // Inline buyers (£10 Highlight Reel toggle on /assessment/new) pass
+      // their own return_to so the post-Checkout landing carries them
+      // back to the assessment-create flow with the toggle still on.
+      // Anything outside an allow-list of internal paths is ignored to
+      // keep the redirect surface narrow.
+      const SAFE_RETURN_PREFIXES = ['/assessment/new', '/billing/credits', '/settings']
+      const safeReturnTo = typeof body.return_to === 'string'
+        && SAFE_RETURN_PREFIXES.some(p => body.return_to.startsWith(p))
+        ? body.return_to
+        : null
+      if (safeReturnTo) {
+        const sep = safeReturnTo.includes('?') ? '&' : '?'
+        successPath = `${safeReturnTo}${sep}purchase=success&type=${body.credit_type}&qty=${qty}`
+      } else {
+        successPath = `/settings?purchase=success&type=${body.credit_type}&qty=${qty}`
+      }
     } else {
       return NextResponse.json({ error: 'Missing bundle_id or credit_type' }, { status: 400 })
     }
