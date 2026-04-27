@@ -104,16 +104,28 @@ const Badge = ({ label, bg, color, border }) => (
 // (slate pills), and the italic narrative. Used in the Workspace section
 // of the candidate report when results.workspace_block_scores is present.
 const BLOCK_LABELS = {
-  'inbox':                   'Inbox',
-  'task-prioritisation':     'Task prioritisation',
-  'calendar-planning':       'Calendar planning',
-  'decision-queue':          'Decision queue',
-  'conversation-simulation': 'Conversation simulation',
-  'stakeholder-conflict':    'Stakeholder conflict',
-  'reading-summarising':     'Reading and summarising',
-  'document-writing':        'Document writing',
-  'spreadsheet-data':        'Spreadsheet and data',
-  'crisis-simulation':       'Crisis simulation',
+  // Office shell
+  'inbox':                       'Inbox',
+  'task-prioritisation':         'Task prioritisation',
+  'calendar-planning':           'Calendar planning',
+  'decision-queue':              'Decision queue',
+  'conversation-simulation':     'Conversation simulation',
+  'stakeholder-conflict':        'Stakeholder conflict',
+  'reading-summarising':         'Reading and summarising',
+  'document-writing':            'Document writing',
+  'spreadsheet-data':            'Spreadsheet and data',
+  'crisis-simulation':           'Crisis simulation',
+  // Healthcare/Care shell
+  'patient-handover':            'Patient handover',
+  'buzzer-alert-queue':          'Buzzer / alert queue',
+  'medication-round':            'Medication round',
+  'clinical-decision-queue':     'Clinical decisions',
+  'doctor-instruction-handling': 'Doctor instructions',
+  'family-visitor-interaction':  'Family / visitor interaction',
+  'care-plan-review':            'Care plan review',
+  'safeguarding-incident':       'Safeguarding incident',
+  'clinical-crisis-simulation':  'Clinical crisis',
+  'patient-family-conversation': 'Patient / family conversation',
 }
 
 const WorkspaceBlockDrillDown = ({ block }) => {

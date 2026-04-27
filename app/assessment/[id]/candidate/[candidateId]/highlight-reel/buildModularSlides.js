@@ -24,16 +24,28 @@
 // caller falls through to the legacy 6-slide flow.
 
 const BLOCK_LABELS = {
-  'inbox':                   'Inbox handling',
-  'task-prioritisation':     'Task prioritisation',
-  'calendar-planning':       'Calendar planning',
-  'decision-queue':          'Decision queue',
-  'conversation-simulation': 'Conversation simulation',
-  'stakeholder-conflict':    'Stakeholder conflict',
-  'reading-summarising':     'Reading and summarising',
-  'document-writing':        'Document writing',
-  'spreadsheet-data':        'Spreadsheet and data',
-  'crisis-simulation':       'Crisis simulation',
+  // Office shell
+  'inbox':                       'Inbox handling',
+  'task-prioritisation':         'Task prioritisation',
+  'calendar-planning':           'Calendar planning',
+  'decision-queue':              'Decision queue',
+  'conversation-simulation':     'Conversation simulation',
+  'stakeholder-conflict':        'Stakeholder conflict',
+  'reading-summarising':         'Reading and summarising',
+  'document-writing':            'Document writing',
+  'spreadsheet-data':            'Spreadsheet and data',
+  'crisis-simulation':           'Crisis simulation',
+  // Healthcare/Care shell
+  'patient-handover':            'Patient handover',
+  'buzzer-alert-queue':          'Buzzer / alert queue',
+  'medication-round':            'Medication round',
+  'clinical-decision-queue':     'Clinical decisions',
+  'doctor-instruction-handling': 'Doctor instructions',
+  'family-visitor-interaction':  'Family / visitor interaction',
+  'care-plan-review':            'Care plan review',
+  'safeguarding-incident':       'Safeguarding incident',
+  'clinical-crisis-simulation':  'Clinical crisis',
+  'patient-family-conversation': 'Patient / family conversation',
 }
 
 const WEIGHT_RANK = { high: 3, medium: 2, low: 1 }

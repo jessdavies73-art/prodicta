@@ -4,6 +4,36 @@ import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-
 import QRCode from 'qrcode'
 import { EMAIL_FROM } from '@/lib/email-sender'
 
+// Human-friendly labels for the audit-trail row that lists which
+// Workspace blocks were evaluated. Server-safe data only (no JSX
+// imports) so this stays inside the server bundle without pulling the
+// candidate report page in. Office and healthcare shells share the
+// same dict because block_ids are unique across shells.
+const WORKSPACE_BLOCK_LABEL = {
+  // Office shell
+  'inbox':                       'Inbox',
+  'task-prioritisation':         'Task prioritisation',
+  'calendar-planning':           'Calendar planning',
+  'decision-queue':              'Decision queue',
+  'conversation-simulation':     'Conversation simulation',
+  'stakeholder-conflict':        'Stakeholder conflict',
+  'reading-summarising':         'Reading and summarising',
+  'document-writing':            'Document writing',
+  'spreadsheet-data':            'Spreadsheet and data',
+  'crisis-simulation':           'Crisis simulation',
+  // Healthcare/Care shell
+  'patient-handover':            'Patient handover',
+  'buzzer-alert-queue':          'Buzzer / alert queue',
+  'medication-round':            'Medication round',
+  'clinical-decision-queue':     'Clinical decisions',
+  'doctor-instruction-handling': 'Doctor instructions',
+  'family-visitor-interaction':  'Family / visitor interaction',
+  'care-plan-review':            'Care plan review',
+  'safeguarding-incident':       'Safeguarding incident',
+  'clinical-crisis-simulation':  'Clinical crisis',
+  'patient-family-conversation': 'Patient / family conversation',
+}
+
 function safe(text) {
   if (!text) return ''
   return String(text)
@@ -303,8 +333,9 @@ export async function GET(request, { params }) {
       }
       const blockNames = blockScores.map(b => {
         const id = (b?.block_id || '').toString()
+        const label = WORKSPACE_BLOCK_LABEL[id] || id
         const score = Number.isFinite(b?.score) ? ` (${b.score})` : ''
-        return id ? `${id}${score}` : null
+        return id ? `${label}${score}` : null
       }).filter(Boolean).join(', ')
       drawAuditRow('Day 1 Workspace simulation evaluated', blockNames || 'No blocks recorded')
       drawAuditRow('Workspace scoring rubric version', result.workspace_rubric_version || 'Not recorded (legacy workspace)')
