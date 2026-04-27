@@ -7,6 +7,8 @@ const NAVY2   = '#0d1e30'
 const TEAL    = '#00BFA5'
 const TEALD   = '#009688'
 const TEALLT  = '#e0f2f0'
+const CREAM   = '#FAF9F4'
+const PARCHMENT = '#FAEFD9'
 const GOLD    = '#E8B84B'
 const F       = "'Outfit', system-ui, sans-serif"
 const FM      = "'IBM Plex Mono', monospace"
@@ -1372,7 +1374,7 @@ export default function LandingPage() {
 
         return (
           <section style={{
-            background: '#EDF6F4',
+            background: PARCHMENT,
             padding: '78px 24px',
             borderTop: '1px solid rgba(15,33,55,0.08)',
             boxShadow: 'inset 0 12px 24px -16px rgba(15,33,55,0.10)',
@@ -2829,7 +2831,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           PRE-HIRE RISK REPORT
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#fff', padding: '72px 24px' }}>
+      <section style={{ background: PARCHMENT, padding: '72px 24px' }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 40 }}>
@@ -2845,7 +2847,7 @@ export default function LandingPage() {
 
           <Reveal delay={80}>
             <div style={{
-              background: '#f8f9fb',
+              background: '#fff',
               border: `1.5px solid ${TEAL}33`,
               borderRadius: 16,
               padding: '32px',

@@ -6,6 +6,8 @@ const TEAL  = '#00BFA5'
 const TEALD = '#00897B'
 const TEALLT = '#e6f7f4'
 const CREAM = '#FAF9F4'
+const PARCHMENT = '#FAEFD9'
+const SLATE_BODY = '#5A6B7A'
 const TX    = '#1a202c'
 const TX2   = '#3f4a5c'
 const TX3   = '#6b7689'
@@ -86,19 +88,23 @@ function Bullet({ children }) {
 function Quote({ text, citation }) {
   return (
     <figure
+      className="pd-quote-panel"
       style={{
         margin: '20px 0 22px',
-        padding: '4px 0 4px 20px',
-        borderLeft: `3px solid ${TEAL}`,
+        padding: 24,
+        background: PARCHMENT,
+        borderLeft: `4px solid ${TEAL}`,
+        borderRadius: 8,
       }}
     >
       <blockquote
+        className="pd-quote-text"
         style={{
           fontFamily: F,
           fontSize: 17,
           fontStyle: 'italic',
           color: NAVY,
-          lineHeight: 1.65,
+          lineHeight: 1.6,
           margin: 0,
         }}
       >
@@ -109,8 +115,8 @@ function Quote({ text, citation }) {
           style={{
             fontFamily: F,
             fontSize: 13,
-            color: TX3,
-            marginTop: 8,
+            color: SLATE_BODY,
+            marginTop: 10,
             fontStyle: 'normal',
           }}
         >
@@ -224,6 +230,8 @@ export default function SciencePage() {
         @media (max-width: 640px) {
           .pd-science-row { flex-direction: column !important; gap: 14px !important; }
           .pd-science-num { width: 56px !important; height: 56px !important; font-size: 22px !important; }
+          .pd-quote-panel { padding: 18px !important; }
+          .pd-quote-text { font-size: 15px !important; line-height: 1.55 !important; }
         }
       `,
         }}

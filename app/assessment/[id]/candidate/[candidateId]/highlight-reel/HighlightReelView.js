@@ -8,8 +8,25 @@ const TEALD = '#009688'
 const GOLD = '#E8B84B'
 const RED = '#dc2626'
 const BD_LIGHT = '#cbd5e1'
+const PARCHMENT = '#FAEFD9'
+const CREAM_BG = '#FAF9F4'
+const MUTED_BG = '#E5E8EC'
+const SLATE_BODY = '#5A6B7A'
 const F = "'Outfit',system-ui,sans-serif"
 const FM = "'IBM Plex Mono',monospace"
+
+// Light backdrop for the verdict slide so a positive verdict reads as a calm
+// "yes" rather than a loud one. Only the verdict slide uses these tones; the
+// rest of the reel stays on the existing dark navy stage.
+function verdictTheme(score) {
+  if (score >= 70) {
+    return { bg: PARCHMENT, headline: NAVY, body: NAVY, mute: SLATE_BODY, light: false }
+  }
+  if (score >= 55) {
+    return { bg: CREAM_BG, headline: NAVY, body: NAVY, mute: SLATE_BODY, light: false }
+  }
+  return { bg: MUTED_BG, headline: NAVY, body: NAVY, mute: SLATE_BODY, light: false }
+}
 
 // Legacy 6-slide structure. Used when workspace_block_scores is absent
 // (legacy Strategy-Fit Workspace, or any non-modular assessment).
@@ -163,23 +180,26 @@ export default function HighlightReel({ data, canShare = false, isDemo = false }
         <div style={{ fontSize: 16, fontWeight: 700, color: TEAL, marginTop: 12 }}>{scoreLabel}</div>
       </div>
     )
-    if (s.type === 'verdict') return (
-      <div className="reel-fade">
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>The Verdict</div>
-        <div style={{ fontSize: 'clamp(32px, 4vw, 48px)', fontWeight: 900, color: verdictColor, marginBottom: 16 }}>{verdict}</div>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 24, flexWrap: 'wrap' }}>
-          <span style={{ padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: `${verdictColor}22`, color: verdictColor, border: `1px solid ${verdictColor}55` }}>
-            Risk: {data.risk_level || 'N/A'}
-          </span>
-          <span style={{ padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.15)' }}>
-            {roleLevelLabel}
-          </span>
+    if (s.type === 'verdict') {
+      const vt = verdictTheme(score)
+      return (
+        <div className="reel-fade">
+          <div style={{ fontSize: 12, fontWeight: 700, color: vt.mute, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>The Verdict</div>
+          <div style={{ fontSize: 'clamp(32px, 4vw, 48px)', fontWeight: 900, color: vt.headline, marginBottom: 16 }}>{verdict}</div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 24, flexWrap: 'wrap' }}>
+            <span style={{ padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: `${verdictColor}22`, color: vt.headline, border: `1px solid ${verdictColor}88` }}>
+              Risk: {data.risk_level || 'N/A'}
+            </span>
+            <span style={{ padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: 'rgba(15,33,55,0.06)', color: vt.mute, border: '1px solid rgba(15,33,55,0.14)' }}>
+              {roleLevelLabel}
+            </span>
+          </div>
+          <p style={{ fontSize: 16, color: vt.body, maxWidth: 500, margin: '0 auto', lineHeight: 1.65 }}>
+            {data.ai_summary ? (data.ai_summary.length > 200 ? data.ai_summary.slice(0, 200) + '...' : data.ai_summary) : ''}
+          </p>
         </div>
-        <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', maxWidth: 500, margin: '0 auto', lineHeight: 1.65 }}>
-          {data.ai_summary ? (data.ai_summary.length > 200 ? data.ai_summary.slice(0, 200) + '...' : data.ai_summary) : ''}
-        </p>
-      </div>
-    )
+      )
+    }
     if (s.type === 'strength' && topStrength) return (
       <div className="reel-fade">
         <div style={{ fontSize: 12, fontWeight: 700, color: TEAL, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>Where they shine</div>
@@ -373,11 +393,14 @@ export default function HighlightReel({ data, canShare = false, isDemo = false }
 
       {/* Slides */}
       <div style={{ position: 'relative', width: '100%', height: 'calc(100vh - 60px)' }}>
-        {slides.map((s, i) => (
-          <div key={`slide-${i}-${s.type}`} style={{ ...slideStyle, opacity: slide === i ? 1 : 0, pointerEvents: slide === i ? 'auto' : 'none' }}>
-            {slide === i ? slideContent(s, i) : null}
-          </div>
-        ))}
+        {slides.map((s, i) => {
+          const slideBg = s.type === 'verdict' ? verdictTheme(score).bg : 'transparent'
+          return (
+            <div key={`slide-${i}-${s.type}`} style={{ ...slideStyle, background: slideBg, opacity: slide === i ? 1 : 0, pointerEvents: slide === i ? 'auto' : 'none' }}>
+              {slide === i ? slideContent(s, i) : null}
+            </div>
+          )
+        })}
       </div>
 
       {/* Controls */}
