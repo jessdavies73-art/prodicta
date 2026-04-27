@@ -944,6 +944,17 @@ export default function LandingPage() {
           .pd-toggle-label-full { display: none; }
           .pd-toggle-label-short { display: inline; }
         }
+        .pd-tab-full   { display: inline; }
+        .pd-tab-tablet { display: none; }
+        .pd-tab-mobile { display: none; }
+        @media (max-width: 1024px) {
+          .pd-tab-full   { display: none; }
+          .pd-tab-tablet { display: inline; }
+        }
+        @media (max-width: 768px) {
+          .pd-tab-tablet { display: none; }
+          .pd-tab-mobile { display: inline; }
+        }
         @media (max-width: 768px) {
           .cv-vs-prodicta {
             grid-template-columns: 1fr !important;
@@ -1328,7 +1339,11 @@ export default function LandingPage() {
             ],
           },
           employer_perm: {
-            tab: 'Direct Employer, Permanent',
+            tab: {
+              full: 'HR & Direct Employer, Permanent',
+              tablet: 'HR & Direct Employer, Permanent',
+              mobile: 'HR & Employer, Permanent',
+            },
             heading: 'Hire with evidence not opinion.',
             sub: 'PRODICTA gives every hiring decision a documented, bias-free, legally defensible foundation. Protecting your business and your reputation.',
             exciters: [
@@ -1338,7 +1353,11 @@ export default function LandingPage() {
             ],
           },
           employer_temp: {
-            tab: 'Direct Employer, Temporary and Contract',
+            tab: {
+              full: 'HR & Direct Employer, Temporary and Contract',
+              tablet: 'HR & Direct Employer, Temporary',
+              mobile: 'HR & Employer, Temporary',
+            },
             heading: 'Manage your contingent workforce from assessment to assignment end.',
             sub: 'PRODICTA screens at volume, tracks every placement in real time, and handles your Fair Work Agency compliance automatically.',
             exciters: [
@@ -1386,6 +1405,7 @@ export default function LandingPage() {
               }}>
                 {order.map(key => {
                   const active = personaTab === key
+                  const tab = PERSONAS[key].tab
                   return (
                     <button
                       key={key}
@@ -1401,7 +1421,13 @@ export default function LandingPage() {
                         transition: 'background 0.18s ease, color 0.18s ease, border-color 0.18s ease',
                       }}
                     >
-                      {PERSONAS[key].tab}
+                      {typeof tab === 'string' ? tab : (
+                        <>
+                          <span className="pd-tab-full">{tab.full}</span>
+                          <span className="pd-tab-tablet">{tab.tablet}</span>
+                          <span className="pd-tab-mobile">{tab.mobile}</span>
+                        </>
+                      )}
                     </button>
                   )
                 })}
