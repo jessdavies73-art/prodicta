@@ -278,6 +278,13 @@ export default function NewAssessmentPage() {
   const [userCredits, setUserCredits] = useState([]) // [{ credit_type, credits_remaining }]
   const [upgradeModal, setUpgradeModal] = useState(null) // { from, to } | null
   const [immersiveOn, setImmersiveOn] = useState(false)
+  // Subscriber Workspace add-on. Distinct from immersiveOn (which drives
+  // the PAYG Stripe Checkout flow for Immersive credits): this flag
+  // signals that the subscriber wants Workspace simulation on this
+  // Speed-Fit / Depth-Fit assessment, billed as a £25 line item on the
+  // next subscription invoice. Strategy-Fit subscribers don't see this
+  // toggle (Workspace included). PAYG users continue to use immersiveOn.
+  const [workspaceAddonOn, setWorkspaceAddonOn] = useState(false)
   const [immersiveBuying, setImmersiveBuying] = useState(false)
   const [smartQuestions, setSmartQuestions] = useState(null) // null = not yet loaded
   const [smartLoading, setSmartLoading] = useState(false)
@@ -692,6 +699,14 @@ export default function NewAssessmentPage() {
           // use_modular_workspace = true on the assessment row when the
           // role classifies into the office shell.
           immersive_enabled: immersiveOn,
+          // Subscriber Workspace add-on. Set true when a Starter /
+          // Professional / Business subscriber toggled Workspace
+          // simulation on for a Speed-Fit or Depth-Fit assessment. The
+          // server bills £25 to the next subscription invoice via
+          // stripe.invoiceItems and flips the modular Workspace gate
+          // alongside immersive_enabled. Strategy-Fit assessments
+          // ignore this flag (Workspace is included).
+          workspace_addon_purchased: workspaceAddonOn,
         })
       })
       const data = await res.json()
@@ -1754,11 +1769,105 @@ export default function NewAssessmentPage() {
           </div>
         </div>
 
-        {/* Immersive add-on toggle. Strategy-Fit already includes the Day 1
-            workspace simulation, so those users are offered Highlight Reel
-            only at £10. Everyone else gets the full Immersive bundle at £25. */}
+        {/* Subscriber Workspace add-on toggle. Visible only when the
+            buyer is on a subscription tier (not PAYG) AND the assessment
+            mode is Speed-Fit or Depth-Fit. Strategy-Fit subscribers skip
+            this toggle because Workspace is already included in the
+            Strategy-Fit assessment cost; the existing Highlight Reel
+            toggle below handles that case. Rapid Screen subscribers
+            also skip per the pricing spec. PAYG buyers continue to use
+            the Immersive Checkout flow below. */}
         {(() => {
           const isStrategyFit = mode === 'advanced'
+          const isSpeedOrDepth = mode === 'quick' || mode === 'standard'
+          const showSubscriberWorkspaceToggle = !isPaygUser && isSpeedOrDepth
+          if (!showSubscriberWorkspaceToggle) return null
+          return (
+            <div style={{
+              background: '#fff', borderRadius: 14, border: `1.5px solid ${workspaceAddonOn ? '#00BFA5' : '#e4e9f0'}`,
+              padding: '22px 26px', marginBottom: 24,
+              boxShadow: workspaceAddonOn ? '0 4px 14px rgba(0,191,165,0.12)' : 'none',
+              transition: 'border-color 0.15s, box-shadow 0.15s',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 240 }}>
+                  <h2 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, color: '#0f2137', fontFamily: F }}>
+                    Add Workspace simulation, £25
+                  </h2>
+                  <p style={{ margin: '0 0 10px', fontSize: 13, color: '#5e6b7f', fontFamily: F, lineHeight: 1.6 }}>
+                    Give your candidate a Day 1 Workspace simulation, a realistic inbox, calendar, and prioritisation challenge that reveals how they actually work under pressure. The £25 charge appears as a line item on your next subscription invoice. Strategy-Fit assessments include Workspace at no extra cost.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={workspaceAddonOn}
+                  onClick={() => setWorkspaceAddonOn(v => !v)}
+                  style={{
+                    width: 44, height: 26, borderRadius: 999,
+                    background: workspaceAddonOn ? '#00BFA5' : '#e4e9f0',
+                    border: 'none', position: 'relative', cursor: 'pointer',
+                    transition: 'background 0.15s', flexShrink: 0,
+                  }}
+                >
+                  <span style={{
+                    position: 'absolute', top: 3, left: workspaceAddonOn ? 21 : 3,
+                    width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                    transition: 'left 0.15s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  }} />
+                </button>
+              </div>
+              {workspaceAddonOn && (
+                <div style={{
+                  marginTop: 14, paddingTop: 14, borderTop: '1px solid #e4e9f0',
+                  fontFamily: F, fontSize: 12.5, color: '#5e6b7f', lineHeight: 1.55,
+                }}>
+                  Workspace simulation will be added to this assessment. £25 will appear as a line item on your next subscription invoice; no separate checkout is needed.
+                </div>
+              )}
+            </div>
+          )
+        })()}
+
+        {/* Strategy-Fit Workspace included pill. Subscribers on
+            Strategy-Fit see this affirmation that Workspace is already
+            covered, before the Highlight Reel toggle below. */}
+        {(() => {
+          const isStrategyFit = mode === 'advanced'
+          if (!isStrategyFit || isPaygUser) return null
+          return (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
+              padding: '10px 14px', borderRadius: 10,
+              background: '#E6F4F1', border: '1px solid #00BFA555',
+              fontFamily: F, fontSize: 13, color: '#0f6e63',
+            }}>
+              <span style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: '#00BFA5', display: 'inline-block',
+              }} />
+              <span>
+                <b>Workspace simulation included.</b> Strategy-Fit assessments always include the modular Workspace at no additional charge.
+              </span>
+            </div>
+          )
+        })()}
+
+        {/* Immersive / Highlight Reel add-on toggle. Strategy-Fit already
+            includes the Day 1 workspace simulation, so Strategy-Fit users
+            are offered Highlight Reel only at £10. Everyone else (PAYG
+            buyers on Rapid Screen / Speed-Fit / Depth-Fit, and all
+            Strategy-Fit users) sees this block. Subscribers on Speed-Fit
+            / Depth-Fit see the new Workspace toggle above instead and
+            this block is hidden for them. */}
+        {(() => {
+          const isStrategyFit = mode === 'advanced'
+          const isSpeedOrDepth = mode === 'quick' || mode === 'standard'
+          // Hide the Immersive Checkout flow for subscribers on
+          // Speed-Fit / Depth-Fit; they use the inline Workspace add-on
+          // toggle above instead.
+          const hideForSubscriberSpeedOrDepth = !isPaygUser && isSpeedOrDepth
+          if (hideForSubscriberSpeedOrDepth) return null
           const addOnType = isStrategyFit ? 'highlight-reel' : 'immersive'
           const addOnPrice = isStrategyFit ? 10 : 25
           const heading = isStrategyFit ? 'Add Highlight Reel, £10' : 'Add Immersive, £25'
@@ -1850,7 +1959,7 @@ export default function NewAssessmentPage() {
             server-side AI detector makes the final call; the pill is
             informational only. */}
         {(() => {
-          const modularLikely = mode === 'advanced' || immersiveOn
+          const modularLikely = mode === 'advanced' || immersiveOn || workspaceAddonOn
           const titleLower = (roleTitle || '').toLowerCase()
           const looksLikeHealthcare = modularLikely && /\b(?:nurse|nursing|hca|healthcare assistant|care assistant|care worker|support worker|care coordinator|care manager|care home|residential|domiciliary|ward manager|matron|doctor|gp\b|registrar|consultant|salaried gp|locum gp|junior doctor|foundation doctor|pharmacist|dentist|dental|veterinary|\bvet\b|physiotherapist|physio|occupational therapist|speech therapist|slt\b|dietitian|radiographer|paramedic|midwife|mental health|psychiatrist|clinical psychologist|psychologist|counsellor|therapist|social worker|social work|amhp|director of nursing|medical director|clinical director|clinical lead|practice manager|registered manager)\b/.test(titleLower)
           const shellLabel = looksLikeHealthcare ? 'healthcare' : 'office'

@@ -171,6 +171,16 @@ export default function SettingsPage() {
   // Credits (pay-per-assessment)
   const [assessmentCredits, setAssessmentCredits] = useState([])
   const [paygTab, setPaygTab] = useState('credits') // 'credits' | 'subscription'
+  // Subscriber Workspace add-on usage this calendar month. Driven by
+  // assessments rows where workspace_addon_purchased = true and
+  // workspace_addon_charged_pence > 0 (Strategy-Fit included rows
+  // record charged_pence = 0 and are excluded from the paid-add-on
+  // count). { paid_count, paid_total_pence, free_strategy_fit_count }.
+  const [workspaceAddonStats, setWorkspaceAddonStats] = useState({
+    paid_count: 0,
+    paid_total_pence: 0,
+    free_strategy_fit_count: 0,
+  })
   const [buyQty, setBuyQty] = useState({}) // { [credit_type]: number }
   const [buyingType, setBuyingType] = useState(null)
   const [switchConfirm, setSwitchConfirm] = useState(null) // { plan, price, key }
@@ -251,6 +261,38 @@ export default function SettingsPage() {
           .select('credit_type, credits_remaining, credits_purchased, last_purchased_at')
           .eq('user_id', user.id)
         if (credits && credits.length > 0) setAssessmentCredits(credits)
+
+        // Workspace add-on usage this month. Two counters:
+        //   paid_count / paid_total_pence: Speed-Fit / Depth-Fit rows
+        //     where the £25 add-on was billed (charged_pence > 0).
+        //   free_strategy_fit_count: Strategy-Fit rows that included
+        //     Workspace at no charge (workspace_addon_purchased = true,
+        //     charged_pence = 0). Surfaces the Business tier marketing
+        //     line without needing a separate column.
+        const { data: addonRows } = await supabase.from('assessments')
+          .select('workspace_addon_purchased, workspace_addon_charged_pence, assessment_mode')
+          .eq('user_id', user.id)
+          .eq('workspace_addon_purchased', true)
+          .gte('created_at', startOfMonth)
+        if (Array.isArray(addonRows)) {
+          let paidCount = 0
+          let paidTotal = 0
+          let freeSfCount = 0
+          for (const r of addonRows) {
+            const charged = Number(r.workspace_addon_charged_pence) || 0
+            if (charged > 0) {
+              paidCount += 1
+              paidTotal += charged
+            } else if ((r.assessment_mode || '').toLowerCase() === 'advanced') {
+              freeSfCount += 1
+            }
+          }
+          setWorkspaceAddonStats({
+            paid_count: paidCount,
+            paid_total_pence: paidTotal,
+            free_strategy_fit_count: freeSfCount,
+          })
+        }
 
         // Load promo redemption history
         const { data: redemptions } = await supabase.from('promo_redemptions')
@@ -913,6 +955,48 @@ export default function SettingsPage() {
                 )}
               </div>
             </div>
+
+            {/* ── Workspace add-ons (subscriber tiers only) ── */}
+            {!isPayg && (() => {
+              const isBusinessTier = (planKey === 'business' || planKey === 'agency' || planKey === 'scale')
+              const paidPounds = (workspaceAddonStats.paid_total_pence / 100).toFixed(2)
+              return (
+                <div style={{ ...cs, marginBottom: 16 }}>
+                  <h2 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: TX }}>Workspace simulation</h2>
+                  <p style={{ margin: '0 0 14px', fontSize: 12.5, color: TX3, lineHeight: 1.55 }}>
+                    {isBusinessTier
+                      ? 'Included free on every Strategy-Fit assessment as part of the Business tier. £25 add-on per Speed-Fit or Depth-Fit assessment, billed on your next invoice.'
+                      : 'Included free on every Strategy-Fit assessment. £25 add-on per Speed-Fit or Depth-Fit assessment, billed on your next subscription invoice.'}
+                  </p>
+                  <div style={{
+                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10,
+                  }}>
+                    <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '12px 14px' }}>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 2 }}>
+                        Paid add-ons this month
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, letterSpacing: '-0.3px' }}>
+                        {workspaceAddonStats.paid_count} <span style={{ fontSize: 13, fontWeight: 600, color: TX2 }}>· £{paidPounds}</span>
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 4 }}>
+                        Speed-Fit and Depth-Fit add-ons, billed on next invoice
+                      </div>
+                    </div>
+                    <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '12px 14px' }}>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginBottom: 2 }}>
+                        Strategy-Fit Workspace this month
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, letterSpacing: '-0.3px' }}>
+                        {workspaceAddonStats.free_strategy_fit_count}
+                      </div>
+                      <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginTop: 4 }}>
+                        Included with each Strategy-Fit, no separate charge
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* ── Subscription status ── */}
             <div style={{ ...cs, marginBottom: 16 }}>

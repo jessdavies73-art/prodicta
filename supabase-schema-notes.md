@@ -190,7 +190,111 @@ UPDATE assessments
 
 ---
 
-## 9. Auth email templates (paste from `supabase/templates/`)
+## 9. Pricing structure and Workspace add-on billing
+
+Four assessment types, four price points, two ways to attach Workspace
+simulation. The pricing is the same across PAYG and subscription tiers;
+the difference is how the £25 Workspace add-on is billed.
+
+### Assessment types and Workspace defaults
+
+| Mode (DB) | Public name      | Headline price | Workspace simulation                  |
+| --------- | ---------------- | -------------- | ------------------------------------- |
+| `rapid`   | Rapid Screen     | £6             | Optional, £25 add-on (Immersive)       |
+| `quick`   | Speed-Fit        | £18            | Optional, £25 add-on                   |
+| `standard`| Depth-Fit        | £35            | Optional, £25 add-on                   |
+| `advanced`| Strategy-Fit     | £65            | Always included, no extra charge       |
+
+### Pay-as-you-go (`plan_type = 'payg'`)
+
+PAYG buyers attach Workspace via the existing one-time Immersive
+credit purchase. The flow is:
+
+1. On the new-assessment page, the Immersive toggle shows for any
+   non-Strategy-Fit mode. Strategy-Fit shows the Highlight Reel toggle
+   instead.
+2. Clicking "Add Immersive, £25" redirects to a Stripe Checkout
+   session created by `app/api/stripe/credit-bundle/route.js` with
+   `credit_type: 'immersive'`.
+3. After Checkout, the user returns with one Immersive credit on
+   their `assessment_credits` row. Creating the assessment with
+   `immersive_enabled: true` consumes the credit and flips
+   `use_modular_workspace = true` (or `healthcare_workspace_enabled`)
+   on the assessment row.
+
+This flow is unchanged by the subscriber Workspace add-on launch.
+
+### Subscription tiers (`plan_type = 'subscription'`)
+
+| Tier         | Monthly | Assessments | Users | Workspace on Speed-Fit / Depth-Fit | Workspace on Strategy-Fit            |
+| ------------ | ------- | ----------- | ----- | ---------------------------------- | ------------------------------------ |
+| Starter      | £99     | 10          | 2     | £25 add-on, billed on next invoice | Included free                         |
+| Professional | £299    | 30          | 5     | £25 add-on, billed on next invoice | Included free                         |
+| Business     | £499    | 100         | 15    | £25 add-on, billed on next invoice | Included free, marketed as unlimited |
+
+The Business tier "FREE unlimited Workspace on Strategy-Fit
+assessments" line is a marketing framing of the same gate behaviour
+that applies to every tier: Strategy-Fit always includes Workspace at
+no additional charge. The Business signal is the larger plan
+allowance (100 assessments) which in practice means Business
+subscribers can run more Strategy-Fits within their plan.
+
+The subscriber add-on is billed via `stripe.invoiceItems.create` with
+the `subscription` parameter set so the £25 lands on the customer's
+next subscription invoice as a separate line item ("Workspace
+simulation: <candidate name>, <role title>"). The subscription
+monthly fee plus any add-on items settle in one statement. The
+implementation lives in `lib/workspace-addon-billing.js`.
+
+### How the gate decides
+
+`app/api/assessment/generate/route.js` flips the modular Workspace
+gate (`use_modular_workspace` for office shell,
+`healthcare_workspace_enabled` for healthcare shell) when ANY of:
+
+- `mode === 'advanced'` (Strategy-Fit always includes Workspace)
+- `immersive_enabled === true` (PAYG bought Immersive credit)
+- `workspace_addon_purchased === true` (subscriber toggled the new
+  add-on AND the £25 successfully posted to Stripe as an invoice item)
+
+Education and field_ops shells stay on the legacy WorkspacePage
+regardless of these flags until their respective Phase 2.6 / Phase 3
+launches.
+
+### Audit-trail columns added
+
+- `assessments.workspace_addon_purchased` (bool, default false) -
+  true when Workspace was attached, either as a paid add-on for a
+  subscriber on Speed-Fit/Depth-Fit, or implicitly for any
+  Strategy-Fit (where it is always included).
+- `assessments.workspace_addon_charged_pence` (int, default 0) - the
+  amount actually charged. 2500 for a billed subscriber add-on, 0 for
+  an included Strategy-Fit.
+
+The launch log line now carries these signals:
+
+```
+[generate] assessment_created {
+  assessment_id, mode, shell_family,
+  use_modular_workspace, healthcare_workspace_enabled,
+  immersive_enabled,                 // PAYG path
+  workspace_addon_requested,         // subscriber requested the toggle
+  workspace_addon_billed,            // Stripe invoice item created OK
+  workspace_addon_charged_pence,
+  workspace_addon_invoice_item_id,
+  ...
+}
+```
+
+Grepping `workspace_addon_billed:true` shows successful subscriber
+charges; `workspace_addon_requested:true workspace_addon_billed:false`
+flags subscribers who toggled the add-on but Stripe billing failed
+(missing customer/subscription id, Stripe API error, etc.) - those
+assessments fall back to the legacy WorkspacePage.
+
+---
+
+## 10. Auth email templates (paste from `supabase/templates/`)
 
 The Supabase Auth confirmation, password-reset, magic-link, email-change
 and invite emails are configured in the Supabase Dashboard, not in

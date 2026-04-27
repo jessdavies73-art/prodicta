@@ -2125,7 +2125,7 @@ export default function LandingPage() {
                 promo: 'First 30 days: £49 then £99/month',
                 limit: '10 assessments/mo · Up to 2 users',
                 desc: 'For small teams getting started with AI assessment.',
-                features: ['10 assessments per month', 'Up to 2 users, extra £35/user/month', 'AI scenario generation', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs and interview questions', 'All features included'],
+                features: ['10 assessments per month', 'Up to 2 users, extra £35/user/month', 'AI scenario generation', 'Pressure-Fit scoring', 'Response integrity check', 'Watch-outs and interview questions', 'Workspace simulation included free with Strategy-Fit', 'Workspace simulation £25 add-on per Speed-Fit or Depth-Fit', 'All features included'],
                 highlight: false,
               },
               {
@@ -2134,7 +2134,7 @@ export default function LandingPage() {
                 promo: 'First 30 days: £149 then £299/month',
                 limit: '30 assessments/mo · Up to 5 users',
                 desc: 'For growing teams hiring at volume.',
-                features: ['30 assessments per month', 'Up to 5 users, extra £35/user/month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking tools', 'Archive and outcomes tracking', 'All features included'],
+                features: ['30 assessments per month', 'Up to 5 users, extra £35/user/month', 'Everything in Starter', 'Candidate comparison', 'Benchmarking tools', 'Archive and outcomes tracking', 'Workspace simulation included free with Strategy-Fit', 'Workspace simulation £25 add-on per Speed-Fit or Depth-Fit', 'All features included'],
                 highlight: false,
               },
               {
@@ -2143,7 +2143,7 @@ export default function LandingPage() {
                 promo: 'First 30 days: £249 then £499/month',
                 limit: '100 assessments/mo · Up to 15 users',
                 desc: 'For high-volume hiring and recruitment agencies.',
-                features: ['100 assessments per month', 'Up to 15 users, extra £35/user/month', 'Everything in Professional', 'Agency features', 'Placement risk scores', 'Document upload and send', 'All features included'],
+                features: ['100 assessments per month', 'Up to 15 users, extra £35/user/month', 'Everything in Professional', 'Agency features', 'Placement risk scores', 'Document upload and send', 'FREE unlimited Workspace simulation on Strategy-Fit assessments', 'Workspace simulation £25 add-on per Speed-Fit or Depth-Fit', 'All features included'],
                 highlight: true,
                 badge: 'BEST VALUE',
               },

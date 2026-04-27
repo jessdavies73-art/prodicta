@@ -381,6 +381,15 @@ export async function POST(request) {
     // cheaper-tier assessments get the modular path only when Immersive is
     // attached. Anything else stays on the legacy WorkspacePage.
     const immersive_enabled = body.immersive_enabled === true
+    // Subscriber Workspace add-on flag from the new-assessment page.
+    // True when a Starter / Professional / Business subscriber toggled
+    // the Workspace simulation add-on on for a Speed-Fit or Depth-Fit
+    // assessment. Server-side, we verify the user is on a subscription
+    // tier (not PAYG) and that the assessment mode supports the add-on
+    // (not Strategy-Fit, since that includes Workspace already), then
+    // bill £25 to the next subscription invoice via stripe.invoiceItems.
+    // PAYG buyers continue to use immersive_enabled (one-off Checkout).
+    const workspace_addon_requested = body.workspace_addon_purchased === true
     // Normalise mode: 'rapid' (1 scenario + prioritisation), 'quick' (2 scenarios), 'standard' (3 scenarios), 'advanced' (4 scenarios).
     const rawMode = (assessment_mode || 'standard').toLowerCase()
     let mode = ['rapid', 'quick', 'standard', 'advanced'].includes(rawMode) ? rawMode : 'standard'
@@ -1824,7 +1833,84 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
       )
       if (detectorResult) {
         const { profile, shell_family } = detectorResult
-        const isAdvancedOrImmersive = (mode === 'advanced' || immersive_enabled === true)
+
+        // Subscriber Workspace add-on. Eligible when the buyer is on a
+        // subscription tier (not PAYG), the mode is Speed-Fit or
+        // Depth-Fit (Strategy-Fit already includes Workspace, Rapid
+        // Screen is intentionally excluded per the pricing spec), the
+        // request asked for the add-on, and the shell is one we ship
+        // modular Workspace for at creation time (office or healthcare;
+        // education stays on the legacy WorkspacePage until Phase 2.6).
+        // We bill via stripe.invoiceItems before flipping the gate so
+        // the modular Workspace is only granted when the charge has
+        // landed on the subscription invoice. If billing fails we log
+        // and continue without the add-on; the assessment row records
+        // workspace_addon_purchased = false in that case.
+        const isSubscriber = userRow?.plan_type !== 'payg'
+          && (userRow?.subscription_status === 'active'
+              || userRow?.subscription_status === 'past_due'
+              || userRow?.subscription_status === 'trialing')
+        const subscriberAddonModeEligible = (mode === 'quick' || mode === 'standard')
+        const subscriberAddonShellEligible = (shell_family === 'office' || shell_family === 'healthcare')
+        let workspaceAddonBilled = false
+        let workspaceAddonChargedPence = 0
+        let workspaceAddonInvoiceItemId = null
+        if (
+          workspace_addon_requested
+          && isSubscriber
+          && subscriberAddonModeEligible
+          && subscriberAddonShellEligible
+        ) {
+          // Look up the user's Stripe ids. Defensive: if either is
+          // missing, we cannot bill correctly so we skip the add-on
+          // (and the assessment falls through to legacy WorkspacePage).
+          const { data: stripeRow } = await adminClient
+            .from('users')
+            .select('stripe_customer_id, stripe_subscription_id')
+            .eq('id', user.id)
+            .maybeSingle()
+          const customerId = stripeRow?.stripe_customer_id || null
+          const subscriptionId = stripeRow?.stripe_subscription_id || null
+          if (customerId && subscriptionId) {
+            try {
+              const { addWorkspaceAddonToSubscription } = await import('@/lib/workspace-addon-billing')
+              const billing = await addWorkspaceAddonToSubscription({
+                customerId,
+                subscriptionId,
+                assessmentId: assessment.id,
+                candidateName: null,
+                roleTitle: role_title,
+              })
+              if (billing?.invoice_item_id) {
+                workspaceAddonBilled = true
+                workspaceAddonChargedPence = billing.amount_pence
+                workspaceAddonInvoiceItemId = billing.invoice_item_id
+              } else {
+                console.warn('[generate] workspace_addon billing returned null', { assessment_id: assessment.id })
+              }
+            } catch (billingErr) {
+              console.error('[generate] workspace_addon billing failed', billingErr)
+            }
+          } else {
+            console.warn('[generate] workspace_addon requested but Stripe ids missing', {
+              assessment_id: assessment.id,
+              hasCustomer: !!customerId,
+              hasSubscription: !!subscriptionId,
+            })
+          }
+        }
+
+        // Strategy-Fit always includes Workspace; persist the audit
+        // signal as workspace_addon_purchased = true with no charge so
+        // billing tabs and PDFs show a consistent picture.
+        const strategyFitIncluded = (mode === 'advanced')
+        const workspaceAddonPersisted = workspaceAddonBilled || strategyFitIncluded
+
+        const isAdvancedOrImmersive = (
+          mode === 'advanced'
+          || immersive_enabled === true
+          || workspaceAddonBilled === true
+        )
         const useModular = shell_family === 'office' && isAdvancedOrImmersive
         const useHealthcareModular = shell_family === 'healthcare' && isAdvancedOrImmersive
 
@@ -1833,6 +1919,8 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
           shell_family,
           use_modular_workspace: useModular,
           healthcare_workspace_enabled: useHealthcareModular,
+          workspace_addon_purchased: workspaceAddonPersisted,
+          workspace_addon_charged_pence: workspaceAddonChargedPence,
         }).eq('id', assessment.id)
 
         let blockCount = null
@@ -1878,6 +1966,10 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
           use_modular_workspace: useModular,
           healthcare_workspace_enabled: useHealthcareModular,
           immersive_enabled,
+          workspace_addon_requested,
+          workspace_addon_billed: workspaceAddonBilled,
+          workspace_addon_charged_pence: workspaceAddonChargedPence,
+          workspace_addon_invoice_item_id: workspaceAddonInvoiceItemId,
           canonical_match: canonicalLabel,
           block_count: blockCount,
           employment_type,
@@ -1890,6 +1982,9 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
           use_modular_workspace: false,
           healthcare_workspace_enabled: false,
           immersive_enabled,
+          workspace_addon_requested,
+          workspace_addon_billed: false,
+          workspace_addon_charged_pence: 0,
           canonical_match: null,
           block_count: null,
           employment_type,
