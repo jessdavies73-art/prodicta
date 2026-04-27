@@ -2080,7 +2080,7 @@ export default function LandingPage() {
                   {
                     name: 'Strategy-Fit', price: '£65',
                     time: '45 minutes · 4 scenarios + Workspace',
-                    desc: 'A 45 minute leadership assessment with 4 work scenarios, a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.',
+                    desc: 'A 45 minute deep assessment with 4 work scenarios, a Day 1 workspace simulation, full narrative report, Strategic Thinking Evaluation, and Executive Summary.',
                   },
                 ].map((p, i) => (
                   <Reveal key={p.name} delay={i * 80}>

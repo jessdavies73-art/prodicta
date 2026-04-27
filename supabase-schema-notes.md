@@ -294,7 +294,45 @@ assessments fall back to the legacy WorkspacePage.
 
 ---
 
-## 10. Auth email templates (paste from `supabase/templates/`)
+## 10. Strategy-Fit components and roadmap
+
+The Strategy-Fit assessment carries layered components above the
+Workspace simulation. As of the current launch:
+
+| Component                     | Status         | Where it lives                               |
+| ----------------------------- | -------------- | -------------------------------------------- |
+| Strategic Thinking Evaluation | Built          | `lib/strategy-fit-components/strategic-thinking.js` (generation), candidate-flow screen between scenarios and Workspace |
+| Executive / Development Summary | Built        | `lib/strategy-fit-components/executive-summary.js` (synthesis at scoring time), parchment panel on page 1 of Manager Brief and Evidence Pack PDFs |
+| Stakeholder Management Brief  | Roadmap        | Not yet built. Removed from upgrade modal, billing/credits page, new-assessment Strategy-Fit description, and LandingPage pricing card so the marketing copy matches what is actually delivered. |
+
+The two columns added to support the launch:
+
+```sql
+alter table public.assessments
+  add column if not exists strategy_fit_components jsonb default null;
+alter table public.results
+  add column if not exists executive_summary jsonb default null;
+```
+
+`assessments.strategy_fit_components` keys what is generated at
+creation time (`strategic_thinking` today; future Stakeholder
+Management Brief would land under `stakeholder_management_brief`
+without a schema change). `results.executive_summary` holds the
+synthesised top-of-report panel.
+
+Senior-tier candidates (canonical role-mapping level 3 or 4, or
+seniority_band manager+) see the **Executive Summary** label.
+Junior-mid candidates (level 1-2 or seniority_band junior/mid) see
+the **Development Summary** label. The underlying JSONB shape is
+identical so the PDF render path is uniform.
+
+Strategy-Fit components do not auto-generate for legacy assessments
+created before this launch; both the candidate flow screen and the
+PDF summary panel skip cleanly when the columns are null.
+
+---
+
+## 11. Auth email templates (paste from `supabase/templates/`)
 
 The Supabase Auth confirmation, password-reset, magic-link, email-change
 and invite emails are configured in the Supabase Dashboard, not in

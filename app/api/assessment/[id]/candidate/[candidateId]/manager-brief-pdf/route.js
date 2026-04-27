@@ -78,7 +78,7 @@ export async function GET(request, { params }) {
 
     const { data: result } = await admin
       .from('results')
-      .select('overall_score, risk_level, hiring_confidence, strengths, watchouts, reality_timeline, onboarding_plan, interview_questions, scoring_rubric_version, model_version, response_quality, generic_detection, scoring_confidence, scores, created_at')
+      .select('overall_score, risk_level, hiring_confidence, strengths, watchouts, reality_timeline, onboarding_plan, interview_questions, scoring_rubric_version, model_version, response_quality, generic_detection, scoring_confidence, scores, executive_summary, created_at')
       .eq('candidate_id', params.candidateId)
       .maybeSingle()
     if (!result) return NextResponse.json({ error: 'No results' }, { status: 404 })
@@ -106,6 +106,79 @@ export async function GET(request, { params }) {
       ? new Date(candidate.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
       : new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
     const companyName = profile?.company_name || ''
+
+    // ── EXECUTIVE / DEVELOPMENT SUMMARY PAGE ──
+    // For Strategy-Fit assessments where the synthesis succeeded, the
+    // first page is a dedicated parchment-tinted Executive Summary
+    // (senior-tier) or Development Summary (junior-mid) panel. The
+    // existing manager brief layout follows on the next page. Legacy
+    // assessments without a generated executive_summary skip this
+    // page entirely and the brief opens as before.
+    if (result.executive_summary && Array.isArray(result.executive_summary.sections) && result.executive_summary.sections.length) {
+      const esPage = pdf.addPage([595, 842])
+      // Header band reuses the manager brief styling for visual continuity.
+      esPage.drawRectangle({ x: 0, y: 752, width: 595, height: 90, color: navy })
+      esPage.drawText('PRODICTA', { x: 40, y: 800, size: 28, font: helvB, color: teal })
+      esPage.drawText('Manager Brief', { x: 40, y: 778, size: 13, font: helv, color: white })
+      if (companyName) esPage.drawText(safe(companyName), { x: 40, y: 762, size: 10, font: helv, color: rgb(0.65, 0.75, 0.75) })
+
+      let ey = 730
+      esPage.drawText(safe(candidate.name || 'Candidate'), { x: 40, y: ey, size: 20, font: helvB, color: black })
+      ey -= 18
+      esPage.drawText(safe(`${candidate.assessments?.role_title || 'Role'} | ${assessmentDate} | ${roleLevelLabel}`), { x: 40, y: ey, size: 10.5, font: helv, color: grey })
+      ey -= 28
+
+      // Parchment panel containing the synthesis sections + recommendation.
+      const parchment = rgb(0.98, 0.937, 0.851)
+      const parchmentBorder = rgb(0.902, 0.84, 0.678)
+      const headlineLabel = result.executive_summary.headline_label || 'Executive Summary'
+      const sections = result.executive_summary.sections.slice(0, 4)
+      const rec = result.executive_summary.recommendation || null
+
+      // Estimate panel height. 30 for headline + 90 per section + 60 for
+      // recommendation. Compact rather than precise; pdf-lib does not
+      // auto-size the parchment background, so undershoot is safer than
+      // overshoot.
+      const panelHeight = Math.min(680, 30 + sections.length * 96 + (rec ? 60 : 0))
+      const panelTop = ey
+      const panelBottom = panelTop - panelHeight
+      esPage.drawRectangle({ x: 40, y: panelBottom, width: 515, height: panelHeight, color: parchment, borderColor: parchmentBorder, borderWidth: 1 })
+
+      let py = panelTop - 22
+      esPage.drawText(safe(headlineLabel), { x: 56, y: py, size: 13, font: helvB, color: navy })
+      py -= 22
+
+      for (const sec of sections) {
+        const label = safe(sec?.section_label || '')
+        const body = safe(sec?.content_paragraph || '')
+        if (!label && !body) continue
+        if (label) {
+          esPage.drawText(label, { x: 56, y: py, size: 10.5, font: helvB, color: teal })
+          py -= 14
+        }
+        if (body) {
+          const lines = wrap(body, helv, 10, 480)
+          for (const ln of lines.slice(0, 6)) {
+            esPage.drawText(ln, { x: 56, y: py, size: 10, font: helv, color: black })
+            py -= 12
+          }
+        }
+        py -= 6
+      }
+
+      if (rec && rec.summary) {
+        py -= 4
+        esPage.drawRectangle({ x: 56, y: py - 30, width: 483, height: 30, color: rgb(1, 1, 1), borderColor: parchmentBorder, borderWidth: 0.5 })
+        const recLabel = (result.executive_summary.headline_label === 'Development Summary')
+          ? 'Growth Recommendation'
+          : 'Recommendation'
+        esPage.drawText(`${recLabel}:`, { x: 64, y: py - 12, size: 10.5, font: helvB, color: navy })
+        const recLines = wrap(safe(rec.summary), helv, 10, 380)
+        recLines.slice(0, 2).forEach((ln, i) => {
+          esPage.drawText(ln, { x: 180, y: py - 12 - (i * 12), size: 10, font: helv, color: black })
+        })
+      }
+    }
 
     // ── PAGE 1 ──
     let page = pdf.addPage([595, 842])

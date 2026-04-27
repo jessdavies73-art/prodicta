@@ -99,7 +99,7 @@ export async function GET(request, { params }) {
     if (!candidate) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     const [{ data: result }, { data: outcome }, { data: copilot }, { data: profile }] = await Promise.all([
-      admin.from('results').select('overall_score, risk_level, hiring_confidence, strengths, watchouts, pressure_fit_score, integrity, reality_timeline, role_level, scoring_rubric_version, model_version, response_quality, generic_detection, scoring_confidence, scores, created_at').eq('candidate_id', params.candidateId).maybeSingle(),
+      admin.from('results').select('overall_score, risk_level, hiring_confidence, strengths, watchouts, pressure_fit_score, integrity, reality_timeline, role_level, scoring_rubric_version, model_version, response_quality, generic_detection, scoring_confidence, scores, executive_summary, created_at').eq('candidate_id', params.candidateId).maybeSingle(),
       admin.from('candidate_outcomes').select('*').eq('candidate_id', params.candidateId).eq('user_id', user.id).maybeSingle(),
       admin.from('probation_copilot').select('*').eq('candidate_id', params.candidateId).eq('user_id', user.id).maybeSingle(),
       admin.from('users').select('company_name, account_type').eq('id', user.id).maybeSingle(),
@@ -159,6 +159,72 @@ export async function GET(request, { params }) {
 
     // Page state
     const pages = []
+
+    // ── EXECUTIVE / DEVELOPMENT SUMMARY PAGE (Strategy-Fit only) ──
+    // For Strategy-Fit assessments where the synthesis succeeded, the
+    // first page is a dedicated parchment-tinted Executive Summary
+    // (senior-tier) or Development Summary (junior-mid) panel. The
+    // existing evidence pack layout follows on subsequent pages. Legacy
+    // assessments without a generated executive_summary skip this page
+    // entirely and the pack opens at the standard front page.
+    if (result.executive_summary && Array.isArray(result.executive_summary.sections) && result.executive_summary.sections.length) {
+      const esPage = pdf.addPage([PAGE_W, PAGE_H])
+      pages.push(esPage)
+      esPage.drawRectangle({ x: 0, y: PAGE_H - 48, width: PAGE_W, height: 48, color: navy })
+      esPage.drawText('PRODICTA', { x: MARGIN, y: PAGE_H - 30, size: 13, font: helvB, color: teal })
+      esPage.drawText('Probation Evidence Pack', { x: MARGIN + 90, y: PAGE_H - 30, size: 10, font: helv, color: white })
+
+      let ey = PAGE_H - 70
+      esPage.drawText(safe(candidate.name || 'Candidate'), { x: MARGIN, y: ey, size: 18, font: helvB, color: black })
+      ey -= 16
+      esPage.drawText(safe(`${candidate.assessments?.role_title || 'Role'} | ${assessmentDate} | ${roleLevelLabel}`), { x: MARGIN, y: ey, size: 10, font: helv, color: grey })
+      ey -= 22
+
+      const parchment = rgb(0.98, 0.937, 0.851)
+      const parchmentBorder = rgb(0.902, 0.84, 0.678)
+      const headlineLabel = result.executive_summary.headline_label || 'Executive Summary'
+      const sections = result.executive_summary.sections.slice(0, 4)
+      const rec = result.executive_summary.recommendation || null
+
+      const panelHeight = Math.min(680, 30 + sections.length * 96 + (rec ? 60 : 0))
+      const panelTop = ey
+      const panelBottom = panelTop - panelHeight
+      esPage.drawRectangle({ x: MARGIN, y: panelBottom, width: CONTENT_W, height: panelHeight, color: parchment, borderColor: parchmentBorder, borderWidth: 1 })
+
+      let py = panelTop - 22
+      esPage.drawText(safe(headlineLabel), { x: MARGIN + 16, y: py, size: 13, font: helvB, color: navy })
+      py -= 22
+
+      for (const sec of sections) {
+        const label = safe(sec?.section_label || '')
+        const body = safe(sec?.content_paragraph || '')
+        if (!label && !body) continue
+        if (label) {
+          esPage.drawText(label, { x: MARGIN + 16, y: py, size: 10.5, font: helvB, color: teal })
+          py -= 14
+        }
+        if (body) {
+          const lines = wrap(body, helv, 10, CONTENT_W - 32)
+          for (const ln of lines.slice(0, 6)) {
+            esPage.drawText(ln, { x: MARGIN + 16, y: py, size: 10, font: helv, color: black })
+            py -= 12
+          }
+        }
+        py -= 6
+      }
+
+      if (rec && rec.summary) {
+        py -= 4
+        esPage.drawRectangle({ x: MARGIN + 16, y: py - 30, width: CONTENT_W - 32, height: 30, color: rgb(1, 1, 1), borderColor: parchmentBorder, borderWidth: 0.5 })
+        const recLabel = headlineLabel === 'Development Summary' ? 'Growth Recommendation' : 'Recommendation'
+        esPage.drawText(`${recLabel}:`, { x: MARGIN + 24, y: py - 12, size: 10.5, font: helvB, color: navy })
+        const recLines = wrap(safe(rec.summary), helv, 10, CONTENT_W - 200)
+        recLines.slice(0, 2).forEach((ln, i) => {
+          esPage.drawText(ln, { x: MARGIN + 144, y: py - 12 - (i * 12), size: 10, font: helv, color: black })
+        })
+      }
+    }
+
     let page = pdf.addPage([PAGE_W, PAGE_H])
     pages.push(page)
     let y = PAGE_H - MARGIN

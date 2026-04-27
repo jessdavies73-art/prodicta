@@ -31,7 +31,7 @@ const PAYG_TYPES = [
   },
   {
     type: 'strategy-fit', label: 'Strategy-Fit', unit: 65,
-    description: 'A 45 minute leadership assessment with 4 work scenarios, a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.',
+    description: 'A 45 minute deep assessment with 4 work scenarios, a Day 1 workspace simulation, full narrative report, Strategic Thinking Evaluation, and Executive Summary.',
   },
 ]
 

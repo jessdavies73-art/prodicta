@@ -21,7 +21,7 @@ const LABELS = { 'rapid-screen': 'Rapid Screen', 'speed-fit': 'Speed-Fit', 'dept
 const DESCRIPTIONS = {
   'speed-fit':    '2 work scenarios, a full scored report with strengths, watch-outs, Week 1 interventions, skills breakdown, and interview brief.',
   'depth-fit':    '2 work scenarios, a full narrative report, detailed competency breakdown, Monday Morning Reality, counter-offer resilience score, and tailored coaching notes.',
-  'strategy-fit': '2 work scenarios, a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.',
+  'strategy-fit': 'A 45 minute deep assessment with 4 work scenarios, a Day 1 workspace simulation, full narrative report, Strategic Thinking Evaluation, and Executive Summary.',
 }
 
 export default function UpgradeAssessmentModal({ open, fromType, toType, assessmentId, onClose, onConfirmed }) {

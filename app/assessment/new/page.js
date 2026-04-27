@@ -1670,7 +1670,7 @@ export default function NewAssessmentPage() {
                 value: 'advanced',
                 title: 'Strategy-Fit',
                 subtitle: '45 minutes, 4 scenarios + workspace simulation',
-                description: 'Leadership assessment. Four work scenarios plus a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.',
+                description: 'Deep assessment. Four work scenarios plus a Day 1 workspace simulation, full narrative report, Strategic Thinking Evaluation, and Executive Summary.',
               },
             ].map(opt => {
               const selected = mode === opt.value

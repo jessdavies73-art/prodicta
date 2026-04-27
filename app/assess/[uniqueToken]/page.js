@@ -1368,6 +1368,126 @@ function SubmittingPage({ candidateName }) {
   )
 }
 
+// ─── State: Strategic Thinking Evaluation (Strategy-Fit only) ────────────────
+//
+// Sits between the calendar/scenarios stage and the modular Workspace
+// for Strategy-Fit assessments where the component was generated at
+// creation time. The candidate reads a single role-and-seniority-aware
+// scenario and types responses to 2-3 evaluation questions. On submit
+// the responses are held in parent state and attached to the eventual
+// /api/assess/[token]/submit payload so scoring can read them.
+//
+// Compliance: rendering is shell-agnostic; the AI generator handled
+// the shell-specific framing and compliance language at creation time.
+function StrategicThinkingScreen({ component, responses, onChange, onSubmit, onSkip }) {
+  const questions = Array.isArray(component?.evaluation_questions) ? component.evaluation_questions : []
+  const setResponse = (id, text) => onChange({ ...(responses || {}), [id]: text })
+  const allAnswered = questions.length > 0
+    && questions.every(q => ((responses?.[q.id] || '').trim().length >= 12))
+  const totalChars = questions.reduce((s, q) => s + ((responses?.[q.id] || '').trim().length), 0)
+  return (
+    <>
+      <NavBar />
+      <CentredCard>
+        <Card style={{ padding: '32px 36px' }}>
+          <div style={{
+            fontFamily: FM, fontSize: 11, fontWeight: 700, color: TEAL,
+            textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8,
+          }}>
+            Strategic Thinking Evaluation
+          </div>
+          <h1 style={{
+            fontFamily: F, fontSize: 22, fontWeight: 800, color: NAVY,
+            lineHeight: 1.25, margin: '0 0 12px',
+          }}>
+            {component?.title || 'Strategic Thinking Evaluation'}
+          </h1>
+          {component?.role_context_summary ? (
+            <div style={{
+              fontFamily: F, fontSize: 12.5, color: TX3, marginBottom: 16,
+            }}>
+              {component.role_context_summary}
+            </div>
+          ) : null}
+          <div style={{
+            background: '#FAEFD9', border: '1px solid #e6d6ad',
+            borderRadius: 10, padding: 16, marginBottom: 22,
+            fontFamily: F, fontSize: 14.5, color: NAVY, lineHeight: 1.65,
+            whiteSpace: 'pre-wrap',
+          }}>
+            {component?.scenario_text || ''}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {questions.map((q, i) => {
+              const value = (responses?.[q.id] || '')
+              const ready = value.trim().length >= 12
+              return (
+                <div key={q.id} style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 10, padding: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                    <div style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: NAVY }}>
+                      {i + 1}. {q.prompt}
+                    </div>
+                    <span style={{ fontFamily: FM, fontSize: 11, color: ready ? TEAL : TX3 }}>
+                      {value.trim().length} / 12 min
+                    </span>
+                  </div>
+                  <textarea
+                    value={value}
+                    onChange={(e) => setResponse(q.id, e.target.value)}
+                    rows={4}
+                    placeholder="Type your response. There is no single right answer; we are reading what you actually do and why."
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      fontFamily: F, fontSize: 14, color: NAVY, lineHeight: 1.6,
+                      padding: 12, borderRadius: 8,
+                      border: `1px solid ${BD}`, background: '#f8fafc',
+                      outline: 'none', resize: 'vertical',
+                    }}
+                  />
+                </div>
+              )
+            })}
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: 12, marginTop: 22, flexWrap: 'wrap',
+          }}>
+            <span style={{ fontFamily: F, fontSize: 13, color: TX2 }}>
+              {allAnswered ? 'Ready to continue.' : `Each response needs at least 12 characters. Total: ${totalChars}.`}
+            </span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={onSkip}
+                style={{
+                  fontFamily: F, fontSize: 13, fontWeight: 700, color: TX2,
+                  background: 'transparent', border: `1px solid ${BD}`,
+                  padding: '9px 14px', borderRadius: 8, cursor: 'pointer',
+                }}
+              >
+                Skip this section
+              </button>
+              <button
+                type="button"
+                onClick={onSubmit}
+                disabled={!allAnswered}
+                style={{
+                  fontFamily: F, fontSize: 14, fontWeight: 700, color: '#fff',
+                  background: allAnswered ? TEAL : BD,
+                  border: 'none', padding: '10px 18px', borderRadius: 8,
+                  cursor: allAnswered ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Continue to Workspace
+              </button>
+            </div>
+          </div>
+        </Card>
+      </CentredCard>
+    </>
+  )
+}
+
 // ─── State: Saved (scoring timed out client-side) ────────────────────────────
 function SavedPage({ candidateName, onContinue }) {
   return (
@@ -2461,13 +2581,18 @@ export default function AssessPage({ params }) {
   // params is a plain object, but better safe than crashing a candidate mid-flow.
   const uniqueToken = params?.uniqueToken || null
 
-  const [uiState, setUiState] = useState('loading') // loading | error | already_complete | intro | active | calendar | workspace | submitting | rating | preview | complete
+  const [uiState, setUiState] = useState('loading') // loading | error | already_complete | intro | active | calendar | strategic_thinking | workspace | submitting | rating | preview | complete
   const [demographicsDone, setDemographicsDone] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [candidate, setCandidate] = useState(null)
   const [assessment, setAssessment] = useState(null)
   const [companyName, setCompanyName] = useState('')
   const [pendingResponses, setPendingResponses] = useState(null) // stored between active→calendar→submit
+  // Strategic Thinking (Strategy-Fit only) candidate responses keyed
+  // by question id. Captured locally as the candidate types, attached
+  // to the final submit payload via doSubmit so scoring can read them
+  // alongside the workspace_data.
+  const [strategicThinkingResponses, setStrategicThinkingResponses] = useState({})
 
   useEffect(() => {
     if (!uniqueToken) {
@@ -2632,6 +2757,28 @@ export default function AssessPage({ params }) {
       onSubmit={handleScenariosComplete}
     />
   )
+  // Helper: after the calendar/scenarios stage, decide whether the
+  // Strategy-Fit candidate goes through the new Strategic Thinking
+  // screen first, or skips straight to the Workspace. Strategic
+  // Thinking only fires when (a) mode is advanced, (b) the assessment
+  // row carries a generated component on strategy_fit_components, and
+  // (c) the candidate has not yet completed it. Legacy Strategy-Fit
+  // assessments created before this launch carry no component on the
+  // row and gracefully fall through to the Workspace as today.
+  function advanceFromCalendar(submittedResponses) {
+    const isAdvanced = (assessment?.assessment_mode || '').toLowerCase() === 'advanced'
+    if (!isAdvanced) {
+      doSubmit(submittedResponses)
+      return
+    }
+    const hasStrategicThinking = !!assessment?.strategy_fit_components?.strategic_thinking?.evaluation_questions?.length
+    if (hasStrategicThinking) {
+      setUiState('strategic_thinking')
+    } else {
+      setUiState('workspace')
+    }
+  }
+
   if (uiState === 'calendar') return (
     <CalendarPage
       assessment={assessment}
@@ -2642,16 +2789,33 @@ export default function AssessPage({ params }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ candidate_id: candidate.id, calendar_layout: calendarData }),
         }).catch(() => {})
-        // Route to workspace for Strategy-Fit, otherwise submit
-        const isAdvanced = (assessment.assessment_mode || '').toLowerCase() === 'advanced'
-        if (isAdvanced) { setUiState('workspace') } else { doSubmit(pendingResponses) }
+        // Route to Strategic Thinking screen for Strategy-Fit (when
+        // the component is on the row), then to workspace, otherwise
+        // submit straight away.
+        advanceFromCalendar(pendingResponses)
       }}
       onSkip={() => {
-        const isAdvanced = (assessment.assessment_mode || '').toLowerCase() === 'advanced'
-        if (isAdvanced) { setUiState('workspace') } else { doSubmit(pendingResponses) }
+        advanceFromCalendar(pendingResponses)
       }}
     />
   )
+  if (uiState === 'strategic_thinking') {
+    const component = assessment?.strategy_fit_components?.strategic_thinking
+    if (!component || !Array.isArray(component.evaluation_questions) || component.evaluation_questions.length === 0) {
+      // Defensive: no component on the row, skip to workspace.
+      setTimeout(() => setUiState('workspace'), 0)
+      return null
+    }
+    return (
+      <StrategicThinkingScreen
+        component={component}
+        responses={strategicThinkingResponses}
+        onChange={setStrategicThinkingResponses}
+        onSubmit={() => setUiState('workspace')}
+        onSkip={() => setUiState('workspace')}
+      />
+    )
+  }
   if (uiState === 'workspace') {
     // Defensive: the workspace stage is Strategy-Fit only. If somehow we land
     // here without `advanced` mode (stale state, bug upstream), skip it and

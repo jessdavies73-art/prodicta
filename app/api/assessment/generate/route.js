@@ -1925,6 +1925,7 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
 
         let blockCount = null
         let canonicalLabel = null
+        let strategicThinkingGenerated = false
         if (useModular || useHealthcareModular) {
           try {
             const scenarioPromise = useModular
@@ -1947,6 +1948,43 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
               await adminClient.from('assessments').update({
                 workspace_scenario: scenario,
               }).eq('id', assessment.id)
+            }
+
+            // Strategy-Fit components. Strategic Thinking Evaluation is
+            // generated alongside the workspace scenario for any
+            // Strategy-Fit assessment (mode === 'advanced'), regardless
+            // of shell. Persisted to assessments.strategy_fit_components
+            // so the candidate flow can render a Strategic Thinking
+            // screen between the scenarios and the modular Workspace.
+            // Failure is non-blocking; the screen falls through to
+            // Workspace if the component is missing on the row.
+            if (mode === 'advanced') {
+              try {
+                const { generateStrategicThinking } = await import('@/lib/strategy-fit-components/strategic-thinking')
+                const canonicalLevel = scenario?.match_info?.level
+                const strategicThinking = await raceWithTimeout(
+                  generateStrategicThinking(client, {
+                    role_profile: profile,
+                    shell_family,
+                    scenario_context: scenario
+                      ? { spine: scenario.spine, trigger: scenario.trigger, title: scenario.title }
+                      : null,
+                    roleTitle: role_title,
+                    canonical_level: Number.isFinite(canonicalLevel) ? canonicalLevel : null,
+                    role_level: roleLevel || null,
+                  }),
+                  60000,
+                  'strategic thinking generation'
+                )
+                if (strategicThinking) {
+                  await adminClient.from('assessments').update({
+                    strategy_fit_components: { strategic_thinking: strategicThinking },
+                  }).eq('id', assessment.id)
+                  strategicThinkingGenerated = true
+                }
+              } catch (stErr) {
+                console.error('Strategic Thinking generation error:', stErr?.message)
+              }
             }
           } catch (scenarioErr) {
             console.error('Workspace scenario generation error:', scenarioErr)
@@ -1972,6 +2010,7 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
           workspace_addon_invoice_item_id: workspaceAddonInvoiceItemId,
           canonical_match: canonicalLabel,
           block_count: blockCount,
+          strategic_thinking_generated: strategicThinkingGenerated,
           employment_type,
         }))
       } else {
