@@ -513,7 +513,7 @@ function Nav() {
   const navLinks = [
     { href: '#how-it-works', label: 'How it works' },
     { href: '#pricing', label: 'Pricing' },
-    { href: '/demo', label: 'Demo' },
+    { href: '#who-its-for', label: "Who it's for" },
     { href: '/audit', label: 'Free audit' },
     { href: '/blog', label: 'Blog' },
     { href: '/roadmap', label: "What's Coming" },
@@ -573,6 +573,109 @@ function Nav() {
         </div>
       )}
     </nav>
+  )
+}
+
+// ── Press credibility strip ──────────────────────────────────────────────────
+const PRESS_FEATURES = [
+  {
+    name: 'theHRDirector',
+    logo_url: '/press/the-hr-director-logo.jpg',
+    article_title: 'The 6-month trap: Every hiring decision is now compliance',
+    article_url: 'https://www.thehrdirector.com/features/employment-law/6-month-trap-every-hiring-decision-now-compliance/',
+    publication_url: 'https://www.thehrdirector.com',
+    brand_color: '#1a3a8a',
+    date: 'April 2026',
+  },
+]
+
+function PressEntry({ feature }) {
+  const [hover, setHover] = useState(false)
+  const [logoFailed, setLogoFailed] = useState(false)
+  const showLogo = feature.logo_url && !logoFailed
+  const href = feature.article_url || feature.publication_url
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 14, textDecoration: 'none', textAlign: 'center',
+        padding: '8px 12px', borderRadius: 10,
+        opacity: hover ? 1 : 0.85,
+        transform: hover ? 'translateY(-2px)' : 'translateY(0)',
+        transition: 'opacity 220ms ease, transform 220ms ease, filter 220ms ease',
+        filter: hover ? 'none' : 'grayscale(0.05)',
+        maxWidth: 360,
+      }}
+    >
+      {showLogo ? (
+        <img
+          src={feature.logo_url}
+          alt={`${feature.name} logo`}
+          onError={() => setLogoFailed(true)}
+          className="pd-press-logo"
+          style={{ maxHeight: 56, width: 'auto', objectFit: 'contain', display: 'block' }}
+        />
+      ) : (
+        <span style={{
+          fontFamily: F, fontSize: 22, fontWeight: 800,
+          color: feature.brand_color || '#1a3a8a', letterSpacing: '-0.3px',
+        }}>
+          {feature.name}
+        </span>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <span style={{
+          fontFamily: F, fontSize: 13.5, color: '#5A6B7A',
+          fontStyle: 'italic', lineHeight: 1.45,
+        }}>
+          &ldquo;{feature.article_title}&rdquo;
+        </span>
+        <span style={{
+          fontFamily: F, fontSize: 12, color: '#8A99AB',
+          letterSpacing: '0.02em',
+        }}>
+          {feature.date}
+        </span>
+      </div>
+    </a>
+  )
+}
+
+function PressStrip() {
+  const features = PRESS_FEATURES
+  if (!features.length) return null
+  const single = features.length === 1
+  return (
+    <section style={{
+      background: '#FAF9F4',
+      borderTop: '1px solid rgba(15,33,55,0.05)',
+      borderBottom: '1px solid rgba(15,33,55,0.05)',
+    }} className="pd-press-strip">
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '56px 24px', textAlign: 'center' }} className="pd-press-inner">
+        <div style={{
+          fontFamily: F, fontSize: 11, fontWeight: 700,
+          color: TEAL, textTransform: 'uppercase',
+          letterSpacing: '0.15em', marginBottom: 26,
+        }}>
+          As featured in
+        </div>
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: single ? 'center' : 'space-evenly',
+          alignItems: 'flex-start',
+          gap: 36,
+        }}>
+          {features.map(f => <PressEntry key={f.name} feature={f} />)}
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -851,6 +954,12 @@ export default function LandingPage() {
           }
           .cv-vs-prodicta > div:nth-child(2) svg {
             transform: rotate(90deg);
+          }
+          .pd-press-inner {
+            padding: 40px 20px !important;
+          }
+          .pd-press-logo {
+            max-height: 44px !important;
           }
         }
       ` }} />
@@ -1187,6 +1296,8 @@ export default function LandingPage() {
         </div>
       </section>
       ) })()}
+
+      <PressStrip />
 
       {/* ════════════════════════════════════════════════════════════════════
           PERSONA VALUE PROPOSITIONS
@@ -2055,7 +2166,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           FOR AGENCIES / FOR EMPLOYERS
       ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#fff', padding: '72px 24px' }}>
+      <section id="who-its-for" style={{ background: '#fff', padding: '72px 24px', scrollMarginTop: 84 }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 60 }}>
