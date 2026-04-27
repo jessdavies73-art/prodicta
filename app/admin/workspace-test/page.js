@@ -28,7 +28,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ModularWorkspace from '@/app/assess/[uniqueToken]/components/ModularWorkspace'
-import { CANONICAL_ROLE_MAPPING, HEALTHCARE_CANONICAL_ROLE_MAPPING } from '@/lib/scenario-generator'
+import {
+  CANONICAL_ROLE_MAPPING,
+  HEALTHCARE_CANONICAL_ROLE_MAPPING,
+  EDUCATION_CANONICAL_ROLE_MAPPING,
+} from '@/lib/scenario-generator'
 import { BLOCK_CATALOGUE } from '@/lib/workspace-blocks/office/catalogue'
 
 const NAVY = '#0f2137'
@@ -52,6 +56,16 @@ const HEALTHCARE_LEVEL_LABELS = {
   2: 'Healthcare L2: Experienced delivery + judgement (4 blocks)',
   3: 'Healthcare L3: Clinical and team management (5 blocks)',
   4: 'Healthcare L4: Senior leadership (4 blocks)',
+}
+
+// Education shell levels (Phase 2 stub stage). Block counts per level
+// match the office and healthcare shells so the duration scaler stays
+// consistent.
+const EDUCATION_LEVEL_LABELS = {
+  1: 'Education L1: Direct delivery (4 blocks)',
+  2: 'Education L2: Experienced delivery + judgement (4 blocks)',
+  3: 'Education L3: Subject and pastoral management (5 blocks)',
+  4: 'Education L4: Senior leadership (4 blocks)',
 }
 
 // Out-of-scope roles for verifying the legacy fallback path.
@@ -92,6 +106,11 @@ export default function WorkspaceTestHarness() {
       const exemplar = exemplarFor(entry)
       hcByLevel[entry.level].push({ value: exemplar, label: `${exemplar} (canonical: ${entry.id})` })
     }
+    const eduByLevel = { 1: [], 2: [], 3: [], 4: [] }
+    for (const entry of EDUCATION_CANONICAL_ROLE_MAPPING) {
+      const exemplar = exemplarFor(entry)
+      eduByLevel[entry.level].push({ value: exemplar, label: `${exemplar} (canonical: ${entry.id})` })
+    }
     return [
       { label: LEVEL_LABELS[1], options: officeByLevel[1] },
       { label: LEVEL_LABELS[2], options: officeByLevel[2] },
@@ -101,6 +120,10 @@ export default function WorkspaceTestHarness() {
       { label: HEALTHCARE_LEVEL_LABELS[2], options: hcByLevel[2] },
       { label: HEALTHCARE_LEVEL_LABELS[3], options: hcByLevel[3] },
       { label: HEALTHCARE_LEVEL_LABELS[4], options: hcByLevel[4] },
+      { label: EDUCATION_LEVEL_LABELS[1], options: eduByLevel[1] },
+      { label: EDUCATION_LEVEL_LABELS[2], options: eduByLevel[2] },
+      { label: EDUCATION_LEVEL_LABELS[3], options: eduByLevel[3] },
+      { label: EDUCATION_LEVEL_LABELS[4], options: eduByLevel[4] },
       { label: 'Extrapolation tests (function + seniority match)', options: EXTRAPOLATION_ROLES.map(r => ({ value: r, label: r })) },
       { label: 'Out of scope (should fall back to legacy)', options: OUT_OF_SCOPE_ROLES.map(r => ({ value: r, label: r })) },
     ]
@@ -200,11 +223,13 @@ export default function WorkspaceTestHarness() {
       id: 'admin-test',
       role_title: effectiveTitle,
       assessment_mode: 'advanced',
-      // Office and healthcare shells each have their own modular gate
-      // flag. Set both so the preview mounts ModularWorkspace regardless
-      // of which shell the role classified into.
+      // Office, healthcare and education shells each have their own
+      // modular gate flag. Set all three so the preview mounts
+      // ModularWorkspace regardless of which shell the role classified
+      // into.
       use_modular_workspace: true,
       healthcare_workspace_enabled: true,
+      education_workspace_enabled: true,
       shell_family: result.shell_family,
       role_profile: result.profile,
       workspace_scenario: result.scenario,
@@ -245,7 +270,7 @@ export default function WorkspaceTestHarness() {
             Pick a role, generate a connected scenario
           </h1>
           <p style={{ fontFamily: F, fontSize: 14, color: '#475569', marginTop: 8, lineHeight: 1.5 }}>
-            Office shell (Phase 1, live) and Healthcare shell (Phase 2, in build) are previewable. Healthcare blocks render as stubs until each real component ships. Education, field-ops, and out-of-scope roles still fall back to the legacy WorkspacePage. Nothing is written to the database from this page.
+            Office shell (Phase 1, live), Healthcare shell (Phase 2, live) and Education shell (Phase 2, stub) are previewable. Education blocks render as stubs until each real component ships. Field-ops and out-of-scope roles still fall back to the legacy WorkspacePage. Nothing is written to the database from this page.
           </p>
         </div>
 

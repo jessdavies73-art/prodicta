@@ -9,6 +9,9 @@ import {
   generateHealthcareScenario,
   selectHealthcareBlocks,
   findHealthcareCanonicalEntry,
+  generateEducationScenario,
+  selectEducationBlocks,
+  findEducationCanonicalEntry,
 } from '@/lib/scenario-generator'
 
 // Phase 1 admin test harness API. Runs the detector + canonical block
@@ -78,9 +81,9 @@ export async function POST(req) {
   const shell_family = detected.shell_family
 
   // Canonical lookup runs even on dry_run so the harness can show the
-  // chosen blocks without burning a generator call. Office and healthcare
-  // shells each have their own canonical mapping; education and field_ops
-  // (Phase 3+) still fall through to the legacy WorkspacePage.
+  // chosen blocks without burning a generator call. Office, healthcare
+  // and education shells each have their own canonical mapping;
+  // field_ops (Phase 3) still falls through to the legacy WorkspacePage.
   let preview = null
   if (shell_family === 'office') {
     const { entry, match_type } = findCanonicalEntry(roleTitle, profile)
@@ -110,11 +113,26 @@ export async function POST(req) {
         duration_seconds: s.suggested_duration_seconds,
       })),
     }
+  } else if (shell_family === 'education') {
+    const { entry, match_type } = findEducationCanonicalEntry(roleTitle, profile)
+    const selected = selectEducationBlocks(profile, roleTitle)
+    preview = {
+      canonical_id: entry?.id || null,
+      canonical_label: entry?.label || null,
+      match_type,
+      level: entry?.level || null,
+      blocks: selected.map(s => ({
+        block_id: s.block_id,
+        order: s.order,
+        duration_seconds: s.suggested_duration_seconds,
+      })),
+    }
   }
 
-  // Shells still pending implementation (education, field_ops) and
-  // out_of_scope roles get a clear fallback reason.
-  const shellNotYetBuilt = (shell_family !== 'office' && shell_family !== 'healthcare' && shell_family !== 'out_of_scope')
+  // Shells still pending implementation (field_ops) and out_of_scope
+  // roles get a clear fallback reason.
+  const SHIPPED_SHELLS = new Set(['office', 'healthcare', 'education'])
+  const shellNotYetBuilt = !SHIPPED_SHELLS.has(shell_family) && shell_family !== 'out_of_scope'
 
   // Dry run stops here.
   if (dry_run) {
@@ -129,9 +147,9 @@ export async function POST(req) {
     })
   }
 
-  // Full generation runs for office and healthcare shells. Each shell
-  // calls its own generator. Other shells get the legacy fallback notice
-  // without an AI call.
+  // Full generation runs for office, healthcare and education shells.
+  // Each shell calls its own generator. Other shells get the legacy
+  // fallback notice without an AI call.
   let scenario = null
   if (shell_family === 'office') {
     scenario = await generateScenario(client, profile, {
@@ -145,6 +163,12 @@ export async function POST(req) {
       jobDescription: jobDescription || '',
       ...(Array.isArray(block_override) && block_override.length > 0 ? { blockOverride: block_override } : {}),
     })
+  } else if (shell_family === 'education') {
+    scenario = await generateEducationScenario(client, profile, {
+      roleTitle,
+      jobDescription: jobDescription || '',
+      ...(Array.isArray(block_override) && block_override.length > 0 ? { blockOverride: block_override } : {}),
+    })
   }
 
   return NextResponse.json({
@@ -152,7 +176,7 @@ export async function POST(req) {
     shell_family,
     preview,
     scenario,
-    fallback_reason: (shell_family === 'office' || shell_family === 'healthcare') && !scenario
+    fallback_reason: SHIPPED_SHELLS.has(shell_family) && !scenario
         ? 'generator_failed'
       : shell_family === 'out_of_scope' ? 'out_of_scope_role'
       : shellNotYetBuilt ? `${shell_family}_shell_not_yet_built`

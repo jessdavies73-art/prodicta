@@ -1768,6 +1768,8 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
     //    NOT NULL DEFAULT false;                                          (Phase 1)
     // -- ALTER TABLE assessments ADD COLUMN healthcare_workspace_enabled
     //    BOOLEAN NOT NULL DEFAULT false;                                  (Phase 2)
+    // -- ALTER TABLE assessments ADD COLUMN education_workspace_enabled
+    //    BOOLEAN NOT NULL DEFAULT false;                                  (Phase 2)
     //
     // Modular Workspace launch. Detect role profile + shell family for
     // every assessment, then route to the right shell:
@@ -1781,9 +1783,17 @@ ${roleLevel === 'OPERATIONAL' ? 'Use simple workplace messages: supervisor askin
     //        scenario via generateHealthcareScenario, modular Healthcare
     //        Workspace mounts at assess time.
     //
-    //   shell_family in {education, field_ops, out_of_scope}
-    //     -> both gates stay false, legacy WorkspacePage runs. These
-    //        shells ship in Phase 3.
+    //   shell_family === 'education'
+    //     -> education_workspace_enabled stays false at creation. Phase
+    //        2 stub stage does not pre-generate education scenarios;
+    //        admin testing uses /admin/workspace-test to preview. When
+    //        all 9 education blocks ship as real components and scoring
+    //        is wired (Phase 2.6), this branch flips on the same way
+    //        healthcare did.
+    //
+    //   shell_family in {field_ops, out_of_scope}
+    //     -> all gates stay false, legacy WorkspacePage runs. Field-ops
+    //        ships in Phase 3.
     //
     // The two flags are independent. An assessment row carries one or
     // the other true, never both, because shell_family is a single

@@ -2663,13 +2663,14 @@ export default function AssessPage({ params }) {
       setTimeout(() => doSubmit(pendingResponses || []), 0)
       return null
     }
-    // Modular Workspace gate. Office shell (Phase 1, live) requires
-    // use_modular_workspace = true. Healthcare shell (Phase 2, in build)
-    // requires the separate healthcare_workspace_enabled flag so we can
-    // ramp it independently and roll back without touching office.
-    // Education and field_ops, plus out-of-scope roles, continue to fall
-    // through to the legacy WorkspacePage until their respective shells
-    // ship.
+    // Modular Workspace gate. Each shell has its own per-assessment
+    // flag so we can ramp them independently and roll one back without
+    // touching the others:
+    //   Office (Phase 1, live)        -> use_modular_workspace
+    //   Healthcare (Phase 2, live)    -> healthcare_workspace_enabled
+    //   Education (Phase 2, stub)     -> education_workspace_enabled
+    // Field-ops and out-of-scope roles continue to fall through to the
+    // legacy WorkspacePage until their respective shells ship.
     const hasScenario = !!assessment?.workspace_scenario
     const officeReady = hasScenario
       && assessment?.shell_family === 'office'
@@ -2677,7 +2678,10 @@ export default function AssessPage({ params }) {
     const healthcareReady = hasScenario
       && assessment?.shell_family === 'healthcare'
       && assessment?.healthcare_workspace_enabled === true
-    const useModular = officeReady || healthcareReady
+    const educationReady = hasScenario
+      && assessment?.shell_family === 'education'
+      && assessment?.education_workspace_enabled === true
+    const useModular = officeReady || healthcareReady || educationReady
     if (useModular) {
       return (
         <ModularWorkspace
