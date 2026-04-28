@@ -2432,7 +2432,10 @@ function DemoCandidateInner({ params }) {
             <div className="no-print" style={{ flexShrink: 0, width: isMobile ? '100%' : 220 }}>
               {/* Primary actions */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
-                {isAgency && (
+                {/* Manager Brief PDF is an employer-side artefact (see the
+                    matching gate on the live page). Mirroring live behaviour
+                    here keeps the demo agency-perm view honest. */}
+                {!isAgency && (
                 <button
                   onClick={() => setSignupPrompt(true)}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: NAVY, border: 'none', borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: '#fff', padding: '10px 16px', cursor: 'pointer', width: '100%' }}
@@ -2498,15 +2501,12 @@ function DemoCandidateInner({ params }) {
               {moreActionsOpen && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
 
-                {/* SHARE */}
+                {/* SHARE — agency-only. Mirrors live: Send to Client is
+                    the single bundling flow; the earlier "Send Report to
+                    Client" button was redundant and has been removed. */}
                 {isAgency && (
                   <>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Share</div>
-                  <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
-                    <Ic name="file" size={14} color={TEALD} />
-                    Send Report to Client
-                    <InfoTooltip text="Generate and send a configured version of this report to your client." />
-                  </button>
                   <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                     <Ic name="send" size={14} color={TEALD} />
                     Send to Client

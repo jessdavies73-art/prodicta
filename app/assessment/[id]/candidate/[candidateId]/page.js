@@ -1957,7 +1957,15 @@ export default function CandidateReportPage({ params }) {
                 <div className="no-print" style={{ flexShrink: 0, width: isMobile ? '100%' : 220 }}>
                   {/* Primary actions */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
-                    {results && profile?.account_type === 'agency' && (
+                    {/* Manager Brief PDF is an employer-side artefact: a 2-page
+                        summary for the line manager who actually onboards the
+                        hire. Permanent recruitment agencies deliver to clients
+                        rather than to line managers, and temp agencies work
+                        through assignment workflows, so both agency types lose
+                        this button. The PDF generation route stays available
+                        and the modal is unchanged, only the entry point moves
+                        from agency to employer. */}
+                    {results && profile?.account_type === 'employer' && (
                       <button
                         onClick={() => setBriefModal(true)}
                         style={{
@@ -2042,20 +2050,14 @@ export default function CandidateReportPage({ params }) {
                   {moreActionsOpen && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
 
-                    {/* SHARE */}
+                    {/* SHARE — agency-only. Send to Client is the single
+                        bundling flow: it emails the candidate report inline
+                        plus any uploaded CV / cover letter as attachments.
+                        The earlier "Send Report to Client" button was a
+                        redundant configure-and-print flow that confused users
+                        sitting next to Send to Client; it has been removed. */}
                     {profile?.account_type === 'agency' && (
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Share</div>
-                    )}
-                    {results && profile?.account_type === 'agency' && (
-                      <button onClick={handleClientExport} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
-                        fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
-                      }}>
-                        <Ic name="file" size={15} color={TEALD} />
-                        Send Report to Client
-                        <InfoTooltip text="Generate and send a configured version of this report to your client." />
-                      </button>
                     )}
                     {results && profile?.account_type === 'agency' && (
                       <button onClick={() => setSendModal(true)} style={{
