@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
 import { SCORING_DIMENSIONS, SCORING_DIMENSION_NAMES } from '@/lib/dimensions'
-import { PD_SCENARIO_VERSION } from '@/lib/constants'
+import { PD_SCENARIO_VERSION, PD_EDUCATION_BLOCK_LIBRARY_VERSION } from '@/lib/constants'
 import { detectRoleProfile } from '@/lib/role-profile-detector'
-import { generateScenario, generateHealthcareScenario } from '@/lib/scenario-generator'
+import { generateScenario, generateHealthcareScenario, generateEducationScenario } from '@/lib/scenario-generator'
 
 // Scenario generation calls the Anthropic API which can take 30-60s for
 // Strategy-Fit (4 scenarios). Allow up to 120s before Vercel kills the function.
@@ -1886,13 +1886,15 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
     //        scenario via generateHealthcareScenario, modular Healthcare
     //        Workspace mounts at assess time.
     //
-    //   shell_family === 'education'
-    //     -> education_workspace_enabled stays false at creation. Phase
-    //        2 stub stage does not pre-generate education scenarios;
-    //        admin testing uses /admin/workspace-test to preview. When
-    //        all 9 education blocks ship as real components and scoring
-    //        is wired (Phase 2.6), this branch flips on the same way
-    //        healthcare did.
+    //   shell_family === 'education'  AND (advanced OR immersive)
+    //     -> education_workspace_enabled = true, generate education
+    //        scenario via generateEducationScenario, modular Education
+    //        Workspace mounts at assess time. Phase 2 Education ships
+    //        all 9 blocks as real components plus per-block scorers
+    //        (Phase 2.6). Gated additionally on
+    //        PD_EDUCATION_BLOCK_LIBRARY_VERSION === 'education-block-library-v1.0'
+    //        so a constant revert is enough to roll back the auto-fire
+    //        without touching this code.
     //
     //   shell_family in {field_ops, out_of_scope}
     //     -> all gates stay false, legacy WorkspacePage runs. Field-ops
@@ -1933,19 +1935,23 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         // Depth-Fit (Strategy-Fit already includes Workspace, Rapid
         // Screen is intentionally excluded per the pricing spec), the
         // request asked for the add-on, and the shell is one we ship
-        // modular Workspace for at creation time (office or healthcare;
-        // education stays on the legacy WorkspacePage until Phase 2.6).
-        // We bill via stripe.invoiceItems before flipping the gate so
-        // the modular Workspace is only granted when the charge has
-        // landed on the subscription invoice. If billing fails we log
-        // and continue without the add-on; the assessment row records
-        // workspace_addon_purchased = false in that case.
+        // modular Workspace for at creation time (office, healthcare
+        // and education shells all ship modular as of Phase 2 Education
+        // switch-on). We bill via stripe.invoiceItems before flipping
+        // the gate so the modular Workspace is only granted when the
+        // charge has landed on the subscription invoice. If billing
+        // fails we log and continue without the add-on; the assessment
+        // row records workspace_addon_purchased = false in that case.
         const isSubscriber = userRow?.plan_type !== 'payg'
           && (userRow?.subscription_status === 'active'
               || userRow?.subscription_status === 'past_due'
               || userRow?.subscription_status === 'trialing')
         const subscriberAddonModeEligible = (mode === 'quick' || mode === 'standard')
-        const subscriberAddonShellEligible = (shell_family === 'office' || shell_family === 'healthcare')
+        const subscriberAddonShellEligible = (
+          shell_family === 'office'
+          || shell_family === 'healthcare'
+          || shell_family === 'education'
+        )
         let workspaceAddonBilled = false
         let workspaceAddonChargedPence = 0
         let workspaceAddonInvoiceItemId = null
@@ -2019,12 +2025,22 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         )
         const useModular = shell_family === 'office' && isAdvancedOrImmersive
         const useHealthcareModular = shell_family === 'healthcare' && isAdvancedOrImmersive
+        // Education modular auto-fires when the shell classifies as
+        // education AND the mode is Strategy-Fit or Depth-Fit-immersive
+        // (same pattern as healthcare) AND the block library is at v1.0.
+        // The version check is a kill-switch: reverting
+        // PD_EDUCATION_BLOCK_LIBRARY_VERSION in lib/constants.js disables
+        // the auto-fire without touching this route.
+        const useEducationModular = shell_family === 'education'
+          && isAdvancedOrImmersive
+          && PD_EDUCATION_BLOCK_LIBRARY_VERSION === 'education-block-library-v1.0'
 
         await adminClient.from('assessments').update({
           role_profile: profile,
           shell_family,
           use_modular_workspace: useModular,
           healthcare_workspace_enabled: useHealthcareModular,
+          education_workspace_enabled: useEducationModular,
           workspace_addon_purchased: workspaceAddonPersisted,
           workspace_addon_charged_pence: workspaceAddonChargedPence,
           highlight_reel_addon_purchased: highlightReelPersisted,
@@ -2071,17 +2087,22 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
         let blockCount = null
         let canonicalLabel = null
         let strategicThinkingGenerated = false
-        if (useModular || useHealthcareModular) {
+        if (useModular || useHealthcareModular || useEducationModular) {
           try {
             const scenarioPromise = useModular
               ? generateScenario(client, profile, {
                   roleTitle: role_title,
                   jobDescription: job_description,
                 })
-              : generateHealthcareScenario(client, profile, {
-                  roleTitle: role_title,
-                  jobDescription: job_description,
-                })
+              : useHealthcareModular
+                ? generateHealthcareScenario(client, profile, {
+                    roleTitle: role_title,
+                    jobDescription: job_description,
+                  })
+                : generateEducationScenario(client, profile, {
+                    roleTitle: role_title,
+                    jobDescription: job_description,
+                  })
             const scenario = await raceWithTimeout(
               scenarioPromise,
               90000,
@@ -2142,16 +2163,25 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
 
         // Structured launch-monitoring log. One line per created assessment
         // so adoption of the modular path can be tracked by grepping
-        // `[generate] assessment_created` in the platform logs. Two gate
+        // `[generate] assessment_created` in the platform logs. Three gate
         // fields are emitted (use_modular_workspace for the office shell,
-        // healthcare_workspace_enabled for the healthcare shell) so the
+        // healthcare_workspace_enabled for the healthcare shell,
+        // education_workspace_enabled for the education shell) so the
         // launch dashboard can split adoption by shell.
+        const modularWorkspaceUsed = useModular || useHealthcareModular || useEducationModular
+        const blockLibraryVersionEmitted = useModular ? 'office-block-library-v1.0'
+          : useHealthcareModular ? 'healthcare-block-library-v1.0'
+          : useEducationModular ? PD_EDUCATION_BLOCK_LIBRARY_VERSION
+          : null
         console.log('[generate] assessment_created', JSON.stringify({
           assessment_id: assessment.id,
           mode,
           shell_family,
           use_modular_workspace: useModular,
           healthcare_workspace_enabled: useHealthcareModular,
+          education_workspace_enabled: useEducationModular,
+          modular_workspace_used: modularWorkspaceUsed,
+          block_library_version: blockLibraryVersionEmitted,
           immersive_enabled,
           workspace_addon_requested,
           workspace_addon_billed: workspaceAddonBilled,
@@ -2174,6 +2204,9 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
           shell_family: null,
           use_modular_workspace: false,
           healthcare_workspace_enabled: false,
+          education_workspace_enabled: false,
+          modular_workspace_used: false,
+          block_library_version: null,
           immersive_enabled,
           workspace_addon_requested,
           workspace_addon_billed: false,

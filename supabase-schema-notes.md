@@ -91,15 +91,17 @@ The scoring pipeline reads the canonical values from `lib/constants.js` (`PD_SCE
 ## 8. Modular Workspace launch and rollback
 
 The modular Workspace is enabled by default for any new assessment
-that classifies into a shipped shell (office or healthcare) AND is
-created in Strategy-Fit mode OR with the Immersive add-on attached.
-Two flags control this, one per shell, and they work independently:
+that classifies into a shipped shell (office, healthcare, education)
+AND is created in Strategy-Fit mode OR with the Immersive add-on
+attached. Three flags control this, one per shell, and they work
+independently:
 
 - `assessments.use_modular_workspace` — Phase 1, Office shell.
 - `assessments.healthcare_workspace_enabled` — Phase 2, Healthcare/Care shell.
+- `assessments.education_workspace_enabled` — Phase 2, Education shell (live as of `education-block-library-v1.0`; 9 real blocks plus per-block scorers in `lib/workspace-blocks/education/scoring/`). Sensitive compliance language applies for `safeguarding-referral` and `crisis-simulation` blocks: scoring narratives focus on professional judgement and pathway, never repeat graphic detail, and anonymise pupil references. Education auto-fire is additionally gated on `PD_EDUCATION_BLOCK_LIBRARY_VERSION === 'education-block-library-v1.0'` in `lib/constants.js`; reverting that constant disables the auto-fire without touching the generate route.
 
-Both flags default to `false` on new rows. Existing rows are never
-migrated; they keep whatever value they were created with so
+All three flags default to `false` on new rows. Existing rows are
+never migrated; they keep whatever value they were created with so
 in-flight candidates do not see a behaviour change mid-run.
 
 The assess-side gate at `app/assess/[uniqueToken]/page.js` routes on
@@ -107,15 +109,16 @@ the combination of `shell_family`, `workspace_scenario`, and the
 matching gate flag:
 
 ```
-shell_family === 'office'      AND use_modular_workspace      AND workspace_scenario  -> modular Office Workspace
-shell_family === 'healthcare'  AND healthcare_workspace_enabled AND workspace_scenario -> modular Healthcare Workspace
-otherwise                                                                              -> legacy WorkspacePage
+shell_family === 'office'      AND use_modular_workspace        AND workspace_scenario  -> modular Office Workspace
+shell_family === 'healthcare'  AND healthcare_workspace_enabled AND workspace_scenario  -> modular Healthcare Workspace
+shell_family === 'education'   AND education_workspace_enabled  AND workspace_scenario  -> modular Education Workspace
+otherwise                                                                                -> legacy WorkspacePage
 ```
 
-A given row carries one gate true, never both, because shell_family
-is a single value. Education, field_ops, and out_of_scope shells
-continue to fall through to the legacy WorkspacePage; those shells
-ship in Phase 3.
+A given row carries exactly one gate true (never more), because
+`shell_family` is a single value. Field-ops and out-of-scope shells
+continue to fall through to the legacy WorkspacePage; field-ops
+ships in Phase 3.
 
 ### Launch monitoring
 
@@ -127,6 +130,9 @@ in the platform logs. Each line is structured JSON and carries:
   assessment_id, mode, shell_family,
   use_modular_workspace,            // office gate
   healthcare_workspace_enabled,     // healthcare gate
+  education_workspace_enabled,      // education gate
+  modular_workspace_used,           // true when any of the three gates fired
+  block_library_version,            // 'office-block-library-v1.0' | 'healthcare-block-library-v1.0' | 'education-block-library-v1.0' | null
   immersive_enabled,
   canonical_match,                  // canonical_label or canonical_id
   block_count,                      // number of blocks selected
@@ -137,7 +143,13 @@ in the platform logs. Each line is structured JSON and carries:
 Sample healthcare line for a fresh Registered Nurse assessment:
 
 ```
-[generate] assessment_created {"assessment_id":"...","mode":"advanced","shell_family":"healthcare","use_modular_workspace":false,"healthcare_workspace_enabled":true,"immersive_enabled":false,"canonical_match":"Registered Nurse (general / specialist)","block_count":4,"employment_type":"permanent"}
+[generate] assessment_created {"assessment_id":"...","mode":"advanced","shell_family":"healthcare","use_modular_workspace":false,"healthcare_workspace_enabled":true,"education_workspace_enabled":false,"modular_workspace_used":true,"block_library_version":"healthcare-block-library-v1.0","immersive_enabled":false,"canonical_match":"Registered Nurse (general / specialist)","block_count":4,"employment_type":"permanent"}
+```
+
+Sample education line for a fresh Class Teacher Primary assessment:
+
+```
+[generate] assessment_created {"assessment_id":"...","mode":"advanced","shell_family":"education","use_modular_workspace":false,"healthcare_workspace_enabled":false,"education_workspace_enabled":true,"modular_workspace_used":true,"block_library_version":"education-block-library-v1.0","immersive_enabled":false,"canonical_match":"Class Teacher (Primary)","block_count":4,"employment_type":"permanent"}
 ```
 
 ### Rollback panic buttons
@@ -170,6 +182,23 @@ UPDATE assessments
    AND shell_family = 'healthcare';
 ```
 
+Education shell rollback:
+
+```sql
+-- Disable modular Education Workspace for every assessment created since launch.
+-- In-flight candidates revert to the legacy WorkspacePage on next load.
+UPDATE assessments
+   SET education_workspace_enabled = false
+ WHERE created_at > '<launch_cutoff>'::timestamptz
+   AND shell_family = 'education';
+```
+
+A no-SQL alternative for education is to revert
+`PD_EDUCATION_BLOCK_LIBRARY_VERSION` away from `'education-block-library-v1.0'`
+in `lib/constants.js`; the generate route checks the constant before
+flipping the gate, so reverting + redeploy disables auto-fire for any
+new assessment going forward without touching existing rows.
+
 Re-enable after the underlying issue is fixed:
 
 ```sql
@@ -185,6 +214,13 @@ UPDATE assessments
    SET healthcare_workspace_enabled = true
  WHERE created_at > '<launch_cutoff>'::timestamptz
    AND shell_family = 'healthcare'
+   AND workspace_scenario IS NOT NULL;
+
+-- Education.
+UPDATE assessments
+   SET education_workspace_enabled = true
+ WHERE created_at > '<launch_cutoff>'::timestamptz
+   AND shell_family = 'education'
    AND workspace_scenario IS NOT NULL;
 ```
 

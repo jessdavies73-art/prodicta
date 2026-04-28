@@ -2873,7 +2873,7 @@ export default function AssessPage({ params }) {
     // touching the others:
     //   Office (Phase 1, live)        -> use_modular_workspace
     //   Healthcare (Phase 2, live)    -> healthcare_workspace_enabled
-    //   Education (Phase 2, stub)     -> education_workspace_enabled
+    //   Education (Phase 2, live)     -> education_workspace_enabled
     // Field-ops and out-of-scope roles continue to fall through to the
     // legacy WorkspacePage until their respective shells ship.
     const hasScenario = !!assessment?.workspace_scenario

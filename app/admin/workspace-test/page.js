@@ -59,9 +59,9 @@ const HEALTHCARE_LEVEL_LABELS = {
   4: 'Healthcare L4: Senior leadership (4 blocks)',
 }
 
-// Education shell levels (Phase 2 stub stage). Block counts per level
-// match the office and healthcare shells so the duration scaler stays
-// consistent.
+// Education shell levels (Phase 2, live with all 9 real blocks plus
+// per-block scorers). Block counts per level match the office and
+// healthcare shells so the duration scaler stays consistent.
 const EDUCATION_LEVEL_LABELS = {
   1: 'Education L1: Direct delivery (4 blocks)',
   2: 'Education L2: Experienced delivery + judgement (4 blocks)',
@@ -410,7 +410,7 @@ export default function WorkspaceTestHarness() {
             Pick a role, generate a connected scenario
           </h1>
           <p style={{ fontFamily: F, fontSize: 14, color: '#475569', marginTop: 8, lineHeight: 1.5 }}>
-            Office shell (Phase 1, live), Healthcare shell (Phase 2, live) and Education shell (Phase 2, v1.0: all 9 blocks real) are previewable. Field-ops and out-of-scope roles still fall back to the legacy WorkspacePage. Nothing is written to the database from this page.
+            Office shell (Phase 1, live), Healthcare shell (Phase 2, live) and Education shell (Phase 2, live: all 9 blocks real, per-block scoring live) are previewable. Field-ops and out-of-scope roles still fall back to the legacy WorkspacePage. Nothing is written to the database from this page.
           </p>
           <EducationBlockStatusBanner />
         </div>
@@ -1474,7 +1474,7 @@ function EducationBlockStatusBanner() {
       </div>
       <div style={{ fontFamily: F, fontSize: 12.5, color: '#475569', lineHeight: 1.5 }}>
         {allReal
-          ? `All ${real.length} blocks real. Per-block scorers ship in Phase 2.6.`
+          ? `All ${real.length} blocks real. Per-block scoring live.`
           : `${real.length} real, ${stub.length} stub. Stubs render the office BlockPlaceholder until each real component ships.`}
       </div>
     </div>
