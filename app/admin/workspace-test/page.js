@@ -34,6 +34,7 @@ import {
   EDUCATION_CANONICAL_ROLE_MAPPING,
 } from '@/lib/scenario-generator'
 import { BLOCK_CATALOGUE } from '@/lib/workspace-blocks/office/catalogue'
+import { BLOCK_CATALOGUE as EDUCATION_BLOCK_CATALOGUE } from '@/lib/workspace-blocks/education/catalogue'
 
 const NAVY = '#0f2137'
 const TEAL = '#00BFA5'
@@ -409,8 +410,9 @@ export default function WorkspaceTestHarness() {
             Pick a role, generate a connected scenario
           </h1>
           <p style={{ fontFamily: F, fontSize: 14, color: '#475569', marginTop: 8, lineHeight: 1.5 }}>
-            Office shell (Phase 1, live), Healthcare shell (Phase 2, live) and Education shell (Phase 2, stub) are previewable. Education blocks render as stubs until each real component ships. Field-ops and out-of-scope roles still fall back to the legacy WorkspacePage. Nothing is written to the database from this page.
+            Office shell (Phase 1, live), Healthcare shell (Phase 2, live) and Education shell (Phase 2, v0.5: 5 of 9 blocks real) are previewable. Field-ops and out-of-scope roles still fall back to the legacy WorkspacePage. Nothing is written to the database from this page.
           </p>
+          <EducationBlockStatusBanner />
         </div>
 
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24, marginBottom: 18 }}>
@@ -1219,4 +1221,46 @@ const tinyBtn = {
   padding: '4px 8px', borderRadius: 6,
   background: '#fff', border: '1px solid #cbd5e1', color: '#475569',
   cursor: 'pointer',
+}
+
+function EducationBlockStatusBanner() {
+  const eduBlocks = Object.values(EDUCATION_BLOCK_CATALOGUE)
+  const real = eduBlocks.filter(b => b.is_real)
+  const stub = eduBlocks.filter(b => !b.is_real)
+  const chipReal = {
+    display: 'inline-flex', alignItems: 'center', gap: 6,
+    fontFamily: FM, fontSize: 11, fontWeight: 700,
+    padding: '4px 9px', borderRadius: 999,
+    background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0',
+  }
+  const chipStub = {
+    display: 'inline-flex', alignItems: 'center', gap: 6,
+    fontFamily: FM, fontSize: 11, fontWeight: 700,
+    padding: '4px 9px', borderRadius: 999,
+    background: '#fffbeb', color: '#92400e', border: '1px solid #fcd34d',
+  }
+  return (
+    <div style={{
+      marginTop: 12, padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
+    }}>
+      <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+        Education shell — block status (v0.5)
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+        {real.map(b => (
+          <span key={b.id} style={chipReal} title="Real interactive block">
+            <span aria-hidden="true">✓</span> {b.id}
+          </span>
+        ))}
+        {stub.map(b => (
+          <span key={b.id} style={chipStub} title="Stub — not yet built">
+            <span aria-hidden="true">○</span> {b.id} (stub - not yet built)
+          </span>
+        ))}
+      </div>
+      <div style={{ fontFamily: F, fontSize: 12.5, color: '#475569', lineHeight: 1.5 }}>
+        {real.length} real, {stub.length} stub. Stubs render the office BlockPlaceholder and will be replaced with real components in the next prompt.
+      </div>
+    </div>
+  )
 }
