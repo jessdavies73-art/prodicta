@@ -1237,6 +1237,10 @@ export default function CandidateReportPage({ params }) {
   const [sendMessage, setSendMessage] = useState('')
   const [sending, setSending] = useState(false)
   const [sendSuccess, setSendSuccess] = useState(false)
+  // Default UNCHECKED so the 90-Day Plan is opt-in per send. The flag is
+  // also reset to false after a successful send so the next bundle starts
+  // clean and the recruiter has to re-tick if they want it again.
+  const [includeCoachingPlan, setIncludeCoachingPlan] = useState(false)
 
   // Report section prefs (agency , Feature 6)
   const DEFAULT_SECTIONS = { overall_score: true, pressure_fit: true, ai_summary: true, skills: true, strengths: true, watchouts: true, interview_questions: true, candidate_type: true, predicted_outcomes: true, reality_timeline: true, hiring_confidence: true, cv_comparison: true }
@@ -1460,12 +1464,17 @@ export default function CandidateReportPage({ params }) {
       const res = await fetch('/api/send-candidate-pack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ candidateId: params.candidateId, clientEmail: sendEmail.trim(), message: sendMessage.trim() }),
+        body: JSON.stringify({
+          candidateId: params.candidateId,
+          clientEmail: sendEmail.trim(),
+          message: sendMessage.trim(),
+          include_coaching_plan: !!includeCoachingPlan,
+        }),
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setSendSuccess(true)
-      setTimeout(() => { setSendModal(false); setSendSuccess(false); setSendEmail(''); setSendMessage('') }, 2800)
+      setTimeout(() => { setSendModal(false); setSendSuccess(false); setSendEmail(''); setSendMessage(''); setIncludeCoachingPlan(false) }, 2800)
     } catch (e) {
       console.error('Send error:', e)
       setSending(false)
@@ -5498,8 +5507,17 @@ export default function CandidateReportPage({ params }) {
 
                 {/* ══════════════════════════════════════════════════
                     ONBOARDING PLAN , structured week cards
+                    Embedded only for employer users. Permanent recruitment
+                    agencies and temp agencies access the 90-Day Success
+                    Plan as an optional attachment from Send to Client; it
+                    is no longer rendered inline on the agency dashboard
+                    because it is a client deliverable, not internal agency
+                    content. The empty-state placeholder is gated the same
+                    way, so agency users see nothing where this section
+                    used to be.
                 ══════════════════════════════════════════════════ */}
-                {results.onboarding_plan?.length > 0 ? (
+                {profile?.account_type === 'employer' && (
+                  results.onboarding_plan?.length > 0 ? (
                   <ScrollReveal id="onboarding" delay={60}>
                   <Card style={{ marginBottom: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 0 }}>
@@ -5769,6 +5787,7 @@ export default function CandidateReportPage({ params }) {
                       </p>
                     </Card>
                   </ScrollReveal>
+                  )
                 )}
 
                 {/* ══════════════════════════════════════════════════
@@ -6370,26 +6389,85 @@ export default function CandidateReportPage({ params }) {
               <>
                 <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 5px' }}>Send Candidate Pack</h3>
                 <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 20px', lineHeight: 1.55 }}>
-                  Send {candidate?.name || 'this candidate'}'s full report to a client. Attached documents are included automatically.
+                  Send {candidate?.name || 'this candidate'}'s assessment report to a client. The full PDF is attached automatically; uploaded documents and the optional 90-Day Success Plan are included alongside.
                 </p>
 
-                {/* What's included */}
-                <div style={{ background: TEALLT, border: `1px solid ${TEAL}44`, borderRadius: 10, padding: '12px 16px', marginBottom: 18 }}>
+                {/* What's included. Each PDF item shows a Preview link that
+                    opens the route in a new tab so the recruiter can sanity-
+                    check what the client will receive before pressing send.
+                    The 90-Day Success Plan row only appears when the toggle
+                    below is on, mirroring the actual attachment behaviour. */}
+                <div style={{ background: TEALLT, border: `1px solid ${TEAL}44`, borderRadius: 10, padding: '12px 16px', marginBottom: 14 }}>
                   <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>What's included</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {/* Personal message — only listed when actually written */}
+                    {sendMessage.trim() && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: TEALD }}>
+                        <Ic name="check" size={13} color={GRN} /> Personal message to your client
+                      </div>
+                    )}
+                    {/* Full assessment report — always included, with Preview */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: TEALD }}>
-                      <Ic name="check" size={13} color={GRN} /> Full candidate report (score, strengths, watch-outs, questions)
+                      <Ic name="check" size={13} color={GRN} />
+                      <span>Full PRODICTA assessment report (PDF)</span>
+                      <a
+                        href={`/api/assessment/${params.id}/candidate/${params.candidateId}/candidate-brief-pdf`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ marginLeft: 'auto', fontFamily: F, fontSize: 12, fontWeight: 700, color: TEALD, textDecoration: 'underline' }}
+                      >
+                        Preview
+                      </a>
                     </div>
+                    {/* CV / Résumé — only if uploaded */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: documents.cv ? TEALD : TX3 }}>
                       <Ic name={documents.cv ? 'check' : 'x'} size={13} color={documents.cv ? GRN : TX3} />
                       CV / Résumé {documents.cv ? `(${documents.cv.file_name})` : '(not attached)'}
                     </div>
+                    {/* Cover Letter — only if uploaded */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: documents.cover_letter ? TEALD : TX3 }}>
                       <Ic name={documents.cover_letter ? 'check' : 'x'} size={13} color={documents.cover_letter ? GRN : TX3} />
                       Cover Letter {documents.cover_letter ? `(${documents.cover_letter.file_name})` : '(not attached)'}
                     </div>
+                    {/* 90-Day Success Plan — only when toggle on */}
+                    {includeCoachingPlan && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: F, fontSize: 13, color: TEALD }}>
+                        <Ic name="check" size={13} color={GRN} />
+                        <span>90-Day Success Plan (PDF)</span>
+                        <a
+                          href={`/api/assessment/${params.id}/candidate/${params.candidateId}/success-plan-pdf`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ marginLeft: 'auto', fontFamily: F, fontSize: 12, fontWeight: 700, color: TEALD, textDecoration: 'underline' }}
+                        >
+                          Preview
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
+
+                {/* Toggle: 90-Day Success Plan (default OFF, opt-in per send) */}
+                <label
+                  htmlFor="include-coaching-plan"
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', border: `1.5px solid ${includeCoachingPlan ? TEAL : BD}`, borderRadius: 10, cursor: 'pointer', marginBottom: 18, background: includeCoachingPlan ? TEALLT : 'transparent', transition: 'background 0.15s, border-color 0.15s' }}
+                >
+                  <input
+                    id="include-coaching-plan"
+                    type="checkbox"
+                    checked={includeCoachingPlan}
+                    onChange={e => setIncludeCoachingPlan(e.target.checked)}
+                    style={{ marginTop: 3, accentColor: TEAL, cursor: 'pointer' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, marginBottom: 2 }}>
+                      Include 90-Day Success Plan for your client
+                    </div>
+                    <div style={{ fontFamily: F, fontSize: 12, color: TX3, lineHeight: 1.5 }}>
+                      Attaches a separate PDF with structured weekly milestones, objectives, and checkpoints tailored to this candidate's gaps.
+                    </div>
+                  </div>
+                </label>
 
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX2, marginBottom: 5 }}>Client email address</label>

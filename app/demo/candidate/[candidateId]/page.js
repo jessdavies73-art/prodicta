@@ -4169,8 +4169,12 @@ function DemoCandidateInner({ params }) {
               </ScrollReveal>
             )}
 
-            {/* ── ONBOARDING ── */}
-            {results.onboarding_plan?.length > 0 && (
+            {/* ── ONBOARDING ──
+                Embedded only for the employer demo, mirroring live. The
+                agency demo accesses the 90-Day Success Plan as an optional
+                attachment from Send to Client; it is no longer surfaced
+                inline in the agency candidate report. */}
+            {!isAgency && results.onboarding_plan?.length > 0 && (
               <ScrollReveal id="onboarding" delay={60}>
                 <Card style={{ marginBottom: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
