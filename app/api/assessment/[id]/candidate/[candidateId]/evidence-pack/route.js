@@ -104,7 +104,7 @@ export async function GET(request, { params }) {
 
     const { data: candidate } = await admin
       .from('candidates')
-      .select('id, name, email, user_id, invited_at, completed_at, assessment_id, assessments(role_title, role_level, job_description, context_answers, employment_type, scenario_version, assessment_mode, scenarios)')
+      .select('id, name, email, user_id, invited_at, completed_at, assessment_id, assessments(role_title, role_level, job_description, context_answers, employment_type, scenario_version, assessment_mode, scenarios, shell_family)')
       .eq('id', params.candidateId)
       .single()
     if (!candidate) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -610,7 +610,15 @@ export async function GET(request, { params }) {
     drawParagraph('PRODICTA confirms the following in respect of the assessment that informed the hiring decision recorded in this evidence pack:', { size: 10.5 })
     y -= 4
 
-    const statements = [
+    // Shell-keyed sector compliance addenda. The first six statements
+    // are the legal core (Equality Act 2010, ERA 2025) and apply to
+    // every shell. Healthcare and education shells add 1 to 2 sector-
+    // specific regulatory references so the pack acknowledges the
+    // framework the employer actually operates under (CQC for care,
+    // KCSIE / Teachers' Standards / safer recruitment for schools).
+    // Office shell and legacy assessments without shell_family fall
+    // through to the legal-core list only.
+    const baseStatements = [
       'The assessment was objective, scenario-based, and built around realistic work situations relevant to the role applied for.',
       'Candidates were assessed against the same scenarios and the same scoring rubric, with responses anonymised at the point of scoring.',
       'Scoring was evidence-based, drawn directly from the candidate\'s recorded responses to scenario tasks, and not based on subjective impressions or inference.',
@@ -618,6 +626,17 @@ export async function GET(request, { params }) {
       'The assessment process complies with the principles of the Equality Act 2010 and is structured to support the fairness obligations introduced by the Employment Rights Act 2025 in relation to dismissals during the statutory probation period.',
       'The probation co-pilot oversight tooling captured manager observations against the original predictions and watch-outs, providing a contemporaneous evidentiary record of performance during the probation period.',
     ]
+    const shellFamily = candidate.assessments?.shell_family || null
+    const COMPLIANCE_SECTOR_ADDENDA = {
+      healthcare: [
+        'For roles in regulated health and social care, this assessment supports compliance with the CQC Key Lines of Enquiry around safeguarding, dignity and respect, and person-centred care, and is consistent with safer-recruitment requirements for regulated activity under the Care Act 2014 and the Health and Social Care Act 2008. Indicators show the assessment scored candidates against role-appropriate clinical and care judgement, escalation discipline, and documentation standards. Where the role is regulated by the NMC, GMC, HCPC, GPhC or GDC, this assessment supports but does not replace the registrant checks required by the relevant body.',
+      ],
+      education: [
+        'For roles in education settings, this assessment supports compliance with Keeping Children Safe in Education (KCSIE) Part 1 obligations around safer recruitment, the Teachers\' Standards (DfE), and the safeguarding requirements that apply to school staff. Patterns suggest the assessment scored candidates against role-appropriate professional judgement, behaviour management, parent communication and safeguarding pathway. This assessment supports but does not replace the safer-recruitment checks (DBS, prohibition checks, right-to-work, pre-employment health declaration, and the section 128 direction check where applicable) required of every school employer.',
+      ],
+    }
+    const sectorAddenda = COMPLIANCE_SECTOR_ADDENDA[shellFamily] || []
+    const statements = [...baseStatements, ...sectorAddenda]
     statements.forEach((s, i) => drawBullet(`${i + 1}. ${s}`))
 
     y -= 6
