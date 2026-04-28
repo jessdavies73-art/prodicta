@@ -410,7 +410,7 @@ export default function WorkspaceTestHarness() {
             Pick a role, generate a connected scenario
           </h1>
           <p style={{ fontFamily: F, fontSize: 14, color: '#475569', marginTop: 8, lineHeight: 1.5 }}>
-            Office shell (Phase 1, live), Healthcare shell (Phase 2, live) and Education shell (Phase 2, v0.5: 5 of 9 blocks real) are previewable. Field-ops and out-of-scope roles still fall back to the legacy WorkspacePage. Nothing is written to the database from this page.
+            Office shell (Phase 1, live), Healthcare shell (Phase 2, live) and Education shell (Phase 2, v1.0: all 9 blocks real) are previewable. Field-ops and out-of-scope roles still fall back to the legacy WorkspacePage. Nothing is written to the database from this page.
           </p>
           <EducationBlockStatusBanner />
         </div>
@@ -1239,12 +1239,13 @@ function EducationBlockStatusBanner() {
     padding: '4px 9px', borderRadius: 999,
     background: '#fffbeb', color: '#92400e', border: '1px solid #fcd34d',
   }
+  const allReal = stub.length === 0
   return (
     <div style={{
       marginTop: 12, padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
     }}>
       <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-        Education shell — block status (v0.5)
+        Education shell — block status (v1.0)
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
         {real.map(b => (
@@ -1259,7 +1260,9 @@ function EducationBlockStatusBanner() {
         ))}
       </div>
       <div style={{ fontFamily: F, fontSize: 12.5, color: '#475569', lineHeight: 1.5 }}>
-        {real.length} real, {stub.length} stub. Stubs render the office BlockPlaceholder and will be replaced with real components in the next prompt.
+        {allReal
+          ? `All ${real.length} blocks real. Per-block scorers ship in Phase 2.6.`
+          : `${real.length} real, ${stub.length} stub. Stubs render the office BlockPlaceholder until each real component ships.`}
       </div>
     </div>
   )
