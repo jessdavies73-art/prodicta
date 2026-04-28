@@ -6,6 +6,7 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import Sidebar from '../../components/Sidebar'
 import { Ic } from '../../components/Icons'
 import { createClient } from '../../lib/supabase'
+import { isAgencyPerm } from '../../lib/account-helpers'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, F, AMB, AMBBG, AMBBD, RED, REDBG, cs, bs } from '../../lib/constants'
 import { TEMPLATES, CATEGORIES } from '../../lib/document-templates'
 
@@ -38,6 +39,10 @@ export default function DocumentsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
       const { data: prof } = await supabase.from('users').select('*').eq('id', user.id).single()
+      // Document templates (offer letters, contracts, compliance docs) belong
+      // to the legal employer of record. Permanent recruitment agencies are
+      // not the employer; bounce to dashboard.
+      if (isAgencyPerm(prof)) { router.push('/dashboard'); return }
       setProfile(prof)
       setAccountType(prof?.account_type || 'employer')
 

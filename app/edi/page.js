@@ -3,6 +3,7 @@
 import { useState, useEffect, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { isAgencyPerm } from '@/lib/account-helpers'
 import Sidebar from '@/components/Sidebar'
 import { Ic } from '@/components/Icons'
 import InfoTooltip from '@/components/InfoTooltip'
@@ -107,6 +108,9 @@ export default function EdiPage() {
       if (!user) { router.push('/login'); return }
 
       const { data: prof } = await supabase.from('users').select('*').eq('id', user.id).single()
+      // EDI monitoring belongs to the legal employer of record. Permanent
+      // recruitment agencies are not the employer; bounce to dashboard.
+      if (isAgencyPerm(prof)) { router.push('/dashboard'); return }
       setProfile(prof)
 
       const { data: assess } = await supabase

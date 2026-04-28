@@ -14,6 +14,7 @@ import {
 } from '@/lib/constants'
 import OnboardingWizard from '@/components/OnboardingWizard'
 import ProdictaLogo from '@/components/ProdictaLogo'
+import { isAgencyPerm } from '@/lib/account-helpers'
 
 /* Inline mobile detection, no external hook dependency */
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
@@ -1495,6 +1496,10 @@ function DashboardPageInner() {
 
   // ── placement health lookup ────────────────────────────────────────────────
   const isAgencyAccount = profile?.account_type === 'agency'
+  // Permanent recruitment agencies are not the legal employer of record, so
+  // employment-of-record compliance UI (SSP, holiday, EDI, Fair Work, sickness
+  // reporting) is hidden for them everywhere it appears on the dashboard.
+  const hideEmployerOfRecord = isAgencyPerm(profile)
   const defaultIsTemp = profile?.default_employment_type === 'temporary'
   const healthByCandidate = {}
   if (placementHealth?.placements) {
@@ -2520,15 +2525,17 @@ function DashboardPageInner() {
           title="Post-placement and Aftercare"
           description="Manage active placements and hires. Track performance, health, and aftercare."
         />
-        <SectionHeader
-          order={42}
-          number={4}
-          title="Compliance"
-          description="Compliance and legal documentation. SSP, holiday pay, Fair Work Agency records."
-        />
+        {!hideEmployerOfRecord && (
+          <SectionHeader
+            order={42}
+            number={4}
+            title="Compliance"
+            description="Compliance and legal documentation. SSP, holiday pay, Fair Work Agency records."
+          />
+        )}
         <SectionHeader
           order={60}
-          number={5}
+          number={hideEmployerOfRecord ? 4 : 5}
           title="Insights"
           description="Your PRODICTA performance data and business impact numbers."
         />
@@ -3004,7 +3011,12 @@ function DashboardPageInner() {
                 { key: 'replace', icon: 'users', label: 'Replace Worker', desc: 'Find a replacement', color: RED, bg: REDBG },
                 { key: 'client-update', icon: 'send', label: 'Client Update', desc: 'Share placement link', color: NAVY, bg: BG },
               ] : [
-                { key: 'sickness', icon: 'alert', label: 'Report Sickness', desc: 'Create SSP alert', color: AMB, bg: AMBBG },
+                // Report Sickness only appears in this perm-only branch when
+                // the user is the legal employer of record. Permanent
+                // recruitment agencies are not, so the SSP-creating tile is
+                // dropped from their grid entirely; the remaining three tiles
+                // reflow naturally.
+                ...(hideEmployerOfRecord ? [] : [{ key: 'sickness', icon: 'alert', label: 'Report Sickness', desc: 'Create SSP alert', color: AMB, bg: AMBBG }]),
                 { key: 'client-update', icon: 'send', label: 'Client Update', desc: 'Share report with client', color: NAVY, bg: BG },
                 { key: 'interview-brief', icon: 'file-text', label: 'Interview Brief', desc: 'Generate interview brief', color: GRN, bg: GRNBG },
                 { key: 'highlight-reel', icon: 'zap', label: 'Highlight Reel', desc: 'Copy shareable link', color: GRN, bg: GRNBG },
@@ -3636,49 +3648,57 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Holiday Tracker (Section 4 Compliance) ── */}
-        <ComplianceStubCard
-          order={44}
-          title="Holiday Tracker"
-          description="Track accrued and taken holiday across your workforce."
-          emptyCopy="No holiday records yet. Add your first record to start tracking entitlement."
-          buttonLabel="Open Holiday Tracker"
-          href="/holiday"
-          iconName="calendar"
-        />
+        {/* Section 4 (Compliance) stubs render only for users who are the
+            legal employer of record. Permanent recruitment agencies place
+            candidates with clients, so these surfaces (Holiday, EDI,
+            Documents, Fair Work Agency records) are hidden for them. */}
+        {!hideEmployerOfRecord && (
+          <>
+            {/* ── Holiday Tracker (Section 4 Compliance) ── */}
+            <ComplianceStubCard
+              order={44}
+              title="Holiday Tracker"
+              description="Track accrued and taken holiday across your workforce."
+              emptyCopy="No holiday records yet. Add your first record to start tracking entitlement."
+              buttonLabel="Open Holiday Tracker"
+              href="/holiday"
+              iconName="calendar"
+            />
 
-        {/* ── EDI Monitor (Section 4 Compliance) ── */}
-        <ComplianceStubCard
-          order={45}
-          title="EDI Monitor"
-          description="Demographic self-report data, anonymised and aggregated."
-          emptyCopy="EDI data will build as candidates complete the demographic self-report form."
-          buttonLabel="View EDI Monitor"
-          href="/edi"
-          iconName="users"
-        />
+            {/* ── EDI Monitor (Section 4 Compliance) ── */}
+            <ComplianceStubCard
+              order={45}
+              title="EDI Monitor"
+              description="Demographic self-report data, anonymised and aggregated."
+              emptyCopy="EDI data will build as candidates complete the demographic self-report form."
+              buttonLabel="View EDI Monitor"
+              href="/edi"
+              iconName="users"
+            />
 
-        {/* ── Document Templates (Section 4 Compliance) ── */}
-        <ComplianceStubCard
-          order={46}
-          title="Document Templates"
-          description="Offer letters, contracts, and compliance documents."
-          emptyCopy="Document templates are ready to use. Generate and send from any candidate report."
-          buttonLabel="Open Templates"
-          href="/documents"
-          iconName="file-text"
-        />
+            {/* ── Document Templates (Section 4 Compliance) ── */}
+            <ComplianceStubCard
+              order={46}
+              title="Document Templates"
+              description="Offer letters, contracts, and compliance documents."
+              emptyCopy="Document templates are ready to use. Generate and send from any candidate report."
+              buttonLabel="Open Templates"
+              href="/documents"
+              iconName="file-text"
+            />
 
-        {/* ── Fair Work Agency Compliance (Section 4 Compliance) ── */}
-        <ComplianceStubCard
-          order={48}
-          title="Fair Work Agency Compliance"
-          description="Audit trail for Fair Work Agency requests."
-          emptyCopy="Your Fair Work Agency records will populate as placements are logged. Each placement generates a compliance record automatically."
-          buttonLabel="View Records"
-          href="/audit"
-          iconName="shield"
-        />
+            {/* ── Fair Work Agency Compliance (Section 4 Compliance) ── */}
+            <ComplianceStubCard
+              order={48}
+              title="Fair Work Agency Compliance"
+              description="Audit trail for Fair Work Agency requests."
+              emptyCopy="Your Fair Work Agency records will populate as placements are logged. Each placement generates a compliance record automatically."
+              buttonLabel="View Records"
+              href="/audit"
+              iconName="shield"
+            />
+          </>
+        )}
 
         {/* ── Assessment Credits (pay-per-assessment users + promo-granted Rapid Screens) ── */}
         {assessmentCredits.length > 0 && (!profile?.plan || assessmentCredits.some(c => c.credit_type === 'rapid-screen' && (c.credits_remaining || 0) > 0)) && (

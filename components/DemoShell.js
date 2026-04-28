@@ -1,7 +1,8 @@
 'use client'
-import { useState, useSyncExternalStore } from 'react'
+import { useState, useEffect, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ic } from './Icons'
+import { isDemoAgencyPerm } from '../lib/account-helpers'
 import ProdictaLogo from './ProdictaLogo'
 
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
@@ -51,17 +52,11 @@ export function DemoBanner() {
 }
 
 // ── Demo Sidebar ──────────────────────────────────────────────────────────────
-function buildDemoGroups({ showDocuments }) {
-  const compliance = [
-    { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/demo/ssp' },
-    { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/demo/holiday' },
-    { key: 'edi',     label: 'EDI',     icon: 'shield',   href: '/demo/edi' },
-  ]
-  if (showDocuments) {
-    compliance.push({ key: 'documents', label: 'Documents', icon: 'file', href: '/demo/documents' })
-  }
-
-  return [
+// The Compliance group as a whole is hidden for the agency-permanent demo
+// viewer (matches the live agency-perm sidebar). Documents stays gated to
+// agency + temp/both within the group when the group is visible at all.
+function buildDemoGroups({ showDocuments, hideCompliance }) {
+  const groups = [
     { label: 'Main', items: [
       { key: 'dashboard',  label: 'Dashboard',      icon: 'grid',    href: '/demo' },
       { key: 'drill-down', label: 'Drill-down',     icon: 'sliders', href: '/demo/drill-down' },
@@ -72,8 +67,21 @@ function buildDemoGroups({ showDocuments }) {
       { key: 'archive',  label: 'Archive',  icon: 'archive', href: '/demo/archive' },
       { key: 'outcomes', label: 'Outcomes', icon: 'award',   restricted: true },
     ]},
-    { label: 'Compliance', items: compliance },
   ]
+
+  if (!hideCompliance) {
+    const compliance = [
+      { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/demo/ssp' },
+      { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/demo/holiday' },
+      { key: 'edi',     label: 'EDI',     icon: 'shield',   href: '/demo/edi' },
+    ]
+    if (showDocuments) {
+      compliance.push({ key: 'documents', label: 'Documents', icon: 'file', href: '/demo/documents' })
+    }
+    groups.push({ label: 'Compliance', items: compliance })
+  }
+
+  return groups
 }
 
 export function DemoSidebar({ active, demoEmploymentType }) {
@@ -81,6 +89,15 @@ export function DemoSidebar({ active, demoEmploymentType }) {
   const isMobile = useIsMobile()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [signupModal, setSignupModal] = useState(false)
+  const [demoAccountType, setDemoAccountType] = useState(null)
+
+  // The demo dashboard persists the agency/employer toggle to localStorage
+  // (prodicta_demo_account_type) so subpages and the sidebar stay in sync
+  // as the user navigates around. Read it client-side to gate Compliance.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try { setDemoAccountType(localStorage.getItem('prodicta_demo_account_type')) } catch {}
+  }, [])
 
   // Documents visibility is driven by the toggle on the demo dashboard.
   // When demoEmploymentType is not passed (other demo pages that don't own the
@@ -89,6 +106,8 @@ export function DemoSidebar({ active, demoEmploymentType }) {
     demoEmploymentType == null ||
     demoEmploymentType === 'temporary' ||
     demoEmploymentType === 'both'
+
+  const hideCompliance = isDemoAgencyPerm(demoAccountType, demoEmploymentType)
 
   function handleNavClick(href) {
     router.push(href)
@@ -168,7 +187,7 @@ export function DemoSidebar({ active, demoEmploymentType }) {
           gap: 10,
         }}
       >
-        {buildDemoGroups({ showDocuments }).map(group => (
+        {buildDemoGroups({ showDocuments, hideCompliance }).map(group => (
           group.items.length > 0 && (
             <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <div style={{

@@ -2662,20 +2662,25 @@ function DemoCandidateInner({ params }) {
           </div>
         </Card>
 
-        {/* Family Leave Risk Notice */}
-        <Card style={{ marginBottom: 16, padding: 0, overflow: 'hidden' }}>
-          <div style={{
-            background: TEALLT, borderLeft: `4px solid ${TEAL}`, borderRadius: '0 8px 8px 0',
-            padding: '14px 18px',
-          }}>
-            <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, marginBottom: 4 }}>
-              Day-One Family Leave Rights
+        {/* Family Leave Risk Notice. Hidden for the agency-perm demo
+            viewer, mirroring live: a permanent recruitment agency is not
+            the legal employer and so bears no parental-leave duty, the
+            client does. */}
+        {!(isAgency && !isTemp) && (
+          <Card style={{ marginBottom: 16, padding: 0, overflow: 'hidden' }}>
+            <div style={{
+              background: TEALLT, borderLeft: `4px solid ${TEAL}`, borderRadius: '0 8px 8px 0',
+              padding: '14px 18px',
+            }}>
+              <div style={{ fontFamily: F, fontSize: 13, fontWeight: 800, color: NAVY, marginBottom: 4 }}>
+                Day-One Family Leave Rights
+              </div>
+              <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>
+                Under the Employment Rights Act 2025 this individual is entitled to Paternity Leave and Unpaid Parental Leave from their first day. There is no qualifying period. If a {isAgency ? 'assignment' : 'probation'} review coincides with or follows a period of family leave, seek independent employment law advice before taking any action.
+              </p>
             </div>
-            <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: 0, lineHeight: 1.55 }}>
-              Under the Employment Rights Act 2025 this individual is entitled to Paternity Leave and Unpaid Parental Leave from their first day. There is no qualifying period. If a {isAgency ? 'assignment' : 'probation'} review coincides with or follows a period of family leave, seek independent employment law advice before taking any action.
-            </p>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {/* ── Placement Health Score (agency only) ── */}
         {isAgency && (() => {

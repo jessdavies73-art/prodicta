@@ -7,6 +7,7 @@ import Sidebar from '../../components/Sidebar'
 import { Ic } from '../../components/Icons'
 import InfoTooltip from '../../components/InfoTooltip'
 import { createClient } from '../../lib/supabase'
+import { isAgencyPerm } from '../../lib/account-helpers'
 import { NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3, F, AMB, AMBBG, AMBBD, RED, REDBG, REDBD, GRN, GRNBG, GRNBD, cs, bs, ps } from '../../lib/constants'
 
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
@@ -67,6 +68,10 @@ export default function SSPPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
       const { data: prof } = await supabase.from('users').select('*').eq('id', user.id).single()
+      // SSP belongs to the legal employer of record. Permanent recruitment
+      // agencies are not the employer; their clients are. Bounce them back
+      // to the dashboard rather than render a page they cannot use.
+      if (isAgencyPerm(prof)) { router.push('/dashboard'); return }
       setProfile(prof)
       setLoading(false)
     }

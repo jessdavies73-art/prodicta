@@ -4,6 +4,7 @@ import { useState, useEffect, useSyncExternalStore } from 'react'
 import { NAVY, TEAL, F } from '../lib/constants'
 import { Ic } from './Icons'
 import { createClient } from '../lib/supabase'
+import { isAgencyPerm } from '../lib/account-helpers'
 import ProdictaLogo from './ProdictaLogo'
 
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
@@ -12,9 +13,11 @@ const _mServer = () => false
 function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
 // Grouped nav with uppercase group labels. Documents is agency + temp/both
-// only; everything else shows for every account type and every employment
-// type.
-function buildNav({ accountType, showTemp }) {
+// only. The Compliance group as a whole is hidden for permanent recruitment
+// agencies (account_type 'agency' + default_employment_type 'permanent'),
+// because those users are not the legal employer of record and have no
+// employment-of-record compliance to track.
+function buildNav({ accountType, showTemp, hideCompliance }) {
   const isAgency = accountType === 'agency'
   const groups = []
 
@@ -34,15 +37,17 @@ function buildNav({ accountType, showTemp }) {
   }
   groups.push({ label: 'Placement', items: placement })
 
-  const compliance = [
-    { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/ssp' },
-    { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/holiday' },
-  ]
-  if (isAgency && showTemp) {
-    compliance.push({ key: 'documents', label: 'Documents', icon: 'file', href: '/documents' })
+  if (!hideCompliance) {
+    const compliance = [
+      { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/ssp' },
+      { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/holiday' },
+    ]
+    if (isAgency && showTemp) {
+      compliance.push({ key: 'documents', label: 'Documents', icon: 'file', href: '/documents' })
+    }
+    compliance.push({ key: 'edi', label: 'EDI', icon: 'shield', href: '/edi' })
+    groups.push({ label: 'Compliance', items: compliance })
   }
-  compliance.push({ key: 'edi', label: 'EDI', icon: 'shield', href: '/edi' })
-  groups.push({ label: 'Compliance', items: compliance })
 
   groups.push({ label: 'Account', items: [
     { key: 'settings', label: 'Settings', icon: 'settings', href: '/settings' },
@@ -59,6 +64,7 @@ export default function Sidebar({ active, companyName }) {
   const [logoutHover, setLogoutHover] = useState(false)
   const [accountType, setAccountType] = useState('employer')
   const [showTemp, setShowTemp] = useState(false)
+  const [hideCompliance, setHideCompliance] = useState(false)
 
   useEffect(() => { setMobileOpen(false) }, [active])
 
@@ -77,6 +83,7 @@ export default function Sidebar({ active, companyName }) {
 
       const acct = prof?.account_type === 'agency' ? 'agency' : 'employer'
       setAccountType(acct)
+      setHideCompliance(isAgencyPerm(prof))
 
       const defaultType = prof?.default_employment_type
       // 'both' and 'ask' fall through to assessments lookup so Documents only
@@ -106,7 +113,7 @@ export default function Sidebar({ active, companyName }) {
     setMobileOpen(false)
   }
 
-  const groups = buildNav({ accountType, showTemp })
+  const groups = buildNav({ accountType, showTemp, hideCompliance })
 
   function NavButton({ itemKey, label, icon, href }) {
     const isActive = active === itemKey

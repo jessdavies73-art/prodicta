@@ -4,6 +4,7 @@ import { useState, useEffect, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ic } from '@/components/Icons'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
+import { isDemoAgencyPerm } from '@/lib/account-helpers'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -190,11 +191,25 @@ export default function DemoEdiPage() {
   const [generating, setGenerating] = useState(null)
 
   const [demoEmploymentType, setDemoEmploymentType] = useState(null)
+  const [redirecting, setRedirecting] = useState(false)
 
+  // Mirrors the live /edi guard: EDI monitoring belongs to the legal employer
+  // of record. Permanent recruitment agencies are not it, so URL-direct
+  // visitors in agency-perm mode are bounced to the demo dashboard.
   useEffect(() => {
     if (typeof window === 'undefined') return
-    try { setDemoEmploymentType(localStorage.getItem('prodicta_demo_employment_type')) } catch {}
+    try {
+      const acct = localStorage.getItem('prodicta_demo_account_type')
+      const empType = localStorage.getItem('prodicta_demo_employment_type')
+      setDemoEmploymentType(empType)
+      if (isDemoAgencyPerm(acct, empType)) {
+        setRedirecting(true)
+        router.replace('/demo')
+      }
+    } catch {}
   }, [])
+
+  if (redirecting) return null
 
   const a = SAMPLE_ASSESSMENT
   const buckets = bucketise(a.scores)

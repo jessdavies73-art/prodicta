@@ -360,6 +360,10 @@ function DemoDashboardInner() {
     }
   }
   const demoHasTempWork = demoEmploymentType === 'temporary' || demoEmploymentType === 'both'
+  // Permanent recruitment agencies are not the legal employer of record, so
+  // employment-of-record compliance UI (Section 4 header, the SSP/Holiday/EDI
+  // surfaces) is hidden for them in the demo, mirroring live.
+  const demoIsAgencyPerm = isAgency && demoEmploymentType === 'permanent'
   const [search, setSearch] = useState('')
   const [hoveredRow, setHoveredRow] = useState(null)
   const [searchFocused, setSearchFocused] = useState(false)
@@ -3973,8 +3977,10 @@ function DemoDashboardInner() {
           )
         })()}
 
-        <SectionHeader order={42} number={4} title="Compliance" description="Compliance and legal documentation. SSP, holiday pay, Fair Work Agency records." />
-        <SectionHeader order={60} number={5} title="Insights" description="Your PRODICTA performance data and business impact numbers." />
+        {!demoIsAgencyPerm && (
+          <SectionHeader order={42} number={4} title="Compliance" description="Compliance and legal documentation. SSP, holiday pay, Fair Work Agency records." />
+        )}
+        <SectionHeader order={60} number={demoIsAgencyPerm ? 4 : 5} title="Insights" description="Your PRODICTA performance data and business impact numbers." />
       </main>
     </DemoLayout>
   )

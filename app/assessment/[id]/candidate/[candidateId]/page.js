@@ -2363,8 +2363,13 @@ export default function CandidateReportPage({ params }) {
                         )}
                       </>
                     )}
-                    {/* Family Leave Risk Notice */}
-                    {results && (
+                    {/* Family Leave Risk Notice. Hidden for permanent
+                        recruitment agencies, who are not the legal employer
+                        and so bear no parental-leave responsibility, the
+                        client does. Visible for employers (probation review
+                        framing) and for temp agencies who do employ workers
+                        directly (assignment review framing). */}
+                    {results && !(profile?.account_type === 'agency' && profile?.default_employment_type === 'permanent') && (
                       <div style={{
                         background: '#e0f2f0', borderLeft: `4px solid ${TEAL}`, borderRadius: '0 8px 8px 0',
                         padding: '12px 14px', marginTop: 4,
