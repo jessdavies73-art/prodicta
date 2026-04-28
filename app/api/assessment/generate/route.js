@@ -1714,6 +1714,27 @@ FORMATTING RULE: Never use em dash (—) or en dash (–) characters anywhere in
     if (sector !== 'general') detected_role_type = sector
     else if (false) {} // keep legacy fallthroughs below intact
     else if (has('legal counsel', 'solicitor', 'paralegal', 'barrister', 'compliance officer')) detected_role_type = 'legal'
+    // Education keywords route to detected_role_type='education' so Call 1
+    // picks up SECTOR_SCORING.education (safeguarding-weighted, behaviour
+    // management, parent communication). Positioned before 'healthcare'
+    // because 'safeguarding' is a shared keyword and should land
+    // education first when the title contains a school marker, but
+    // education-specific keywords below are otherwise non-overlapping
+    // with healthcare. Positioned well before the 'management' fallback
+    // so 'headteacher', 'deputy head', 'head of department' do not
+    // misclassify as generic management.
+    else if (has(
+      'teacher', 'class teacher', 'subject teacher', 'supply teacher',
+      'nqt', 'ect', 'teaching assistant', ' ta ', 'hlta', 'cover supervisor',
+      'senco', 'sen teacher', 'inclusion lead', 'pastoral lead',
+      'designated safeguarding lead', 'dsl ', ' dsl', 'deputy head',
+      'headteacher', 'head teacher', 'principal', 'school business manager',
+      'head of department', 'head of faculty', 'curriculum lead',
+      'school', 'pupil', 'classroom', 'lesson', 'curriculum',
+      'ofsted', 'kcsie', 'cpoms', 'myconcern', 'ehcp', 'pupil premium',
+      'sixth form', 'fe college', 'further education', 'mat ',
+      'multi-academy trust',
+    )) detected_role_type = 'education'
     else if (has('nurse', 'carer', 'care worker', 'support worker', 'healthcare', 'clinical', 'midwife', 'safeguarding')) detected_role_type = 'healthcare'
     else if (has('finance director', 'accountant', 'bookkeeper', 'accounts assistant', 'finance manager', 'fp&a', 'controller', 'auditor', 'tax ', 'payroll')) detected_role_type = 'finance'
     else if (has('sales', 'business development', 'account manager', 'account executive', 'pipeline', 'revenue', 'bdr', 'sdr')) detected_role_type = 'sales'
