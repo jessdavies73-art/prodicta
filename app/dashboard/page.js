@@ -888,7 +888,7 @@ function DashboardPageInner() {
 
         const { data: cands, error: candsErr } = await supabase
           .from('candidates')
-          .select('*, stage, assessments!inner(role_title, id, employment_type, created_at, location), results(overall_score, risk_level, percentile, pressure_fit_score)')
+          .select('*, stage, assessments!inner(role_title, id, employment_type, created_at, location, role_level), results(overall_score, risk_level, percentile, pressure_fit_score)')
           .in('user_id', allowedUserIds)
           .neq('status', 'archived')
           .order('invited_at', { ascending: false })
@@ -1455,13 +1455,26 @@ function DashboardPageInner() {
     return m > 0 ? `${h}h ${m}m` : `${h}h`
   }
 
-  // Hiring cost saved: completed candidates scoring below 70 with no positive outcome.
+  // Cost Avoidance: completed candidates scoring below 70 with no positive outcome.
   // Split by employment type so we can show the right framing per account type:
   // perm candidates count toward "bad hires avoided" (tribunal / probation risk).
   // temp and contract candidates count toward "assignment / placement failures avoided".
+  //
+  // Perm-side cost is tiered by role_level (REC industry benchmark range
+  // £15k to £50k+ per failed perm hire). The flat £30k figure that
+  // shipped previously assumed mid-level for every role; the tiered
+  // figure tracks the marketing claim "£30k to £50k mistakes" honestly.
   const POSITIVE_OUTCOMES = new Set(['hired', 'offer_accepted', 'passed_probation', 'still_in_probation', 'placed'])
   const outcomesById = Object.fromEntries((candidateOutcomes || []).map(o => [o.candidate_id, o.outcome]))
-  const BAD_HIRE_COST       = 30000 // perm: tribunal + backfill + productivity
+  const BAD_HIRE_COST_BY_LEVEL = {
+    OPERATIONAL: 15000, // junior / IC / front-line: backfill + induction + lost month of productivity
+    MID_LEVEL:   30000, // mid / line manager / senior IC: tribunal risk + probation backfill + productivity
+    LEADERSHIP:  50000, // director / head of / partner / C-suite: search costs + lost strategic momentum
+  }
+  const badHireCostFor = (candidate) => {
+    const level = candidate?.assessments?.role_level
+    return BAD_HIRE_COST_BY_LEVEL[level] || BAD_HIRE_COST_BY_LEVEL.MID_LEVEL
+  }
   const FAILED_PLACEMENT_COST = 4500 // temp/contract: rebate risk + re-engagement + relationship
   const avoidedBadHires = completed.filter(c => {
     const score = c.results?.[0]?.overall_score ?? 0
@@ -1470,7 +1483,7 @@ function DashboardPageInner() {
   })
   const avoidedPerm = avoidedBadHires.filter(c => c.assessments?.employment_type !== 'temporary')
   const avoidedTemp = avoidedBadHires.filter(c => c.assessments?.employment_type === 'temporary')
-  const costSavedPerm = avoidedPerm.length * BAD_HIRE_COST
+  const costSavedPerm = avoidedPerm.reduce((sum, c) => sum + badHireCostFor(c), 0)
   const costSavedTemp = avoidedTemp.length * FAILED_PLACEMENT_COST
   const costSaved = costSavedPerm + costSavedTemp
 
@@ -3709,11 +3722,11 @@ function DashboardPageInner() {
           // Decide which framings to show. For 'both' accounts we show the
           // relevant framing for each employment type present so perm hires
           // and temp/contract placements are never conflated.
-          const permTitle = 'Estimated cost of bad hires avoided'
+          const permTitle = 'Cost Avoidance'
           const tempTitle = isAgencyAccount
             ? 'Assignment failures avoided'
             : 'Poor placements avoided'
-          const permFootnote = `£30,000 average bad hire cost, covering tribunal risk, lost productivity, and probation backfill.`
+          const permFootnote = 'Tiered by role level: £15k junior, £30k mid, £50k senior. Covers tribunal risk, lost productivity, probation backfill, and search costs at senior tiers. REC industry benchmarks.'
           const tempFootnote = isAgencyAccount
             ? 'Avoiding a failed assignment saves the placement fee, the rebate risk, and the client relationship.'
             : 'Each avoided poor placement saves shift coverage costs, agency re-engagement fees, and management time.'
@@ -4589,27 +4602,6 @@ function DashboardPageInner() {
             </div>
           </div>
         )}
-
-        {/* ── Hiring Cost Saved (stub; empty state until outcome data is logged) ── */}
-        <div style={{
-          order: 61,
-          background: NAVY, borderRadius: 14,
-          padding: isMobile ? '18px 20px' : '22px 24px',
-          marginBottom: 20,
-        }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-            Hiring cost saved
-          </div>
-          <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, color: TEAL, lineHeight: 1, marginBottom: 6 }}>
-            &pound;0
-          </div>
-          <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.5)', marginBottom: 14 }}>
-            Estimated savings this quarter
-          </div>
-          <div style={{ fontFamily: F, fontSize: 12.5, color: 'rgba(255,255,255,0.7)', fontStyle: 'italic', lineHeight: 1.6 }}>
-            Bad hires avoided and estimated savings will appear here once you log hire outcomes.
-          </div>
-        </div>
 
         {/* ── Cost of Vacancy (Insights section 5) ── */}
         <div style={{ order: 62 }}>

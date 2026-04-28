@@ -4285,14 +4285,17 @@ export default function CandidateReportPage({ params }) {
                 })()}
 
                 {/* ══════════════════════════════════════════════════
- MANAGER ALIGNMENT (from Manager DNA), employer only
+ MANAGER DNA ALIGNMENT, employer only
                 ══════════════════════════════════════════════════ */}
                 {profile?.account_type === 'employer' && managerDna && managerDna.alignment_dimensions && (
                   <ScrollReveal delay={60}>
                   <Card style={{ marginBottom: 20 }} topColor={TEAL}>
+                    <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+                      Manager DNA Alignment
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <Ic name="zap" size={15} color={TEAL} />
-                      <SectionHeading tooltip="Based on the hiring manager's own Management DNA assessment. Shows where this candidate aligns with and where they may clash with the manager's actual style.">
+                      <SectionHeading tooltip="Based on the hiring manager's own Manager DNA Assessment. Shows where this candidate aligns with and where they may clash with the manager's actual style.">
                         How they will work with you
                       </SectionHeading>
                     </div>

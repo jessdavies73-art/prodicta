@@ -7,7 +7,7 @@ import ProdictaLogo from '@/components/ProdictaLogo'
 import { getReskilingSuggestion } from '@/lib/reskilling'
 import { calculateSurvivalScore } from '@/lib/survival-score'
 import { DemoBanner, DemoSidebar, SignUpModal } from '@/components/DemoShell'
-import { DEMO_CANDIDATES, DEMO_RESULTS, DEMO_RESPONSES } from '@/lib/demo-data'
+import { DEMO_CANDIDATES, DEMO_RESULTS, DEMO_RESPONSES, getDemoManagerDna } from '@/lib/demo-data'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
   GRN, GRNBG, GRNBD, AMB, AMBBG, AMBBD, RED, REDBG, REDBD,
@@ -4577,6 +4577,101 @@ function DemoCandidateInner({ params }) {
                 </div>
               </ScrollReveal>
             )}
+
+            {/* ══════════════════════════════════════════════════
+                MANAGER DNA ALIGNMENT (demo, all completed candidates)
+                Mirrors the live panel at
+                app/assessment/[id]/candidate/[candidateId]/page.js:4290+
+                Demo data resolved per-assessment via getDemoManagerDna.
+                Renders only when candidate has a profile (completed /
+                archived); pending and scoring_failed candidates skip
+                the panel — same null-guard pattern as the live page.
+                ══════════════════════════════════════════════════ */}
+            {(() => {
+              const dna = getDemoManagerDna(params.candidateId)
+              if (!dna || !dna.alignment_dimensions) return null
+              const candidateAlignmentScore = (results?.pressure_fit_score) ?? (results?.overall_score) ?? 50
+              const dimensionLabels = {
+                autonomy_vs_guidance: 'Autonomy vs Guidance',
+                pace_tolerance: 'Pace Tolerance',
+                structure_preference: 'Structure Preference',
+                conflict_comfort: 'Conflict Comfort',
+                detail_orientation: 'Detail Orientation',
+              }
+              return (
+                <ScrollReveal delay={60}>
+                  <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '24px 28px', marginBottom: 20, borderTop: `3px solid ${TEAL}` }}>
+                    <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+                      Manager DNA Alignment
+                    </div>
+                    <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>
+                      How they will work with you
+                    </h2>
+                    <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 18px', lineHeight: 1.6 }}>
+                      Compared against <strong style={{ color: TEAL }}>{dna.management_style}</strong> management style. Based on the hiring manager's own Manager DNA assessment.
+                    </p>
+
+                    {/* Alignment bars */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+                      {Object.entries(dna.alignment_dimensions).map(([key, managerVal]) => {
+                        const diff = Math.abs(managerVal - candidateAlignmentScore)
+                        const alignColor = diff < 20 ? GRN : diff < 40 ? AMB : RED
+                        const alignLabel = diff < 20 ? 'Strong fit' : diff < 40 ? 'Moderate fit' : 'Potential clash'
+                        return (
+                          <div key={key}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                              <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 600, color: TX }}>{dimensionLabels[key] || key}</span>
+                              <span style={{ fontSize: 10.5, fontWeight: 700, color: alignColor, background: `${alignColor}18`, padding: '2px 8px', borderRadius: 4 }}>{alignLabel}</span>
+                            </div>
+                            <div style={{ position: 'relative', height: 8, background: BG, borderRadius: 4, border: `1px solid ${BD}` }}>
+                              <div style={{ position: 'absolute', left: `${managerVal}%`, top: -2, width: 3, height: 12, background: NAVY, borderRadius: 2 }} title={`Manager: ${managerVal}`} />
+                              <div style={{ position: 'absolute', left: `${candidateAlignmentScore}%`, top: -2, width: 3, height: 12, background: TEAL, borderRadius: 2 }} title={`Candidate: ${candidateAlignmentScore}`} />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+                              <span style={{ fontSize: 10, color: TX3 }}>Low</span>
+                              <span style={{ fontSize: 10, color: TX3 }}>High</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div style={{ width: 10, height: 10, background: NAVY, borderRadius: 2 }} />
+                        <span style={{ fontSize: 11, color: TX3 }}>Manager</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div style={{ width: 10, height: 10, background: TEAL, borderRadius: 2 }} />
+                        <span style={{ fontSize: 11, color: TX3 }}>Candidate</span>
+                      </div>
+                    </div>
+
+                    {/* Ideal vs clash */}
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                      <div style={{ background: GRNBG, border: `1px solid ${GRNBD}`, borderRadius: 8, padding: '12px 14px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: GRN, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Manager values</div>
+                        {(dna.ideal_candidate_traits || []).map((t, i) => (
+                          <div key={i} style={{ fontSize: 12.5, color: TX, marginBottom: 3 }}>+ {t}</div>
+                        ))}
+                      </div>
+                      <div style={{ background: REDBG, border: '1px solid #fecaca', borderRadius: 8, padding: '12px 14px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Clash risks</div>
+                        {(dna.clash_risk_traits || []).map((t, i) => (
+                          <div key={i} style={{ fontSize: 12.5, color: TX, marginBottom: 3 }}>- {t}</div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {dna.summary ? (
+                      <div style={{ background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 10, padding: '12px 16px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: TEALD, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Manager DNA summary</div>
+                        <p style={{ fontFamily: F, fontSize: 13, color: TX, margin: 0, lineHeight: 1.55 }}>{dna.summary}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                </ScrollReveal>
+              )
+            })()}
 
             {/* ── TEAM FIT (demo for Sophie Chen) ── */}
             {params.candidateId === 'demo-c1' && (
