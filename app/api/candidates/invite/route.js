@@ -99,12 +99,23 @@ export async function POST(request) {
     const resend = new Resend(process.env.RESEND_API_KEY)
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://prodicta.co.uk'
 
+    // Bulk vs individual classifier. A single POST body with more than
+    // one candidate is treated as a bulk invite; a single-candidate POST
+    // is individual. Mirrors the existing UI distinction, the Invite
+    // Candidate form posts one and the Bulk Invite modal posts N. The
+    // flag is stamped on every row in this request so the agency-side
+    // Bulk Screening Mode and Individual Screening dashboard panels
+    // can split their counts cleanly.
+    const isBulkInvite = Array.isArray(candidates) && candidates.length > 1
+
     const results = []
 
     for (const candidate of candidates) {
       const unique_link = uuidv4()
 
-      // Insert candidate record
+      // Insert candidate record. created_via_bulk falls back to the
+      // schema default (false) on the rare path where the migration has
+      // not landed yet, so the writer is forward-compatible.
       const { data: candidateRecord, error: insertError } = await adminClient
         .from('candidates')
         .insert({
@@ -113,7 +124,8 @@ export async function POST(request) {
           name: candidate.name,
           email: candidate.email,
           unique_link,
-          status: 'sent'
+          status: 'sent',
+          created_via_bulk: isBulkInvite,
         })
         .select()
         .single()

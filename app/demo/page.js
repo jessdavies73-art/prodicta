@@ -477,6 +477,29 @@ function DemoDashboardInner() {
     if (v) verdictCounts[v]++
   })
 
+  // Demo split: pretend the first six demo candidates were uploaded as a
+  // batch from a CV pile (Bulk Screening Mode panel) and the rest were
+  // invited individually (Individual Screening panel). Mirrors the
+  // live agency-only panel pair without needing a created_via_bulk
+  // value on the local demo data.
+  const DEMO_BULK_CANDIDATE_IDS = new Set(['demo-c1', 'demo-c2', 'demo-c3', 'demo-c4', 'demo-c5', 'demo-c6'])
+  const demoBulkVerdictCounts = { strong: 0, maybe: 0, risk: 0 }
+  const demoIndividualVerdictCounts = { strong: 0, maybe: 0, risk: 0 }
+  let demoBulkCompleted = 0
+  let demoIndividualCompleted = 0
+  activeCandidates.forEach(c => {
+    const isCompleted = c.status === 'completed'
+    const isBulk = DEMO_BULK_CANDIDATE_IDS.has(c.id)
+    if (isCompleted) {
+      if (isBulk) demoBulkCompleted++
+      else demoIndividualCompleted++
+    }
+    const v = getVerdict(c)
+    if (!v) return
+    if (isBulk) demoBulkVerdictCounts[v]++
+    else demoIndividualVerdictCounts[v]++
+  })
+
   // Location filter
   const demoLocations = Array.from(
     new Set(activeCandidates.map(c => (c.assessments?.location || '').trim()).filter(Boolean))
@@ -1986,49 +2009,65 @@ function DemoDashboardInner() {
           </>
         )}
 
-        {/* Bulk Screening + Candidate Pipeline (both agency and employer) */}
-        <div style={{ order: 12, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '16px 24px', marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Ic name="sliders" size={16} color={TEAL} />
-            <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>Bulk Screening Mode</h2>
-          </div>
-          <p style={{ margin: '4px 0 0 0', fontSize: 12.5, color: TX3 }}>{completed.length} candidate{completed.length !== 1 ? 's' : ''} assessed</p>
-          <div style={{ position: 'relative', zIndex: 2, display: 'flex', gap: 14, marginTop: 16, flexDirection: isMobile ? 'column' : 'row' }}>
-            {[
-              { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
-              { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
-              { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
-            ].map(v => {
-              const active = activeFilter?.type === 'verdict' && activeFilter.value === v.key
-              return (
-                <button
-                  key={v.key}
-                  type="button"
-                  onClick={() => { if (activeFilter?.type === 'verdict' && activeFilter.value === v.key) { setActiveFilter(null) } else { setActiveFilter({ type: 'verdict', value: v.key }) } }}
-                  onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
-                  onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
-                  style={{
-                    flex: isMobile ? undefined : 1,
-                    width: isMobile ? '100%' : undefined,
-                    background: active ? `${v.accent}14` : '#fff',
-                    border: '1px solid #E5E7EB',
-                    borderLeft: `${active ? 6 : 4}px solid ${v.accent}`,
-                    borderRadius: 12, padding: '20px 22px', textAlign: 'left',
-                    cursor: 'pointer', fontFamily: F,
-                    boxShadow: active ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
-                    transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
-                    transform: active ? 'translateY(-2px)' : 'none',
-                    opacity: activeFilter?.type === 'verdict' && !active ? 0.6 : 1,
-                  }}
-                >
-                  <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: v.accent }}>{v.count}</div>
-                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2, color: NAVY }}>{v.label}</div>
-                  <div style={{ fontSize: 12, color: TX3 }}>{v.sub}</div>
-                </button>
-              )
-            })}
-          </div>
+        {/* Bulk Screening Mode + Individual Screening panel pair.
+            Agency-only: bulk screening is positioned as an agency feature
+            and direct employer demo viewers do not see either panel.
+            The split is computed from a hardcoded ID set above so the
+            demo can mirror the live created_via_bulk behaviour without
+            needing a real flag on the demo data. */}
+        {isAgency && (
+        <div style={{ order: 12, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
+          {[
+            { panelKey: 'bulk',       title: 'Bulk Screening Mode',  icon: 'sliders', counts: demoBulkVerdictCounts,       totalCompleted: demoBulkCompleted },
+            { panelKey: 'individual', title: 'Individual Screening', icon: 'user',    counts: demoIndividualVerdictCounts, totalCompleted: demoIndividualCompleted },
+          ].map(panel => (
+            <div key={panel.panelKey} style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Ic name={panel.icon} size={16} color={TEAL} />
+                <h2 style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: TX }}>{panel.title}</h2>
+              </div>
+              <p style={{ margin: '4px 0 0 0', fontSize: 12, color: TX3 }}>
+                {panel.totalCompleted} candidate{panel.totalCompleted === 1 ? '' : 's'} assessed
+              </p>
+              <div style={{ position: 'relative', zIndex: 2, display: 'flex', gap: 10, marginTop: 14, flexDirection: isMobile ? 'column' : 'row' }}>
+                {[
+                  { key: 'strong', count: panel.counts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
+                  { key: 'maybe',  count: panel.counts.maybe,  label: 'Review',      sub: 'Needs a closer look', accent: '#D97706' },
+                  { key: 'risk',   count: panel.counts.risk,   label: 'High Risk',   sub: 'Proceed with caution', accent: '#B91C1C' },
+                ].map(v => {
+                  const active = activeFilter?.type === 'verdict' && activeFilter.value === v.key
+                  return (
+                    <button
+                      key={v.key}
+                      type="button"
+                      onClick={() => { if (activeFilter?.type === 'verdict' && activeFilter.value === v.key) { setActiveFilter(null) } else { setActiveFilter({ type: 'verdict', value: v.key }) } }}
+                      onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.10)' } }}
+                      onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.06)' } }}
+                      style={{
+                        flex: isMobile ? undefined : 1,
+                        width: isMobile ? '100%' : undefined,
+                        background: active ? `${v.accent}14` : '#fff',
+                        border: '1px solid #E5E7EB',
+                        borderLeft: `${active ? 5 : 3}px solid ${v.accent}`,
+                        borderRadius: 10, padding: '14px 14px', textAlign: 'left',
+                        cursor: 'pointer', fontFamily: F,
+                        boxShadow: active ? '0 6px 18px rgba(0,0,0,0.10)' : '0 2px 10px rgba(0,0,0,0.06)',
+                        transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
+                        transform: active ? 'translateY(-2px)' : 'none',
+                        opacity: activeFilter?.type === 'verdict' && !active ? 0.6 : 1,
+                      }}
+                    >
+                      <div style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, lineHeight: 1, marginBottom: 4, color: v.accent }}>{v.count}</div>
+                      <div style={{ fontSize: 12.5, fontWeight: 800, marginBottom: 1, color: NAVY }}>{v.label}</div>
+                      <div style={{ fontSize: 11, color: TX3 }}>{v.sub}</div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </div>
+        )}
 
         {/* Candidate Pipeline filtered results (directly after pipeline cards) */}
         {activeFilter?.type === 'verdict' && (

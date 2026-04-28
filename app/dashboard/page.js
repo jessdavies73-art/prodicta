@@ -1523,6 +1523,28 @@ function DashboardPageInner() {
     if (v) verdictCounts[v]++
   })
 
+  // Split verdict counts by created_via_bulk for the agency-only Bulk
+  // Screening Mode + Individual Screening panel pair below. Pre-flag
+  // candidates default to false on the column and so land under
+  // Individual Screening, which is the conservative choice. Counts are
+  // gated visually further down to agency accounts only.
+  const bulkVerdictCounts = { strong: 0, maybe: 0, risk: 0 }
+  const individualVerdictCounts = { strong: 0, maybe: 0, risk: 0 }
+  let bulkCompletedCount = 0
+  let individualCompletedCount = 0
+  candidates.forEach(c => {
+    const isCompleted = c.status === 'completed'
+    const isBulk = !!c.created_via_bulk
+    if (isCompleted) {
+      if (isBulk) bulkCompletedCount++
+      else individualCompletedCount++
+    }
+    const v = getVerdict(c)
+    if (!v) return
+    if (isBulk) bulkVerdictCounts[v]++
+    else individualVerdictCounts[v]++
+  })
+
   // ── location filter ─────────────────────────────────────────────────────────
   // Unique, sorted list of locations seen across this user's assessments.
   // Used to render the pill filter bar and to scope the Roles / Clients
@@ -3993,13 +4015,76 @@ function DashboardPageInner() {
           </button>
         </div>
 
-        {/* ── Candidate Pipeline (all account types) ── Section 1 */}
+        {/* ── Candidate Pipeline ── Section 1
+            Agency users get the Bulk Screening Mode + Individual
+            Screening panel pair (split off candidates.created_via_bulk).
+            Direct employers keep the existing single row of verdict
+            cards untouched. The grouped candidate lists rendered further
+            down are common to both account types. */}
         <div style={{ order: 12, marginBottom: 24 }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
             Candidate Pipeline
           </div>
-          {candidates.length > 0 ? (
+          {candidates.length > 0 || isAgencyAccount ? (
             <>
+            {isAgencyAccount ? (
+              // Agency-only: two outer panels, each with its own three
+              // verdict cards. Bulk pulls created_via_bulk = true rows;
+              // Individual pulls the rest. Each inner card still drives
+              // the shared verdict filter so clicking through still
+              // filters the candidate table downstream.
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
+                {[
+                  { panelKey: 'bulk',       title: 'Bulk Screening Mode', icon: 'sliders', counts: bulkVerdictCounts,       totalCompleted: bulkCompletedCount },
+                  { panelKey: 'individual', title: 'Individual Screening', icon: 'user',    counts: individualVerdictCounts, totalCompleted: individualCompletedCount },
+                ].map(panel => (
+                  <div key={panel.panelKey} style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '16px 20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Ic name={panel.icon} size={16} color={TEAL} />
+                      <h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: TX }}>{panel.title}</h3>
+                    </div>
+                    <p style={{ margin: '4px 0 0 0', fontSize: 12, color: TX3 }}>
+                      {panel.totalCompleted} candidate{panel.totalCompleted === 1 ? '' : 's'} assessed
+                    </p>
+                    <div style={{ display: 'flex', gap: 10, marginTop: 14, flexDirection: isMobile ? 'column' : 'row' }}>
+                      {[
+                        { key: 'strong', count: panel.counts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
+                        { key: 'maybe',  count: panel.counts.maybe,  label: 'Review',      sub: 'Needs a closer look', accent: '#D97706' },
+                        { key: 'risk',   count: panel.counts.risk,   label: 'High Risk',   sub: 'Proceed with caution', accent: '#B91C1C' },
+                      ].map(v => {
+                        const active = activeFilter?.type === 'verdict' && activeFilter.value === v.key
+                        return (
+                          <button
+                            key={v.key}
+                            type="button"
+                            onClick={() => { if (activeFilter?.type === 'verdict' && activeFilter.value === v.key) { setActiveFilter(null) } else { setActiveFilter({ type: 'verdict', value: v.key }) } }}
+                            onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.10)' } }}
+                            onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.06)' } }}
+                            style={{
+                              flex: isMobile ? undefined : 1,
+                              width: isMobile ? '100%' : undefined,
+                              background: active ? `${v.accent}14` : '#fff',
+                              border: '1px solid #E5E7EB',
+                              borderLeft: `${active ? 5 : 3}px solid ${v.accent}`,
+                              borderRadius: 10, padding: '14px 14px', textAlign: 'left',
+                              cursor: 'pointer', fontFamily: F,
+                              boxShadow: active ? '0 6px 18px rgba(0,0,0,0.10)' : '0 2px 10px rgba(0,0,0,0.06)',
+                              transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
+                              transform: active ? 'translateY(-2px)' : 'none',
+                              opacity: activeFilter?.type === 'verdict' && !active ? 0.6 : 1,
+                            }}
+                          >
+                            <div style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, lineHeight: 1, marginBottom: 4, color: v.accent }}>{v.count}</div>
+                            <div style={{ fontSize: 12.5, fontWeight: 800, marginBottom: 1, color: NAVY }}>{v.label}</div>
+                            <div style={{ fontSize: 11, color: TX3 }}>{v.sub}</div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
               {[
                 { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Score 70 and above', accent: '#00BFA5' },
@@ -4035,6 +4120,7 @@ function DashboardPageInner() {
                 )
               })}
             </div>
+            )}
 
             {/* Grouped candidate lists (inline, shown when no filter is active) */}
             {!activeFilter && (() => {
