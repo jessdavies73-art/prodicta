@@ -849,6 +849,14 @@ function ResultPanel({ result, effectiveTitle, onPreview }) {
             roleTitle={effectiveTitle}
           />
 
+          <ScoringPreviewPanel
+            key={`score-${scenario.scenario_id}`}
+            scenario={scenario}
+            shell_family={shell_family}
+            profile={profile}
+            roleTitle={effectiveTitle}
+          />
+
           <button
             onClick={onPreview}
             style={{
@@ -1221,6 +1229,211 @@ const tinyBtn = {
   padding: '4px 8px', borderRadius: 6,
   background: '#fff', border: '1px solid #cbd5e1', color: '#475569',
   cursor: 'pointer',
+}
+
+// Scoring preview. For each selected block in the generated scenario,
+// the admin can paste a JSON-shaped fake candidate response and POST it
+// to /api/admin/workspace-test/score-block. The resulting BlockScore
+// (score, strengths, watch_outs, narrative, signals) renders inline so
+// scoring quality can be sanity-checked before any real candidate runs
+// through. The candidate_inputs schema for each block matches the
+// onComplete payload emitted by the live block components in
+// lib/workspace-blocks/{shell}/{block}.jsx.
+function ScoringPreviewPanel({ scenario, shell_family, profile, roleTitle }) {
+  const blocks = Array.isArray(scenario?.selected_blocks) ? scenario.selected_blocks : []
+  const block_content_map = scenario?.block_content || {}
+  const scenario_context = {
+    title: scenario?.title,
+    spine: scenario?.spine,
+    trigger: scenario?.trigger,
+    scenario_arc: scenario?.scenario_arc,
+  }
+  // Per-block local state: { [block_id]: { input, scoring, score, error } }
+  const [state, setState] = useState({})
+
+  const setBlockState = (block_id, patch) => {
+    setState(prev => ({ ...prev, [block_id]: { ...(prev[block_id] || {}), ...patch } }))
+  }
+
+  const scoreBlock = async (block_id) => {
+    const inputText = state[block_id]?.input || ''
+    let candidate_inputs = {}
+    if (inputText.trim()) {
+      try {
+        candidate_inputs = JSON.parse(inputText)
+      } catch (err) {
+        setBlockState(block_id, { error: `Invalid JSON: ${err.message}`, score: null })
+        return
+      }
+    }
+    setBlockState(block_id, { scoring: true, error: null, score: null })
+    try {
+      const res = await fetch('/api/admin/workspace-test/score-block', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shell_family,
+          role_profile: profile,
+          role_title: roleTitle,
+          employment_type: profile?.employment_type || 'permanent',
+          scenario_context,
+          block_id,
+          block_content: block_content_map[block_id] || {},
+          candidate_inputs,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        setBlockState(block_id, {
+          scoring: false,
+          error: data?.error || `HTTP ${res.status}`,
+          score: null,
+        })
+        return
+      }
+      setBlockState(block_id, { scoring: false, error: null, score: data?.score || null })
+    } catch (err) {
+      setBlockState(block_id, { scoring: false, error: err.message, score: null })
+    }
+  }
+
+  if (blocks.length === 0) return null
+
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12,
+      padding: 18, marginBottom: 18,
+    }}>
+      <div style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+        Block scoring preview
+      </div>
+      <div style={{ fontFamily: F, fontSize: 13, color: '#475569', lineHeight: 1.5, marginBottom: 12 }}>
+        Paste a JSON candidate-inputs payload for any block (the shape the live block emits via onComplete) and score it. Use this to sanity-check scoring tone and calibration before a real candidate runs through. Empty input scores against an empty payload, which is useful for seeing the floor of the scorer.
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {blocks.map(b => {
+          const s = state[b.block_id] || {}
+          const score = s.score
+          return (
+            <div key={b.block_id} style={{
+              background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 12,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                <span style={{ fontFamily: FM, fontSize: 11, fontWeight: 700, color: NAVY }}>
+                  {b.block_id}
+                </span>
+                <span style={{ fontFamily: FM, fontSize: 11, color: '#64748b' }}>
+                  ({Math.round((b.duration_seconds || 0) / 60)} min)
+                </span>
+                {score?.score != null ? (
+                  <span style={{
+                    fontFamily: FM, fontSize: 11, fontWeight: 700,
+                    padding: '2px 8px', borderRadius: 999,
+                    background: scoreBg(score.score), color: scoreFg(score.score),
+                  }}>
+                    {score.score} / 100
+                  </span>
+                ) : null}
+              </div>
+              <textarea
+                value={s.input || ''}
+                onChange={(e) => setBlockState(b.block_id, { input: e.target.value })}
+                rows={4}
+                placeholder={`Paste candidate_inputs JSON for ${b.block_id}, or leave empty to score an empty response.`}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  fontFamily: FM, fontSize: 12, color: NAVY, lineHeight: 1.45,
+                  padding: 10, borderRadius: 8,
+                  border: '1px solid #cbd5e1', background: '#fff',
+                  outline: 'none', resize: 'vertical',
+                }}
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => scoreBlock(b.block_id)}
+                  disabled={!!s.scoring}
+                  style={{
+                    fontFamily: F, fontSize: 13, fontWeight: 700,
+                    padding: '7px 14px', borderRadius: 8, border: 'none',
+                    background: s.scoring ? '#94a3b8' : NAVY,
+                    color: '#fff',
+                    cursor: s.scoring ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {s.scoring ? 'Scoring...' : 'Score this block'}
+                </button>
+                {s.error ? (
+                  <span style={{ fontFamily: FM, fontSize: 12, color: '#dc2626' }}>
+                    {s.error}
+                  </span>
+                ) : null}
+              </div>
+              {score ? (
+                <div style={{ marginTop: 10 }}>
+                  {Array.isArray(score.strengths) && score.strengths.length ? (
+                    <ScoreList label="Strengths" colour="#047857" bg="#ecfdf5" border="#a7f3d0" items={score.strengths} />
+                  ) : null}
+                  {Array.isArray(score.watch_outs) && score.watch_outs.length ? (
+                    <ScoreList label="Watch-outs" colour="#92400e" bg="#fffbeb" border="#fcd34d" items={score.watch_outs} />
+                  ) : null}
+                  {score.narrative ? (
+                    <div style={{
+                      marginTop: 8, padding: 10,
+                      background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8,
+                      fontFamily: F, fontSize: 13, color: NAVY, lineHeight: 1.55, fontStyle: 'italic',
+                    }}>
+                      {score.narrative}
+                    </div>
+                  ) : null}
+                  {Array.isArray(score.signals) && score.signals.length ? (
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ fontFamily: FM, fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+                        Signals
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: 18, fontFamily: F, fontSize: 12.5, color: NAVY, lineHeight: 1.5 }}>
+                        {score.signals.map((sig, i) => (
+                          <li key={i}>
+                            <b>{sig.type}</b> ({sig.weight}): {sig.evidence}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function ScoreList({ label, colour, bg, border, items }) {
+  return (
+    <div style={{
+      marginTop: 8, padding: 10,
+      background: bg, border: `1px solid ${border}`, borderRadius: 8,
+    }}>
+      <div style={{ fontFamily: FM, fontSize: 10.5, fontWeight: 700, color: colour, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+        {label}
+      </div>
+      <ul style={{ margin: 0, paddingLeft: 18, fontFamily: F, fontSize: 13, color: NAVY, lineHeight: 1.55 }}>
+        {items.map((s, i) => <li key={i}>{s}</li>)}
+      </ul>
+    </div>
+  )
+}
+
+function scoreBg(s) {
+  if (s >= 75) return '#ecfdf5'
+  if (s >= 50) return '#fffbeb'
+  return '#fef2f2'
+}
+function scoreFg(s) {
+  if (s >= 75) return '#047857'
+  if (s >= 50) return '#92400e'
+  return '#b91c1c'
 }
 
 function EducationBlockStatusBanner() {

@@ -46,6 +46,16 @@ const BLOCK_LABELS = {
   'safeguarding-incident':       'Safeguarding incident',
   'clinical-crisis-simulation':  'Clinical crisis',
   'patient-family-conversation': 'Patient / family conversation',
+  // Education shell. 'conversation-simulation' and 'crisis-simulation'
+  // are shared block_ids with the office shell; the existing labels read
+  // appropriately for the education context.
+  'class-roster':                'Class Roster',
+  'lesson-plan':                 'Lesson Plan',
+  'parent-communication':        'Parent Communication',
+  'behaviour-incident':          'Behaviour Incident',
+  'safeguarding-referral':       'Safeguarding Referral',
+  'head-teacher-message':        'Head Teacher Message',
+  'cohort-coordination':         'Cohort Coordination',
   // Strategy-Fit components (synthetic block_id appended after Workspace
   // scoring so the Highlight Reel slide builder picks up the strengths
   // and signals from the Strategic Thinking score).

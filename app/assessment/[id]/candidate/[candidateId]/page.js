@@ -126,6 +126,18 @@ const BLOCK_LABELS = {
   'safeguarding-incident':       'Safeguarding incident',
   'clinical-crisis-simulation':  'Clinical crisis',
   'patient-family-conversation': 'Patient / family conversation',
+  // Education shell. Note: 'conversation-simulation' and 'crisis-simulation'
+  // are shared block_ids with the office shell. The labels above already
+  // read appropriately for the education context, so no shell-aware
+  // override is needed in this map; the orchestrator's labelFor() does
+  // shell-aware narrative phrasing where it matters.
+  'class-roster':                'Class Roster',
+  'lesson-plan':                 'Lesson Plan',
+  'parent-communication':        'Parent Communication',
+  'behaviour-incident':          'Behaviour Incident',
+  'safeguarding-referral':       'Safeguarding Referral',
+  'head-teacher-message':        'Head Teacher Message',
+  'cohort-coordination':         'Cohort Coordination',
   // Strategy-Fit components (rendered in the same drill-down list as
   // Workspace blocks; block_id is the synthetic 'strategic-thinking'
   // appended by lib/score-candidate.js after Workspace block scoring).

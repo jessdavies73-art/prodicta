@@ -32,6 +32,15 @@ const WORKSPACE_BLOCK_LABEL = {
   'safeguarding-incident':       'Safeguarding incident',
   'clinical-crisis-simulation':  'Clinical crisis',
   'patient-family-conversation': 'Patient / family conversation',
+  // Education shell. 'conversation-simulation' and 'crisis-simulation'
+  // are shared with the office shell; existing labels above suffice.
+  'class-roster':                'Class Roster',
+  'lesson-plan':                 'Lesson Plan',
+  'parent-communication':        'Parent Communication',
+  'behaviour-incident':          'Behaviour Incident',
+  'safeguarding-referral':       'Safeguarding Referral',
+  'head-teacher-message':        'Head Teacher Message',
+  'cohort-coordination':         'Cohort Coordination',
   // Strategy-Fit components (Manager Brief PDF section header).
   'strategic-thinking':          'Strategic Thinking Evaluation',
 }
