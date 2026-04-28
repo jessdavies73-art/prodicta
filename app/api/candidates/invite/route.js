@@ -19,10 +19,11 @@ export async function POST(request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
-    // Get assessment details
+    // Get assessment details. shell_family drives sector-aware copy in
+    // the invite email; legacy assessments without it fall back to office.
     const { data: assessment } = await supabase
       .from('assessments')
-      .select('role_title, id, assessment_mode')
+      .select('role_title, id, assessment_mode, shell_family')
       .eq('id', assessment_id)
       .eq('user_id', user.id)
       .single()
@@ -57,10 +58,42 @@ export async function POST(request) {
     const mode = (assessment.assessment_mode || 'standard').toLowerCase()
     const normalisedMode = mode === 'rapid' ? 'quick' : mode
     const modeCopy = normalisedMode === 'quick'
-      ? { line: '2 focused work scenarios that take approximately 15 minutes', count: 2, range: '6 to 8 minutes' }
+      ? { line: '2 focused work scenarios that take approximately 15 minutes', count: 2, range: '6 to 8 minutes', minutes: 15 }
       : normalisedMode === 'advanced'
-      ? { line: '4 comprehensive work scenarios that take approximately 45 minutes', count: 4, range: '10 to 14 minutes' }
-      : { line: '3 realistic work scenarios that take approximately 25 minutes', count: 3, range: '8 to 9 minutes' }
+      ? { line: '4 comprehensive work scenarios that take approximately 45 minutes', count: 4, range: '10 to 14 minutes', minutes: 45 }
+      : { line: '3 realistic work scenarios that take approximately 25 minutes', count: 3, range: '8 to 9 minutes', minutes: 25 }
+
+    // Sector-aware invite copy. Office is the default and preserves the
+    // existing baseline (with the cliché "simulation" softened to
+    // "scenario"); healthcare and education use practical, role-appropriate
+    // framing rather than generic office-coded language. Legacy assessments
+    // with no shell_family, or any unexpected value, fall through to office,
+    // so a missing or new shell never blocks the invite send.
+    const CANDIDATE_INVITE_COPY_BY_SHELL = {
+      office: {
+        subject: `You've been invited to complete an assessment for ${assessment.role_title}`,
+        subHeader: 'Work scenario assessment',
+        introHTML: `<strong style="color:#0f172a;">${company_name}</strong> has invited you to complete a work scenario assessment for the <strong style="color:#0f2137;">${assessment.role_title}</strong> position.`,
+        summaryText: `The assessment consists of ${modeCopy.line} to complete. You can complete it from any device, at any time.`,
+        bulletScenarios: `${modeCopy.count} timed scenarios based on real work situations`,
+      },
+      healthcare: {
+        subject: `Your assessment for the ${assessment.role_title} role`,
+        subHeader: 'Care scenario assessment',
+        introHTML: `<strong style="color:#0f172a;">${company_name}</strong> has invited you to complete a practical assessment that mirrors the actual work of a <strong style="color:#0f2137;">${assessment.role_title}</strong>.`,
+        summaryText: `You will work through ${modeCopy.count} realistic care scenarios that take approximately ${modeCopy.minutes} minutes to complete. You can complete it from any device, at any time.`,
+        bulletScenarios: `${modeCopy.count} timed care scenarios drawn from situations you would meet in role: handovers, family conversations, prioritising care, recording what you do`,
+      },
+      education: {
+        subject: `Your assessment for the ${assessment.role_title} role`,
+        subHeader: 'Classroom scenario assessment',
+        introHTML: `<strong style="color:#0f172a;">${company_name}</strong> has invited you to complete a practical assessment that mirrors the actual work of a <strong style="color:#0f2137;">${assessment.role_title}</strong>.`,
+        summaryText: `You will work through ${modeCopy.count} realistic school scenarios that take approximately ${modeCopy.minutes} minutes to complete. You can complete it from any device, at any time.`,
+        bulletScenarios: `${modeCopy.count} timed school scenarios drawn from situations you would meet in role: lessons, parent communication, behaviour incidents, pupil-related judgement calls`,
+      },
+    }
+    const shellKey = String(assessment.shell_family || 'office').toLowerCase()
+    const inviteCopy = CANDIDATE_INVITE_COPY_BY_SHELL[shellKey] || CANDIDATE_INVITE_COPY_BY_SHELL.office
 
     const adminClient = createServiceClient()
     const resend = new Resend(process.env.RESEND_API_KEY)
@@ -97,7 +130,7 @@ export async function POST(request) {
         await resend.emails.send({
           from: EMAIL_FROM,
           to: candidate.email,
-          subject: `You've been invited to complete an assessment for ${assessment.role_title}`,
+          subject: inviteCopy.subject,
           html: `
 <!DOCTYPE html>
 <html lang="en">
@@ -106,15 +139,15 @@ export async function POST(request) {
   <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
     <div style="background:#0f2137;padding:28px 36px;">
       <div style="color:#00BFA5;font-size:22px;font-weight:800;letter-spacing:-0.5px;">Prodicta</div>
-      <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-top:2px;">Work simulation assessment</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-top:2px;">${inviteCopy.subHeader}</div>
     </div>
     <div style="padding:36px;">
       <p style="font-size:16px;color:#0f172a;margin:0 0 16px;">Hi ${candidate.name},</p>
       <p style="font-size:15px;color:#5e6b7f;line-height:1.6;margin:0 0 24px;">
-        <strong style="color:#0f172a;">${company_name}</strong> has invited you to complete a work simulation assessment for the <strong style="color:#0f2137;">${assessment.role_title}</strong> position.
+        ${inviteCopy.introHTML}
       </p>
       <p style="font-size:15px;color:#5e6b7f;line-height:1.6;margin:0 0 28px;">
-        The assessment consists of ${modeCopy.line} to complete. You can complete it from any device, at any time.
+        ${inviteCopy.summaryText}
       </p>
       <div style="text-align:center;margin:32px 0;">
         <a href="${assessmentLink}" style="display:inline-block;background:#00BFA5;color:#0f2137;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none;">Start Assessment &#8594;</a>
@@ -122,7 +155,7 @@ export async function POST(request) {
       <div style="background:#f7f9fb;border-radius:10px;padding:20px 24px;margin:24px 0;">
         <p style="font-size:14px;font-weight:700;color:#0f2137;margin:0 0 12px;">What to expect:</p>
         <ul style="margin:0;padding:0 0 0 18px;color:#5e6b7f;font-size:14px;line-height:1.8;">
-          <li>${modeCopy.count} timed scenarios based on real work situations</li>
+          <li>${inviteCopy.bulletScenarios}</li>
           <li>Each scenario takes ${modeCopy.range}</li>
           <li>Write your responses as you would in the actual role</li>
           <li>There are no trick questions, we want to see how you think</li>

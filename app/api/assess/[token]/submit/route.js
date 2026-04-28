@@ -27,15 +27,39 @@ async function scoreAndNotify(candidateId, adminClient) {
   // they left the browser or hit the 3-minute polling cap.
   if (!process.env.RESEND_API_KEY) return
   try {
+    // Pull the joined assessment so completion copy can adapt per shell.
+    // shell_family and role_title are both optional; when either is
+    // missing the body falls through to the office baseline.
     const { data: candidate } = await adminClient
       .from('candidates')
-      .select('name, email, unique_link')
+      .select('name, email, unique_link, assessments(role_title, shell_family)')
       .eq('id', candidateId)
       .single()
     if (!candidate?.email) return
 
     const firstName = (candidate.name || '').split(' ')[0] || 'there'
     const feedbackUrl = `https://prodicta.co.uk/assess/${candidate.unique_link}/feedback`
+    const roleTitle = candidate?.assessments?.role_title || ''
+    const shellKey = String(candidate?.assessments?.shell_family || 'office').toLowerCase()
+
+    // Sector-aware completion acknowledgement. Office is the baseline and
+    // is preserved verbatim. Healthcare and education add a brief, neutral
+    // sentence acknowledging the kind of scenarios just completed, in the
+    // same vocabulary as the invite email. A non-blocking lookup, so an
+    // unexpected shell value falls to office.
+    const CANDIDATE_COMPLETION_COPY_BY_SHELL = {
+      office: {
+        acknowledgement: 'Thank you for completing your assessment. Leave optional feedback about your experience and then view your personalised development report.',
+      },
+      healthcare: {
+        acknowledgement: `Thank you for completing your assessment${roleTitle ? ` for the ${roleTitle} role` : ''}. The scenarios reflected real care work: handovers, family conversations, prioritising care, recording what you do. Leave optional feedback about your experience and then view your personalised development report.`,
+      },
+      education: {
+        acknowledgement: `Thank you for completing your assessment${roleTitle ? ` for the ${roleTitle} role` : ''}. The scenarios reflected real classroom work: lessons, parent communication, behaviour incidents, pupil-related judgement calls. Leave optional feedback about your experience and then view your personalised development report.`,
+      },
+    }
+    const completionCopy = CANDIDATE_COMPLETION_COPY_BY_SHELL[shellKey] || CANDIDATE_COMPLETION_COPY_BY_SHELL.office
+
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
       from: EMAIL_FROM,
@@ -45,7 +69,7 @@ async function scoreAndNotify(candidateId, adminClient) {
         <div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e9f0;border-radius:14px;padding:32px;">
           <h1 style="margin:0 0 16px;font-size:20px;font-weight:800;color:#0f2137;">Your results are ready</h1>
           <p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#5e6b7f;">Hi ${firstName},</p>
-          <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#5e6b7f;">Thank you for completing your assessment. Leave optional feedback about your experience and then view your personalised development report.</p>
+          <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#5e6b7f;">${completionCopy.acknowledgement}</p>
           <p style="margin:0 0 20px;text-align:center;">
             <a href="${feedbackUrl}" style="display:inline-block;background:#00BFA5;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 22px;border-radius:10px;">Leave feedback and view my report</a>
           </p>

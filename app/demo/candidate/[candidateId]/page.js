@@ -4586,8 +4586,9 @@ function DemoCandidateInner({ params }) {
                 Renders only when candidate has a profile (completed /
                 archived); pending and scoring_failed candidates skip
                 the panel — same null-guard pattern as the live page.
+                Employer-only feature; gated out for agency demo viewers.
                 ══════════════════════════════════════════════════ */}
-            {(() => {
+            {!isAgency && (() => {
               const dna = getDemoManagerDna(params.candidateId)
               if (!dna || !dna.alignment_dimensions) return null
               const candidateAlignmentScore = (results?.pressure_fit_score) ?? (results?.overall_score) ?? 50
@@ -4673,8 +4674,8 @@ function DemoCandidateInner({ params }) {
               )
             })()}
 
-            {/* ── TEAM FIT (demo for Sophie Chen) ── */}
-            {params.candidateId === 'demo-c1' && (
+            {/* ── TEAM FIT (demo for Sophie Chen, employer-only — mirrors live gate) ── */}
+            {!isAgency && params.candidateId === 'demo-c1' && (
               <ScrollReveal delay={60}>
                 <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '24px 28px', marginBottom: 20, borderTop: `3px solid ${TEAL}` }}>
                   <h2 style={{ fontFamily: F, fontSize: 15, fontWeight: 800, color: TX, margin: '0 0 4px' }}>How they will work with your team</h2>

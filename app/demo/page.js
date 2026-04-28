@@ -1770,7 +1770,7 @@ function DemoDashboardInner() {
             </div>
 
             {/* Rebate Period Tracker (agency permanent only) */}
-            {demoEmploymentType === 'permanent' && (
+            {isAgency && demoEmploymentType === 'permanent' && (
             <div style={{ order: 36, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24 }}>
               <div style={{ padding: '16px 24px', borderBottom: `1px solid ${BD}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
