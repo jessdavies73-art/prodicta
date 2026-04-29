@@ -299,7 +299,7 @@ function DemoManagerActions({ candidateId }) {
     week8: [
       'Assess whether the day 60 milestones from this report are materialising.',
       'If over-planning has surfaced, apply the intervention plan from this report before week 10.',
-      'Begin planning the probation review conversation using the evidence pack generator.',
+      'Begin planning the probation review conversation using the Compliance Evidence Pack generator.',
     ],
   }
   const marcusActions = {
@@ -316,7 +316,7 @@ function DemoManagerActions({ candidateId }) {
     week8: [
       'Assess whether the day 60 milestones from this report are materialising.',
       'If decision deferral has surfaced, apply the intervention plan before week 10.',
-      'Begin planning the probation review conversation using the evidence pack generator.',
+      'Begin planning the probation review conversation using the Compliance Evidence Pack generator.',
     ],
   }
   const src = candidateId === 'demo-c2' ? marcusActions : sophieActions
@@ -4940,7 +4940,7 @@ function DemoCandidateInner({ params }) {
                 <Ic name="x" size={18} color="rgba(255,255,255,0.6)" />
               </button>
               <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Fair Dismissal Audit Trail</div>
-              <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 6px', letterSpacing: '-0.4px' }}>Probation Evidence Pack</h2>
+              <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 6px', letterSpacing: '-0.4px' }}>Compliance Evidence Pack</h2>
               <p style={{ fontFamily: F, fontSize: 13, color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.55 }}>
                 A legally-structured document combining the original assessment and probation data for ERA 2025 compliance.
               </p>
@@ -4948,7 +4948,7 @@ function DemoCandidateInner({ params }) {
 
             <div style={{ padding: '24px 28px' }}>
               <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 18px', lineHeight: 1.65 }}>
-                When an employer hires through PRODICTA and later needs to end employment during probation, the Evidence Pack consolidates every step of the process into a single downloadable PDF. It demonstrates that the decision was based on documented, objective performance, not on any protected characteristic.
+                When an employer hires through PRODICTA and later needs to end employment during probation, the Compliance Evidence Pack consolidates every step of the process into a single downloadable PDF. It demonstrates that the decision was based on documented, objective performance, not on any protected characteristic.
               </p>
 
               <div style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 10, padding: '16px 18px', marginBottom: 18 }}>
@@ -4973,7 +4973,7 @@ function DemoCandidateInner({ params }) {
 
               <div style={{ background: TEALLT, border: `1px solid ${TEAL}44`, borderRadius: 10, padding: '12px 16px', marginBottom: 22 }}>
                 <p style={{ fontFamily: F, fontSize: 12.5, color: TEALD, margin: 0, lineHeight: 1.55 }}>
-                  <strong>Why it matters:</strong> the Employment Rights Act 2025 strengthens protections during the probation period. The Evidence Pack gives employers an objective, contemporaneous record to support a fair dismissal.
+                  <strong>Why it matters:</strong> the Employment Rights Act 2025 strengthens protections during the probation period. The Compliance Evidence Pack gives employers an objective, contemporaneous record to support a fair dismissal.
                 </p>
               </div>
 

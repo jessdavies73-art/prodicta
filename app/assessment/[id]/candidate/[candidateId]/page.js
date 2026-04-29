@@ -2400,7 +2400,7 @@ export default function CandidateReportPage({ params }) {
                         </p>
                       </div>
                     )}
-                    {results && profile?.account_type === 'employer' && existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
+                    {results && profile && !isAgencyPerm(profile) && existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
                       <button
                         onClick={() => window.open(`/api/assessment/${params.id}/candidate/${params.candidateId}/evidence-pack`, '_blank')}
                         className="no-print"
@@ -2411,7 +2411,7 @@ export default function CandidateReportPage({ params }) {
                         }}
                       >
                         <Ic name="shield" size={15} color={NAVY} />
-                        Evidence Pack
+                        Compliance Evidence Pack
                       </button>
                     )}
 
@@ -8503,7 +8503,7 @@ function ManagerActionsColumn({ results, onboardingPlan = [] }) {
   const week8 = [
     'Assess whether the day 60 milestones from this report are materialising.',
     'If any watch-outs have surfaced, apply the intervention plan from this report before week 10.',
-    'Begin planning the probation review conversation using the evidence pack generator.',
+    'Begin planning the probation review conversation using the Compliance Evidence Pack generator.',
   ]
 
   const blocks = [

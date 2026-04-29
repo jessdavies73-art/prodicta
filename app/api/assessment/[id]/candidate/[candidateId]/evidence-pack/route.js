@@ -192,7 +192,7 @@ export async function GET(request, { params }) {
       pages.push(esPage)
       esPage.drawRectangle({ x: 0, y: PAGE_H - 48, width: PAGE_W, height: 48, color: navy })
       esPage.drawText('PRODICTA', { x: MARGIN, y: PAGE_H - 30, size: 13, font: helvB, color: teal })
-      esPage.drawText('Probation Evidence Pack', { x: MARGIN + 90, y: PAGE_H - 30, size: 10, font: helv, color: white })
+      esPage.drawText('Compliance Evidence Pack', { x: MARGIN + 90, y: PAGE_H - 30, size: 10, font: helv, color: white })
 
       let ey = PAGE_H - 70
       esPage.drawText(safe(candidate.name || 'Candidate'), { x: MARGIN, y: ey, size: 18, font: helvB, color: black })
@@ -264,7 +264,7 @@ export async function GET(request, { params }) {
     function drawRunningHeader(p) {
       p.drawRectangle({ x: 0, y: PAGE_H - 48, width: PAGE_W, height: 48, color: navy })
       p.drawText('PRODICTA', { x: MARGIN, y: PAGE_H - 30, size: 13, font: helvB, color: teal })
-      p.drawText('Probation Evidence Pack', { x: MARGIN + 90, y: PAGE_H - 30, size: 10, font: helv, color: white })
+      p.drawText('Compliance Evidence Pack', { x: MARGIN + 90, y: PAGE_H - 30, size: 10, font: helv, color: white })
       p.drawText(`Ref: ${referenceNumber.slice(0, 8).toUpperCase()}`, { x: PAGE_W - MARGIN - 110, y: PAGE_H - 30, size: 9, font: helv, color: greyL })
     }
 
@@ -338,7 +338,7 @@ export async function GET(request, { params }) {
 
     y = PAGE_H - 170
 
-    page.drawText('Probation Evidence Pack', { x: MARGIN, y, size: 26, font: helvB, color: navy })
+    page.drawText('Compliance Evidence Pack', { x: MARGIN, y, size: 26, font: helvB, color: navy })
     y -= 28
     page.drawText('Employment Rights Act 2025 Compliance Documentation', { x: MARGIN, y, size: 12, font: helv, color: grey })
     y -= 40
@@ -757,7 +757,7 @@ export async function GET(request, { params }) {
       p.drawText('PRODICTA reports describe assessment behaviour and surface risk indicators.', { x: MARGIN, y: 40, size: 7.5, font: helv, color: rgb(0.78, 0.86, 0.84) })
       p.drawText('They are not legal advice. Seek employment law advice where appropriate.', { x: MARGIN, y: 30, size: 7.5, font: helv, color: rgb(0.78, 0.86, 0.84) })
       p.drawText('PRODICTA reports should be one input to your hiring decision, not the sole basis.', { x: MARGIN, y: 20, size: 7.5, font: helv, color: rgb(0.78, 0.86, 0.84) })
-      p.drawText('PRODICTA  |  Probation Evidence Pack  |  Confidential', { x: MARGIN, y: 7, size: 8, font: helv, color: rgb(0.78, 0.85, 0.86) })
+      p.drawText('PRODICTA  |  Compliance Evidence Pack  |  Confidential', { x: MARGIN, y: 7, size: 8, font: helv, color: rgb(0.78, 0.85, 0.86) })
       p.drawText(`${generatedAtLabel}  |  Page ${i + 1} of ${totalPages}`, { x: PAGE_W - MARGIN - 200, y: 7, size: 8, font: helv, color: rgb(0.78, 0.85, 0.86) })
     })
 
@@ -766,7 +766,7 @@ export async function GET(request, { params }) {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="PRODICTA-Evidence-Pack-${candidateName.replace(/[^a-z0-9]+/gi, '-')}.pdf"`,
+        'Content-Disposition': `inline; filename="PRODICTA-Compliance-Evidence-Pack-${candidateName.replace(/[^a-z0-9]+/gi, '-')}.pdf"`,
       },
     })
   } catch (err) {

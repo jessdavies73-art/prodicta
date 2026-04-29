@@ -773,7 +773,7 @@ export default function ProbationCopilotPage({ params }) {
  {/* Evidence Pack, only when employment ended during probation */}
         {outcome && ['failed_probation', 'dismissed', 'left_early'].includes(outcome.outcome) && (
           <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '22px 24px', marginBottom: 20 }}>
-            <h2 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 800, color: NAVY }}>Probation Evidence Pack</h2>
+            <h2 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 800, color: NAVY }}>Compliance Evidence Pack</h2>
             <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 14px', lineHeight: 1.6 }}>
               A legally-structured document combining assessment and probation data for ERA 2025 compliance.
             </p>
@@ -786,7 +786,7 @@ export default function ProbationCopilotPage({ params }) {
                 fontFamily: F, fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
               }}
             >
-              Generate Probation Evidence Pack
+              Generate Compliance Evidence Pack
             </button>
           </div>
         )}
