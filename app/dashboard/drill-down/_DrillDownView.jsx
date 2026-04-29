@@ -445,11 +445,19 @@ function UpgradePrompt({ label }) {
 function SortHeader({ k, label, sort, onSortKey, hideOnMobile = false, align = 'left' }) {
   const active = sort.key === k
   const arrow = active ? (sort.dir === 'asc' ? ' ↑' : ' ↓') : ''
+  // overflow: hidden + textOverflow: ellipsis stop a nowrap header from
+  // contributing to the table's scrollWidth in tableLayout: fixed mode.
+  // Without these, RoleTab's narrow trailing-column headers (Recommended,
+  // Completed) overflow visibly past their column, the table reports a
+  // larger scrollWidth than clientWidth, main's overflowX:auto triggers
+  // and on certain initial-render orders the parent paints with non-zero
+  // scrollLeft so the leftmost content is hidden behind the sidebar.
   return (
     <th style={{
       padding: '10px 8px', textAlign: align,
       fontFamily: F, fontSize: 11, fontWeight: 700, color: active ? NAVY : TX3,
-      letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+      letterSpacing: '0.04em', textTransform: 'uppercase',
+      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
       background: BG, cursor: 'pointer',
       display: hideOnMobile ? undefined : undefined,
     }}
@@ -502,14 +510,20 @@ function RoleTab({ roles, search, onSearch, sort, onSortKey, expanded, onExpand,
         <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
             <colgroup>
-              <col style={{ width: '24%' }} />
+              {/* Role column widened from 24% to 30% by reclaiming 1% from
+                  each of Sent, Completed, Recommended, Active, Hires, Avg
+                  so long role titles ("Customer Service Team Leader",
+                  "Software Developer", "Management Accountant") render
+                  without ellipsis at common viewport widths. Total still
+                  sums to 100%. */}
+              <col style={{ width: '30%' }} />
+              <col style={{ width: '8%' }} />
               <col style={{ width: '8%' }} />
               <col style={{ width: '9%' }} />
               <col style={{ width: '10%' }} />
-              <col style={{ width: '11%' }} />
-              <col style={{ width: '8%' }} />
-              <col style={{ width: '8%' }} />
-              <col style={{ width: '8%' }} />
+              <col style={{ width: '7%' }} />
+              <col style={{ width: '7%' }} />
+              <col style={{ width: '7%' }} />
               <col style={{ width: '8%' }} />
               <col style={{ width: '6%' }} />
             </colgroup>
