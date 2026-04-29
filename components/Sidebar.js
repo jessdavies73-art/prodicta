@@ -72,14 +72,19 @@ export default function Sidebar({ active, companyName }) {
   const [logoutHover, setLogoutHover] = useState(false)
   const [accountType, setAccountType] = useState('employer')
   const [showTemp, setShowTemp] = useState(false)
-  // Default to false (show Compliance). Employer accounts (the majority)
-  // need to see the group from first paint and must keep seeing it even
-  // if the supabase fetch fails, returns no profile, or short-circuits.
-  // Once the fetch resolves, isAgencyPerm flips this to true for the
-  // single account type that should not see the group; everyone else
-  // stays at the default. Trade-off: agency-perm users see a brief flash
-  // of Compliance on first mount until the fetch resolves.
-  const [hideCompliance, setHideCompliance] = useState(false)
+  // Initial value is read synchronously from localStorage so agency-perm
+  // users do not see a flash of Compliance on every page mount. The flag
+  // 'prodicta_is_agency_perm' is written below when the supabase profile
+  // fetch resolves; subsequent navigations read it before the first paint.
+  // First-ever-login users hit the default (false: show Compliance) until
+  // the fetch resolves; then localStorage is set and future mounts are
+  // flash-free. Employer accounts never have the flag set, so they get
+  // the safe default (show Compliance) even if the fetch fails or
+  // short-circuits.
+  const [hideCompliance, setHideCompliance] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try { return localStorage.getItem('prodicta_is_agency_perm') === 'true' } catch { return false }
+  })
 
   useEffect(() => { setMobileOpen(false) }, [active])
 
@@ -98,7 +103,16 @@ export default function Sidebar({ active, companyName }) {
 
       const acct = prof?.account_type === 'agency' ? 'agency' : 'employer'
       setAccountType(acct)
-      setHideCompliance(isAgencyPerm(prof))
+      const agencyPerm = isAgencyPerm(prof)
+      // Persist for the next mount so the synchronous useState initialiser
+      // above starts in the correct state on the next page navigation.
+      if (typeof window !== 'undefined') {
+        try {
+          if (agencyPerm) localStorage.setItem('prodicta_is_agency_perm', 'true')
+          else localStorage.removeItem('prodicta_is_agency_perm')
+        } catch {}
+      }
+      setHideCompliance(agencyPerm)
 
       const defaultType = prof?.default_employment_type
       // 'both' and 'ask' fall through to assessments lookup so Documents only
@@ -120,6 +134,12 @@ export default function Sidebar({ active, companyName }) {
   async function handleLogout() {
     const supabase = createClient()
     await supabase.auth.signOut()
+    // Clear the cached agency-perm flag so a different account type
+    // signing in on the same browser does not inherit the previous
+    // user's Compliance visibility.
+    if (typeof window !== 'undefined') {
+      try { localStorage.removeItem('prodicta_is_agency_perm') } catch {}
+    }
     router.push('/login')
   }
 
