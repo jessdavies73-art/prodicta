@@ -1745,25 +1745,40 @@ function DemoDashboardInner() {
             <div style={{ order: 40, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Outcome tracking</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
-                  <span style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: TEAL }}>3</span>
-                  <span style={{ fontSize: 13, color: TX2 }}>check-ins pending</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {[
-                    { name: 'Sophie Chen', due: '3-month check-in', client: 'Acme Corp' },
-                    { name: 'David Park', due: '6-month check-in', client: 'Nexus Ltd' },
-                    { name: 'Rachel Adams', due: '12-month check-in', client: 'Bright HR' },
-                  ].map(c => (
-                    <div key={c.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 8 }}>
-                      <div>
-                        <div style={{ fontSize: 12.5, fontWeight: 700, color: TX }}>{c.name}</div>
-                        <div style={{ fontSize: 11, color: TX3 }}>{c.due} at {c.client}</div>
+                {(() => {
+                  // Permanent recruitment agencies have no ongoing relationship
+                  // with the placement after the rebate period, so only the
+                  // 3-month entry is shown for agency-perm. The other rows
+                  // stay in the demo data so other account types still see
+                  // the full cadence.
+                  const allCheckins = [
+                    { name: 'Sophie Chen',  due: '3-month check-in',  month: 3,  client: 'Acme Corp' },
+                    { name: 'David Park',   due: '6-month check-in',  month: 6,  client: 'Nexus Ltd' },
+                    { name: 'Rachel Adams', due: '12-month check-in', month: 12, client: 'Bright HR' },
+                  ]
+                  const visibleCheckins = demoIsAgencyPerm
+                    ? allCheckins.filter(c => c.month === 3)
+                    : allCheckins
+                  return (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
+                        <span style={{ fontFamily: FM, fontSize: 28, fontWeight: 800, color: TEAL }}>{visibleCheckins.length}</span>
+                        <span style={{ fontSize: 13, color: TX2 }}>check-ins pending</span>
                       </div>
-                      <Ic name="chevron-right" size={14} color={TEALD} />
-                    </div>
-                  ))}
-                </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {visibleCheckins.map(c => (
+                          <div key={c.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 8 }}>
+                            <div>
+                              <div style={{ fontSize: 12.5, fontWeight: 700, color: TX }}>{c.name}</div>
+                              <div style={{ fontSize: 11, color: TX3 }}>{c.due} at {c.client}</div>
+                            </div>
+                            <Ic name="chevron-right" size={14} color={TEALD} />
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )
+                })()}
               </div>
               <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Red flag alerts</div>

@@ -1085,15 +1085,21 @@ function DashboardPageInner() {
             }
           } catch (_) {}
 
-          // Pending outcome check-ins (reminders awaiting response)
+          // Pending outcome check-ins (reminders awaiting response).
+          // Agency-perm users only see 3-month entries: permanent agencies
+          // hand candidates to clients at placement, so 6 and 12-month
+          // entries (legacy or generated before the gate) are hidden at
+          // query time. The records remain in the database.
           try {
-            const { data: pending } = await supabase
+            let q = supabase
               .from('outcome_reminders')
               .select('id, reminder_month, sent_at, candidate_outcome_id, candidate_outcomes!inner(candidate_id, user_id, candidates(id, name, assessment_id, assessments(role_title)))')
               .is('responded_at', null)
               .eq('candidate_outcomes.user_id', user.id)
               .order('sent_at', { ascending: false })
               .limit(20)
+            if (isAgencyPerm(prof)) q = q.eq('reminder_month', 3)
+            const { data: pending } = await q
             setPendingCheckins(pending || [])
           } catch (_) {}
         } catch (_) {

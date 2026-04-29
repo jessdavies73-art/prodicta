@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { v4 as uuidv4 } from 'uuid'
 import { createServiceClient } from '@/lib/supabase-server'
 import { EMAIL_FROM } from '@/lib/email-sender'
+import { isAgencyPerm } from '@/lib/account-helpers'
 
 const HIRE_OUTCOMES = ['passed_probation', 'still_probation', 'still_in_probation', 'still_employed']
 
@@ -37,6 +38,21 @@ export async function GET(request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Bulk-fetch the owner profiles in one round-trip so the per-row gate
+  // below can read account_type + default_employment_type without N hits.
+  // Permanent recruitment agencies do not retain a relationship with the
+  // placement after the rebate period, so 6 and 12-month reminders are
+  // out of scope for them; only 3-month reminders are generated.
+  const ownerIds = Array.from(new Set((outcomes || []).map(o => o.user_id).filter(Boolean)))
+  const profileById = new Map()
+  if (ownerIds.length > 0) {
+    const { data: profileRows } = await adminClient
+      .from('users')
+      .select('id, account_type, default_employment_type')
+      .in('id', ownerIds)
+    for (const p of profileRows || []) profileById.set(p.id, p)
+  }
+
   const sent = []
   const errors = []
 
@@ -45,6 +61,10 @@ export async function GET(request) {
       const months = monthsBetween(o.placement_date, now)
       const due = months >= 12 ? 12 : months >= 6 ? 6 : months >= 3 ? 3 : 0
       if (due === 0) continue
+
+      // Agency-perm gate: only 3-month reminders are in scope.
+      const ownerProfile = profileById.get(o.user_id)
+      if (isAgencyPerm(ownerProfile) && due !== 3) continue
 
       // Check what reminder months we have already sent for this outcome
       const { data: existing } = await adminClient
