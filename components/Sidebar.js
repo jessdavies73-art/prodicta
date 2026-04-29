@@ -17,6 +17,10 @@ function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 // agencies (account_type 'agency' + default_employment_type 'permanent'),
 // because those users are not the legal employer of record and have no
 // employment-of-record compliance to track.
+//
+// hideCompliance is tri-state: true (hide), false (show), null (profile not
+// loaded yet, hide for the brief loading window so agency-perm never sees a
+// flash of Compliance during navigation between pages).
 function buildNav({ accountType, showTemp, hideCompliance }) {
   const isAgency = accountType === 'agency'
   const groups = []
@@ -37,7 +41,7 @@ function buildNav({ accountType, showTemp, hideCompliance }) {
   }
   groups.push({ label: 'Placement', items: placement })
 
-  if (!hideCompliance) {
+  if (hideCompliance === false) {
     const compliance = [
       { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/ssp' },
       { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/holiday' },
@@ -64,7 +68,11 @@ export default function Sidebar({ active, companyName }) {
   const [logoutHover, setLogoutHover] = useState(false)
   const [accountType, setAccountType] = useState('employer')
   const [showTemp, setShowTemp] = useState(false)
-  const [hideCompliance, setHideCompliance] = useState(false)
+  // null until the profile fetch resolves so the Compliance group stays
+  // hidden during the brief loading window. Otherwise an agency-perm user
+  // navigating between pages sees Compliance flash visible on each fresh
+  // mount before the async profile fetch updates state.
+  const [hideCompliance, setHideCompliance] = useState(null)
 
   useEffect(() => { setMobileOpen(false) }, [active])
 

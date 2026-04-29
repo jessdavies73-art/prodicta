@@ -55,6 +55,10 @@ export function DemoBanner() {
 // The Compliance group as a whole is hidden for the agency-permanent demo
 // viewer (matches the live agency-perm sidebar). Documents stays gated to
 // agency + temp/both within the group when the group is visible at all.
+//
+// hideCompliance is tri-state: true (hide), false (show), null (localStorage
+// not yet read; hide for the brief loading window so an agency-perm demo
+// viewer never sees Compliance flash on a fresh route mount).
 function buildDemoGroups({ showDocuments, hideCompliance }) {
   const groups = [
     { label: 'Main', items: [
@@ -69,7 +73,7 @@ function buildDemoGroups({ showDocuments, hideCompliance }) {
     ]},
   ]
 
-  if (!hideCompliance) {
+  if (hideCompliance === false) {
     const compliance = [
       { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/demo/ssp' },
       { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/demo/holiday' },
@@ -90,24 +94,46 @@ export function DemoSidebar({ active, demoEmploymentType }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [signupModal, setSignupModal] = useState(false)
   const [demoAccountType, setDemoAccountType] = useState(null)
+  // Persisted demo employment_type from localStorage. The demoEmploymentType
+  // prop is only passed by pages that own the toggle (the demo dashboard).
+  // Other demo subpages need to read it themselves, otherwise an agency-perm
+  // viewer who navigates to /demo/drill-down sees Compliance flash visible
+  // because the prop is undefined and the gate falls open.
+  const [demoEmploymentTypeLs, setDemoEmploymentTypeLs] = useState(null)
+  const [profileLoaded, setProfileLoaded] = useState(false)
 
   // The demo dashboard persists the agency/employer toggle to localStorage
-  // (prodicta_demo_account_type) so subpages and the sidebar stay in sync
-  // as the user navigates around. Read it client-side to gate Compliance.
+  // (prodicta_demo_account_type / _employment_type) so subpages and the
+  // sidebar stay in sync as the user navigates around. Read both client-side
+  // to gate Compliance consistently across every demo page.
   useEffect(() => {
     if (typeof window === 'undefined') return
-    try { setDemoAccountType(localStorage.getItem('prodicta_demo_account_type')) } catch {}
+    try {
+      setDemoAccountType(localStorage.getItem('prodicta_demo_account_type'))
+      setDemoEmploymentTypeLs(localStorage.getItem('prodicta_demo_employment_type'))
+    } catch {}
+    setProfileLoaded(true)
   }, [])
 
-  // Documents visibility is driven by the toggle on the demo dashboard.
-  // When demoEmploymentType is not passed (other demo pages that don't own the
- // toggle), default to showing Documents, the demo default is 'both'.
-  const showDocuments =
-    demoEmploymentType == null ||
-    demoEmploymentType === 'temporary' ||
-    demoEmploymentType === 'both'
+  // Effective employment type: the prop wins when the page owns the toggle,
+  // otherwise fall back to the localStorage value so the gate is consistent
+  // on subpages.
+  const effectiveEmploymentType = demoEmploymentType ?? demoEmploymentTypeLs
 
-  const hideCompliance = isDemoAgencyPerm(demoAccountType, demoEmploymentType)
+  // Documents visibility is driven by the toggle on the demo dashboard.
+  // When effectiveEmploymentType is not yet known, default to showing
+  // Documents; the demo default is 'both'.
+  const showDocuments =
+    effectiveEmploymentType == null ||
+    effectiveEmploymentType === 'temporary' ||
+    effectiveEmploymentType === 'both'
+
+  // null until localStorage has been read; resolves to true/false once
+  // profileLoaded so the Compliance group does not flash visible mid-load
+  // for agency-perm viewers navigating between demo pages.
+  const hideCompliance = profileLoaded
+    ? isDemoAgencyPerm(demoAccountType, effectiveEmploymentType)
+    : null
 
   function handleNavClick(href) {
     router.push(href)

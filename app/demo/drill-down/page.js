@@ -5,7 +5,9 @@
 // data so prospects see all four tabs populated. Demo experience is
 // always agency-perm so the By Client tab renders.
 
+import { useEffect, useState } from 'react'
 import { DemoLayout } from '@/components/DemoShell'
+import { isDemoAgencyPerm } from '@/lib/account-helpers'
 import {
   DEMO_CANDIDATES,
   DEMO_ASSESSMENTS,
@@ -16,6 +18,19 @@ import {
 import DrillDownView from '@/app/dashboard/drill-down/_DrillDownView'
 
 export default function DemoDrillDownPage() {
+  // Mirror the live drill-down: read the demo banner state so an
+  // agency-perm demo viewer sees the description without "compliance
+  // signals" and the live behaviour is honestly previewed.
+  const [hideCompliance, setHideCompliance] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const acct = localStorage.getItem('prodicta_demo_account_type')
+      const empType = localStorage.getItem('prodicta_demo_employment_type')
+      setHideCompliance(isDemoAgencyPerm(acct, empType))
+    } catch {}
+  }, [])
+
   // Prefer the full enriched candidate set (with results) so per-role
   // averages and recommended counts populate correctly.
   const enriched = getDemoCandidatesFull()
@@ -47,6 +62,7 @@ export default function DemoDrillDownPage() {
         clients={DEMO_CLIENTS}
         accountType="agency"
         planType="agency"
+        hideCompliance={hideCompliance}
       />
     </DemoLayout>
   )

@@ -8,17 +8,25 @@
 // rendering are inside the view; this page is just the data plumbing
 // and the auth gate.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
 import DrillDownView from './_DrillDownView'
 import { NAVY, TEAL, F } from '@/lib/constants'
+import { isAgencyPerm } from '@/lib/account-helpers'
+
+const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
+const _mSnap = () => window.innerWidth <= 768
+const _mServer = () => false
+function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 
 export default function DrillDownPage() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
   const [authChecked, setAuthChecked] = useState(false)
+  const [hideCompliance, setHideCompliance] = useState(null)
   const [data, setData] = useState({ candidates: [], assessments: [], teamMembers: [], clients: [], accountType: 'employer', planType: 'subscription' })
 
   useEffect(() => {
@@ -36,12 +44,13 @@ export default function DrillDownPage() {
         // visibility, plan_type drives the upgrade prompts on PAYG.
         const { data: profile } = await supabase
           .from('users')
-          .select('account_type, plan_type, plan')
+          .select('account_type, plan_type, plan, default_employment_type')
           .eq('id', user.id)
           .maybeSingle()
 
         const accountType = profile?.account_type === 'agency' ? 'agency' : 'employer'
         const planType = (profile?.plan_type || profile?.plan || 'subscription').toLowerCase()
+        if (!cancelled) setHideCompliance(isAgencyPerm(profile))
 
         // Resolve the user's team scope. Owners and managers see the full
         // team; consultants only see their own activity.
@@ -112,13 +121,17 @@ export default function DrillDownPage() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f7f9fb' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f7f9fb', fontFamily: F }}>
       <Sidebar active="drill-down" />
-      <main style={{ flex: 1, minWidth: 0 }}>
+      {/* marginLeft mirrors the dashboard so the fixed 220px sidebar does
+          not overlap the drill-down content. overflowX: 'auto' on the main
+          column lets wide tables scroll horizontally on narrow viewports
+          rather than being clipped. */}
+      <main style={{ flex: 1, minWidth: 0, marginLeft: isMobile ? 0 : 220, paddingTop: isMobile ? 56 : 0, overflowX: 'auto' }}>
         {loading ? (
           <div style={{ padding: 40, fontFamily: F, color: TEAL }}>Loading drill-down...</div>
         ) : (
-          <DrillDownView {...data} />
+          <DrillDownView {...data} hideCompliance={hideCompliance === true} />
         )}
       </main>
     </div>

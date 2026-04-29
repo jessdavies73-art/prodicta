@@ -238,6 +238,7 @@ export default function DrillDownView({
   clients = [],
   accountType = 'employer',
   planType = 'subscription',
+  hideCompliance = false,
 }) {
   const isMobile = useIsMobile()
   const persisted = useMemo(() => loadState(), [])
@@ -294,7 +295,9 @@ export default function DrillDownView({
           Slice the dashboard by what matters to you
         </h1>
         <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: '8px 0 0', lineHeight: 1.55 }}>
-          Filter assessment, shortlisting, post-placement and compliance signals by role, client, team member, or location. The four buckets stay consistent under every filter.
+          {hideCompliance
+            ? 'Slice your assessment, shortlisting, and post-placement signals by role, client, team member, or location. The four buckets stay consistent under every filter.'
+            : 'Filter assessment, shortlisting, post-placement and compliance signals by role, client, team member, or location. The four buckets stay consistent under every filter.'}
         </p>
       </header>
 
