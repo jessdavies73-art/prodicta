@@ -89,7 +89,7 @@ export async function POST(request, { params }) {
 
     const { data: candidate, error: candError } = await adminClient
       .from('candidates')
-      .select('id, status, name, email, user_id, assessment_id')
+      .select('id, status, name, email, user_id, assessment_id, assessments(role_title)')
       .eq('unique_link', params.token)
       .single()
 
@@ -184,12 +184,18 @@ export async function POST(request, { params }) {
     if (updateError) throw updateError
 
  // In-app notification for the hiring team, cheap, keep inline.
+    // Interpolating role_title gives the recipient context when they have
+    // multiple roles in flight; falls through cleanly for legacy assessments.
     try {
+      const roleTitle = candidate?.assessments?.role_title || ''
+      const completedBody = roleTitle
+        ? `Completed assessment for ${roleTitle}. Results will be ready within minutes.`
+        : 'Results will be ready within minutes.'
       await adminClient.from('notifications').insert({
         user_id: candidate.user_id,
         type: 'candidate_completed',
         title: `${candidate.name} completed their assessment`,
-        body: 'Results will be ready within minutes.',
+        body: completedBody,
         candidate_id: candidate.id,
         assessment_id: candidate.assessment_id,
       })
