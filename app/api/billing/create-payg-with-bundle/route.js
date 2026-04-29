@@ -8,13 +8,73 @@ import { redeemPromoCode } from '@/lib/promo-redeem'
 // only, not something you'd buy as your first line.
 const SELECTABLE_TYPES = ['rapid-screen', 'speed-fit', 'depth-fit', 'strategy-fit']
 const MIN_QTY = 1
-const MAX_QTY = 100
+const MAX_QTY_PER_TYPE = 50
+const MAX_TOTAL_QTY = 200
 
 function labelFor(credit_type) {
   return CREDIT_PRICES[credit_type]?.label || credit_type
 }
 
-async function createSupabaseUserAndGrantCredits({ email, password, companyName, accountType, customerId, credit_type, quantity, promoCode }) {
+// Normalises an incoming body into a list of purchase rows. Accepts either:
+//   - the new mixed-cart shape: { purchases: [{ credit_type, quantity }] }
+//   - the legacy single-line shape: { credit_type, quantity }
+// Throws { status, message } on invalid input. Total amount, in pence, is
+// computed from CREDIT_PRICES so the server is the source of truth on price.
+function normalisePurchases(body) {
+  let purchases = []
+  if (Array.isArray(body?.purchases) && body.purchases.length > 0) {
+    purchases = body.purchases
+  } else if (body?.credit_type) {
+    purchases = [{ credit_type: body.credit_type, quantity: body.quantity }]
+  } else {
+    throw { status: 400, message: 'No assessment quantities provided.' }
+  }
+
+  const seen = new Set()
+  const cleaned = []
+  let totalQty = 0
+  let totalAmount = 0
+
+  for (const p of purchases) {
+    const ct = p?.credit_type
+    if (!SELECTABLE_TYPES.includes(ct)) {
+      throw { status: 400, message: `Unknown assessment type: ${ct}` }
+    }
+    if (seen.has(ct)) {
+      throw { status: 400, message: `Duplicate assessment type in cart: ${ct}` }
+    }
+    seen.add(ct)
+    const qty = parseInt(p?.quantity, 10)
+    if (!Number.isFinite(qty) || qty < MIN_QTY || qty > MAX_QTY_PER_TYPE) {
+      throw { status: 400, message: `Quantity for ${ct} must be between ${MIN_QTY} and ${MAX_QTY_PER_TYPE}.` }
+    }
+    const unitPrice = CREDIT_PRICES[ct]?.price
+    if (!unitPrice) {
+      throw { status: 400, message: `No price configured for ${ct}` }
+    }
+    cleaned.push({ credit_type: ct, quantity: qty, unitPrice })
+    totalQty += qty
+    totalAmount += unitPrice * qty
+  }
+
+  if (cleaned.length === 0) {
+    throw { status: 400, message: 'Add at least one assessment to continue.' }
+  }
+  if (totalQty > MAX_TOTAL_QTY) {
+    throw { status: 400, message: `Total quantity exceeds ${MAX_TOTAL_QTY}. Contact us about a subscription.` }
+  }
+
+  return { purchases: cleaned, totalAmount, totalQty }
+}
+
+function describePurchases(purchases) {
+  if (purchases.length === 1) {
+    return `PRODICTA ${purchases[0].quantity} x ${labelFor(purchases[0].credit_type)}`
+  }
+  return 'PRODICTA: ' + purchases.map(p => `${p.quantity} x ${labelFor(p.credit_type)}`).join(', ')
+}
+
+async function createSupabaseUserAndGrantCredits({ email, password, companyName, accountType, customerId, purchases, promoCode }) {
   const anonClient = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -77,17 +137,25 @@ async function createSupabaseUserAndGrantCredits({ email, password, companyName,
     .eq('id', userId)
   console.log('[payg-signup] plan verified and set to payg for', userId)
 
-  const { error: creditError } = await admin.from('assessment_credits').upsert(
-    {
-      user_id: userId,
-      credit_type,
-      credits_remaining: quantity,
-      credits_purchased: quantity,
-      last_purchased_at: new Date().toISOString(),
-    },
-    { onConflict: 'user_id,credit_type' }
-  )
-  if (creditError) console.error('[payg] credit grant failed:', creditError)
+  // Mixed-cart credit grant: one row per credit_type. The composite uniqueness
+  // (user_id, credit_type) means each upsert touches at most one row, so this
+  // is safe even if the user re-runs through some recovery path with the same
+  // payment intent (idempotent on credit_type, additive only via signup so
+  // existing rows are guaranteed to be zero on first grant).
+  const nowIso = new Date().toISOString()
+  for (const p of purchases) {
+    const { error: creditError } = await admin.from('assessment_credits').upsert(
+      {
+        user_id: userId,
+        credit_type: p.credit_type,
+        credits_remaining: p.quantity,
+        credits_purchased: p.quantity,
+        last_purchased_at: nowIso,
+      },
+      { onConflict: 'user_id,credit_type' }
+    )
+    if (creditError) console.error('[payg] credit grant failed:', { credit_type: p.credit_type, creditError })
+  }
 
   let promoMessage = null
   if (promoCode) {
@@ -108,15 +176,9 @@ export async function POST(request) {
   try {
     currentStep = 'parse-body'
     const body = await request.json()
-    const { email, password, companyName, accountType, promoCode, paymentMethodId, credit_type, quantity } = body
+    const { email, password, companyName, accountType, promoCode, paymentMethodId } = body
 
-    console.log('[payg-with-bundle] start', {
-      hasEmail: !!email, hasPaymentMethodId: !!paymentMethodId, credit_type, quantity, accountType,
-      hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
-      stripeKeyPrefix: (process.env.STRIPE_SECRET_KEY || '').slice(0, 7),
-    })
-
-    if (!email || !password || !companyName || !accountType || !paymentMethodId || !credit_type) {
+    if (!email || !password || !companyName || !accountType || !paymentMethodId) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
     }
     if (password.length < 8) {
@@ -125,27 +187,33 @@ export async function POST(request) {
     if (accountType !== 'employer' && accountType !== 'agency') {
       return NextResponse.json({ error: 'Invalid account type.' }, { status: 400 })
     }
-    if (!SELECTABLE_TYPES.includes(credit_type)) {
-      return NextResponse.json({ error: 'Unknown assessment type.' }, { status: 400 })
+
+    let purchases, amount, totalQty
+    try {
+      const normalised = normalisePurchases(body)
+      purchases = normalised.purchases
+      amount = normalised.totalAmount
+      totalQty = normalised.totalQty
+    } catch (validationErr) {
+      return NextResponse.json({ error: validationErr.message }, { status: validationErr.status || 400 })
     }
-    const qty = parseInt(quantity, 10)
-    if (!Number.isFinite(qty) || qty < MIN_QTY || qty > MAX_QTY) {
-      return NextResponse.json({ error: `Quantity must be between ${MIN_QTY} and ${MAX_QTY}.` }, { status: 400 })
-    }
-    const unitPrice = CREDIT_PRICES[credit_type]?.price
-    if (!unitPrice) {
-      return NextResponse.json({ error: 'Unknown assessment type.' }, { status: 400 })
-    }
-    const amount = unitPrice * qty // already in pence (lib/stripe.js stores minor units)
-    console.log('[payg-with-bundle] amount calc', { unitPrice, qty, amount })
+
+    console.log('[payg-with-bundle] start', {
+      hasEmail: !!email, hasPaymentMethodId: !!paymentMethodId,
+      purchases: purchases.map(p => `${p.quantity} x ${p.credit_type}`),
+      totalQty, amount, accountType,
+      hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
+      stripeKeyPrefix: (process.env.STRIPE_SECRET_KEY || '').slice(0, 7),
+    })
 
     currentStep = 'stripe-customer'
     const stripe = getStripeClient()
 
+    const purchasesJson = JSON.stringify(purchases.map(p => ({ credit_type: p.credit_type, quantity: p.quantity })))
     const customer = await stripe.customers.create({
       email: email.trim(),
       name: companyName.trim(),
-      metadata: { plan: 'payg', accountType, credit_type, quantity: String(qty) },
+      metadata: { plan: 'payg', accountType, purchases: purchasesJson, total_qty: String(totalQty) },
     })
     stripeCustomerId = customer.id
     console.log('[payg-with-bundle] customer created', { customerId: customer.id })
@@ -166,10 +234,10 @@ export async function POST(request) {
       // When a specific payment_method is passed, we don't need automatic_payment_methods.
       // Using payment_method_types keeps the intent card-only and avoids any redirect flows.
       payment_method_types: ['card'],
-      description: `PRODICTA ${qty} x ${labelFor(credit_type)}`,
+      description: describePurchases(purchases),
       metadata: {
-        credit_type,
-        quantity: String(qty),
+        purchases: purchasesJson,
+        total_qty: String(totalQty),
         signup: 'true',
       },
     })
@@ -213,16 +281,16 @@ export async function POST(request) {
     try {
       const { userId, promoMessage } = await createSupabaseUserAndGrantCredits({
         email, password, companyName, accountType,
-        customerId: customer.id, credit_type, quantity: qty, promoCode,
+        customerId: customer.id, purchases, promoCode,
       })
       console.log('[payg-with-bundle] user created and credits granted', {
-        userId, credit_type, quantity: qty, amountGBP: amount / 100,
+        userId, purchases: purchases.map(p => `${p.quantity} x ${p.credit_type}`),
+        amountGBP: amount / 100,
       })
       return NextResponse.json({
         success: true,
         promoMessage,
-        credit_type,
-        quantity: qty,
+        purchases: purchases.map(p => ({ credit_type: p.credit_type, quantity: p.quantity })),
         amount: amount / 100,
       })
     } catch (createErr) {

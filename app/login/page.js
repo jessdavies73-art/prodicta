@@ -52,6 +52,23 @@ const PAYG_ASSESSMENT_TYPES = [
   },
 ]
 
+// Per-type cap. Mirrors MAX_QTY_PER_TYPE on the server. Higher quantities
+// suggest a subscription is the right fit and are caught with a tooltip
+// before the user can submit.
+const PAYG_MAX_QTY_PER_TYPE = 50
+
+function paygTotalQty(quantities) {
+  return PAYG_ASSESSMENT_TYPES.reduce((sum, t) => sum + (quantities[t.id] || 0), 0)
+}
+function paygTotalGBP(quantities) {
+  return PAYG_ASSESSMENT_TYPES.reduce((sum, t) => sum + ((quantities[t.id] || 0) * t.unitPrice), 0)
+}
+function paygPurchasesArray(quantities) {
+  return PAYG_ASSESSMENT_TYPES
+    .filter(t => (quantities[t.id] || 0) > 0)
+    .map(t => ({ credit_type: t.id, quantity: quantities[t.id] }))
+}
+
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
@@ -269,7 +286,18 @@ function SignUpForm() {
   const [password,    setPassword]    = useState('')
   const [accountType, setAccountType] = useState('employer')
   const [planPath,    setPlanPath]    = useState('monthly') // 'monthly' | 'payg'
-  const [selectedType, setSelectedType] = useState(null) // credit_type id
+  // Per-type quantities for the PAYG mixed cart. Each key is a credit_type id;
+  // missing or zero values mean "not in the cart". Submit button is disabled
+  // until at least one quantity is positive.
+  const [quantities, setQuantities] = useState({
+    'rapid-screen': 0,
+    'speed-fit': 0,
+    'depth-fit': 0,
+    'strategy-fit': 0,
+  })
+  // Captured from the API response on successful payment so the success
+  // screen can list what the candidate just bought (skipping zero rows).
+  const [purchasedSummary, setPurchasedSummary] = useState(null)
   const [plan,        setPlan]        = useState('professional')
   const [postcode,    setPostcode]    = useState('')
   const [promoCode,   setPromoCode]   = useState('')
@@ -287,11 +315,14 @@ function SignUpForm() {
     if (!email.trim())       { setError('Please enter your email address.'); return }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
 
- // Pay-as-you-go, single assessment credit purchase.
+ // Pay-as-you-go, mixed-cart assessment credit purchase. Quantities object
+    // is converted to a purchases array of { credit_type, quantity } that the
+    // server normalises and prices.
     if (planPath === 'payg') {
-      if (!selectedType) { setError('Please choose an assessment type.'); return }
+      const purchases = paygPurchasesArray(quantities)
+      if (purchases.length === 0) { setError('Add at least one assessment to continue.'); return }
       if (!stripe || !elements) { setError('Payment form is loading. Please wait a moment.'); return }
-      const qty = 1
+      const totalGBP = paygTotalGBP(quantities)
 
       // Safely parse a fetch response; surface server errors even when the
       // response isn't JSON (e.g. Vercel 500 HTML page).
@@ -327,8 +358,7 @@ function SignUpForm() {
             accountType,
             promoCode:      promoCode.trim() || null,
             paymentMethodId: paymentMethod.id,
-            credit_type:    selectedType,
-            quantity:       qty,
+            purchases,
           }),
         })
         const data = await readJson(res)
@@ -361,8 +391,7 @@ function SignUpForm() {
               companyName:     company.trim(),
               accountType,
               promoCode:       promoCode.trim() || null,
-              credit_type:     selectedType,
-              quantity:        qty,
+              purchases,
             }),
           })
           const confirmData = await readJson(confirmRes)
@@ -371,11 +400,13 @@ function SignUpForm() {
             setError(confirmData.error); setLoading(false); return
           }
           if (confirmData.promoMessage) setPromoMessage(confirmData.promoMessage)
+          setPurchasedSummary(confirmData.purchases || purchases)
           setDone(true)
           return
         }
 
         if (data.promoMessage) setPromoMessage(data.promoMessage)
+        setPurchasedSummary(data.purchases || purchases)
         setDone(true)
       } catch (err) {
         console.error('[signup] payg flow threw', err)
@@ -489,6 +520,7 @@ function SignUpForm() {
   }
 
   if (done) {
+    const summary = Array.isArray(purchasedSummary) ? purchasedSummary.filter(p => (p?.quantity || 0) > 0) : []
     return (
       <div style={{ textAlign: 'center', padding: '12px 0 8px' }}>
         <div style={{
@@ -503,8 +535,32 @@ function SignUpForm() {
           </svg>
         </div>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: '0 0 10px' }}>
-          Check your email
+          {summary.length > 0 ? 'Welcome to PRODICTA' : 'Check your email'}
         </h2>
+        {summary.length > 0 && (
+          <div style={{
+            margin: '0 auto 16px',
+            maxWidth: 320,
+            padding: '14px 16px',
+            borderRadius: 10,
+            background: 'rgba(0,191,165,0.10)',
+            border: '1px solid rgba(0,191,165,0.3)',
+            textAlign: 'left',
+          }}>
+            <p style={{ fontSize: 12.5, fontWeight: 700, color: TEAL, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              You have:
+            </p>
+            {summary.map(p => {
+              const meta = PAYG_ASSESSMENT_TYPES.find(t => t.id === p.credit_type)
+              const label = meta?.label || p.credit_type
+              return (
+                <div key={p.credit_type} style={{ fontSize: 13.5, color: '#fff', lineHeight: 1.7 }}>
+                  {label} credits: <strong>{p.quantity}</strong>
+                </div>
+              )
+            })}
+          </div>
+        )}
         <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.6)', margin: 0, lineHeight: 1.65 }}>
           We have sent a verification link to{' '}
           <strong style={{ color: '#fff' }}>{email}</strong>.
@@ -642,67 +698,110 @@ function SignUpForm() {
         )}
 
         {planPath === 'payg' && (() => {
-          const sel = PAYG_ASSESSMENT_TYPES.find(t => t.id === selectedType)
+          const totalQty = paygTotalQty(quantities)
+          const totalGBP = paygTotalGBP(quantities)
+          const setQty = (id, next) => {
+            const clamped = Math.max(0, Math.min(PAYG_MAX_QTY_PER_TYPE, parseInt(next, 10) || 0))
+            setQuantities(prev => ({ ...prev, [id]: clamped }))
+          }
           return (
             <div>
-              <label style={styles.label}>Choose an assessment type</label>
+              <label style={styles.label}>Choose your assessments</label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
                 {PAYG_ASSESSMENT_TYPES.map(t => {
-                  const active = selectedType === t.id
+                  const qty = quantities[t.id] || 0
+                  const subtotal = qty * t.unitPrice
+                  const atMax = qty >= PAYG_MAX_QTY_PER_TYPE
                   return (
-                    <button
+                    <div
                       key={t.id}
-                      type="button"
-                      onClick={() => setSelectedType(t.id)}
                       style={{
-                        padding: '13px 16px',
+                        padding: '14px 16px',
                         borderRadius: 10,
-                        border: `1.5px solid ${active ? TEAL : 'rgba(255,255,255,0.18)'}`,
-                        background: active ? 'rgba(0,191,165,0.15)' : 'rgba(255,255,255,0.06)',
-                        color: active ? '#fff' : 'rgba(255,255,255,0.75)',
+                        border: `1.5px solid ${qty > 0 ? TEAL : 'rgba(255,255,255,0.18)'}`,
+                        background: qty > 0 ? 'rgba(0,191,165,0.10)' : 'rgba(255,255,255,0.06)',
                         fontFamily: "'Outfit', system-ui, sans-serif",
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.15s',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: active ? TEAL : '#fff' }}>
-                          {t.label}
-                        </span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: active ? TEAL : '#fff' }}>
-                          £{t.unitPrice}
-                        </span>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>{t.label}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>£{t.unitPrice} each</span>
                       </div>
-                      <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)', marginBottom: 2 }}>
-                        {t.duration}
+                      <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)', marginBottom: 2 }}>{t.duration}</div>
+                      <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)', marginBottom: 12 }}>{t.description}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                          <button
+                            type="button"
+                            aria-label={`Decrease ${t.label}`}
+                            onClick={() => setQty(t.id, qty - 1)}
+                            disabled={qty <= 0}
+                            style={{
+                              width: 44, height: 44, minWidth: 44, borderRadius: 8,
+                              border: `1.5px solid rgba(255,255,255,0.25)`,
+                              background: qty <= 0 ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.10)',
+                              color: qty <= 0 ? 'rgba(255,255,255,0.3)' : '#fff',
+                              fontSize: 20, fontWeight: 700, cursor: qty <= 0 ? 'not-allowed' : 'pointer',
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              transition: 'all 0.15s',
+                            }}
+                          >−</button>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            max={PAYG_MAX_QTY_PER_TYPE}
+                            step={1}
+                            value={qty}
+                            onChange={e => setQty(t.id, e.target.value)}
+                            aria-label={`${t.label} quantity`}
+                            style={{
+                              width: 64, height: 44, borderRadius: 8,
+                              border: '1.5px solid rgba(255,255,255,0.25)',
+                              background: 'rgba(255,255,255,0.06)',
+                              color: '#fff', fontFamily: "'Outfit', system-ui, sans-serif",
+                              fontSize: 16, fontWeight: 700, textAlign: 'center', outline: 'none',
+                            }}
+                          />
+                          <button
+                            type="button"
+                            aria-label={`Increase ${t.label}`}
+                            onClick={() => setQty(t.id, qty + 1)}
+                            disabled={atMax}
+                            title={atMax ? 'Maximum 50 per assessment type. Need more? Contact us about a subscription.' : undefined}
+                            style={{
+                              width: 44, height: 44, minWidth: 44, borderRadius: 8,
+                              border: `1.5px solid ${atMax ? 'rgba(255,255,255,0.18)' : TEAL}`,
+                              background: atMax ? 'rgba(255,255,255,0.04)' : 'rgba(0,191,165,0.18)',
+                              color: atMax ? 'rgba(255,255,255,0.3)' : TEAL,
+                              fontSize: 20, fontWeight: 700, cursor: atMax ? 'not-allowed' : 'pointer',
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              transition: 'all 0.15s',
+                            }}
+                          >+</button>
+                        </div>
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: qty > 0 ? TEAL : 'rgba(255,255,255,0.55)' }}>
+                          {qty > 0 ? `${t.label} × ${qty} = £${subtotal}` : 'Not in cart'}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)' }}>
-                        {t.description}
-                      </div>
-                      <div style={{
-                        marginTop: 8, fontSize: 11, fontWeight: 700,
-                        color: active ? TEAL : 'rgba(255,255,255,0.55)',
-                      }}>
-                        {active ? 'Selected' : 'Select'}
-                      </div>
-                    </button>
+                    </div>
                   )
                 })}
               </div>
 
-              {sel && (
-                <div style={{
-                  marginTop: 14, padding: '12px 14px', borderRadius: 10,
-                  background: 'rgba(0,191,165,0.08)', border: '1px solid rgba(0,191,165,0.3)',
-                  fontFamily: "'Outfit', system-ui, sans-serif",
-                  fontSize: 13.5, color: '#fff',
-                }}>
-                  <strong style={{ color: TEAL }}>Total: £{sel.unitPrice}</strong>
-                  {' '}for 1 {sel.label} credit
-                </div>
-              )}
-
+              <div style={{
+                marginTop: 14, padding: '14px 16px', borderRadius: 10,
+                background: totalQty > 0 ? 'rgba(0,191,165,0.12)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${totalQty > 0 ? 'rgba(0,191,165,0.4)' : 'rgba(255,255,255,0.12)'}`,
+                fontFamily: "'Outfit', system-ui, sans-serif",
+                fontSize: 14, color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+              }}>
+                <span style={{ fontWeight: 600, color: totalQty > 0 ? '#fff' : 'rgba(255,255,255,0.5)' }}>
+                  {totalQty === 0 ? 'Add at least one assessment to continue' : `${totalQty} assessment${totalQty === 1 ? '' : 's'}`}
+                </span>
+                <strong style={{ color: TEAL, fontSize: 18 }}>Total: £{totalGBP}</strong>
+              </div>
             </div>
           )
         })()}
@@ -726,7 +825,7 @@ function SignUpForm() {
           autoComplete="new-password"
         />
 
-        {(planPath === 'monthly' || (planPath === 'payg' && selectedType)) && (
+        {(planPath === 'monthly' || (planPath === 'payg' && paygTotalQty(quantities) > 0)) && (
           <div>
             <label style={styles.label}>Card details</label>
             <div style={styles.cardInput(cardFocused)}>
@@ -762,15 +861,15 @@ function SignUpForm() {
 
       <button
         type="submit"
-        disabled={loading || !stripe || (planPath === 'payg' && !selectedType)}
+        disabled={loading || !stripe || (planPath === 'payg' && paygTotalQty(quantities) === 0)}
         style={styles.btn(loading)}
       >
         {(() => {
           if (loading) return 'Processing...'
           if (planPath === 'payg') {
-            const sel = PAYG_ASSESSMENT_TYPES.find(t => t.id === selectedType)
-            if (!sel) return 'Choose an assessment type above'
-            return `Create account and pay £${sel.unitPrice}`
+            const totalGBP = paygTotalGBP(quantities)
+            if (totalGBP === 0) return 'Add at least one assessment to continue'
+            return `Create account and pay £${totalGBP}`
           }
           return `Create account and pay ${planPrice}`
         })()}

@@ -6,7 +6,49 @@ import { redeemPromoCode } from '@/lib/promo-redeem'
 
 const SELECTABLE_TYPES = ['rapid-screen', 'speed-fit', 'depth-fit', 'strategy-fit']
 const MIN_QTY = 1
-const MAX_QTY = 100
+const MAX_QTY_PER_TYPE = 50
+const MAX_TOTAL_QTY = 200
+
+// Mirrors the create endpoint's normaliser. See create-payg-with-bundle for
+// docs. Accepts either { purchases: [...] } or legacy { credit_type, quantity }.
+function normalisePurchases(body) {
+  let purchases = []
+  if (Array.isArray(body?.purchases) && body.purchases.length > 0) {
+    purchases = body.purchases
+  } else if (body?.credit_type) {
+    purchases = [{ credit_type: body.credit_type, quantity: body.quantity }]
+  } else {
+    throw { status: 400, message: 'No assessment quantities provided.' }
+  }
+  const seen = new Set()
+  const cleaned = []
+  let totalQty = 0
+  let totalAmount = 0
+  for (const p of purchases) {
+    const ct = p?.credit_type
+    if (!SELECTABLE_TYPES.includes(ct)) {
+      throw { status: 400, message: `Unknown assessment type: ${ct}` }
+    }
+    if (seen.has(ct)) {
+      throw { status: 400, message: `Duplicate assessment type in cart: ${ct}` }
+    }
+    seen.add(ct)
+    const qty = parseInt(p?.quantity, 10)
+    if (!Number.isFinite(qty) || qty < MIN_QTY || qty > MAX_QTY_PER_TYPE) {
+      throw { status: 400, message: `Quantity for ${ct} must be between ${MIN_QTY} and ${MAX_QTY_PER_TYPE}.` }
+    }
+    const unitPrice = CREDIT_PRICES[ct]?.price
+    if (!unitPrice) throw { status: 400, message: `No price configured for ${ct}` }
+    cleaned.push({ credit_type: ct, quantity: qty, unitPrice })
+    totalQty += qty
+    totalAmount += unitPrice * qty
+  }
+  if (cleaned.length === 0) throw { status: 400, message: 'Add at least one assessment to continue.' }
+  if (totalQty > MAX_TOTAL_QTY) {
+    throw { status: 400, message: `Total quantity exceeds ${MAX_TOTAL_QTY}. Contact us about a subscription.` }
+  }
+  return { purchases: cleaned, totalAmount, totalQty }
+}
 
 // Runs after the client completes 3D Secure / SCA authentication on a payg
 // assessment purchase. Verifies the PaymentIntent succeeded, creates the
@@ -15,20 +57,27 @@ export async function POST(request) {
   let currentStep = 'init'
   try {
     currentStep = 'parse-body'
-    const { paymentIntentId, email, password, companyName, accountType, promoCode, credit_type, quantity } = await request.json()
+    const body = await request.json()
+    const { paymentIntentId, email, password, companyName, accountType, promoCode } = body
 
-    console.log('[confirm-payg-bundle] start', { paymentIntentId, credit_type, quantity, accountType })
-
-    if (!paymentIntentId || !email || !password || !companyName || !accountType || !credit_type) {
+    if (!paymentIntentId || !email || !password || !companyName || !accountType) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
     }
-    if (!SELECTABLE_TYPES.includes(credit_type)) {
-      return NextResponse.json({ error: 'Unknown assessment type.' }, { status: 400 })
+
+    let purchases, expectedAmount
+    try {
+      const normalised = normalisePurchases(body)
+      purchases = normalised.purchases
+      expectedAmount = normalised.totalAmount
+    } catch (validationErr) {
+      return NextResponse.json({ error: validationErr.message }, { status: validationErr.status || 400 })
     }
-    const qty = parseInt(quantity, 10)
-    if (!Number.isFinite(qty) || qty < MIN_QTY || qty > MAX_QTY) {
-      return NextResponse.json({ error: `Quantity must be between ${MIN_QTY} and ${MAX_QTY}.` }, { status: 400 })
-    }
+
+    console.log('[confirm-payg-bundle] start', {
+      paymentIntentId,
+      purchases: purchases.map(p => `${p.quantity} x ${p.credit_type}`),
+      expectedAmount, accountType,
+    })
 
     currentStep = 'retrieve-intent'
     const stripe = getStripeClient()
@@ -52,7 +101,6 @@ export async function POST(request) {
 
     // Cross-check amount to stop someone re-using a PaymentIntent for a bigger
     // purchase than they paid for.
-    const expectedAmount = (CREDIT_PRICES[credit_type]?.price || 0) * qty
     if (expectedAmount === 0 || intent.amount !== expectedAmount) {
       return NextResponse.json({ error: 'Purchase details do not match the payment record.' }, { status: 403 })
     }
@@ -130,17 +178,22 @@ export async function POST(request) {
       .eq('id', userId)
     console.log('[payg-signup] plan verified and set to payg for', userId)
 
-    const { error: creditError } = await admin.from('assessment_credits').upsert(
-      {
-        user_id: userId,
-        credit_type,
-        credits_remaining: qty,
-        credits_purchased: qty,
-        last_purchased_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id,credit_type' }
-    )
-    if (creditError) console.error('[payg] credit grant failed:', creditError)
+    // Mixed-cart credit grant: one row per credit_type. See create endpoint
+    // for the same pattern.
+    const nowIso = new Date().toISOString()
+    for (const p of purchases) {
+      const { error: creditError } = await admin.from('assessment_credits').upsert(
+        {
+          user_id: userId,
+          credit_type: p.credit_type,
+          credits_remaining: p.quantity,
+          credits_purchased: p.quantity,
+          last_purchased_at: nowIso,
+        },
+        { onConflict: 'user_id,credit_type' }
+      )
+      if (creditError) console.error('[payg] credit grant failed:', { credit_type: p.credit_type, creditError })
+    }
 
     let promoMessage = null
     if (promoCode) {
@@ -152,12 +205,15 @@ export async function POST(request) {
       }
     }
 
-    console.log('[confirm-payg-bundle] credits granted', { userId, credit_type, quantity: qty, amountGBP: expectedAmount / 100 })
+    console.log('[confirm-payg-bundle] credits granted', {
+      userId,
+      purchases: purchases.map(p => `${p.quantity} x ${p.credit_type}`),
+      amountGBP: expectedAmount / 100,
+    })
     return NextResponse.json({
       success: true,
       promoMessage,
-      credit_type,
-      quantity: qty,
+      purchases: purchases.map(p => ({ credit_type: p.credit_type, quantity: p.quantity })),
       amount: expectedAmount / 100,
     })
   } catch (err) {
