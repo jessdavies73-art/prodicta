@@ -21,6 +21,7 @@
 import { NextResponse } from 'next/server'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
+import { calculateSurvivalScore } from '@/lib/survival-score'
 
 function safe(text) {
   if (!text) return ''
@@ -108,7 +109,7 @@ export async function GET(request, { params }) {
 
     const { data: result } = await admin
       .from('results')
-      .select('overall_score, risk_level, hiring_confidence, strengths, watchouts, interview_questions, scores, executive_summary, candidate_type, pressure_fit_score, response_quality, scoring_confidence')
+      .select('overall_score, risk_level, hiring_confidence, strengths, watchouts, interview_questions, scores, executive_summary, candidate_type, pressure_fit_score, response_quality, scoring_confidence, counter_offer_resilience, execution_reliability, training_potential')
       .eq('candidate_id', params.candidateId)
       .maybeSingle()
     if (!result) return NextResponse.json({ error: 'No results' }, { status: 404 })
@@ -275,10 +276,23 @@ export async function GET(request, { params }) {
     }
 
     // Counter-Offer Resilience and Placement Survival, when available.
-    // These are optional fields produced by the scoring pipeline; skip
-    // gracefully when absent so legacy candidates still render.
-    const cor = result.scores?.counter_offer_resilience ?? result.counter_offer_resilience_score ?? null
-    const psv = result.scores?.placement_survival ?? result.placement_survival_score ?? null
+    // Counter-Offer is read from the canonical top-level column on the
+    // results row (lib/score-candidate.js writes it as
+    // `counter_offer_resilience` with no `_score` suffix and no nesting
+    // inside `scores`). Placement Survival is not stored at all; it is
+    // computed at read-time via calculateSurvivalScore from the same
+    // inputs the candidate report UI uses, guaranteeing on-screen vs
+    // on-PDF parity. Both values fall through to null gracefully when
+    // the upstream data is incomplete, and the panel guard below
+    // short-circuits.
+    const cor = result.counter_offer_resilience ?? null
+    const psv = (result.overall_score != null) ? calculateSurvivalScore({
+      overallScore: result.overall_score,
+      hiringConfidence: result.hiring_confidence,
+      watchouts: result.watchouts || [],
+      executionReliability: result.execution_reliability,
+      trainingPotential: result.training_potential,
+    }) : null
     if (cor != null || psv != null) {
       ensure(70)
       heading('Placement Indicators', 13)
