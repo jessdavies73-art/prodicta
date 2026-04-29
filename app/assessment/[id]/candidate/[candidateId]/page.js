@@ -2400,7 +2400,7 @@ export default function CandidateReportPage({ params }) {
                         </p>
                       </div>
                     )}
-                    {results && profile && !isAgencyPerm(profile) && existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
+                    {results && !isAgencyPerm(profile) && profile?.account_type && existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
                       <button
                         onClick={() => window.open(`/api/assessment/${params.id}/candidate/${params.candidateId}/evidence-pack`, '_blank')}
                         className="no-print"
