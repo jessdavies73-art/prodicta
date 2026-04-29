@@ -16,7 +16,7 @@ export async function GET() {
 
   if (error) {
     console.error('[saved-roles] list error', error.message)
-    return NextResponse.json({ error: 'Failed to load saved roles' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to load drafted roles' }, { status: 500 })
   }
 
   return NextResponse.json({ saved_roles: data || [] })
@@ -39,10 +39,10 @@ export async function POST(req) {
     .eq('user_id', user.id)
   if (countErr) {
     console.error('[saved-roles] count error', countErr.message)
-    return NextResponse.json({ error: 'Failed to check saved role limit' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to check drafted role limit' }, { status: 500 })
   }
   if ((count || 0) >= MAX_SAVED_ROLES) {
-    return NextResponse.json({ error: 'limit_reached', message: `You can save up to ${MAX_SAVED_ROLES} roles. Delete one before saving another.` }, { status: 400 })
+    return NextResponse.json({ error: 'limit_reached', message: `You can draft up to ${MAX_SAVED_ROLES} roles. Delete one before drafting another.` }, { status: 400 })
   }
 
   const row = {

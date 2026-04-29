@@ -14,7 +14,7 @@ export async function DELETE(_req, { params }) {
 
   if (error) {
     console.error('[saved-roles] delete error', error.message)
-    return NextResponse.json({ error: 'Failed to delete saved role' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to delete drafted role' }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true })

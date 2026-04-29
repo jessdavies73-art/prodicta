@@ -767,6 +767,10 @@ function DashboardPageInner() {
   const [attendanceByCandidate, setAttendanceByCandidate] = useState({})
   const [shareByCandidate, setShareByCandidate] = useState({})
   const [upcomingStarts, setUpcomingStarts] = useState([])
+  // Drafted roles (DB-side: saved_roles). User-facing label is "Drafted Roles";
+  // the persistence-layer name is unchanged so frontend variables match the
+  // API response shape and DB column.
+  const [savedRoles, setSavedRoles] = useState([])
   const [placementHealth, setPlacementHealth] = useState(null) // { placements, counts, total_active, rebate_ending_this_month }
   const [revenueProtection, setRevenueProtection] = useState(null)
   const [revenueProtectionLoading, setRevenueProtectionLoading] = useState(false)
@@ -1173,6 +1177,17 @@ function DashboardPageInner() {
           if (psRes.ok) {
             const psData = await psRes.json()
             setUpcomingStarts(psData.upcoming || [])
+          }
+        } catch {}
+
+        // Load drafted roles. The dashboard surfaces them as a passive list
+        // so users see what they've started; saving, deleting, and using
+        // a draft remain on /assessment/new.
+        try {
+          const srRes = await fetch('/api/saved-roles', { credentials: 'include' })
+          if (srRes.ok) {
+            const srData = await srRes.json()
+            if (Array.isArray(srData?.saved_roles)) setSavedRoles(srData.saved_roles)
           }
         } catch {}
 
@@ -3976,36 +3991,109 @@ function DashboardPageInner() {
           </div>
         )}
 
-        {/* ── Saved Roles (stub; feature not yet shipped in live) ── */}
+        {/* ── Drafted Roles ──
+            User-facing label is "Drafted Roles"; the persistence layer
+            (DB table, API route, response shape) keeps the saved_roles
+            naming so frontend variables match the wire format.
+            Renders for all account types and always renders, even empty,
+            so new users see what the section is for. */}
         <div style={{
           order: 3,
           background: CARD, border: `1.5px solid ${TEAL}55`, borderRadius: 14,
           padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 24,
           boxShadow: '0 2px 10px rgba(0,191,165,0.08)',
         }}>
-          <div style={{ marginBottom: 12 }}>
-            <h2 style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: NAVY, margin: 0 }}>
-              Saved Roles
-            </h2>
-            <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '4px 0 0' }}>
-              Re-send for a known role in two taps. Candidate name and email stay blank until you are ready.
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 8, flexWrap: 'wrap' }}>
+            <div>
+              <h2 style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: NAVY, margin: 0 }}>
+                Drafted Roles
+              </h2>
+              <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '4px 0 0' }}>
+                Re-send for a known role in two taps. Candidate name and email stay blank until you are ready.
+              </p>
+            </div>
+            {savedRoles.length > 0 && (
+              <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, background: TEALLT, padding: '4px 10px', borderRadius: 20, flexShrink: 0 }}>
+                {savedRoles.length}/10
+              </span>
+            )}
           </div>
-          <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.6, marginBottom: 12 }}>
-            Saved role templates will appear here once the feature is available. In the meantime, configure roles as you run each assessment.
-          </div>
-          <button
-            type="button"
-            onClick={() => router.push('/assessment/new')}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '9px 16px', borderRadius: 8, border: 'none',
-              background: TEAL, color: NAVY,
-              fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
-            }}
-          >
-            Run your first assessment
-          </button>
+          {savedRoles.length === 0 ? (
+            <>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.6, margin: '0 0 14px' }}>
+                Drafted roles are job descriptions you have started but have not sent to candidates yet. When you save a draft, it will appear here for you to come back to and complete.
+              </p>
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                gap: 8, padding: '28px 20px', borderRadius: 12,
+                background: BG, border: `1px dashed ${BD}`,
+                fontFamily: F,
+              }}>
+                <Ic name="file" size={20} color={TX3} />
+                <div style={{ fontSize: 13, fontWeight: 700, color: TX3 }}>No drafted roles yet</div>
+              </div>
+            </>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: 12,
+            }}>
+              {savedRoles.map(sr => {
+                const modeLabel = sr.assessment_mode === 'rapid' ? 'Rapid Screen'
+                  : sr.assessment_mode === 'quick' ? 'Speed-Fit'
+                  : sr.assessment_mode === 'advanced' ? 'Strategy-Fit'
+                  : 'Depth-Fit'
+                const partyLabel = profile?.account_type === 'agency' ? 'Client' : 'Department'
+                return (
+                  <div key={sr.id} style={{
+                    display: 'flex', flexDirection: 'column',
+                    background: BG, border: `1px solid ${BD}`,
+                    borderRadius: 12, padding: isMobile ? '14px 14px' : '16px 16px',
+                    fontFamily: F, gap: 10,
+                  }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: NAVY, lineHeight: 1.3, marginBottom: 4, wordBreak: 'break-word' }}>
+                        {sr.role_title || 'Untitled role'}
+                      </div>
+                      {sr.client_name && (
+                        <div style={{ fontSize: 12, color: TX2 }}>
+                          {partyLabel}: <span style={{ color: NAVY, fontWeight: 600 }}>{sr.client_name}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 800, padding: '3px 10px', borderRadius: 20, background: NAVY, color: '#fff', letterSpacing: '0.03em' }}>
+                        {modeLabel}
+                      </span>
+                      {sr.employment_type && (
+                        <span style={{
+                          fontSize: 10.5, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                          background: sr.employment_type === 'permanent' ? '#f0f4f8' : TEALLT,
+                          color: sr.employment_type === 'permanent' ? NAVY : TEALD,
+                        }}>
+                          {sr.employment_type === 'permanent' ? 'Permanent' : 'Temp/Contract'}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/assessment/new')}
+                      style={{
+                        width: '100%', padding: isMobile ? '12px 0' : '10px 0',
+                        borderRadius: 10, border: 'none',
+                        background: TEAL, color: NAVY,
+                        fontSize: isMobile ? 14 : 13, fontWeight: 800, fontFamily: F,
+                        cursor: 'pointer', marginTop: 2,
+                      }}
+                    >
+                      Use this role
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* ── Candidate Pipeline ── Section 1

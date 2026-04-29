@@ -69,8 +69,9 @@ const EMPLOYER_QUESTIONS = [
   },
 ]
 
-// Client-side example saved roles for new accounts. Shown in place of the
-// Saved Roles section when the user has not saved any of their own roles yet.
+// Client-side example drafted roles for new accounts. Shown in place of the
+// Drafted Roles section when the user has not drafted any of their own
+// roles yet. (Persistence layer keeps the saved_roles naming.)
 // These are never persisted to the database, they disappear as soon as the
 // user saves their first real role.
 const EXAMPLE_SAVED_ROLES_AGENCY = [
@@ -666,7 +667,7 @@ export default function NewAssessmentPage() {
   const roleType = jd.length > 0 ? detectRoleType(jd) : null
   const canGenerate = roleTitle.trim().length > 0 && jd.length >= 50 && totalWeight === 100
 
-  // Show real saved roles when the user has any, otherwise fall back to
+  // Show real drafted roles when the user has any, otherwise fall back to
   // client-side examples so the section is never empty for new accounts.
   // Limit counting excludes examples.
   const exampleSavedRoles = accountType === 'agency' ? EXAMPLE_SAVED_ROLES_AGENCY : EXAMPLE_SAVED_ROLES_EMPLOYER
@@ -995,9 +996,10 @@ export default function NewAssessmentPage() {
           </h1>
         </div>
 
-        {/* Saved Roles. First visible element on mobile so recruiters can
-            re-send for a known role in two taps. Sits above everything else
-            on the page including the JD paste area and employment-type picker. */}
+        {/* Drafted Roles (DB: saved_roles). First visible element on mobile
+            so recruiters can re-send for a known role in two taps. Sits
+            above everything else on the page including the JD paste area
+            and employment-type picker. */}
         <div style={{
           background: '#fff', borderRadius: 14, border: '1.5px solid #80DFD2',
           padding: isMobile ? '20px 16px' : '24px 28px', marginBottom: 20,
@@ -1006,12 +1008,12 @@ export default function NewAssessmentPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 8 }}>
             <div>
               <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? 16 : 16.5, fontWeight: 800, color: '#0F2137', fontFamily: F }}>
-                Saved Roles
+                Drafted Roles
               </h2>
               <p style={{ margin: 0, fontSize: 12.5, color: '#5e6b7f', fontFamily: F }}>
                 {showingExamples
                   ? 'Examples to get you started. Save your own roles below to replace these.'
-                  : 'Pick a saved role, then just enter candidate name and email.'}
+                  : 'Pick a drafted role, then just enter candidate name and email.'}
               </p>
             </div>
             {!showingExamples && (
@@ -1066,9 +1068,9 @@ export default function NewAssessmentPage() {
                     {!isExample && (
                       <button
                         type="button"
-                        aria-label="Delete saved role"
+                        aria-label="Delete drafted role"
                         onClick={() => {
-                          if (confirm(`Delete saved role "${sr.role_title || 'Untitled role'}"?`)) {
+                          if (confirm(`Delete drafted role "${sr.role_title || 'Untitled role'}"?`)) {
                             handleDeleteSavedRole(sr.id)
                           }
                         }}
@@ -1127,7 +1129,7 @@ export default function NewAssessmentPage() {
               margin: '14px 0 0', padding: '14px 16px', fontSize: 13, color: '#5e6b7f',
               fontFamily: F, background: '#f8fafc', border: '1px dashed #e4e9f0', borderRadius: 10, lineHeight: 1.55,
             }}>
-              Save a role after filling in your first assessment and it will appear here for one-tap reuse.
+              Draft a role after filling in your first assessment and it will appear here for one-tap reuse.
             </p>
           )}
           {savedRoleConfirmation && (
@@ -1534,7 +1536,7 @@ export default function NewAssessmentPage() {
                         }}
                       >
                         {savedRoles.length >= SAVED_ROLES_LIMIT
-                          ? `Saved Roles limit reached (${SAVED_ROLES_LIMIT}). Delete one to save another.`
+                          ? `Drafted Roles limit reached (${SAVED_ROLES_LIMIT}). Delete one to draft another.`
                           : 'Save this role for next time'}
                       </button>
                     ) : (

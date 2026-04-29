@@ -967,7 +967,10 @@ function DemoDashboardInner() {
           </div>
         </div>
 
-        {/* ── Saved Role drafts (both account types) ── */}
+        {/* ── Drafted Roles (both account types) ──
+            Demo keeps three populated drafts so the populated state is
+            visible. Live builds the empty state from real data; demo
+            mirrors the same heading and copy. */}
         {(() => {
           const demoSavedRoles = isAgency ? [
             { id: 'sr-demo-1', role_title: 'Senior Account Manager', client_name: 'Globex Ltd', assessment_mode: 'standard', employment_type: 'permanent' },
@@ -990,8 +993,8 @@ function DemoDashboardInner() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 8, flexWrap: 'wrap' }}>
                 <div>
                   <h2 style={{ fontFamily: F, fontSize: 17, fontWeight: 800, color: NAVY, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                    Saved Roles
-                    <InfoTooltip text="Save a role setup once, then just enter candidate name and email to send. Ten draft roles max." />
+                    Drafted Roles
+                    <InfoTooltip text="Save a draft once, then just enter candidate name and email to send. Ten drafted roles max." />
                   </h2>
                   <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '4px 0 0' }}>
                     Re-send for a known role in two taps. Candidate name and email stay blank until you are ready.
@@ -1024,7 +1027,7 @@ function DemoDashboardInner() {
                       </div>
                       <button
                         type="button"
-                        aria-label="Delete saved role"
+                        aria-label="Delete drafted role"
                         onClick={() => setModal(true)}
                         style={{
                           width: 32, height: 32, borderRadius: 8,
