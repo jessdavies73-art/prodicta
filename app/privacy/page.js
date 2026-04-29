@@ -5,7 +5,7 @@ const TEAL  = '#009688'
 const F     = "'Outfit', system-ui, sans-serif"
 
 const EFFECTIVE_DATE = '1 April 2025'
-const LAST_UPDATED   = '16 April 2026'
+const LAST_UPDATED   = '29 April 2026'
 const COMPANY        = 'AIAURA Group Ltd (trading as PRODICTA)'
 const EMAIL          = 'hello@prodicta.co.uk'
 
@@ -26,6 +26,9 @@ function Nav() {
 
 function H2({ children }) {
   return <h2 style={{ fontFamily: F, fontSize: 19, fontWeight: 700, color: NAVY, margin: '36px 0 10px', letterSpacing: '-0.2px' }}>{children}</h2>
+}
+function H3({ children }) {
+  return <h3 style={{ fontFamily: F, fontSize: 15.5, fontWeight: 700, color: NAVY, margin: '22px 0 8px', letterSpacing: '-0.1px' }}>{children}</h3>
 }
 function P({ children }) {
   return <p style={{ fontFamily: F, fontSize: 14.5, color: '#374151', lineHeight: 1.8, margin: '0 0 14px' }}>{children}</p>
@@ -87,6 +90,57 @@ export default function PrivacyPage() {
         <P><strong>Usage data:</strong> information about how you use the Service, including pages visited, features used, and assessment activity. This helps us improve the platform and enforce usage limits.</P>
         <P><strong>Technical data:</strong> IP address, browser type, device information, and session data collected automatically when you use the Service.</P>
         <P><strong>Payment data:</strong> if you have a paid subscription, payment processing is handled by our payment provider. We do not store full card numbers.</P>
+
+        <H2>2a. How AI is used in PRODICTA</H2>
+        <P>
+          PRODICTA uses AI to analyse candidate assessment responses and produce structured reports. This section explains what data the AI uses, what it does not use, how long outputs are stored, and how candidates can request human review of AI-generated findings.
+        </P>
+
+        <H3>What data the AI receives</H3>
+        <P>When a candidate completes an assessment, the following information is provided to the AI scoring engine:</P>
+        <UL items={[
+          'The job description for the role',
+          'The role context information provided by the agency or employer (e.g. seniority, key responsibilities, sector)',
+          "The candidate's typed responses to each scenario",
+          'Time taken to complete each scenario',
+          'Response integrity signals (typing patterns, copy-paste detection, completion timing)',
+        ]} />
+        <P>
+          The AI uses this information to generate scoring across defined skill dimensions, identify strengths and watch-outs with evidence, and produce a structured assessment report.
+        </P>
+
+        <H3>What data the AI does not use</H3>
+        <P>The AI scoring engine does not receive or use:</P>
+        <UL items={[
+          'Candidate name, age, or date of birth',
+          'Demographic information including ethnicity, nationality, religion, gender identity, or sexual orientation',
+          'Photographs, video, voice recordings, or biometric data',
+          "Any information not directly contained in the candidate's responses or the role context",
+          'Information from previous assessments unless explicitly part of the current role context',
+        ]} />
+        <P>PRODICTA does not use AI to make decisions based on protected characteristics under the Equality Act 2010.</P>
+
+        <H3>How long AI-generated outputs are stored</H3>
+        <P>
+          Assessment reports, scoring data, and supporting analysis are stored for the duration of the customer's account, plus a retention period of 6 months after account closure unless the candidate requests earlier deletion.
+        </P>
+        <P>
+          Candidates have the right to request deletion of their assessment data at any time by contacting the agency or employer who invited them, or by emailing <a href={`mailto:${EMAIL}`} style={{ color: TEAL }}>{EMAIL}</a>.
+        </P>
+
+        <H3>Right to challenge AI-generated findings</H3>
+        <P>
+          Under UK GDPR Article 22, candidates have the right to request human review of any decision made about them that is significantly informed by AI processing.
+        </P>
+        <P>To request human review, candidates can:</P>
+        <UL items={[
+          'Contact the agency or employer who invited them to the assessment',
+          "Email " + EMAIL + " with the candidate's name, the role assessed for, and the specific finding being challenged",
+        ]} />
+        <P>PRODICTA will arrange for a human review within 7 days of the request.</P>
+        <P>
+          It is important to note that all hiring decisions made via PRODICTA are made by humans (the agency or employer who invited the candidate). PRODICTA's AI scoring is provided as input to that human decision-maker; it does not make hiring decisions on its own.
+        </P>
 
         <H2>3. How We Use Your Data</H2>
         <UL items={[

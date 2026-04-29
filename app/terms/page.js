@@ -5,7 +5,7 @@ const TEAL  = '#009688'
 const F     = "'Outfit', system-ui, sans-serif"
 
 const EFFECTIVE_DATE = '1 April 2025'
-const LAST_UPDATED   = '16 April 2026'
+const LAST_UPDATED   = '29 April 2026'
 const COMPANY        = 'AIAURA Group Ltd'
 const EMAIL          = 'hello@prodicta.co.uk'
 const DOMAIN         = 'prodicta.co.uk'
@@ -27,6 +27,9 @@ function Nav() {
 
 function H2({ children }) {
   return <h2 style={{ fontFamily: F, fontSize: 19, fontWeight: 700, color: NAVY, margin: '36px 0 10px', letterSpacing: '-0.2px' }}>{children}</h2>
+}
+function H3({ children }) {
+  return <h3 style={{ fontFamily: F, fontSize: 15.5, fontWeight: 700, color: NAVY, margin: '22px 0 8px', letterSpacing: '-0.1px' }}>{children}</h3>
 }
 function P({ children }) {
   return <p style={{ fontFamily: F, fontSize: 14.5, color: '#374151', lineHeight: 1.8, margin: '0 0 14px' }}>{children}</p>
@@ -96,6 +99,48 @@ export default function TermsPage() {
           'Upload or transmit malicious code, viruses, or other harmful content',
           'Impersonate any person or entity or misrepresent your affiliation with any person or entity',
         ]} />
+
+        <H2>3a. How AI scoring works</H2>
+        <P>
+          PRODICTA uses AI to analyse candidate assessment responses against defined criteria and produce structured reports. This section describes how the scoring methodology operates and where human decision-making sits within the process.
+        </P>
+
+        <H3>Scoring methodology</H3>
+        <P>The AI scoring engine analyses each candidate response against:</P>
+        <UL items={[
+          'Skill dimensions appropriate to the role and seniority level (operational, mid-level, or leadership)',
+          'Sector-specific frameworks where applicable (Office, Healthcare, Education)',
+          'Watch-out categories indicating risks or concerns',
+          'Predicted outcomes (probation pass, top performer, retention risk, underperformance risk)',
+        ]} />
+        <P>
+          Scoring is produced as a numerical overall score, individual skill scores, narrative assessments with supporting evidence, identified strengths and watch-outs, and a recommended verdict (Strong Hire, Review, or High Risk).
+        </P>
+
+        <H3>Human-in-the-loop principle</H3>
+        <P>PRODICTA's AI scoring is provided as decision support, not as a hiring decision in itself.</P>
+        <UL items={[
+          'The AI generates structured analysis and a recommended verdict',
+          'The agency or employer who invited the candidate reviews the analysis',
+          'The hiring decision is made by the human decision-maker, taking the assessment alongside other inputs (CV, cover letter, interview, references, etc.)',
+        ]} />
+        <P>
+          PRODICTA does not make hiring decisions, does not auto-reject candidates, and does not communicate decisions to candidates on behalf of the customer. The AI's role is to provide structured, evidence-based analysis to support the human decision-maker.
+        </P>
+
+        <H3>Limitations and caveats</H3>
+        <P>
+          PRODICTA's AI scoring is designed to provide useful structured input to hiring decisions. The customer (agency or employer) remains responsible for:
+        </P>
+        <UL items={[
+          'Making the final hiring decision',
+          'Ensuring fair treatment of all candidates under the Equality Act 2010',
+          'Conducting any additional assessment activities they consider appropriate (e.g. interviews, reference checks)',
+          'Compliance with their own employment law obligations',
+        ]} />
+        <P>
+          PRODICTA does not provide legal advice. Customers should consult a qualified solicitor for guidance on specific employment matters.
+        </P>
 
         <H2>4. Candidate Data and Consent</H2>
         <P>
