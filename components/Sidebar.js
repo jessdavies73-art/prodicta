@@ -18,9 +18,13 @@ function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
 // because those users are not the legal employer of record and have no
 // employment-of-record compliance to track.
 //
-// hideCompliance is tri-state: true (hide), false (show), null (profile not
-// loaded yet, hide for the brief loading window so agency-perm never sees a
-// flash of Compliance during navigation between pages).
+// hideCompliance defaults to false (show Compliance) so employer accounts
+// always see the group, even before the async profile fetch resolves and
+// even if the fetch fails or short-circuits. Agency-perm users see a brief
+// flash of Compliance on first mount until the fetch flips this to true,
+// which is the acceptable cost. The earlier null tri-state pessimistically
+// hid Compliance for everyone until proven otherwise, which broke the
+// majority case (employers) when the fetch was slow or failed.
 function buildNav({ accountType, showTemp, hideCompliance }) {
   const isAgency = accountType === 'agency'
   const groups = []
@@ -41,7 +45,7 @@ function buildNav({ accountType, showTemp, hideCompliance }) {
   }
   groups.push({ label: 'Placement', items: placement })
 
-  if (hideCompliance === false) {
+  if (!hideCompliance) {
     const compliance = [
       { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/ssp' },
       { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/holiday' },
@@ -68,11 +72,14 @@ export default function Sidebar({ active, companyName }) {
   const [logoutHover, setLogoutHover] = useState(false)
   const [accountType, setAccountType] = useState('employer')
   const [showTemp, setShowTemp] = useState(false)
-  // null until the profile fetch resolves so the Compliance group stays
-  // hidden during the brief loading window. Otherwise an agency-perm user
-  // navigating between pages sees Compliance flash visible on each fresh
-  // mount before the async profile fetch updates state.
-  const [hideCompliance, setHideCompliance] = useState(null)
+  // Default to false (show Compliance). Employer accounts (the majority)
+  // need to see the group from first paint and must keep seeing it even
+  // if the supabase fetch fails, returns no profile, or short-circuits.
+  // Once the fetch resolves, isAgencyPerm flips this to true for the
+  // single account type that should not see the group; everyone else
+  // stays at the default. Trade-off: agency-perm users see a brief flash
+  // of Compliance on first mount until the fetch resolves.
+  const [hideCompliance, setHideCompliance] = useState(false)
 
   useEffect(() => { setMobileOpen(false) }, [active])
 

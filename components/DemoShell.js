@@ -56,9 +56,11 @@ export function DemoBanner() {
 // viewer (matches the live agency-perm sidebar). Documents stays gated to
 // agency + temp/both within the group when the group is visible at all.
 //
-// hideCompliance is tri-state: true (hide), false (show), null (localStorage
-// not yet read; hide for the brief loading window so an agency-perm demo
-// viewer never sees Compliance flash on a fresh route mount).
+// hideCompliance defaults to false (show Compliance). Once localStorage
+// has been read and the demo viewer is identified as agency-perm,
+// isDemoAgencyPerm flips this to true. Default-show keeps employer demo
+// viewers seeing Compliance from first paint even before the localStorage
+// effect fires; agency-perm demo viewers see a brief flash on first mount.
 function buildDemoGroups({ showDocuments, hideCompliance }) {
   const groups = [
     { label: 'Main', items: [
@@ -73,7 +75,7 @@ function buildDemoGroups({ showDocuments, hideCompliance }) {
     ]},
   ]
 
-  if (hideCompliance === false) {
+  if (!hideCompliance) {
     const compliance = [
       { key: 'ssp',     label: 'SSP',     icon: 'shield',   href: '/demo/ssp' },
       { key: 'holiday', label: 'Holiday', icon: 'calendar', href: '/demo/holiday' },
@@ -128,12 +130,14 @@ export function DemoSidebar({ active, demoEmploymentType }) {
     effectiveEmploymentType === 'temporary' ||
     effectiveEmploymentType === 'both'
 
-  // null until localStorage has been read; resolves to true/false once
-  // profileLoaded so the Compliance group does not flash visible mid-load
-  // for agency-perm viewers navigating between demo pages.
+  // Defaults to false (show Compliance) until localStorage has been read,
+  // then flips to true only when the demo viewer is agency-perm. Default-
+  // show keeps the employer demo experience visible from first paint and
+  // robust to localStorage being unavailable; agency-perm demo viewers see
+  // a brief flash of Compliance on first mount.
   const hideCompliance = profileLoaded
     ? isDemoAgencyPerm(demoAccountType, effectiveEmploymentType)
-    : null
+    : false
 
   function handleNavClick(href) {
     router.push(href)
