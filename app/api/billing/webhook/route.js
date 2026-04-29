@@ -1,6 +1,30 @@
 import { NextResponse } from 'next/server'
 import { getStripeClient } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase-server'
+import { EMAIL_FROM } from '@/lib/email-sender'
+
+// Sends a manual-intervention alert to ops when the webhook detects a
+// captured-but-no-account state. Best-effort: a missing RESEND_API_KEY or
+// transient Resend failure is logged loudly but does not block the webhook
+// returning success (Stripe's retry would just re-fire the alert).
+async function sendOpsAlert({ subject, text }) {
+  if (!process.env.RESEND_API_KEY) {
+    console.error('[webhook] RESEND_API_KEY not set, ops alert NOT sent', { subject })
+    return
+  }
+  try {
+    const { Resend } = await import('resend')
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: 'hello@prodicta.co.uk',
+      subject,
+      text,
+    })
+  } catch (err) {
+    console.error('[webhook] ops alert send failed', { subject, error: err?.message })
+  }
+}
 
 // Grant `quantity` credits of `creditType` to `userId`. Performs a
 // select-then-update/insert and checks .error on every supabase call so the
@@ -186,6 +210,123 @@ export async function POST(request) {
           await updateSubscriptionStatus(adminClient, invoice.subscription, 'active')
           console.log('[webhook] payment succeeded for subscription:', invoice.subscription)
         }
+        break
+      }
+
+      case 'payment_intent.succeeded': {
+        // Safety net for the PAYG signup flow at /api/billing/create-payg-with-bundle
+        // and /api/billing/confirm-payg-bundle. Those endpoints capture
+        // payment, then call the grant_payg_credits RPC. If the RPC fails
+        // (or the inline route times out before it runs), the captured
+        // payment still triggers this event - we use the metadata to
+        // recover credits or alert ops if no account was created.
+        const intent = event.data.object
+        const meta = intent.metadata || {}
+        if (meta.signup !== 'true') break
+
+        const customerEmail = (meta.email || '').toLowerCase().trim() || null
+        let purchases = []
+        try { purchases = JSON.parse(meta.purchases || '[]') } catch {}
+
+        console.log('[webhook] payment_intent.succeeded signup', {
+          intentId: intent.id, email: customerEmail,
+          purchases: Array.isArray(purchases) ? purchases.map(p => `${p.quantity} x ${p.credit_type}`) : null,
+          amount: intent.amount,
+        })
+
+        if (!customerEmail || !Array.isArray(purchases) || purchases.length === 0) {
+          console.error('[webhook] payment_intent.succeeded signup: missing email or purchases metadata', {
+            intentId: intent.id, hasEmail: !!customerEmail, purchasesParsed: Array.isArray(purchases) ? purchases.length : null,
+          })
+          await sendOpsAlert({
+            subject: '[ALERT] Stripe payment captured with malformed signup metadata',
+            text: `PaymentIntent ${intent.id} was captured (${intent.amount}p) with signup=true but the metadata was incomplete or malformed. Manual reconciliation required.\n\nEmail metadata: ${meta.email || '(none)'}\nPurchases metadata: ${meta.purchases || '(none)'}\n`,
+          })
+          break
+        }
+
+        // Locate the Supabase user by email. The signup flow writes the
+        // public.users row before granting credits, so a successful signup
+        // is observable here. A missing row means the inline endpoint
+        // failed before user creation - captured-but-no-account.
+        // Case-insensitive lookup. The metadata email is trimmed+lowercased
+        // above; the public.users.email column preserves whatever the user
+        // typed at signup, which may be mixed case (e.g. SARA@Acme.co).
+        const { data: userRow, error: userErr } = await adminClient
+          .from('users')
+          .select('id')
+          .ilike('email', customerEmail)
+          .maybeSingle()
+        if (userErr) {
+          console.error('[webhook] payment_intent.succeeded user lookup failed', { intentId: intent.id, error: userErr.message })
+          throw new Error(`payment_intent.succeeded user lookup failed: ${userErr.message}`)
+        }
+
+        if (!userRow) {
+          // Captured-but-no-account: payment is held by Stripe with no
+          // corresponding user. Email ops for manual resolution (refund or
+          // create the user and grant credits manually).
+          await sendOpsAlert({
+            subject: '[ALERT] Stripe payment captured but no Supabase account created - manual intervention needed',
+            text: [
+              'A PAYG signup payment captured successfully but no Supabase account was created.',
+              '',
+              `PaymentIntent ID: ${intent.id}`,
+              `Customer email: ${customerEmail}`,
+              `Amount captured: ${(intent.amount / 100).toFixed(2)} ${(intent.currency || 'gbp').toUpperCase()}`,
+              `Captured at: ${new Date(intent.created * 1000).toISOString()}`,
+              `Requested credits: ${meta.purchases}`,
+              '',
+              'Action required: either create the Supabase user and grant the listed credits, or refund the PaymentIntent.',
+            ].join('\n'),
+          })
+          console.error('[webhook] payment_intent.succeeded: captured-but-no-account alert sent', {
+            intentId: intent.id, email: customerEmail,
+          })
+          break
+        }
+
+        // User exists. Check whether any of the purchased credit types
+        // are missing. The RPC is atomic, so partial-state across types
+        // is impossible: either all rows for this signup were granted or
+        // none were. Missing-any signals the inline RPC failed.
+        const expectedTypes = new Set(purchases.map(p => p.credit_type))
+        const { data: existingCredits, error: creditsErr } = await adminClient
+          .from('assessment_credits')
+          .select('credit_type')
+          .eq('user_id', userRow.id)
+          .in('credit_type', Array.from(expectedTypes))
+        if (creditsErr) {
+          console.error('[webhook] payment_intent.succeeded credits lookup failed', { intentId: intent.id, error: creditsErr.message })
+          throw new Error(`payment_intent.succeeded credits lookup failed: ${creditsErr.message}`)
+        }
+        const existingTypes = new Set((existingCredits || []).map(c => c.credit_type))
+        const missing = Array.from(expectedTypes).filter(t => !existingTypes.has(t))
+
+        if (missing.length === 0) {
+          console.log('[webhook] payment_intent.succeeded credits already present, no recovery needed', {
+            intentId: intent.id, userId: userRow.id,
+          })
+          break
+        }
+
+        // Recovery: re-run the same atomic RPC the inline endpoint uses.
+        // Idempotent on (user_id, credit_type) and overwrites with the
+        // requested quantity, which is correct here because the row is
+        // missing entirely (the user has not had a chance to spend down
+        // a partial balance).
+        console.log('[webhook] payment_intent.succeeded recovering missing credits', {
+          intentId: intent.id, userId: userRow.id, missing,
+        })
+        const { error: rpcErr } = await adminClient.rpc('grant_payg_credits', {
+          user_id_input: userRow.id,
+          purchases_input: purchases,
+        })
+        if (rpcErr) {
+          console.error('[webhook] payment_intent.succeeded recovery RPC failed', { intentId: intent.id, userId: userRow.id, error: rpcErr.message })
+          throw new Error(`payment_intent.succeeded recovery RPC failed: ${rpcErr.message}`)
+        }
+        console.log('[webhook] payment_intent.succeeded credits recovered', { intentId: intent.id, userId: userRow.id })
         break
       }
 

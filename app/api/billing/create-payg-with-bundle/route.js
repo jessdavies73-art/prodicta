@@ -137,28 +137,20 @@ async function createSupabaseUserAndGrantCredits({ email, password, companyName,
     .eq('id', userId)
   console.log('[payg-signup] plan verified and set to payg for', userId)
 
-  // Mixed-cart credit grant: one row per credit_type. The composite uniqueness
-  // (user_id, credit_type) means each upsert touches at most one row, so this
-  // is safe even if the user re-runs through some recovery path with the same
-  // payment intent (idempotent on credit_type, additive only via signup so
-  // existing rows are guaranteed to be zero on first grant).
-  const nowIso = new Date().toISOString()
-  for (const p of purchases) {
-    const { error: creditError } = await admin.from('assessment_credits').upsert(
-      {
-        user_id: userId,
-        credit_type: p.credit_type,
-        credits_remaining: p.quantity,
-        credits_purchased: p.quantity,
-        last_purchased_at: nowIso,
-      },
-      { onConflict: 'user_id,credit_type' }
-    )
-    if (creditError) console.error('[payg] credit grant failed:', { credit_type: p.credit_type, creditError })
-  }
+  // Atomic credit grant via RPC. The function wraps every row insert in a
+  // single PL/pgSQL transaction and raises on any per-row error so a partial
+  // grant (paid for 13, got 10) is impossible. If this fails after the user
+  // is already created, the caller MUST avoid deleting the Stripe customer:
+  // the payment_intent.succeeded webhook handler reads metadata.signup and
+  // re-attempts the same RPC as a recovery path. See app/api/billing/webhook.
+  const purchasesPayload = purchases.map(p => ({ credit_type: p.credit_type, quantity: p.quantity }))
+  const { error: rpcError } = await admin.rpc('grant_payg_credits', {
+    user_id_input: userId,
+    purchases_input: purchasesPayload,
+  })
 
   let promoMessage = null
-  if (promoCode) {
+  if (!rpcError && promoCode) {
     try {
       const result = await redeemPromoCode({ adminClient: admin, userId, code: promoCode })
       if (result.ok) promoMessage = result.message
@@ -167,16 +159,37 @@ async function createSupabaseUserAndGrantCredits({ email, password, companyName,
     }
   }
 
-  return { userId, promoMessage }
+  if (rpcError) {
+    console.error('[payg] CRITICAL: grant_payg_credits RPC failed, awaiting webhook recovery', {
+      userId, purchases: purchasesPayload, error: rpcError.message,
+    })
+  }
+
+  return { userId, promoMessage, creditsGranted: !rpcError }
 }
 
 export async function POST(request) {
   let stripeCustomerId = null
   let currentStep = 'init'
+  // Tracks whether we successfully created a Supabase user in this request.
+  // If true, the catch block must NOT delete the Stripe customer: a failed
+  // credit grant is recoverable via the payment_intent.succeeded webhook,
+  // but only if the customer record (and its metadata.email) survives.
+  let userWasCreated = false
   try {
     currentStep = 'parse-body'
     const body = await request.json()
     const { email, password, companyName, accountType, promoCode, paymentMethodId } = body
+    // Stripe idempotency key: client generates once per form mount and
+    // resends on any retry, so a network-level retry of the same submission
+    // returns the same PaymentIntent rather than creating a duplicate
+    // charge. Server falls back to a generated UUID if the header is
+    // absent, which still gives single-request safety even if the client
+    // is older or misbehaving.
+    const idempotencyKey = request.headers.get('x-idempotency-key')
+      || (typeof crypto !== 'undefined' && crypto.randomUUID
+        ? `payg-${crypto.randomUUID()}`
+        : `payg-${Date.now()}-${Math.random().toString(36).slice(2)}`)
 
     if (!email || !password || !companyName || !accountType || !paymentMethodId) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
@@ -235,11 +248,21 @@ export async function POST(request) {
       // Using payment_method_types keeps the intent card-only and avoids any redirect flows.
       payment_method_types: ['card'],
       description: describePurchases(purchases),
+      // Metadata is read by the payment_intent.succeeded webhook handler at
+      // /api/billing/webhook to detect signup payments and recover from a
+      // captured-but-no-account or captured-but-no-credits state. Keep these
+      // keys stable: signup=true gates the handler, email is the lookup key
+      // for the Supabase user, purchases is the JSON-encoded cart used by
+      // the webhook to call grant_payg_credits as a recovery.
       metadata: {
+        signup: 'true',
+        email: email.trim(),
         purchases: purchasesJson,
         total_qty: String(totalQty),
-        signup: 'true',
+        total_amount: String(amount),
       },
+    }, {
+      idempotencyKey,
     })
     console.log('[payg-with-bundle] intent created', {
       intentId: intent.id, status: intent.status,
@@ -279,10 +302,31 @@ export async function POST(request) {
 
     currentStep = 'create-user-and-credits'
     try {
-      const { userId, promoMessage } = await createSupabaseUserAndGrantCredits({
+      const { userId, promoMessage, creditsGranted } = await createSupabaseUserAndGrantCredits({
         email, password, companyName, accountType,
         customerId: customer.id, purchases, promoCode,
       })
+      // The Supabase user exists from this point. Mark so the outer catch
+      // skips the customer-delete branch on any later error: the webhook
+      // recovery path needs the customer + intent metadata to find this user.
+      if (userId) userWasCreated = true
+
+      if (!creditsGranted) {
+        // Payment captured, user created, RPC failed. The
+        // payment_intent.succeeded webhook will retry the RPC. Surface a
+        // clear message to the candidate and a 202 Accepted so the client
+        // doesn't treat the captured payment as a hard error.
+        console.error('[payg-with-bundle] CRITICAL: credits_pending after capture', {
+          userId, purchases: purchases.map(p => `${p.quantity} x ${p.credit_type}`),
+          amountGBP: amount / 100, paymentIntentId: intent.id,
+        })
+        return NextResponse.json({
+          creditsPending: true,
+          error: 'Your payment was successful and your account is being activated. Please check your email shortly. If your credits do not appear within 10 minutes, contact hello@prodicta.co.uk.',
+          purchases: purchases.map(p => ({ credit_type: p.credit_type, quantity: p.quantity })),
+        }, { status: 202 })
+      }
+
       console.log('[payg-with-bundle] user created and credits granted', {
         userId, purchases: purchases.map(p => `${p.quantity} x ${p.credit_type}`),
         amountGBP: amount / 100,
@@ -316,7 +360,11 @@ export async function POST(request) {
       raw: err?.raw ? { code: err.raw.code, message: err.raw.message, type: err.raw.type } : null,
     })
     try {
-      if (stripeCustomerId) {
+      // Only delete the customer if the user was NOT created. After user
+      // creation the webhook recovery path needs the customer+intent
+      // metadata to find this user; deleting the customer here would
+      // orphan the captured payment.
+      if (stripeCustomerId && !userWasCreated) {
         const stripe = getStripeClient()
         await stripe.customers.del(stripeCustomerId).catch(() => {})
       }

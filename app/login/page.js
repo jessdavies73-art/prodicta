@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ProdictaLogo from '@/components/ProdictaLogo'
@@ -298,6 +298,22 @@ function SignUpForm() {
   // Captured from the API response on successful payment so the success
   // screen can list what the candidate just bought (skipping zero rows).
   const [purchasedSummary, setPurchasedSummary] = useState(null)
+  // Stripe idempotency key. Generated lazily on first render of this form
+  // (SSR-safe: useState initialiser only runs on the client because the
+  // file is 'use client'). Sent in the x-idempotency-key header on every
+  // PAYG submit attempt; if the user retries after a network blip, the
+  // same key is sent and Stripe deduplicates the PaymentIntent rather
+  // than creating a duplicate charge.
+  const [idempotencyKey] = useState(() => {
+    if (typeof globalThis !== 'undefined' && globalThis.crypto?.randomUUID) {
+      return `payg-${globalThis.crypto.randomUUID()}`
+    }
+    return `payg-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  })
+  // Synchronous double-click / double-submit guard. A ref (not state) so
+  // the value is observable inside the same event tick before React has
+  // had a chance to render the disabled-button state from setLoading(true).
+  const submittingRef = useRef(false)
   const [plan,        setPlan]        = useState('professional')
   const [postcode,    setPostcode]    = useState('')
   const [promoCode,   setPromoCode]   = useState('')
@@ -309,6 +325,22 @@ function SignUpForm() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    // Synchronous double-submit guard. setLoading(true) further down also
+    // disables the button via the disabled prop, but React state updates
+    // are batched and a fast double-click can re-enter this handler before
+    // React has rendered the disabled state. The ref is observable in the
+    // same tick. The finally block always unlocks; the top-of-handler
+    // check is what blocks concurrent re-entry.
+    if (submittingRef.current) return
+    submittingRef.current = true
+    try {
+      await runHandleSubmit(e)
+    } finally {
+      submittingRef.current = false
+    }
+  }
+
+  async function runHandleSubmit(_e) {
     setError('')
 
     if (!company.trim())     { setError('Please enter your company name.'); return }
@@ -350,7 +382,10 @@ function SignUpForm() {
 
         const res = await fetch('/api/billing/create-payg-with-bundle', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-idempotency-key': idempotencyKey,
+          },
           body: JSON.stringify({
             email:          email.trim(),
             password,
@@ -383,7 +418,10 @@ function SignUpForm() {
           }
           const confirmRes = await fetch('/api/billing/confirm-payg-bundle', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'x-idempotency-key': idempotencyKey,
+            },
             body: JSON.stringify({
               paymentIntentId: data.paymentIntentId,
               email:           email.trim(),

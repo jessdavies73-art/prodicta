@@ -178,31 +178,32 @@ export async function POST(request) {
       .eq('id', userId)
     console.log('[payg-signup] plan verified and set to payg for', userId)
 
-    // Mixed-cart credit grant: one row per credit_type. See create endpoint
-    // for the same pattern.
-    const nowIso = new Date().toISOString()
-    for (const p of purchases) {
-      const { error: creditError } = await admin.from('assessment_credits').upsert(
-        {
-          user_id: userId,
-          credit_type: p.credit_type,
-          credits_remaining: p.quantity,
-          credits_purchased: p.quantity,
-          last_purchased_at: nowIso,
-        },
-        { onConflict: 'user_id,credit_type' }
-      )
-      if (creditError) console.error('[payg] credit grant failed:', { credit_type: p.credit_type, creditError })
-    }
+    // Atomic credit grant via RPC. See add_grant_payg_credits_rpc migration.
+    const purchasesPayload = purchases.map(p => ({ credit_type: p.credit_type, quantity: p.quantity }))
+    const { error: rpcError } = await admin.rpc('grant_payg_credits', {
+      user_id_input: userId,
+      purchases_input: purchasesPayload,
+    })
 
     let promoMessage = null
-    if (promoCode) {
+    if (!rpcError && promoCode) {
       try {
         const result = await redeemPromoCode({ adminClient: admin, userId, code: promoCode })
         if (result.ok) promoMessage = result.message
       } catch (err) {
         console.error('[confirm-payg-bundle] promo redeem error (non-fatal):', err)
       }
+    }
+
+    if (rpcError) {
+      console.error('[confirm-payg-bundle] CRITICAL: grant_payg_credits RPC failed, awaiting webhook recovery', {
+        userId, purchases: purchasesPayload, error: rpcError.message,
+      })
+      return NextResponse.json({
+        creditsPending: true,
+        error: 'Your payment was successful and your account is being activated. Please check your email shortly. If your credits do not appear within 10 minutes, contact hello@prodicta.co.uk.',
+        purchases: purchasesPayload,
+      }, { status: 202 })
     }
 
     console.log('[confirm-payg-bundle] credits granted', {
@@ -213,7 +214,7 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       promoMessage,
-      purchases: purchases.map(p => ({ credit_type: p.credit_type, quantity: p.quantity })),
+      purchases: purchasesPayload,
       amount: expectedAmount / 100,
     })
   } catch (err) {
