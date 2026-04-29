@@ -4002,7 +4002,17 @@ function DashboardPageInner() {
             (DB table, API route, response shape) keeps the saved_roles
             naming so frontend variables match the wire format.
             Renders for all account types and always renders, even empty,
-            so new users see what the section is for. */}
+            so new users see what the section is for. The list is filtered
+            by the user's currently-selected default_employment_type so a
+            recruiter set to Permanent does not see temp drafts and vice
+            versa. Drafts with missing/null employment_type are always
+            shown (legacy-safe default for pre-flag rows). */}
+        {(() => {
+          const defaultEmp = profile?.default_employment_type
+          const visibleSavedRoles = (defaultEmp === 'permanent' || defaultEmp === 'temporary')
+            ? savedRoles.filter(sr => !sr.employment_type || sr.employment_type === defaultEmp)
+            : savedRoles
+          return (
         <div style={{
           order: 3,
           background: CARD, border: `1.5px solid ${TEAL}55`, borderRadius: 14,
@@ -4018,13 +4028,13 @@ function DashboardPageInner() {
                 Re-send for a known role in two taps. Candidate name and email stay blank until you are ready.
               </p>
             </div>
-            {savedRoles.length > 0 && (
+            {visibleSavedRoles.length > 0 && (
               <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, background: TEALLT, padding: '4px 10px', borderRadius: 20, flexShrink: 0 }}>
-                {savedRoles.length}/10
+                {visibleSavedRoles.length}/10
               </span>
             )}
           </div>
-          {savedRoles.length === 0 ? (
+          {visibleSavedRoles.length === 0 ? (
             <>
               <p style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.6, margin: '0 0 14px' }}>
                 Drafted roles are job descriptions you have started but have not sent to candidates yet. When you save a draft, it will appear here for you to come back to and complete.
@@ -4045,7 +4055,7 @@ function DashboardPageInner() {
               gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
               gap: 12,
             }}>
-              {savedRoles.map(sr => {
+              {visibleSavedRoles.map(sr => {
                 const modeLabel = sr.assessment_mode === 'rapid' ? 'Rapid Screen'
                   : sr.assessment_mode === 'quick' ? 'Speed-Fit'
                   : sr.assessment_mode === 'advanced' ? 'Strategy-Fit'
@@ -4101,6 +4111,8 @@ function DashboardPageInner() {
             </div>
           )}
         </div>
+          )
+        })()}
 
         {/* ── Candidate Pipeline ── Section 1
             All account types see the Bulk Screening Mode + Individual

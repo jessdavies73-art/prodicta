@@ -981,6 +981,13 @@ function DemoDashboardInner() {
             { id: 'sr-demo-2', role_title: 'Office Administrator', client_name: 'Operations', assessment_mode: 'quick', employment_type: 'permanent' },
             { id: 'sr-demo-3', role_title: 'Sales Executive', client_name: 'Commercial', assessment_mode: 'standard', employment_type: 'permanent' },
           ]
+          // Filter by the demo banner's employment-type toggle so a viewer
+          // set to Permanent does not see temp drafts and vice versa.
+          // Drafts with missing employment_type are always shown (legacy-
+          // safe default, matches live behaviour for pre-flag rows).
+          const visibleSavedRoles = (demoEmploymentType === 'permanent' || demoEmploymentType === 'temporary')
+            ? demoSavedRoles.filter(sr => !sr.employment_type || sr.employment_type === demoEmploymentType)
+            : demoSavedRoles
           const modeLabel = m => m === 'rapid' ? 'Rapid Screen' : m === 'quick' ? 'Speed-Fit' : m === 'advanced' ? 'Strategy-Fit' : 'Depth-Fit'
           const partyLabel = isAgency ? 'Client' : 'Department'
           return (
@@ -1001,15 +1008,31 @@ function DemoDashboardInner() {
                   </p>
                 </div>
                 <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEALD, background: TEALLT, padding: '4px 10px', borderRadius: 20 }}>
-                  {demoSavedRoles.length}/10
+                  {visibleSavedRoles.length}/10
                 </span>
               </div>
+              {visibleSavedRoles.length === 0 ? (
+                <>
+                  <p style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.6, margin: '0 0 14px' }}>
+                    Drafted roles are job descriptions you have started but have not sent to candidates yet. When you save a draft, it will appear here for you to come back to and complete.
+                  </p>
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    gap: 8, padding: '28px 20px', borderRadius: 12,
+                    background: BG, border: `1px dashed ${BD}`,
+                    fontFamily: F,
+                  }}>
+                    <Ic name="file" size={20} color={TX3} />
+                    <div style={{ fontSize: 13, fontWeight: 700, color: TX3 }}>No drafted roles yet</div>
+                  </div>
+                </>
+              ) : (
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
                 gap: 12,
               }}>
-                {demoSavedRoles.map(sr => (
+                {visibleSavedRoles.map(sr => (
                   <div key={sr.id} style={{
                     display: 'flex', flexDirection: 'column',
                     background: BG, border: `1px solid ${BD}`,
@@ -1072,6 +1095,7 @@ function DemoDashboardInner() {
                   </div>
                 ))}
               </div>
+              )}
             </div>
           )
         })()}
