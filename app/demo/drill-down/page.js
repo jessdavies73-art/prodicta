@@ -5,7 +5,7 @@
 // data so prospects see all four tabs populated. Demo experience is
 // always agency-perm so the By Client tab renders.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { DemoLayout } from '@/components/DemoShell'
 import { isDemoAgencyPerm } from '@/lib/account-helpers'
 import {
@@ -17,7 +17,13 @@ import {
 } from '@/lib/demo-data'
 import DrillDownView from '@/app/dashboard/drill-down/_DrillDownView'
 
+const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
+const _mSnap = () => window.innerWidth <= 768
+const _mServer = () => false
+function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
+
 export default function DemoDrillDownPage() {
+  const isMobile = useIsMobile()
   // Mirror the live drill-down: read the demo banner state so an
   // agency-perm demo viewer sees the description without "compliance
   // signals" and the live behaviour is honestly previewed.
@@ -55,15 +61,23 @@ export default function DemoDrillDownPage() {
 
   return (
     <DemoLayout active="drill-down">
-      <DrillDownView
-        candidates={candidates}
-        assessments={DEMO_ASSESSMENTS}
-        teamMembers={DEMO_TEAM_MEMBERS}
-        clients={DEMO_CLIENTS}
-        accountType="agency"
-        planType="agency"
-        hideCompliance={hideCompliance}
-      />
+      {/* Demo drill-down had no <main> wrapper before; DemoLayout's
+          column-flex stacked the view at x=0, so the leftmost 220px sat
+          behind the fixed demo sidebar. Match the live drill-down's
+          buffer (marginLeft 240 + paddingLeft 32) and explicit
+          overflowX:'visible' so no horizontal scrollbar can paint with
+          non-zero scrollLeft and clip the leftmost content. */}
+      <main style={{ flex: 1, minWidth: 0, marginLeft: isMobile ? 0 : 240, marginTop: isMobile ? 96 : 46, paddingLeft: isMobile ? 16 : 32, overflowX: 'visible' }}>
+        <DrillDownView
+          candidates={candidates}
+          assessments={DEMO_ASSESSMENTS}
+          teamMembers={DEMO_TEAM_MEMBERS}
+          clients={DEMO_CLIENTS}
+          accountType="agency"
+          planType="agency"
+          hideCompliance={hideCompliance}
+        />
+      </main>
     </DemoLayout>
   )
 }

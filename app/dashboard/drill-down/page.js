@@ -123,11 +123,15 @@ export default function DrillDownPage() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f7f9fb', fontFamily: F }}>
       <Sidebar active="drill-down" />
-      {/* marginLeft mirrors the dashboard so the fixed 220px sidebar does
-          not overlap the drill-down content. overflowX: 'auto' on the main
-          column lets wide tables scroll horizontally on narrow viewports
-          rather than being clipped. */}
-      <main style={{ flex: 1, minWidth: 0, marginLeft: isMobile ? 0 : 220, paddingTop: isMobile ? 56 : 0, overflowX: 'auto' }}>
+      {/* Sidebar is position:fixed at width 220. marginLeft 240 leaves a
+          20px gap past its right edge before main begins. paddingLeft 32
+          adds an internal buffer so no inner content (TabStrip, table)
+          can ever paint flush against the sidebar boundary, even if a
+          downstream layout quirk shifts content slightly left. overflowX
+          is explicitly 'visible' so the parent never paints a horizontal
+          scrollbar with non-zero scrollLeft, which is what caused the
+          earlier By Role left-clip symptom even after Option A. */}
+      <main style={{ flex: 1, minWidth: 0, marginLeft: isMobile ? 0 : 240, paddingLeft: isMobile ? 16 : 32, paddingTop: isMobile ? 56 : 0, overflowX: 'visible' }}>
         {loading ? (
           <div style={{ padding: 40, fontFamily: F, color: TEAL }}>Loading drill-down...</div>
         ) : (
