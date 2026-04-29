@@ -130,6 +130,12 @@ export async function GET(request, { params }) {
     const statement = 'This assessment was conducted using objective, scenario-based methodology. No candidate was penalised for spelling, grammar, or writing style. All scores are backed by specific evidence from the candidate\'s responses. This document forms part of the evidence trail for a fair and defensible hiring decision.'
     const stmtLines = wrap(statement, helv, 10.5, 515)
     stmtLines.forEach(l => { page.drawText(l, { x: 40, y, size: 10.5, font: helv, color: black }); y -= 14 })
+    y -= 12
+
+    // Disclaimer
+    const disclaimer = 'PRODICTA provides documentation to support your legal position. PRODICTA does not provide legal advice. Consult a qualified solicitor for guidance on specific cases.'
+    const discLines = wrap(disclaimer, helv, 8.5, 515)
+    discLines.forEach(l => { page.drawText(l, { x: 40, y, size: 8.5, font: helv, color: grey }); y -= 11 })
 
     // Footer
     page.drawRectangle({ x: 0, y: 0, width: 595, height: 36, color: navy })

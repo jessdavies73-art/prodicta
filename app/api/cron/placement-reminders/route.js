@@ -149,13 +149,13 @@ export async function GET(request) {
  // Month 5, urgent ERA warning (days 152-158)
         if (elapsed >= 152 && elapsed < 159 && !sent.month5) {
           await sendReminderEmail(resend, user.email,
- `URGENT: One month until unfair dismissal rights apply, ${candName}`,
+ `URGENT: One month until the ERA 2025 unfair dismissal threshold, ${candName}`,
             buildProbationEmail({ appUrl, candName, role, month: 5, probationMonths: o.probation_months,
-              message: `<strong style="color:#dc2626;">You have one month before ${candName} acquires unfair dismissal rights under ERA 2025.</strong> If there are unresolved performance concerns, you must act now. Review the flagged watch-outs in their Prodicta assessment and document your decision before the 6-month mark.`,
+              message: `<strong style="color:#dc2626;">You have one month before the ERA 2025 unfair dismissal threshold (from January 2027) applies to ${candName}.</strong> If there are unresolved performance concerns, you must act now. Review the flagged watch-outs in their Prodicta assessment and document your decision before the 6-month mark.`,
               urgent: true }))
           await insertNotification(adminClient, o.user_id, cand?.id, cand?.assessment_id,
             `Urgent: ${candName} approaching ERA 2025 threshold`,
-            `One month until unfair dismissal rights apply. Log your probation outcome now.`)
+            `One month until the ERA 2025 6-month unfair dismissal threshold (from January 2027). Log your probation outcome now.`)
           await adminClient.from('candidate_outcomes').update({ probation_reminder_sent: { ...sent, month5: true } }).eq('id', o.id)
           notifsSent.push({ type: 'probation_month5', candidate: candName })
         }
@@ -248,7 +248,7 @@ function buildProbationEmail({ appUrl, candName, role, month, probationMonths, m
     <h2 style="font-size:20px;font-weight:800;color:#0f2137;margin:0 0 14px;line-height:1.3;">${candName} &mdash; ${role}</h2>
     <p style="font-size:14px;color:#5e6b7f;line-height:1.7;margin:0 0 24px;">${message}</p>
     ${urgent ? `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:16px 20px;margin-bottom:24px;">
-      <p style="font-size:13px;color:#dc2626;font-weight:600;margin:0;">Under ERA 2025, employees acquire unfair dismissal rights after 6 months of employment. Ensure all performance concerns are documented and any necessary steps are taken before this threshold.</p>
+      <p style="font-size:13px;color:#dc2626;font-weight:600;margin:0;">Under ERA 2025, from January 2027 employees acquire unfair dismissal rights after 6 months of employment. Ensure all performance concerns are documented and any necessary steps are taken before this threshold.</p>
     </div>` : ''}
     <div style="text-align:center;margin:28px 0 8px;">
       <a href="${appUrl}/outcomes" style="display:inline-block;background:${urgent ? '#dc2626' : '#00BFA5'};color:#fff;font-weight:700;font-size:14px;padding:13px 32px;border-radius:10px;text-decoration:none;">Log Probation Outcome &rarr;</a>

@@ -1023,7 +1023,7 @@ function ProbationTimeline({ outcome }) {
       <div style={{ fontFamily: F, fontSize: 13, color: TX2, marginBottom: 20 }}>
         Hired on <strong>{fmtDate(start)}</strong> &middot; {probation_months}-month probation
         {elapsed >= 152 && !ended && (
-          <strong style={{ color: RED }}> &middot; Unfair dismissal rights apply at 6 months</strong>
+          <strong style={{ color: RED }}> &middot; Unfair dismissal rights apply at 6 months from January 2027</strong>
         )}
       </div>
 
@@ -1103,7 +1103,7 @@ function ProbationTimeline({ outcome }) {
       {/* ERA warning */}
       {elapsed >= 152 && !ended && (
         <div style={{ background: REDBG, border: `1px solid ${REDBD}`, borderRadius: 8, padding: '10px 14px', fontFamily: F, fontSize: 13, color: RED, fontWeight: 600 }}>
-          One month until unfair dismissal rights apply under ERA 2025. Log the probation outcome now.
+          One month until the ERA 2025 6-month unfair dismissal threshold (from January 2027) applies. Log the probation outcome now.
         </div>
       )}
     </div>

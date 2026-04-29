@@ -340,7 +340,7 @@ export default function OutcomesPage() {
                         <div style={{ marginTop: 6 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
                             <span style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Probation Timeline</span>
-                            <InfoTooltip text="Visual tracker from hire date to the 6-month ERA 2025 unfair dismissal threshold. Colour-coded milestones with automated review reminders." />
+                            <InfoTooltip text="Visual tracker from hire date to the 6-month ERA 2025 unfair dismissal threshold (from January 2027). Colour-coded milestones with automated review reminders." />
                           </div>
                           <div style={{ fontFamily: F, fontSize: 10.5, color: danger && !done ? RED : TX3, fontWeight: danger ? 700 : 400, marginBottom: 3 }}>
                             {done ? 'Probation complete' : `Month ${monthsIn} of ${probMonths}${danger ? ' · ERA zone' : ''}`}

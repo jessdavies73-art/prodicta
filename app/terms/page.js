@@ -125,7 +125,7 @@ export default function TermsPage() {
           PRODICTA provides tools to assist with Statutory Sick Pay calculations, Fair Work Agency compliance documentation, and employment record keeping. These tools are provided as guidance only and do not constitute legal or payroll advice. SSP calculations are based on legislation effective as of the date shown and may not reflect subsequent changes in law.
         </P>
         <P>
-          You remain solely responsible for verifying all SSP calculations with a qualified payroll provider or accountant and for ensuring your employment practices comply with applicable legislation including the Employment Rights Act 2025 and SSP regulations. PRODICTA's compliance packs and documentation tools create records of process but do not guarantee legal compliance or protect against tribunal claims.
+          You remain solely responsible for verifying all SSP calculations with a qualified payroll provider or accountant and for ensuring your employment practices comply with applicable legislation including the Employment Rights Act 2025 and SSP regulations. PRODICTA's compliance packs and documentation tools create records of process but do not guarantee legal compliance or protect against tribunal claims. PRODICTA provides documentation to support your legal position; it does not provide legal advice. Consult a qualified solicitor for guidance on specific cases.
         </P>
 
         <H2>6. Subscription and Billing</H2>

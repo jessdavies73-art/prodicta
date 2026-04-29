@@ -264,7 +264,7 @@ export default function HolidayPage() {
           }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
               <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: 0, lineHeight: 1.55, flex: 1 }}>
-                Holiday pay records must be retained for a minimum of 6 years under HMRC requirements. The Fair Work Agency can investigate and fine employers who cannot produce records. All records created here are time-stamped and stored.
+                Holiday pay records must be retained for a minimum of 6 years under HMRC requirements. Holiday pay enforcement is anticipated to fall within Fair Work Agency oversight from 2027. All records created here are time-stamped and stored.
               </p>
               <span style={{ flexShrink: 0, marginTop: 2 }}>
                 <InfoTooltip text="HMRC requires holiday pay records to be kept for a minimum of 6 years. PRODICTA stores all records automatically." />

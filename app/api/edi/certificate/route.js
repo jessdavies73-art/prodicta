@@ -253,6 +253,12 @@ export async function GET(request) {
     const stmt = 'This assessment process has been reviewed for adverse impact and meets the standards required under the Equality Act 2010 and Employment Rights Act 2025. Demographic data is self-reported, stored separately from assessment responses, and is never used in scoring. All candidates complete identical scenarios under identical conditions.'
     const stmtLines = wrap(stmt, helv, 10, 515)
     stmtLines.forEach(l => { page.drawText(l, { x: 40, y, size: 10, font: helv, color: black }); y -= 14 })
+    y -= 12
+
+    // Disclaimer
+    const disclaimer = 'PRODICTA provides documentation to support your legal position. PRODICTA does not provide legal advice. Consult a qualified solicitor for guidance on specific cases.'
+    const discLines = wrap(disclaimer, helv, 8.5, 515)
+    discLines.forEach(l => { page.drawText(l, { x: 40, y, size: 8.5, font: helv, color: grey }); y -= 11 })
 
     // Footer
     page.drawRectangle({ x: 0, y: 0, width: 595, height: 36, color: navy })
