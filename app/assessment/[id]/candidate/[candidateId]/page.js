@@ -3547,9 +3547,13 @@ export default function CandidateReportPage({ params }) {
                 })()}
 
                 {/* ══════════════════════════════════════════════════
-                    CANDIDATE DOCUMENTS , agency only
+                    CANDIDATE DOCUMENTS , employer only
+                    Agency users upload CV / cover letter inline inside
+                    the Send to Client modal so the standalone section is
+                    redundant for them. Employers retain it because they
+                    do not have the Send to Client flow.
                 ══════════════════════════════════════════════════ */}
-                {profile?.account_type === 'agency' && (
+                {profile?.account_type === 'employer' && (
                   <Card style={{ marginBottom: 20 }} className="no-print">
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                       <SectionHeading>
@@ -3560,7 +3564,7 @@ export default function CandidateReportPage({ params }) {
                     </div>
                     {expandedSections.candidateDocs && <>
                     <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 20px', lineHeight: 1.6 }}>
-                      Attach the candidate's CV and cover letter. Uploaded files are included when you use <strong>Send to Client</strong>.
+                      Attach the candidate's CV and cover letter for your records.
                     </p>
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
                       {['cv', 'cover_letter'].map(docType => {
@@ -6395,9 +6399,87 @@ export default function CandidateReportPage({ params }) {
             ) : (
               <>
                 <h3 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 5px' }}>Send Candidate Pack</h3>
-                <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 20px', lineHeight: 1.55 }}>
+                <p style={{ fontFamily: F, fontSize: 13.5, color: TX2, margin: '0 0 16px', lineHeight: 1.55 }}>
                   Send {candidate?.name || 'this candidate'}'s assessment report to a client. The full PDF is attached automatically; uploaded documents and the optional 90-Day Success Plan are included alongside.
                 </p>
+
+                {/* CV + Cover Letter upload, inline. Persists to the same
+                    Supabase Storage candidate-documents bucket as the
+                    employer-side standalone section; cancelling the modal
+                    does not delete uploads. The "What's included" badge
+                    below reads from the same `documents` state, so the
+                    badge updates immediately as files are uploaded or
+                    removed here. */}
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 14 }}>
+                  {['cv', 'cover_letter'].map(docType => {
+                    const doc = documents[docType]
+                    const label = docType === 'cv' ? 'CV / Résumé' : 'Cover Letter'
+                    const isUploading = uploadingDoc === docType
+                    const isDeleting  = deletingDoc  === docType
+                    return (
+                      <div key={docType} style={{
+                        border: `1.5px dashed ${doc ? TEAL : BD}`,
+                        borderRadius: 10, padding: '12px 12px', textAlign: 'center',
+                        background: doc ? TEALLT : BG, transition: 'all 0.15s',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
+                          <Ic name="file" size={14} color={doc ? TEAL : TX3} />
+                          <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX }}>{label}</span>
+                        </div>
+                        {doc ? (
+                          <>
+                            <div style={{ fontFamily: F, fontSize: 11.5, color: TX2, marginBottom: 8, wordBreak: 'break-all' }}>
+                              {doc.file_name}
+                              <span style={{ display: 'block', color: TX3, fontSize: 10.5 }}>{Math.round((doc.file_size || 0) / 1024)}KB</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+                              <a
+                                href={`/api/documents/${doc.id}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: TEAL, color: NAVY, fontFamily: F, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}
+                              >
+                                <Ic name="download" size={11} color={NAVY} /> View
+                              </a>
+                              <button
+                                onClick={() => handleDocDelete(doc.id, docType)}
+                                disabled={isDeleting}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: REDBG, color: RED, border: `1px solid ${REDBD}`, fontFamily: F, fontSize: 11.5, fontWeight: 700, cursor: isDeleting ? 'not-allowed' : 'pointer' }}
+                              >
+                                <Ic name="trash" size={11} color={RED} /> {isDeleting ? '...' : 'Remove'}
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginBottom: 8 }}>PDF, DOC or DOCX, max 5MB</div>
+                            <label style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 5,
+                              padding: '5px 12px', borderRadius: 6,
+                              background: isUploading ? BD : NAVY, color: isUploading ? TX3 : '#fff',
+                              fontFamily: F, fontSize: 11.5, fontWeight: 700,
+                              cursor: isUploading ? 'not-allowed' : 'pointer',
+                            }}>
+                              <Ic name="upload" size={11} color={isUploading ? TX3 : TEAL} />
+                              {isUploading ? 'Uploading...' : `Upload ${label}`}
+                              <input
+                                type="file"
+                                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                style={{ display: 'none' }}
+                                disabled={isUploading}
+                                onChange={e => {
+                                  const f = e.target.files?.[0]
+                                  if (f) handleDocUpload(docType, f)
+                                  e.target.value = ''
+                                }}
+                              />
+                            </label>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
 
                 {/* What's included. Each PDF item shows a Preview link that
                     opens the route in a new tab so the recruiter can sanity-

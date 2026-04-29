@@ -4326,7 +4326,11 @@ function DemoCandidateInner({ params }) {
               </ScrollReveal>
             )}
 
-            {/* ── CANDIDATE DOCUMENTS (agency feature demo) ── */}
+            {/* ── CANDIDATE DOCUMENTS (employer demo only) ──
+                Agency demo viewers upload CV / cover letter inline inside
+                the Send to Client modal so the standalone section is
+                redundant for them; mirrors the live agency view. */}
+            {!isAgency && (
             <Card style={{ marginBottom: 20 }} className="no-print">
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                 <SectionHeading>
@@ -4375,6 +4379,7 @@ function DemoCandidateInner({ params }) {
               </div>
               </>}
             </Card>
+            )}
 
             {/* ── FAIR WORK AGENCY READY ── */}
             <ScrollReveal delay={40}>
@@ -5058,9 +5063,47 @@ function DemoCandidateInner({ params }) {
             </p>
 
             {/* Demo notice */}
-            <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, padding: '10px 14px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ background: AMBBG, border: `1px solid ${AMBBD}`, borderRadius: 8, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
               <Ic name="info" size={14} color={AMB} />
               <span style={{ fontFamily: F, fontSize: 12.5, color: '#92400e' }}>Demo preview. Sign up to send real candidate packs via email.</span>
+            </div>
+
+            {/* CV + Cover Letter upload, inline. Mirrors live: live persists
+                to Supabase Storage; demo renders a disabled-preview pair
+                so prospects see where uploads happen without exposing real
+                upload behaviour. CV is shown pre-uploaded for the demo;
+                Cover Letter shown empty so the upload state is also
+                demonstrated. */}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 14 }}>
+              <div style={{ border: `1.5px dashed ${TEAL}`, borderRadius: 10, padding: '12px 12px', textAlign: 'center', background: TEALLT }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
+                  <Ic name="file" size={14} color={TEAL} />
+                  <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX }}>CV / Résumé</span>
+                </div>
+                <div style={{ fontFamily: F, fontSize: 11.5, color: TX2, marginBottom: 8 }}>
+                  {candidate?.name?.split(' ')[0] || 'Candidate'}_CV.pdf
+                  <span style={{ display: 'block', color: TX3, fontSize: 10.5 }}>142KB</span>
+                </div>
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button onClick={() => router.push('/login')} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: TEAL, color: NAVY, fontFamily: F, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', border: 'none' }}>
+                    <Ic name="download" size={11} color={NAVY} /> View
+                  </button>
+                  <button onClick={() => router.push('/login')} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: REDBG, color: RED, border: `1px solid ${REDBD}`, fontFamily: F, fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
+                    <Ic name="trash" size={11} color={RED} /> Remove
+                  </button>
+                </div>
+              </div>
+              <div style={{ border: `1.5px dashed ${BD}`, borderRadius: 10, padding: '12px 12px', textAlign: 'center', background: BG }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
+                  <Ic name="file" size={14} color={TX3} />
+                  <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX }}>Cover Letter</span>
+                </div>
+                <div style={{ fontFamily: F, fontSize: 11, color: TX3, marginBottom: 8 }}>PDF, DOC or DOCX, max 5MB</div>
+                <button onClick={() => router.push('/login')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 6, background: NAVY, color: '#fff', fontFamily: F, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', border: 'none' }}>
+                  <Ic name="upload" size={11} color={TEAL} />
+                  Upload Cover Letter
+                </button>
+              </div>
             </div>
 
             {/* What's included */}
