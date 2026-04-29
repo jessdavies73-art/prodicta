@@ -1,7 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { useState, useEffect, useSyncExternalStore } from 'react'
-import { NAVY, TEAL, F } from '../lib/constants'
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react'
+import { NAVY, TEAL, TEALD, F } from '../lib/constants'
 import { Ic } from './Icons'
 import { createClient } from '../lib/supabase'
 import { isAgencyPerm } from '../lib/account-helpers'
@@ -11,6 +11,16 @@ const _mSub = (cb) => { window.addEventListener('resize', cb); return () => wind
 const _mSnap = () => window.innerWidth <= 768
 const _mServer = () => false
 function useIsMobile() { return useSyncExternalStore(_mSub, _mSnap, _mServer) }
+
+function timeAgo(dateStr) {
+  const seconds = Math.floor((Date.now() - new Date(dateStr)) / 1000)
+  if (seconds < 60) return 'just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
+}
 
 // Grouped nav with uppercase group labels. Documents is agency + temp/both
 // only. The Compliance group as a whole is hidden for permanent recruitment
@@ -130,6 +140,80 @@ export default function Sidebar({ active, companyName }) {
     loadProfile()
     return () => { cancelled = true }
   }, [])
+
+  // ── Notifications ─────────────────────────────────────────────────────────
+  // Bell reads from the notifications table populated by:
+  //   app/api/assess/[token]/submit/route.js   (candidate_completed)
+  //   lib/score-candidate.js                   (scoring_finished)
+  // Polls every 30s for new rows; click on a row marks it read and routes
+  // to the candidate report. Restored from commit c320392; previous sidebar
+  // restructures dropped the block.
+  const [userId, setUserId] = useState(null)
+  const [notifications, setNotifications] = useState([])
+  const [notifOpen, setNotifOpen] = useState(false)
+  const panelRef = useRef(null)
+  const unreadCount = notifications.filter(n => !n.read).length
+
+  async function loadNotifications(uid) {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false })
+      .limit(20)
+    if (data) setNotifications(data)
+  }
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setUserId(user.id)
+        loadNotifications(user.id)
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!userId) return
+    const interval = setInterval(() => loadNotifications(userId), 30000)
+    return () => clearInterval(interval)
+  }, [userId])
+
+  useEffect(() => {
+    if (!notifOpen) return
+    function handleClick(e) {
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        setNotifOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [notifOpen])
+
+  async function markAllRead() {
+    if (!userId) return
+    const supabase = createClient()
+    await supabase.from('notifications').update({ read: true }).eq('user_id', userId).eq('read', false)
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+  }
+
+  async function markAsRead(id) {
+    const supabase = createClient()
+    await supabase.from('notifications').update({ read: true }).eq('id', id)
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+  }
+
+  function handleNotifClick(n) {
+    if (!n.read) markAsRead(n.id)
+    if (n.candidate_id && n.assessment_id) {
+      router.push(`/assessment/${n.assessment_id}/candidate/${n.candidate_id}`)
+      setNotifOpen(false)
+    }
+  }
+
+  const notifIcon = type => type === 'scoring_finished' ? 'award' : 'check'
 
   async function handleLogout() {
     const supabase = createClient()
@@ -256,7 +340,7 @@ export default function Sidebar({ active, companyName }) {
         ))}
       </nav>
 
-      {/* Pinned sign-out */}
+      {/* Pinned: notifications + sign-out */}
       <div style={{
         padding: '8px 12px 14px',
         borderTop: '1px solid rgba(255,255,255,0.07)',
@@ -265,6 +349,112 @@ export default function Sidebar({ active, companyName }) {
         gap: 1,
         flexShrink: 0,
       }}>
+        {/* Notification bell */}
+        <button
+          onClick={() => setNotifOpen(v => !v)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+            padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+            fontFamily: F, fontSize: 13, fontWeight: 500, textAlign: 'left',
+            background: notifOpen ? 'rgba(0,191,165,0.15)' : 'transparent',
+            color: notifOpen ? TEAL : 'rgba(255,255,255,0.5)',
+            transition: 'background 0.15s, color 0.15s',
+          }}
+        >
+          <div style={{ position: 'relative', flexShrink: 0, display: 'inline-flex' }}>
+            <Ic name="bell" size={16} color={notifOpen ? TEAL : 'rgba(255,255,255,0.5)'} />
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute', top: -5, right: -6,
+                minWidth: 14, height: 14, borderRadius: 7,
+                background: '#dc2626', color: '#fff', fontSize: 9, fontWeight: 800,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '0 3px', lineHeight: 1,
+              }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </div>
+          Notifications
+        </button>
+
+        {/* Notification panel. Anchored just to the right of the sidebar
+            on desktop; on mobile the sidebar is itself a slide-out drawer
+            so the panel renders inside the drawer. */}
+        {notifOpen && (
+          <div
+            ref={panelRef}
+            style={{
+              position: 'fixed',
+              left: isMobile ? 16 : 228,
+              bottom: isMobile ? 16 : 60,
+              width: isMobile ? 'calc(100vw - 32px)' : 320,
+              maxWidth: 380,
+              maxHeight: 460,
+              background: '#fff', borderRadius: 14,
+              border: '1px solid #e4e9f0',
+              boxShadow: '0 8px 40px rgba(15,33,55,0.18)',
+              zIndex: 200, overflow: 'hidden',
+              display: 'flex', flexDirection: 'column',
+            }}
+          >
+            <div style={{ padding: '14px 18px', borderBottom: '1px solid #e4e9f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <span style={{ fontFamily: F, fontWeight: 700, fontSize: 14, color: '#0f172a' }}>Notifications</span>
+              {unreadCount > 0 && (
+                <button onClick={markAllRead} style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: TEALD, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  Mark all read
+                </button>
+              )}
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {notifications.length === 0 ? (
+                <div style={{ padding: '32px 18px', textAlign: 'center' }}>
+                  <Ic name="bell" size={24} color="#e4e9f0" />
+                  <p style={{ fontFamily: F, fontSize: 13, color: '#94a1b3', margin: '10px 0 0' }}>No notifications yet</p>
+                </div>
+              ) : notifications.map((n, i) => (
+                <div
+                  key={n.id}
+                  onClick={() => handleNotifClick(n)}
+                  style={{
+                    padding: '12px 18px',
+                    borderBottom: i < notifications.length - 1 ? '1px solid #f1f5f9' : 'none',
+                    background: n.read ? '#fff' : '#f0fdf9',
+                    cursor: n.candidate_id ? 'pointer' : 'default',
+                    display: 'flex', gap: 10, alignItems: 'flex-start',
+                    transition: 'background 0.1s',
+                  }}
+                  onMouseEnter={e => { if (n.candidate_id) e.currentTarget.style.background = n.read ? '#f7f9fb' : '#e4f7f5' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = n.read ? '#fff' : '#f0fdf9' }}
+                >
+                  <div style={{
+                    width: 30, height: 30, borderRadius: '50%',
+                    background: n.type === 'scoring_finished' ? '#ecfdf5' : '#e8f6f5',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, marginTop: 1,
+                  }}>
+                    <Ic name={notifIcon(n.type)} size={14} color={n.type === 'scoring_finished' ? '#16a34a' : TEALD} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: F, fontSize: 13, fontWeight: n.read ? 500 : 700, color: '#0f172a', lineHeight: 1.35, marginBottom: 3 }}>
+                      {n.title}
+                    </div>
+                    {n.body && (
+                      <div style={{ fontFamily: F, fontSize: 12, color: '#5e6b7f', lineHeight: 1.4 }}>{n.body}</div>
+                    )}
+                    <div style={{ fontFamily: F, fontSize: 11, color: '#94a1b3', marginTop: 4 }}>
+                      {timeAgo(n.created_at)}
+                    </div>
+                  </div>
+                  {!n.read && (
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: TEAL, flexShrink: 0, marginTop: 6 }} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <button
           onClick={handleLogout}
           onMouseEnter={() => setLogoutHover(true)}
