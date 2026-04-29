@@ -268,10 +268,11 @@ function AlreadyCompletedPage({ candidateName, token }) {
 }
 
 // ─── State: Intro ─────────────────────────────────────────────────────────────
+// Minimal "Before you start" landing screen. Shows the role context, a brief
+// AI/UK GDPR disclosure, and the Start button. Pressing Start is the consent
+// action; a timestamp is recorded server-side via /api/assess/[token]/consent
+// before navigation to the first scenario.
 function IntroPage({ candidate, assessment, companyName, onBegin }) {
-  const scenarios = assessment.scenarios || []
-  const totalMinutes = scenarios.reduce((sum, s) => sum + (s.timeMinutes || 0), 0)
-
   return (
     <>
       <NavBar candidateName={candidate.name} />
@@ -279,116 +280,28 @@ function IntroPage({ candidate, assessment, companyName, onBegin }) {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
           <ProdictaLogo textColor={NAVY} size={36} />
         </div>
-        <div style={{ marginBottom: 32 }}>
+        <Card style={{ textAlign: 'center', padding: '48px 28px' }}>
           <h1 style={{
             fontFamily: F,
             fontWeight: 800,
-            fontSize: 28,
+            fontSize: 24,
             color: TX,
-            margin: '0 0 8px',
+            margin: '0 0 36px',
+            lineHeight: 1.3,
           }}>
-            Welcome, {candidate.name}
+            {assessment.role_title} assessment
+            {companyName ? <> for <span style={{ color: TX }}>{companyName}</span></> : null}
           </h1>
-          <p style={{ fontFamily: F, color: TX2, fontSize: 16, margin: '0 0 4px' }}>
-            <strong style={{ color: TX }}>{companyName}</strong> has invited you to complete a work
-            simulation assessment for the <strong style={{ color: TX }}>{assessment.role_title}</strong> role.
-          </p>
-        </div>
-
-        {(assessment.assessment_mode || '').toLowerCase() === 'rapid' && (
-          <div style={{
-            background: TEALLT,
-            border: `1px solid ${TEAL}55`,
-            borderRadius: 10,
-            padding: '12px 18px',
-            marginBottom: 20,
+          <p style={{
             fontFamily: F,
-            fontSize: 14,
-            fontWeight: 600,
-            color: TEALD,
-            textAlign: 'center',
+            color: TX2,
+            fontSize: 15,
+            lineHeight: 1.7,
+            margin: '0 auto 36px',
+            maxWidth: 520,
           }}>
-            This is a brief 5-8 minute screening assessment.
-          </div>
-        )}
-
-        <Card style={{ marginBottom: 24 }}>
-          <h3 style={{ fontFamily: F, fontSize: 15, fontWeight: 600, color: TX, margin: '0 0 8px' }}>
-            About this assessment
-          </h3>
-          <p style={{ fontFamily: F, color: TX2, fontSize: 15, margin: '0 0 16px', lineHeight: 1.6 }}>
-            This assessment includes {scenarios.length} timed work scenarios. Take your time and answer
-            as you would in the actual role. There are no trick questions.
+            AI will analyse your responses to produce a structured report for the agency or employer who invited you. They make the hiring decision. Your data is held securely under UK GDPR.
           </p>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            background: TEALLT,
-            borderRadius: 8,
-            padding: '8px 16px',
-          }}>
-            <span style={{ fontSize: 18 }}>⏱</span>
-            <span style={{ fontFamily: F, fontSize: 14, color: TEALD, fontWeight: 600 }}>
-              Estimated total time: ~{totalMinutes} minutes
-            </span>
-          </div>
-        </Card>
-
-        <Card style={{ marginBottom: 32 }}>
-          <h3 style={{ fontFamily: F, fontSize: 15, fontWeight: 600, color: TX, margin: '0 0 20px' }}>
-            Scenarios
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {scenarios.map((s, i) => (
-              <div key={i} style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 16,
-                padding: '14px 0',
-                borderBottom: i < scenarios.length - 1 ? `1px solid ${BD}` : 'none',
-              }}>
-                <div style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${TEAL}, ${TEALD})`,
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontFamily: F,
-                  fontWeight: 700,
-                  fontSize: 14,
-                  flexShrink: 0,
-                  marginTop: 2,
-                  boxShadow: `0 2px 8px rgba(0,191,165,0.3)`,
-                }}>
-                  {i + 1}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                    <span style={typeBadgeStyle(s.type)}>{s.type}</span>
-                  </div>
-                  <div style={{ fontFamily: F, fontWeight: 600, fontSize: 15, color: TX }}>
-                    {s.title}
-                  </div>
-                </div>
-                <div style={{
-                  fontFamily: FM,
-                  fontSize: 13,
-                  color: TX3,
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}>
-                  {s.timeMinutes} min
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
           <button
             onClick={onBegin}
             style={{
@@ -408,9 +321,9 @@ function IntroPage({ candidate, assessment, companyName, onBegin }) {
             onMouseEnter={e => e.currentTarget.style.background = TEALD}
             onMouseLeave={e => e.currentTarget.style.background = TEAL}
           >
-            Begin Assessment
+            Start assessment
           </button>
-        </div>
+        </Card>
       </CentredCard>
     </>
   )
@@ -2782,7 +2695,14 @@ export default function AssessPage({ params }) {
       candidate={candidate}
       assessment={assessment}
       companyName={companyName}
-      onBegin={() => setUiState('active')}
+      onBegin={() => {
+        // Record consent timestamp server-side. Fire-and-forget: a network
+        // blip should not block a candidate from starting their assessment;
+        // the endpoint is idempotent so a refresh-then-Start does not
+        // overwrite the original record.
+        fetch(`/api/assess/${uniqueToken}/consent`, { method: 'POST' }).catch(() => {})
+        setUiState('active')
+      }}
     />
   )
   if (uiState === 'active') return (
