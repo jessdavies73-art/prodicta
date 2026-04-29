@@ -1958,6 +1958,15 @@ function DemoCandidateInner({ params }) {
   const responses = DEMO_RESPONSES[params.candidateId] || []
   const isTemp = candidate?.assessments?.employment_type === 'temporary'
 
+  // Demo viewer's persisted employment-type. Agency-perm demo mirrors the
+  // live agency-perm gate by hiding the Compliance Certificate button.
+  const [demoEmploymentType, setDemoEmploymentType] = useState(null)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try { setDemoEmploymentType(localStorage.getItem('prodicta_demo_employment_type')) } catch {}
+  }, [])
+  const demoIsAgencyPermViewer = isAgency && demoEmploymentType === 'permanent'
+
   // IntersectionObserver for sticky nav
   useEffect(() => {
     if (!results) return
@@ -2591,13 +2600,13 @@ function DemoCandidateInner({ params }) {
                   </>
                 ) : (
                 <>
-                {isAgency ? (
+                {isAgency && !demoIsAgencyPermViewer ? (
                   <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                     <Ic name="shield" size={14} color={TEALD} />
                     Compliance Certificate
                     <InfoTooltip text="Compliance certificate for this assessment." />
                   </button>
-                ) : (
+                ) : !isAgency ? (
                 <>
                 <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
                   <Ic name="shield" size={14} color={TEALD} />
@@ -2610,7 +2619,7 @@ function DemoCandidateInner({ params }) {
                   <InfoTooltip text="Acknowledge the risks before making an offer. Creates a legal audit trail of your decision." />
                 </button>
                 </>
-                )}
+                ) : null}
                 </>
                 )}
 

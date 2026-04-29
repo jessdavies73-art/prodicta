@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Sidebar from '@/components/Sidebar'
+import { isAgencyPerm } from '@/lib/account-helpers'
 
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
 const _mSnap = () => window.innerWidth <= 768
@@ -99,10 +100,18 @@ export default function ProbationCopilotPage({ params }) {
         const [{ data: cand }, { data: res }, { data: prof }, { data: out }, { data: cop }] = await Promise.all([
           supabase.from('candidates').select('*, assessments(role_title)').eq('id', params.candidateId).single(),
           supabase.from('results').select('overall_score, risk_level, hiring_confidence, watchouts, reality_timeline, predictions').eq('candidate_id', params.candidateId).maybeSingle(),
-          supabase.from('users').select('company_name, account_type').eq('id', u.id).maybeSingle(),
+          supabase.from('users').select('company_name, account_type, default_employment_type').eq('id', u.id).maybeSingle(),
           supabase.from('candidate_outcomes').select('*').eq('candidate_id', params.candidateId).eq('user_id', u.id).maybeSingle(),
           supabase.from('probation_copilot').select('*').eq('candidate_id', params.candidateId).eq('user_id', u.id).maybeSingle(),
         ])
+        // Permanent recruitment agencies are not the legal employer and
+        // have no probation responsibility for the candidate. The
+        // navigation button on the candidate report is already
+        // employer-gated; this server-side redirect blocks direct-URL
+        // access to the co-pilot page itself, including its Evidence
+        // Pack trigger which would otherwise produce ERA 2025 / Equality
+        // Act / Fair Work Agency content.
+        if (isAgencyPerm(prof)) { router.push('/dashboard'); return }
         setCandidate(cand)
         setResults(res)
         setProfile(prof)

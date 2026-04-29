@@ -8,6 +8,7 @@ import { Ic } from '@/components/Icons'
 import UpgradeAssessmentModal from '@/components/UpgradeAssessmentModal'
 import { getReskilingSuggestion } from '@/lib/reskilling'
 import { calculateSurvivalScore } from '@/lib/survival-score'
+import { isAgencyPerm } from '@/lib/account-helpers'
 
 /* Inline mobile detection, no external hook dependency */
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
@@ -2333,7 +2334,13 @@ export default function CandidateReportPage({ params }) {
                       </>
                     ) : (
                       <>
-                        {results && profile?.account_type === 'agency' && (
+                        {/* Compliance Certificate is only legitimate for
+                            agencies that are the legal employer of record:
+                            agency-temp. Permanent recruitment agencies hand
+                            candidates to clients at placement and have no
+                            standing to issue a per-candidate compliance
+                            certificate. */}
+                        {results && profile?.account_type === 'agency' && !isAgencyPerm(profile) && (
                           <button
                             onClick={() => window.open(`/api/candidates/${params.candidateId}/certificate`, '_blank')}
                             style={{

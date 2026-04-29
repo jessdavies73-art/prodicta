@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
+import { isAgencyPerm } from '@/lib/account-helpers'
 
 function safe(text) {
   if (!text) return ''
@@ -39,6 +40,20 @@ export async function GET(request, { params }) {
     const anonymise = url.searchParams.get('anon') === '1'
 
     const adminClient = createServiceClient()
+
+    // Defence-in-depth: permanent recruitment agencies are not the legal
+    // employer of record and have no standing to issue a per-candidate
+    // ERA 2025 / Equality Act compliance certificate. The UI button is
+    // already gated; this server-side check refuses direct-URL callers.
+    const { data: ownerProfile } = await adminClient
+      .from('users')
+      .select('account_type, default_employment_type')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (isAgencyPerm(ownerProfile)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const { data: candidate } = await adminClient
       .from('candidates')
       .select('id, name, completed_at, user_id, assessments(role_title, assessment_mode), users:user_id(company_name)')

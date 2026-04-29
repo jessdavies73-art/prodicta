@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
+import { isAgencyPerm } from '@/lib/account-helpers'
 import crypto from 'crypto'
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -113,8 +114,16 @@ export async function GET(request, { params }) {
       admin.from('results').select('overall_score, risk_level, hiring_confidence, strengths, watchouts, pressure_fit_score, integrity, reality_timeline, role_level, scoring_rubric_version, model_version, response_quality, generic_detection, scoring_confidence, scores, executive_summary, created_at').eq('candidate_id', params.candidateId).maybeSingle(),
       admin.from('candidate_outcomes').select('*').eq('candidate_id', params.candidateId).eq('user_id', user.id).maybeSingle(),
       admin.from('probation_copilot').select('*').eq('candidate_id', params.candidateId).eq('user_id', user.id).maybeSingle(),
-      admin.from('users').select('company_name, account_type').eq('id', user.id).maybeSingle(),
+      admin.from('users').select('company_name, account_type, default_employment_type').eq('id', user.id).maybeSingle(),
     ])
+
+    // Defence-in-depth: the Evidence Pack is an ERA 2025 / Equality Act /
+    // Fair Work Agency tribunal-defence artefact and only applies to users
+    // who are the legal employer of record. Permanent recruitment agencies
+    // are not; refuse direct-URL callers.
+    if (isAgencyPerm(profile)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     if (!result) return NextResponse.json({ error: 'No results' }, { status: 404 })
     if (!outcome) return NextResponse.json({ error: 'No outcome recorded' }, { status: 400 })

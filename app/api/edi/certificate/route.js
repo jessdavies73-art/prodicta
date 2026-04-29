@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase-server'
+import { isAgencyPerm } from '@/lib/account-helpers'
 
 function safe(text) {
   if (!text) return ''
@@ -41,6 +42,20 @@ export async function GET(request) {
 
     const adminClient = createServiceClient()
 
+    // Defence-in-depth: the EDI Bias-Free Hiring Certificate is an
+    // employment-of-record artefact. Permanent recruitment agencies are
+    // not the employer; the /edi page already redirects them, this
+    // server-side check refuses direct-URL callers to the certificate
+    // endpoint.
+    const { data: ownerProfile } = await adminClient
+      .from('users')
+      .select('account_type, default_employment_type, company_name')
+      .eq('id', user.id)
+      .single()
+    if (isAgencyPerm(ownerProfile)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const { data: assessment } = await adminClient
       .from('assessments')
       .select('id, role_title, created_at')
@@ -49,11 +64,7 @@ export async function GET(request) {
       .single()
     if (!assessment) return NextResponse.json({ error: 'Assessment not found' }, { status: 404 })
 
-    const { data: profile } = await adminClient
-      .from('users')
-      .select('company_name')
-      .eq('id', user.id)
-      .single()
+    const profile = ownerProfile
 
     const { data: candidates } = await adminClient
       .from('candidates')
