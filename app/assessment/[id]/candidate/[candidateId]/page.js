@@ -2319,6 +2319,26 @@ export default function CandidateReportPage({ params }) {
                           Fair Work Agency Compliance Pack
                           <InfoTooltip text="Download a compliance pack for Fair Work Agency requirements." />
                         </button>
+                        {!isAgencyPerm(profile) && profile?.account_type && (() => {
+                          const evidenceReady = existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome)
+                          return (
+                            <button
+                              onClick={evidenceReady ? () => window.open(`/api/assessment/${params.id}/candidate/${params.candidateId}/evidence-pack`, '_blank') : undefined}
+                              disabled={!evidenceReady}
+                              title={evidenceReady ? undefined : 'Log a probation, dismissal, or early-leave outcome to generate'}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8,
+                                cursor: evidenceReady ? 'pointer' : 'not-allowed',
+                                opacity: evidenceReady ? 1 : 0.5,
+                                fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                              }}
+                            >
+                              <Ic name="shield" size={15} color={TEALD} />
+                              Compliance Evidence Pack
+                            </button>
+                          )
+                        })()}
                         <button
                           onClick={() => router.push('/ssp')}
                           style={{
@@ -2368,6 +2388,26 @@ export default function CandidateReportPage({ params }) {
                             <InfoTooltip text="ERA 2025 compliance certificate for this assessment. Download for your legal records." />
                           </button>
                         )}
+                        {results && !isAgencyPerm(profile) && profile?.account_type && (() => {
+                          const evidenceReady = existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome)
+                          return (
+                            <button
+                              onClick={evidenceReady ? () => window.open(`/api/assessment/${params.id}/candidate/${params.candidateId}/evidence-pack`, '_blank') : undefined}
+                              disabled={!evidenceReady}
+                              title={evidenceReady ? undefined : 'Log a probation, dismissal, or early-leave outcome to generate'}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8,
+                                cursor: evidenceReady ? 'pointer' : 'not-allowed',
+                                opacity: evidenceReady ? 1 : 0.5,
+                                fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                              }}
+                            >
+                              <Ic name="shield" size={15} color={TEALD} />
+                              Compliance Evidence Pack
+                            </button>
+                          )
+                        })()}
                         {results && profile?.account_type === 'employer' && !existingOutcome && (
                           <button onClick={() => setConfirmHireModal(true)} style={{
                             display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -2400,20 +2440,27 @@ export default function CandidateReportPage({ params }) {
                         </p>
                       </div>
                     )}
-                    {results && !isAgencyPerm(profile) && profile?.account_type && existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome) && (
-                      <button
-                        onClick={() => window.open(`/api/assessment/${params.id}/candidate/${params.candidateId}/evidence-pack`, '_blank')}
-                        className="no-print"
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
-                          fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
-                        }}
-                      >
-                        <Ic name="shield" size={15} color={NAVY} />
-                        Compliance Evidence Pack
-                      </button>
-                    )}
+                    {results && !isAgencyPerm(profile) && profile?.account_type && (() => {
+                      const evidenceReady = existingOutcome && ['failed_probation', 'dismissed', 'left_early'].includes(existingOutcome.outcome)
+                      return (
+                        <button
+                          onClick={evidenceReady ? () => window.open(`/api/assessment/${params.id}/candidate/${params.candidateId}/evidence-pack`, '_blank') : undefined}
+                          disabled={!evidenceReady}
+                          title={evidenceReady ? undefined : 'Log a probation, dismissal, or early-leave outcome to generate'}
+                          className="no-print"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8,
+                            cursor: evidenceReady ? 'pointer' : 'not-allowed',
+                            opacity: evidenceReady ? 1 : 0.5,
+                            fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
+                          }}
+                        >
+                          <Ic name="shield" size={15} color={NAVY} />
+                          Compliance Evidence Pack
+                        </button>
+                      )
+                    })()}
 
                     {/* CANDIDATE */}
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Candidate</div>

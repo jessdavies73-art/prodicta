@@ -770,26 +770,35 @@ export default function ProbationCopilotPage({ params }) {
           )}
         </div>
 
- {/* Evidence Pack, only when employment ended during probation */}
-        {outcome && ['failed_probation', 'dismissed', 'left_early'].includes(outcome.outcome) && (
-          <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '22px 24px', marginBottom: 20 }}>
-            <h2 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 800, color: NAVY }}>Compliance Evidence Pack</h2>
-            <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 14px', lineHeight: 1.6 }}>
-              A legally-structured document combining assessment and probation data for ERA 2025 compliance.
-            </p>
-            <button
-              onClick={() => window.open(`/api/assessment/${params.id}/candidate/${params.candidateId}/evidence-pack`, '_blank')}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                padding: '12px 22px', borderRadius: 8, border: 'none',
-                background: NAVY, color: '#fff',
-                fontFamily: F, fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
-              }}
-            >
-              Generate Compliance Evidence Pack
-            </button>
-          </div>
-        )}
+ {/* Compliance Evidence Pack. Always visible to qualifying users (page-level
+            isAgencyPerm redirect already excludes permanent recruitment agencies).
+            Button is enabled only when an ending outcome has been logged. */}
+        {(() => {
+          const evidenceReady = outcome && ['failed_probation', 'dismissed', 'left_early'].includes(outcome.outcome)
+          return (
+            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '22px 24px', marginBottom: 20 }}>
+              <h2 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 800, color: NAVY }}>Compliance Evidence Pack</h2>
+              <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 14px', lineHeight: 1.6 }}>
+                A legally-structured document combining assessment and probation data for ERA 2025 compliance.
+              </p>
+              <button
+                onClick={evidenceReady ? () => window.open(`/api/assessment/${params.id}/candidate/${params.candidateId}/evidence-pack`, '_blank') : undefined}
+                disabled={!evidenceReady}
+                title={evidenceReady ? undefined : 'Log a probation, dismissal, or early-leave outcome to generate'}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  padding: '12px 22px', borderRadius: 8, border: 'none',
+                  background: NAVY, color: '#fff',
+                  fontFamily: F, fontSize: 13.5, fontWeight: 700,
+                  cursor: evidenceReady ? 'pointer' : 'not-allowed',
+                  opacity: evidenceReady ? 1 : 0.5,
+                }}
+              >
+                Generate Compliance Evidence Pack
+              </button>
+            </div>
+          )
+        })()}
 
         {/* ── Family Leave Period ── */}
         <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '22px 24px', marginBottom: 20 }}>
