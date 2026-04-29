@@ -2445,6 +2445,19 @@ function DemoCandidateInner({ params }) {
                   <InfoTooltip text="A 2-page summary with QR code for line managers who will not read the full report" light />
                 </button>
                 )}
+                {/* Send to Client lives at the top of the agency primary
+                    tier in an outline treatment (mirrors live). Demo
+                    keeps it as a disabled preview so the visual position
+                    is honest without exposing the real send modal. */}
+                {isAgency && (
+                <button
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${NAVY}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '10px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}
+                >
+                  <Ic name="send" size={14} color={NAVY} />
+                  Send to Client
+                  <InfoTooltip text="Email this candidate report directly to your client contact." />
+                </button>
+                )}
                 {isAgency && (
                 <button
                   onClick={() => {
@@ -2500,20 +2513,6 @@ function DemoCandidateInner({ params }) {
               {/* Secondary actions, categorised */}
               {moreActionsOpen && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
-
-                {/* SHARE — agency-only. Mirrors live: Send to Client is
-                    the single bundling flow; the earlier "Send Report to
-                    Client" button was redundant and has been removed. */}
-                {isAgency && (
-                  <>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Share</div>
-                  <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px', opacity: 0.45, cursor: 'default', pointerEvents: 'none', width: '100%' }}>
-                    <Ic name="send" size={14} color={TEALD} />
-                    Send to Client
-                    <InfoTooltip text="Email this candidate report directly to your client contact." />
-                  </button>
-                  </>
-                )}
 
                 {/* INTERVIEW */}
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Interview</div>

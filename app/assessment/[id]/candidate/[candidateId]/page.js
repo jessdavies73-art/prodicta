@@ -1988,6 +1988,27 @@ export default function CandidateReportPage({ params }) {
                         <InfoTooltip text="A 2-page summary with QR code for line managers who will not read the full report" light />
                       </button>
                     )}
+                    {/* Send to Client is the agency's main commercial
+                        deliverable (full PDF + optional 90-Day Plan + any
+                        uploaded CV/cover letter as attachments). It sits
+                        at the top of the primary tier in an outline
+                        treatment so the three primary buttons read as
+                        three distinct action types. Handler is unchanged
+                        from when the button lived in the dropdown. */}
+                    {results && profile?.account_type === 'agency' && (
+                      <button
+                        onClick={() => setSendModal(true)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: '#fff', border: `1.5px solid ${NAVY}`, borderRadius: 8, cursor: 'pointer',
+                          fontFamily: F, fontSize: 13, fontWeight: 700, color: NAVY, padding: '10px 16px', width: '100%',
+                        }}
+                      >
+                        <Ic name="send" size={15} color={NAVY} />
+                        Send to Client
+                        <InfoTooltip text="Email this candidate report directly to your client contact." />
+                      </button>
+                    )}
                     {results && profile?.account_type === 'agency' && (
                       <button
                         onClick={async () => {
@@ -2058,27 +2079,6 @@ export default function CandidateReportPage({ params }) {
  {/* Secondary actions, categorised */}
                   {moreActionsOpen && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
-
-                    {/* SHARE — agency-only. Send to Client is the single
-                        bundling flow: it emails the candidate report inline
-                        plus any uploaded CV / cover letter as attachments.
-                        The earlier "Send Report to Client" button was a
-                        redundant configure-and-print flow that confused users
-                        sitting next to Send to Client; it has been removed. */}
-                    {profile?.account_type === 'agency' && (
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Share</div>
-                    )}
-                    {results && profile?.account_type === 'agency' && (
-                      <button onClick={() => setSendModal(true)} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        background: '#fff', border: `1.5px solid ${BD}`, borderRadius: 8, cursor: 'pointer',
-                        fontFamily: F, fontSize: 13, fontWeight: 700, color: TX, padding: '9px 16px',
-                      }}>
-                        <Ic name="send" size={15} color={TEALD} />
-                        Send to Client
-                        <InfoTooltip text="Email this candidate report directly to your client contact." />
-                      </button>
-                    )}
 
                     {/* INTERVIEW */}
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 8, marginBottom: 2, fontFamily: F }}>Interview</div>
