@@ -466,22 +466,16 @@ function DemoDashboardInner() {
     const r = Array.isArray(c.results) ? c.results[0] : c.results
     if (!r || r.overall_score == null) return null
     const s = r.overall_score
-    if (s >= 70) return 'strong'
-    if (s >= 50) return 'maybe'
+    if (s >= 80) return 'strong'
+    if (s >= 55) return 'maybe'
     return 'risk'
   }
 
-  const verdictCounts = { strong: 0, maybe: 0, risk: 0 }
-  activeCandidates.forEach(c => {
-    const v = getVerdict(c)
-    if (v) verdictCounts[v]++
-  })
-
   // Demo split: pretend the first six demo candidates were uploaded as a
   // batch from a CV pile (Bulk Screening Mode panel) and the rest were
-  // invited individually (Individual Screening panel). Mirrors the
-  // live agency-only panel pair without needing a created_via_bulk
-  // value on the local demo data.
+  // invited individually (Individual Screening panel). Mirrors the live
+  // panel pair without needing a created_via_bulk value on the local
+  // demo data.
   const DEMO_BULK_CANDIDATE_IDS = new Set(['demo-c1', 'demo-c2', 'demo-c3', 'demo-c4', 'demo-c5', 'demo-c6'])
   const demoBulkVerdictCounts = { strong: 0, maybe: 0, risk: 0 }
   const demoIndividualVerdictCounts = { strong: 0, maybe: 0, risk: 0 }
@@ -1402,50 +1396,6 @@ function DemoDashboardInner() {
 
         <SectionHeader order={10} number={1} title="Assessment and Screening" description="Screen and rank your candidates. Send assessments, view scores, and build your shortlist." />
 
-        {/* Candidate Pipeline (employer only, after Speed to Offer / before Prediction Accuracy) — Section 1 */}
-        {!isAgency && (
-          <div style={{ order: 12, marginBottom: 24 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
-              Candidate Pipeline
-            </div>
-            <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
-              {[
-                { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
-                { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Needs a closer look', accent: '#D97706' },
-                { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Proceed with caution', accent: '#B91C1C' },
-              ].map(v => {
-                const active = activeFilter?.type === 'verdict' && activeFilter.value === v.key
-                return (
-                  <button
-                    key={v.key}
-                    type="button"
-                    onClick={() => { if (activeFilter?.type === 'verdict' && activeFilter.value === v.key) { setActiveFilter(null) } else { setActiveFilter({ type: 'verdict', value: v.key }) } }}
-                    onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
-                    onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
-                    style={{
-                      flex: isMobile ? undefined : 1,
-                      width: isMobile ? '100%' : undefined,
-                      background: active ? `${v.accent}14` : '#fff',
-                      border: '1px solid #E5E7EB',
-                      borderLeft: `${active ? 6 : 4}px solid ${v.accent}`,
-                      borderRadius: 12, padding: '20px 22px', textAlign: 'left',
-                      cursor: 'pointer', fontFamily: F,
-                      boxShadow: active ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
-                      transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
-                      transform: active ? 'translateY(-2px)' : 'none',
-                      opacity: activeFilter?.type === 'verdict' && !active ? 0.6 : 1,
-                    }}
-                  >
-                    <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: v.accent }}>{v.count}</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2, color: NAVY }}>{v.label}</div>
-                    <div style={{ fontSize: 12, color: TX3 }}>{v.sub}</div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
         {/* Employer: Placement Health (probation-based, mirrors live) */}
         {!isAgency && (
           <div style={{ order: 35, marginBottom: 24 }}>
@@ -1479,54 +1429,6 @@ function DemoDashboardInner() {
             <div style={{ marginTop: 14, fontSize: 12.5, color: TX3, fontFamily: F }}>
               <strong style={{ color: TX2 }}>6</strong> hires currently in probation.
             </div>
-          </div>
-        )}
-
-        {/* Employer: verdict filtered results (directly after employer pipeline cards) */}
-        {!isAgency && activeFilter?.type === 'verdict' && (
-          <div style={{ order: 12, background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: 0, overflow: 'hidden', marginBottom: 24 }}>
-            <div style={{ padding: '18px 24px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: TX }}>{verdictFilterLabel}</h2>
-                <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>{verdictFilteredCandidates.length} candidate{verdictFilteredCandidates.length !== 1 ? 's' : ''}</div>
-              </div>
-              <button type="button" onClick={() => setActiveFilter(null)} style={{ background: 'none', border: `1px solid ${BD}`, borderRadius: 6, padding: '5px 14px', fontFamily: F, fontSize: 12, fontWeight: 600, color: TX3, cursor: 'pointer' }}>
-                Clear filter
-              </button>
-            </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-              <colgroup>
-                <col style={{ width: isMobile ? '45%' : '28%' }} />
-                <col style={{ width: '20%', display: isMobile ? 'none' : undefined }} />
-                <col style={{ width: isMobile ? '25%' : '14%' }} />
-                <col style={{ width: isMobile ? '30%' : '10%' }} />
-                <col style={{ width: '10%', display: isMobile ? 'none' : undefined }} />
-                <col style={{ width: '10%', display: isMobile ? 'none' : undefined }} />
-              </colgroup>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${BD}` }}>
-                  {[{ h: 'Candidate', hide: false }, { h: 'Role', hide: true }, { h: 'Status', hide: false }, { h: 'Score', hide: false }, { h: 'Pressure', hide: true }, { h: 'Risk', hide: true }].map(({ h, hide }) => (
-                    <th key={h} style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: TX3, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', background: BG, display: hide && isMobile ? 'none' : 'table-cell' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {verdictFilteredCandidates.map((c, i) => {
-                  const result = c.results?.[0]; const score = result?.overall_score ?? null; const pf = result?.pressure_fit_score ?? null; const risk = result?.risk_level ?? null
-                  const isCompleted = c.status === 'completed'; const isHovered = hoveredRow === c.id
-                  return (
-                    <tr key={c.id} onClick={() => { if (isCompleted) router.push(`/demo/candidate/${c.id}?type=${demoType}`) }} onMouseEnter={() => setHoveredRow(c.id)} onMouseLeave={() => setHoveredRow(null)} style={{ borderBottom: i < verdictFilteredCandidates.length - 1 ? `1px solid ${BD}` : 'none', background: isHovered && isCompleted ? '#f0fdfb' : CARD, cursor: isCompleted ? 'pointer' : 'default', transition: 'background 0.15s', boxShadow: isHovered && isCompleted ? `inset 3px 0 0 ${TEAL}` : 'none' }}>
-                      <td style={{ padding: '10px 8px', overflow: 'hidden' }}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Avatar name={c.name} size={28} /><div style={{ minWidth: 0, flex: 1 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ fontSize: 12.5, fontWeight: 600, color: TX, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span><span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: c.assessments?.employment_type === 'temporary' ? TEALLT : '#f0f4f8', color: c.assessments?.employment_type === 'temporary' ? TEALD : NAVY, letterSpacing: '0.04em' }}>{c.assessments?.employment_type === 'temporary' ? 'TEMP' : 'PERM'}</span>{isAgency && c.assessments?.employment_type === 'temporary' && DEMO_ATTENDANCE_RISK[c.id] && (() => { const att = DEMO_ATTENDANCE_RISK[c.id]; const attColor = att.attendance_risk === 'high' ? RED : att.attendance_risk === 'monitor' ? AMB : GRN; const attLabel = att.attendance_risk === 'high' ? 'At Risk' : att.attendance_risk === 'monitor' ? 'Monitor' : 'Reliable'; return <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: '0.04em', padding: '1px 5px', borderRadius: 4, flexShrink: 0, background: `${attColor}18`, color: attColor, border: `1px solid ${attColor}44` }} title={`Reliability: ${att.reliability_score}/100`}>{attLabel}</span> })()}{isAgency && c.assessments?.employment_type === 'temporary' && DEMO_CLIENT_SHARE[c.id] && <span style={{ fontSize: 8, flexShrink: 0 }} title="Client share link active"><Ic name="send" size={10} color={TEALD} /></span>}</div><div style={{ fontSize: 11, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div></div></div></td>
-                      <td style={{ padding: '10px 8px', overflow: 'hidden', display: isMobile ? 'none' : 'table-cell' }}><span style={{ fontSize: 12, color: TX2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{c.assessments?.role_title || '-'}</span></td>
-                      <td style={{ padding: '10px 8px' }}><StatusBadge status={c.status} /></td>
-                      <td style={{ padding: '10px 8px' }}>{isCompleted && score !== null ? <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}><span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, color: scolor(score), lineHeight: 1 }}>{score}</span><span style={{ fontSize: 10, color: TX3 }}>/100</span></div> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}</td>
-                      <td style={{ padding: '10px 8px', display: isMobile ? 'none' : 'table-cell' }}>{isCompleted && pf !== null ? <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}><span style={{ fontFamily: FM, fontSize: 15, fontWeight: 700, lineHeight: 1, color: pf >= 75 ? GRN : pf >= 55 ? TEALD : pf >= 40 ? AMB : RED }}>{pf}</span><span style={{ fontSize: 10, color: TX3 }}>/100</span></div> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}</td>
-                      <td style={{ padding: '10px 8px', display: isMobile ? 'none' : 'table-cell' }}>{isCompleted ? <RiskBadge risk={risk} /> : <span style={{ color: TX3, fontSize: 12 }}>-</span>}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
           </div>
         )}
 
@@ -2010,12 +1912,10 @@ function DemoDashboardInner() {
         )}
 
         {/* Bulk Screening Mode + Individual Screening panel pair.
-            Agency-only: bulk screening is positioned as an agency feature
-            and direct employer demo viewers do not see either panel.
-            The split is computed from a hardcoded ID set above so the
-            demo can mirror the live created_via_bulk behaviour without
-            needing a real flag on the demo data. */}
-        {isAgency && (
+            All account types see the same panel pair. The split is
+            computed from a hardcoded ID set above so the demo can
+            mirror the live created_via_bulk behaviour without needing
+            a real flag on the demo data. */}
         <div style={{ order: 12, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
           {[
             { panelKey: 'bulk',       title: 'Bulk Screening Mode',  icon: 'sliders', counts: demoBulkVerdictCounts,       totalCompleted: demoBulkCompleted },
@@ -2067,7 +1967,6 @@ function DemoDashboardInner() {
             </div>
           ))}
         </div>
-        )}
 
         {/* Candidate Pipeline filtered results (directly after pipeline cards) */}
         {activeFilter?.type === 'verdict' && (
@@ -2562,14 +2461,14 @@ function DemoDashboardInner() {
           const total = roleDetailCandidates.length
           const completed = roleDetailCandidates.filter(c => c.status === 'completed')
           const completedCount = completed.length
-          const strongHire = completed.filter(c => (c.results?.[0]?.overall_score ?? 0) >= 70).length
+          const strongHire = completed.filter(c => (c.results?.[0]?.overall_score ?? 0) >= 80).length
           const review     = completed.filter(c => {
             const s = c.results?.[0]?.overall_score
-            return typeof s === 'number' && s >= 50 && s < 70
+            return typeof s === 'number' && s >= 55 && s < 80
           }).length
           const highRisk   = completed.filter(c => {
             const s = c.results?.[0]?.overall_score
-            return typeof s === 'number' && s < 50
+            return typeof s === 'number' && s < 55
           }).length
           const notResponded = roleDetailCandidates.filter(c => c.status !== 'completed').length
           const progressing  = roleDetailCandidates.filter(c => c.stage === 'progress').length
@@ -2587,9 +2486,9 @@ function DemoDashboardInner() {
           const stages = [
             { key: 'invited',     label: 'Total invited',   short: 'Invited',         value: total,          color: NAVY,      bg: '#E5EAF1',  bd: '#CBD5E1' },
             { key: 'completed',   label: 'Completed',       short: 'Finished',        value: completedCount, color: TEALD,     bg: TEALLT,     bd: `${TEAL}55` },
-            { key: 'strong',      label: 'Strong hire',     short: 'Score 70+',       value: strongHire,     color: '#0F7A66', bg: '#D8F4EC',  bd: '#00BFA555' },
-            { key: 'review',      label: 'Review',          short: 'Score 50 to 69',  value: review,         color: '#92400E', bg: AMBBG,      bd: AMBBD },
-            { key: 'risk',        label: 'High risk',       short: 'Score below 50',  value: highRisk,       color: '#991B1B', bg: REDBG,      bd: REDBD },
+            { key: 'strong',      label: 'Strong hire',     short: 'Score 80+',       value: strongHire,     color: '#0F7A66', bg: '#D8F4EC',  bd: '#00BFA555' },
+            { key: 'review',      label: 'Review',          short: 'Score 55 to 79',  value: review,         color: '#92400E', bg: AMBBG,      bd: AMBBD },
+            { key: 'risk',        label: 'High risk',       short: 'Score below 55',  value: highRisk,       color: '#991B1B', bg: REDBG,      bd: REDBD },
             { key: 'noresponse',  label: 'Not responded',   short: 'Not completed',   value: notResponded,   color: TX3,       bg: BG,         bd: BD },
             { key: 'progress',    label: progressLabel,     short: 'Progress stage',  value: progressing,    color: '#0F7A66', bg: '#D8F4EC',  bd: '#00BFA555' },
           ]

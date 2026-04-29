@@ -1512,22 +1512,15 @@ function DashboardPageInner() {
     const r = c.results?.[0]
     if (!r || r.overall_score == null) return null
     const s = r.overall_score
-    if (s >= 70) return 'strong'
-    if (s >= 50) return 'maybe'
+    if (s >= 80) return 'strong'
+    if (s >= 55) return 'maybe'
     return 'risk'
   }
 
-  const verdictCounts = { strong: 0, maybe: 0, risk: 0 }
-  candidates.forEach(c => {
-    const v = getVerdict(c)
-    if (v) verdictCounts[v]++
-  })
-
-  // Split verdict counts by created_via_bulk for the agency-only Bulk
-  // Screening Mode + Individual Screening panel pair below. Pre-flag
-  // candidates default to false on the column and so land under
-  // Individual Screening, which is the conservative choice. Counts are
-  // gated visually further down to agency accounts only.
+  // Split verdict counts by created_via_bulk for the Bulk Screening Mode +
+  // Individual Screening panel pair below. Pre-flag candidates default to
+  // false on the column and so land under Individual Screening, which is
+  // the conservative choice. Panels render for all account types.
   const bulkVerdictCounts = { strong: 0, maybe: 0, risk: 0 }
   const individualVerdictCounts = { strong: 0, maybe: 0, risk: 0 }
   let bulkCompletedCount = 0
@@ -4016,118 +4009,75 @@ function DashboardPageInner() {
         </div>
 
         {/* ── Candidate Pipeline ── Section 1
-            Agency users get the Bulk Screening Mode + Individual
+            All account types see the Bulk Screening Mode + Individual
             Screening panel pair (split off candidates.created_via_bulk).
-            Direct employers keep the existing single row of verdict
-            cards untouched. The grouped candidate lists rendered further
-            down are common to both account types. */}
+            Bulk pulls created_via_bulk = true rows; Individual pulls
+            the rest. Each inner card drives the shared verdict filter
+            so clicking through still filters the candidate table
+            downstream. Pre-flag candidates default to false and so
+            appear under Individual Screening. */}
         <div style={{ order: 12, marginBottom: 24 }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: '#94a1b3', fontFamily: F, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
             Candidate Pipeline
           </div>
-          {candidates.length > 0 || isAgencyAccount ? (
-            <>
-            {isAgencyAccount ? (
-              // Agency-only: two outer panels, each with its own three
-              // verdict cards. Bulk pulls created_via_bulk = true rows;
-              // Individual pulls the rest. Each inner card still drives
-              // the shared verdict filter so clicking through still
-              // filters the candidate table downstream.
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
-                {[
-                  { panelKey: 'bulk',       title: 'Bulk Screening Mode', icon: 'sliders', counts: bulkVerdictCounts,       totalCompleted: bulkCompletedCount },
-                  { panelKey: 'individual', title: 'Individual Screening', icon: 'user',    counts: individualVerdictCounts, totalCompleted: individualCompletedCount },
-                ].map(panel => (
-                  <div key={panel.panelKey} style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '16px 20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Ic name={panel.icon} size={16} color={TEAL} />
-                      <h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: TX }}>{panel.title}</h3>
-                    </div>
-                    <p style={{ margin: '4px 0 0 0', fontSize: 12, color: TX3 }}>
-                      {panel.totalCompleted} candidate{panel.totalCompleted === 1 ? '' : 's'} assessed
-                    </p>
-                    <div style={{ display: 'flex', gap: 10, marginTop: 14, flexDirection: isMobile ? 'column' : 'row' }}>
-                      {[
-                        { key: 'strong', count: panel.counts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
-                        { key: 'maybe',  count: panel.counts.maybe,  label: 'Review',      sub: 'Needs a closer look', accent: '#D97706' },
-                        { key: 'risk',   count: panel.counts.risk,   label: 'High Risk',   sub: 'Proceed with caution', accent: '#B91C1C' },
-                      ].map(v => {
-                        const active = activeFilter?.type === 'verdict' && activeFilter.value === v.key
-                        return (
-                          <button
-                            key={v.key}
-                            type="button"
-                            onClick={() => { if (activeFilter?.type === 'verdict' && activeFilter.value === v.key) { setActiveFilter(null) } else { setActiveFilter({ type: 'verdict', value: v.key }) } }}
-                            onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.10)' } }}
-                            onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.06)' } }}
-                            style={{
-                              flex: isMobile ? undefined : 1,
-                              width: isMobile ? '100%' : undefined,
-                              background: active ? `${v.accent}14` : '#fff',
-                              border: '1px solid #E5E7EB',
-                              borderLeft: `${active ? 5 : 3}px solid ${v.accent}`,
-                              borderRadius: 10, padding: '14px 14px', textAlign: 'left',
-                              cursor: 'pointer', fontFamily: F,
-                              boxShadow: active ? '0 6px 18px rgba(0,0,0,0.10)' : '0 2px 10px rgba(0,0,0,0.06)',
-                              transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
-                              transform: active ? 'translateY(-2px)' : 'none',
-                              opacity: activeFilter?.type === 'verdict' && !active ? 0.6 : 1,
-                            }}
-                          >
-                            <div style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, lineHeight: 1, marginBottom: 4, color: v.accent }}>{v.count}</div>
-                            <div style={{ fontSize: 12.5, fontWeight: 800, marginBottom: 1, color: NAVY }}>{v.label}</div>
-                            <div style={{ fontSize: 11, color: TX3 }}>{v.sub}</div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
+            {[
+              { panelKey: 'bulk',       title: 'Bulk Screening Mode', icon: 'sliders', counts: bulkVerdictCounts,       totalCompleted: bulkCompletedCount },
+              { panelKey: 'individual', title: 'Individual Screening', icon: 'user',    counts: individualVerdictCounts, totalCompleted: individualCompletedCount },
+            ].map(panel => (
+              <div key={panel.panelKey} style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 14, padding: '16px 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Ic name={panel.icon} size={16} color={TEAL} />
+                  <h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: TX }}>{panel.title}</h3>
+                </div>
+                <p style={{ margin: '4px 0 0 0', fontSize: 12, color: TX3 }}>
+                  {panel.totalCompleted} candidate{panel.totalCompleted === 1 ? '' : 's'} assessed
+                </p>
+                <div style={{ display: 'flex', gap: 10, marginTop: 14, flexDirection: isMobile ? 'column' : 'row' }}>
+                  {[
+                    { key: 'strong', count: panel.counts.strong, label: 'Strong Hire', sub: 'Ready to interview', accent: '#00BFA5' },
+                    { key: 'maybe',  count: panel.counts.maybe,  label: 'Review',      sub: 'Needs a closer look', accent: '#D97706' },
+                    { key: 'risk',   count: panel.counts.risk,   label: 'High Risk',   sub: 'Proceed with caution', accent: '#B91C1C' },
+                  ].map(v => {
+                    const active = activeFilter?.type === 'verdict' && activeFilter.value === v.key
+                    return (
+                      <button
+                        key={v.key}
+                        type="button"
+                        onClick={() => { if (activeFilter?.type === 'verdict' && activeFilter.value === v.key) { setActiveFilter(null) } else { setActiveFilter({ type: 'verdict', value: v.key }) } }}
+                        onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.10)' } }}
+                        onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.06)' } }}
+                        style={{
+                          flex: isMobile ? undefined : 1,
+                          width: isMobile ? '100%' : undefined,
+                          background: active ? `${v.accent}14` : '#fff',
+                          border: '1px solid #E5E7EB',
+                          borderLeft: `${active ? 5 : 3}px solid ${v.accent}`,
+                          borderRadius: 10, padding: '14px 14px', textAlign: 'left',
+                          cursor: 'pointer', fontFamily: F,
+                          boxShadow: active ? '0 6px 18px rgba(0,0,0,0.10)' : '0 2px 10px rgba(0,0,0,0.06)',
+                          transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
+                          transform: active ? 'translateY(-2px)' : 'none',
+                          opacity: activeFilter?.type === 'verdict' && !active ? 0.6 : 1,
+                        }}
+                      >
+                        <div style={{ fontFamily: FM, fontSize: 26, fontWeight: 800, lineHeight: 1, marginBottom: 4, color: v.accent }}>{v.count}</div>
+                        <div style={{ fontSize: 12.5, fontWeight: 800, marginBottom: 1, color: NAVY }}>{v.label}</div>
+                        <div style={{ fontSize: 11, color: TX3 }}>{v.sub}</div>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            ) : (
-            <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row' }}>
-              {[
-                { key: 'strong', count: verdictCounts.strong, label: 'Strong Hire', sub: 'Score 70 and above', accent: '#00BFA5' },
-                { key: 'maybe', count: verdictCounts.maybe, label: 'Review', sub: 'Score 50 to 69', accent: '#D97706' },
-                { key: 'risk', count: verdictCounts.risk, label: 'High Risk', sub: 'Score below 50', accent: '#B91C1C' },
-              ].map(v => {
-                const active = activeFilter?.type === 'verdict' && activeFilter.value === v.key
-                return (
-                  <button
-                    key={v.key}
-                    type="button"
-                    onClick={() => { if (activeFilter?.type === 'verdict' && activeFilter.value === v.key) { setActiveFilter(null) } else { setActiveFilter({ type: 'verdict', value: v.key }) } }}
-                    onMouseEnter={e => { if (!active) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.13)' } }}
-                    onMouseLeave={e => { if (!active) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' } }}
-                    style={{
-                      flex: isMobile ? undefined : 1,
-                      width: isMobile ? '100%' : undefined,
-                      background: active ? `${v.accent}14` : '#fff',
-                      border: '1px solid #E5E7EB',
-                      borderLeft: `${active ? 6 : 4}px solid ${v.accent}`,
-                      borderRadius: 12, padding: '20px 22px', textAlign: 'left',
-                      cursor: 'pointer', fontFamily: F,
-                      boxShadow: active ? '0 8px 24px rgba(0,0,0,0.13)' : '0 4px 16px rgba(0,0,0,0.10)',
-                      transition: 'transform 0.15s, box-shadow 0.15s, background 0.15s',
-                      transform: active ? 'translateY(-2px)' : 'none',
-                      opacity: activeFilter?.type === 'verdict' && !active ? 0.6 : 1,
-                    }}
-                  >
-                    <div style={{ fontFamily: FM, fontSize: 34, fontWeight: 800, lineHeight: 1, marginBottom: 6, color: v.accent }}>{v.count}</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2, color: NAVY }}>{v.label}</div>
-                    <div style={{ fontSize: 12, color: TX3 }}>{v.sub}</div>
-                  </button>
-                )
-              })}
-            </div>
-            )}
+            ))}
+          </div>
 
-            {/* Grouped candidate lists (inline, shown when no filter is active) */}
-            {!activeFilter && (() => {
+          {/* Grouped candidate lists (inline, shown when no filter is active) */}
+          {candidates.length > 0 && !activeFilter && (() => {
               const buckets = [
-                { key: 'strong', label: 'Strong Hire', sub: 'Score 70 and above', accent: '#00BFA5' },
-                { key: 'maybe',  label: 'Review',      sub: 'Score 50 to 69',     accent: '#D97706' },
-                { key: 'risk',   label: 'High Risk',   sub: 'Score below 50',     accent: '#B91C1C' },
+                { key: 'strong', label: 'Strong Hire', sub: 'Score 80 and above', accent: '#00BFA5' },
+                { key: 'maybe',  label: 'Review',      sub: 'Score 55 to 79',     accent: '#D97706' },
+                { key: 'risk',   label: 'High Risk',   sub: 'Score below 55',     accent: '#B91C1C' },
               ]
               const grouped = { strong: [], maybe: [], risk: [] }
               for (const c of candidates) {
@@ -4198,29 +4148,6 @@ function DashboardPageInner() {
                 </div>
               )
             })()}
-            </>
-          ) : (
-            <div style={{
-              background: CARD, border: `1px solid ${BD}`, borderRadius: 12,
-              padding: '22px 24px',
-            }}>
-              <div style={{ fontFamily: F, fontSize: 13, color: TX3, fontStyle: 'italic', lineHeight: 1.6, marginBottom: 14 }}>
-                Strong Hire, Review, and High Risk breakdowns will appear here once you assess your first candidate.
-              </div>
-              <button
-                type="button"
-                onClick={() => router.push('/assessment/new')}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '9px 16px', borderRadius: 8, border: 'none',
-                  background: TEAL, color: NAVY,
-                  fontFamily: F, fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                }}
-              >
-                Run your first assessment
-              </button>
-            </div>
-          )}
         </div>
 
         {/* ── Verdict filtered results (directly after pipeline cards) ── Section 1 */}
@@ -5361,14 +5288,14 @@ function DashboardPageInner() {
           // Funnel buckets
           const total = roleDetailCandidates.length
           const completedCount = completedForRole.length
-          const strongHire = completedForRole.filter(c => (c.results?.[0]?.overall_score ?? 0) >= 70).length
+          const strongHire = completedForRole.filter(c => (c.results?.[0]?.overall_score ?? 0) >= 80).length
           const review     = completedForRole.filter(c => {
             const s = c.results?.[0]?.overall_score
-            return typeof s === 'number' && s >= 50 && s < 70
+            return typeof s === 'number' && s >= 55 && s < 80
           }).length
           const highRisk   = completedForRole.filter(c => {
             const s = c.results?.[0]?.overall_score
-            return typeof s === 'number' && s < 50
+            return typeof s === 'number' && s < 55
           }).length
           const notResponded = roleDetailCandidates.filter(c => c.status !== 'completed').length
           const progressing = roleDetailCandidates.filter(c => c.stage === 'progress').length
@@ -5389,9 +5316,9 @@ function DashboardPageInner() {
           const stages = [
             { key: 'invited',     label: 'Total invited',   short: 'Invited',         value: total,         color: NAVY,   bg: '#E5EAF1',     bd: '#CBD5E1' },
             { key: 'completed',   label: 'Completed',       short: 'Finished',        value: completedCount, color: TEALD, bg: TEALLT,        bd: `${TEAL}55` },
-            { key: 'strong',      label: 'Strong hire',     short: 'Score 70+',       value: strongHire,    color: '#0F7A66', bg: '#D8F4EC',  bd: '#00BFA555' },
-            { key: 'review',      label: 'Review',          short: 'Score 50 to 69',  value: review,        color: '#92400E', bg: AMBBG,      bd: AMBBD },
-            { key: 'risk',        label: 'High risk',       short: 'Score below 50',  value: highRisk,      color: '#991B1B', bg: REDBG,      bd: REDBD },
+            { key: 'strong',      label: 'Strong hire',     short: 'Score 80+',       value: strongHire,    color: '#0F7A66', bg: '#D8F4EC',  bd: '#00BFA555' },
+            { key: 'review',      label: 'Review',          short: 'Score 55 to 79',  value: review,        color: '#92400E', bg: AMBBG,      bd: AMBBD },
+            { key: 'risk',        label: 'High risk',       short: 'Score below 55',  value: highRisk,      color: '#991B1B', bg: REDBG,      bd: REDBD },
             { key: 'noresponse',  label: 'Not responded',   short: 'Not completed',   value: notResponded,  color: TX3,       bg: BG,         bd: BD },
             { key: 'progress',    label: progressLabel,     short: 'Progress stage',  value: progressing,   color: '#0F7A66', bg: '#D8F4EC',  bd: '#00BFA555' },
           ]
