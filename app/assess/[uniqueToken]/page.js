@@ -58,6 +58,52 @@ function rankedSlotsAreFullyFilled(slots) {
   )
 }
 
+// ─── Progress save helpers ──────────────────────────────────────────────────
+// Auto-save target for the typed-text scenario path on /assess/[token].
+// Mirrors to localStorage for instant same-browser resume and to the
+// candidates row (in_progress_state JSONB) for cross-device resume.
+// Limited in this MVP to the ActivePage flow: ranked actions, forced-choice
+// responses, free-text responses, scenarioIndex, timeTakens. Modular
+// workspace, calendar, strategic-thinking, and audio are persisted by
+// follow-up work, not this commit.
+function progressStorageKey(token) {
+  return `prodicta_assessment_progress_${token}`
+}
+
+// Returns true when the persisted progress blob represents meaningful work.
+// A blob with scenarioIndex 0 and empty responses is the fresh state we'd
+// see from a candidate clicking Start once and immediately closing the tab;
+// treating that as "no progress" keeps the Resume page from appearing on
+// essentially-fresh restarts.
+function hasMeaningfulProgress(state) {
+  if (!state || typeof state !== 'object') return false
+  if ((state.scenarioIndex ?? 0) > 0) return true
+  if (Array.isArray(state.responses) && state.responses.some(r => (r || '').trim().length > 0)) return true
+  const ra = state.rankedActions || {}
+  for (const key of Object.keys(ra)) {
+    const slots = ra[key]?.slots || []
+    if (slots.some(s => (s?.action || '').trim() || (s?.justification || '').trim())) return true
+  }
+  if (state.forcedChoiceResponses && Object.keys(state.forcedChoiceResponses).length > 0) return true
+  return false
+}
+
+function readLocalProgress(token) {
+  if (typeof window === 'undefined' || !token) return null
+  try {
+    const raw = window.localStorage.getItem(progressStorageKey(token))
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+function clearLocalProgress(token) {
+  if (typeof window === 'undefined' || !token) return
+  try { window.localStorage.removeItem(progressStorageKey(token)) } catch {}
+}
+
 function rankedActionsToText(slots) {
   if (!Array.isArray(slots) || slots.length === 0) return ''
   return slots
@@ -329,29 +375,163 @@ function IntroPage({ candidate, assessment, companyName, onBegin }) {
   )
 }
 
+// ─── State: Resume ────────────────────────────────────────────────────────────
+// Replaces the IntroPage when the candidate has saved in-progress data on
+// arrival. Continue rehydrates ActivePage from the saved blob; Start over
+// shows a confirmation, then clears localStorage + the DB JSONB column and
+// drops the candidate back to the standard intro screen as if fresh.
+function ResumePage({ candidate, assessment, savedProgress, onContinue, onStartOver }) {
+  const firstName = (candidate?.name || '').split(' ')[0] || ''
+  const scenarios = assessment?.scenarios || []
+  const completedCount = Math.max(0, Math.min(savedProgress?.scenarioIndex ?? 0, scenarios.length))
+  const totalCount = scenarios.length
+  const totalTakenSeconds = (savedProgress?.timeTakens || []).reduce((s, n) => s + (n || 0), 0)
+  const totalMinutes = totalTakenSeconds > 0 ? Math.max(1, Math.round(totalTakenSeconds / 60)) : 0
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  return (
+    <>
+      <NavBar candidateName={candidate?.name} />
+      <CentredCard>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+          <ProdictaLogo textColor={NAVY} size={36} />
+        </div>
+        <Card style={{ textAlign: 'center', padding: '48px 28px' }}>
+          <h1 style={{ fontFamily: F, fontWeight: 800, fontSize: 24, color: TX, margin: '0 0 12px', lineHeight: 1.3 }}>
+            Welcome back{firstName ? `, ${firstName}` : ''}
+          </h1>
+          <p style={{ fontFamily: F, color: TX2, fontSize: 15, lineHeight: 1.7, margin: '0 auto 32px', maxWidth: 480 }}>
+            You completed scenario {completedCount} of {totalCount}. Continue where you left off?
+          </p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
+            <button
+              onClick={onContinue}
+              style={{
+                background: TEAL, color: '#fff', fontFamily: F, fontWeight: 700, fontSize: 16,
+                border: 'none', borderRadius: 12, padding: '14px 36px', cursor: 'pointer',
+                letterSpacing: 0.2, boxShadow: `0 4px 16px ${TEAL}44`,
+              }}
+            >
+              Continue assessment
+            </button>
+            <button
+              onClick={() => setConfirmOpen(true)}
+              style={{
+                background: '#fff', color: NAVY, fontFamily: F, fontWeight: 700, fontSize: 16,
+                border: `1.5px solid ${NAVY}`, borderRadius: 12, padding: '14px 28px', cursor: 'pointer',
+                letterSpacing: 0.2,
+              }}
+            >
+              Start over
+            </button>
+          </div>
+          <p style={{ fontFamily: F, color: TX3, fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+            Your previous answers are saved.{totalMinutes > 0 ? ` Total time so far: ${totalMinutes} ${totalMinutes === 1 ? 'minute' : 'minutes'}.` : ''}
+          </p>
+        </Card>
+        {confirmOpen && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16,
+          }}>
+            <div style={{ background: '#fff', borderRadius: 16, padding: '32px 28px', maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+              <h2 style={{ fontFamily: F, fontSize: 18, fontWeight: 800, color: TX, margin: '0 0 10px' }}>
+                Are you sure?
+              </h2>
+              <p style={{ fontFamily: F, fontSize: 14, color: TX2, lineHeight: 1.6, margin: '0 0 24px' }}>
+                Your previous answers will be deleted. You will start the assessment from the beginning.
+              </p>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setConfirmOpen(false)}
+                  style={{
+                    background: '#fff', color: TX2, fontFamily: F, fontWeight: 600, fontSize: 14,
+                    border: `1px solid ${BD}`, borderRadius: 10, padding: '10px 18px', cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { setConfirmOpen(false); onStartOver() }}
+                  style={{
+                    background: NAVY, color: '#fff', fontFamily: F, fontWeight: 700, fontSize: 14,
+                    border: 'none', borderRadius: 10, padding: '10px 18px', cursor: 'pointer',
+                  }}
+                >
+                  Yes, start over
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </CentredCard>
+    </>
+  )
+}
+
 // ─── State: Active scenario ───────────────────────────────────────────────────
-function ActivePage({ candidate, assessment, onSubmit }) {
+function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgress }) {
   const scenarios = assessment.scenarios || []
-  const [scenarioIndex, setScenarioIndex] = useState(0)
-  const [responses, setResponses] = useState(scenarios.map(() => ''))
-  const [timeLefts, setTimeLefts] = useState(scenarios.map(s => (s.timeMinutes || 10) * 60))
-  const [timeTakens, setTimeTakens] = useState(scenarios.map(() => 0))
+
+  // Resume hydration. When initialProgress is supplied (Resume page → Continue
+  // path), seed local state from the saved blob. Otherwise initialize as
+  // before. A 60s soft floor is applied to the resumed scenario's remaining
+  // time so a candidate doesn't hit a cliff-edge expiry on resume.
+  const startIndex = Math.max(0, Math.min(initialProgress?.scenarioIndex ?? 0, Math.max(0, scenarios.length - 1)))
+  const [scenarioIndex, setScenarioIndex] = useState(startIndex)
+  const [responses, setResponses] = useState(() =>
+    scenarios.map((_, i) => initialProgress?.responses?.[i] ?? '')
+  )
+  const [timeTakens, setTimeTakens] = useState(() =>
+    scenarios.map((s, i) => {
+      const total = (s.timeMinutes || 10) * 60
+      const saved = initialProgress?.timeTakens?.[i] ?? 0
+      // 60s soft floor on the resumed scenario only: if the saved taken
+      // would leave less than 60s remaining, backdate so remaining ~ 60s.
+      if (i === startIndex && saved > 0 && total - saved < 60) {
+        return Math.max(0, total - 60)
+      }
+      return saved
+    })
+  )
+  const [timeLefts, setTimeLefts] = useState(() =>
+    scenarios.map((s, i) => {
+      const total = (s.timeMinutes || 10) * 60
+      const saved = initialProgress?.timeTakens?.[i] ?? 0
+      if (i === startIndex && saved > 0 && total - saved < 60) return 60
+      return Math.max(0, total - saved)
+    })
+  )
   // Forced choice state, keyed by scenario index. Shape depends on forced_choice.type:
   //   ranking:        { type: 'ranking',        response: { ranked: [...strings] } }
   //   select_exclude: { type: 'select_exclude', response: { selected: [...], excluded: '...', excluded_reason: '...' } }
   //   trade_off:      { type: 'trade_off',      response: { choices: [...strings] } }
-  const [forcedChoiceResponses, setForcedChoiceResponses] = useState({})
+  const [forcedChoiceResponses, setForcedChoiceResponses] = useState(() =>
+    initialProgress?.forcedChoiceResponses && typeof initialProgress.forcedChoiceResponses === 'object'
+      ? initialProgress.forcedChoiceResponses
+      : {}
+  )
 
   // Ranked-actions state, keyed by scenario index. Each entry holds three
   // slots; each slot has an action label and a 1 to 2 sentence justification.
   // Persisted on the response row as `responses.ranked_actions`.
-  const [rankedActions, setRankedActions] = useState(() => Object.fromEntries(
-    scenarios.map((_, i) => [i, { slots: [
+  const [rankedActions, setRankedActions] = useState(() => {
+    const fresh = () => ({ slots: [
       { action: '', justification: '' },
       { action: '', justification: '' },
       { action: '', justification: '' },
-    ]}])
-  ))
+    ]})
+    const saved = initialProgress?.rankedActions
+    return Object.fromEntries(scenarios.map((_, i) => {
+      const candidate = saved && (saved[i] || saved[String(i)])
+      if (candidate && Array.isArray(candidate.slots)) {
+        return [i, { slots: candidate.slots.map(s => ({
+          action: s?.action || '',
+          justification: s?.justification || '',
+        })) }]
+      }
+      return [i, fresh()]
+    }))
+  })
 
   // In-scenario interruption state. After the candidate has filled in all
   // three ranked-action slots, a deterministic 30% gate per scenario fires
@@ -455,6 +635,75 @@ function ActivePage({ candidate, assessment, onSubmit }) {
 
   const intervalRef = useRef(null)
   const startTimeRef = useRef(Date.now())
+  // Snapshot of timeTakens[scenarioIndex] at the moment we (re)entered the
+  // scenario. The interval below adds wall-clock elapsed since this moment
+  // ON TOP OF this baseline, so a resumed scenario continues counting from
+  // its previously-elapsed seconds rather than resetting to zero.
+  const initialTakenRef = useRef(0)
+
+  // ── Auto-save: localStorage + DB ──────────────────────────────────────────
+  // Subtle "Saved" indicator that flashes briefly after each persistence call
+  // and fades after 2 seconds. Positioned bottom-right of the viewport so it
+  // doesn't displace the response area or compete with the timer.
+  const [savedFlash, setSavedFlash] = useState(false)
+  const savedFlashTimeoutRef = useRef(null)
+
+  // persistProgressNow snapshots the persisted-shape fields and writes them
+  // to localStorage synchronously and to the DB endpoint as a fire-and-forget
+  // POST. Idempotent: a refresh-Continue cycle just rewrites the same blob.
+  // Audio recordings, micro-signals, inbox/interruption state, and modes are
+  // intentionally NOT persisted in this MVP - those reset on resume.
+  function persistProgressNow() {
+    if (!uniqueToken) return
+    const state = {
+      scenarioIndex,
+      responses,
+      timeTakens,
+      rankedActions,
+      forcedChoiceResponses,
+      lastSavedAt: new Date().toISOString(),
+    }
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(progressStorageKey(uniqueToken), JSON.stringify(state))
+      }
+    } catch {}
+    fetch(`/api/assess/${uniqueToken}/progress`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state),
+    }).catch(() => {})
+    setSavedFlash(true)
+    if (savedFlashTimeoutRef.current) clearTimeout(savedFlashTimeoutRef.current)
+    savedFlashTimeoutRef.current = setTimeout(() => setSavedFlash(false), 2000)
+  }
+
+  // Ref so the heartbeat interval below sees the latest closure on every
+  // tick without forcing the interval to be re-created each render.
+  const persistProgressNowRef = useRef(persistProgressNow)
+  useEffect(() => { persistProgressNowRef.current = persistProgressNow })
+
+  // Heartbeat save: every 30 seconds, regardless of user activity. Captures
+  // the latest timeTakens / responses / ranked actions / forced choice
+  // without thrashing the React render tree (no state read in the deps).
+  useEffect(() => {
+    if (!uniqueToken) return
+    const id = setInterval(() => {
+      persistProgressNowRef.current()
+    }, 30000)
+    return () => clearInterval(id)
+  }, [uniqueToken])
+
+  // Immediate save when scenarioIndex changes (i.e. on Next click). Ensures a
+  // crash right after advance still has the just-completed scenario's response
+  // and the new scenarioIndex on disk. Skipped on first render via a ref.
+  const lastSavedScenarioIndexRef = useRef(scenarioIndex)
+  useEffect(() => {
+    if (lastSavedScenarioIndexRef.current !== scenarioIndex) {
+      lastSavedScenarioIndexRef.current = scenarioIndex
+      persistProgressNowRef.current()
+    }
+  }, [scenarioIndex])
 
   const scenario = scenarios[scenarioIndex]
   const isLast = scenarioIndex === scenarios.length - 1
@@ -476,6 +725,10 @@ function ActivePage({ candidate, assessment, onSubmit }) {
   // Start/restart timer whenever scenarioIndex changes
   useEffect(() => {
     startTimeRef.current = Date.now()
+    // Capture the time already taken on this scenario (zero on fresh entry,
+    // or the previously-elapsed seconds when resuming). The interval below
+    // accumulates on top so resumed sessions continue counting forward.
+    initialTakenRef.current = timeTakens[scenarioIndex] || 0
 
     // Micro-signal: record when the scenario was first shown to the candidate.
     // Only set once per scenario so revisits (if any) don't overwrite.
@@ -490,18 +743,19 @@ function ActivePage({ candidate, assessment, onSubmit }) {
 
     if (intervalRef.current) clearInterval(intervalRef.current)
     intervalRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000)
+      const sinceEntry = Math.floor((Date.now() - startTimeRef.current) / 1000)
+      const totalTaken = (initialTakenRef.current || 0) + sinceEntry
 
       setTimeTakens(prev => {
         const next = [...prev]
-        next[scenarioIndex] = elapsed
+        next[scenarioIndex] = totalTaken
         return next
       })
 
       setTimeLefts(prev => {
         const next = [...prev]
         const total = (scenarios[scenarioIndex]?.timeMinutes || 10) * 60
-        next[scenarioIndex] = Math.max(0, total - elapsed)
+        next[scenarioIndex] = Math.max(0, total - totalTaken)
         return next
       })
     }, 1000)
@@ -530,11 +784,14 @@ function ActivePage({ candidate, assessment, onSubmit }) {
 
   async function handleNext() {
     if (maybeFireInterruption()) return
-    // Snapshot current time taken before switching
-    const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000)
+    // Snapshot current time taken before switching. Accumulates wall-clock
+    // elapsed since scenario entry on top of any previously-saved baseline,
+    // so resumed sessions don't lose their pre-resume time on advance.
+    const sinceEntry = Math.floor((Date.now() - startTimeRef.current) / 1000)
+    const totalTaken = (initialTakenRef.current || 0) + sinceEntry
     setTimeTakens(prev => {
       const next = [...prev]
-      next[scenarioIndex] = elapsed
+      next[scenarioIndex] = totalTaken
       return next
     })
 
@@ -647,6 +904,20 @@ function ActivePage({ candidate, assessment, onSubmit }) {
   return (
     <>
       <NavBar candidateName={candidate.name} />
+      {savedFlash && (
+        <div style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
+          background: '#fff', border: `1px solid ${TEAL}55`, borderRadius: 10,
+          padding: '8px 14px', display: 'inline-flex', alignItems: 'center', gap: 8,
+          fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD,
+          boxShadow: '0 4px 14px rgba(0,191,165,0.18)',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Saved
+        </div>
+      )}
       <div style={{ background: BG, minHeight: '100vh', fontFamily: F }}>
         {/* Progress + timer bar */}
         <div style={{
@@ -1028,7 +1299,13 @@ function ActivePage({ candidate, assessment, onSubmit }) {
                       lineHeight: 1.7, boxSizing: 'border-box', transition: 'border-color 0.15s',
                     }}
                     onFocus={e => e.currentTarget.style.borderColor = TEAL}
-                    onBlur={e => e.currentTarget.style.borderColor = BD}
+                    onBlur={e => {
+                      e.currentTarget.style.borderColor = BD
+                      // Immediate save when the candidate moves focus away from
+                      // the response field. Complements the 30s heartbeat so
+                      // pauses-to-think still hit storage.
+                      persistProgressNow()
+                    }}
                   />
                   <div style={{ fontFamily: FM, fontSize: 13, color: TX3, marginTop: 6, textAlign: 'right' }}>
                     {wordCount(responses[scenarioIndex])} words
@@ -2507,13 +2784,18 @@ export default function AssessPage({ params }) {
   // params is a plain object, but better safe than crashing a candidate mid-flow.
   const uniqueToken = params?.uniqueToken || null
 
-  const [uiState, setUiState] = useState('loading') // loading | error | already_complete | intro | active | calendar | strategic_thinking | workspace | submitting | rating | preview | complete
+  const [uiState, setUiState] = useState('loading') // loading | error | already_complete | resume | intro | active | calendar | strategic_thinking | workspace | submitting | rating | preview | complete
   const [demographicsDone, setDemographicsDone] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [candidate, setCandidate] = useState(null)
   const [assessment, setAssessment] = useState(null)
   const [companyName, setCompanyName] = useState('')
   const [pendingResponses, setPendingResponses] = useState(null) // stored between active→calendar→submit
+  // Resume state. Populated on mount from localStorage and the DB JSONB
+  // column when the candidate has meaningful in-progress work; null when
+  // they're a fresh start or have no recoverable state. Passed to
+  // ActivePage as initialProgress when the candidate clicks Continue.
+  const [savedProgress, setSavedProgress] = useState(null)
   // Strategic Thinking (Strategy-Fit only) candidate responses keyed
   // by question id. Captured locally as the candidate types, attached
   // to the final submit payload via doSubmit so scoring can read them
@@ -2551,7 +2833,31 @@ export default function AssessPage({ params }) {
         if (data?.candidate?.status === 'completed') {
           setUiState('already_complete')
         } else if (data?.candidate) {
-          setUiState('intro')
+          // Look for in-progress saved state. Prefer localStorage (instant
+          // on same browser) but fall back to the DB JSONB column for
+          // cross-device resume. Only show the Resume page when the saved
+          // blob represents meaningful work; an essentially-empty blob
+          // (scenarioIndex 0, all responses blank) drops through to the
+          // standard intro screen.
+          let progress = readLocalProgress(uniqueToken)
+          if (!hasMeaningfulProgress(progress)) {
+            try {
+              const pres = await fetch(`/api/assess/${uniqueToken}/progress`, { cache: 'no-store' })
+              if (pres.ok) {
+                const pdata = await pres.json().catch(() => ({}))
+                if (pdata?.progress) progress = pdata.progress
+              }
+            } catch {
+              // Network failure on progress lookup is non-fatal: candidate
+              // continues to the standard intro and starts fresh.
+            }
+          }
+          if (hasMeaningfulProgress(progress)) {
+            setSavedProgress(progress)
+            setUiState('resume')
+          } else {
+            setUiState('intro')
+          }
         } else {
           setUiState('error')
           setErrorMessage('Assessment data is incomplete. Please contact the hiring team.')
@@ -2617,6 +2923,13 @@ export default function AssessPage({ params }) {
         setUiState('error')
         return
       }
+      // Clear in-progress save once the server has accepted the final
+      // submission. localStorage immediately, DB best-effort. A stale
+      // saved blob would otherwise pop the Resume page on a second
+      // visit to a completed assessment, before the GET /progress
+      // completed-status guard kicks in.
+      clearLocalProgress(uniqueToken)
+      fetch(`/api/assess/${uniqueToken}/progress`, { method: 'DELETE' }).catch(() => {})
     } catch {
       setErrorMessage('Submission failed. Please check your connection and try again.')
       setUiState('error')
@@ -2690,6 +3003,24 @@ export default function AssessPage({ params }) {
 
   if (uiState === 'error') return <ErrorPage message={errorMessage} />
   if (uiState === 'already_complete') return <AlreadyCompletedPage candidateName={candidate?.name} token={uniqueToken} />
+  if (uiState === 'resume') return (
+    <ResumePage
+      candidate={candidate}
+      assessment={assessment}
+      savedProgress={savedProgress}
+      onContinue={() => setUiState('active')}
+      onStartOver={() => {
+        // Wipe both stores so the candidate's next session is genuinely
+        // fresh. Fire-and-forget on the DB delete so a network failure
+        // doesn't block them from restarting; localStorage is the
+        // authoritative same-browser signal anyway.
+        clearLocalProgress(uniqueToken)
+        fetch(`/api/assess/${uniqueToken}/progress`, { method: 'DELETE' }).catch(() => {})
+        setSavedProgress(null)
+        setUiState('intro')
+      }}
+    />
+  )
   if (uiState === 'intro') return (
     <IntroPage
       candidate={candidate}
@@ -2710,6 +3041,8 @@ export default function AssessPage({ params }) {
       candidate={candidate}
       assessment={assessment}
       onSubmit={handleScenariosComplete}
+      uniqueToken={uniqueToken}
+      initialProgress={savedProgress}
     />
   )
   // Helper: after the calendar/scenarios stage, decide whether the
