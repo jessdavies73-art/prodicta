@@ -221,10 +221,10 @@ function ErrorPage({ message, context }) {
       <NavBar />
       <CentredCard>
         <Card style={{ textAlign: 'center', padding: '56px 36px' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>⚠️</div>
-          <h2 style={{ fontFamily: F, color: TX, fontSize: 22, fontWeight: 700, margin: '0 0 12px' }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }} aria-hidden>⚠️</div>
+          <h1 style={{ fontFamily: F, color: TX, fontSize: 22, fontWeight: 700, margin: '0 0 12px' }}>
             Something went wrong
-          </h2>
+          </h1>
           <p style={{ fontFamily: F, color: TX2, fontSize: 15, margin: '0 0 24px', lineHeight: 1.6 }}>
             {friendly}
           </p>
@@ -279,9 +279,9 @@ function AlreadyCompletedPage({ candidateName, token }) {
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <h2 style={{ fontFamily: F, color: TX, fontSize: 22, fontWeight: 800, margin: '0 0 12px' }}>
+          <h1 style={{ fontFamily: F, color: TX, fontSize: 22, fontWeight: 800, margin: '0 0 12px' }}>
             You have already completed this assessment
-          </h2>
+          </h1>
           <p style={{ fontFamily: F, color: TX2, fontSize: 15, margin: '0 0 28px', lineHeight: 1.6 }}>
             Thank you{firstName ? `, ${firstName}` : ''}. Your results have been shared with the hiring team.
           </p>
@@ -406,6 +406,20 @@ function AdjustmentsPanel({ uniqueToken, demoPreview = false }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [demoFlash, setDemoFlash] = useState(false)
+  // Focus management refs. WCAG 2.4.3 (Focus Order) and authoring practice
+  // for disclosure widgets: move focus into the expanded panel on open,
+  // return focus to the trigger when the panel closes.
+  const triggerRef = useRef(null)
+  const firstCheckboxRef = useRef(null)
+  const wasOpenRef = useRef(false)
+  useEffect(() => {
+    if (open && firstCheckboxRef.current) {
+      firstCheckboxRef.current.focus()
+    } else if (!open && wasOpenRef.current && triggerRef.current) {
+      triggerRef.current.focus()
+    }
+    wasOpenRef.current = open
+  }, [open])
 
   // Pre-fill on first open if a request already exists for this candidate.
   useEffect(() => {
@@ -487,8 +501,11 @@ function AdjustmentsPanel({ uniqueToken, demoPreview = false }) {
           </p>
         )}
         <button
+          ref={triggerRef}
           type="button"
           onClick={() => setOpen(true)}
+          aria-expanded={open}
+          aria-controls="pd-adjustments-panel"
           style={{
             background: 'none', border: 'none', padding: 0,
             fontFamily: F, fontSize: 13.5, color: TX2,
@@ -503,6 +520,7 @@ function AdjustmentsPanel({ uniqueToken, demoPreview = false }) {
 
   return (
     <div
+      id="pd-adjustments-panel"
       role="region"
       aria-labelledby="pd-adjustments-heading"
       style={{
@@ -521,13 +539,14 @@ function AdjustmentsPanel({ uniqueToken, demoPreview = false }) {
         Tick any that apply. Your request is logged and the agency or employer who invited you is informed. Where possible, the assessment will accommodate your needs automatically.
       </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-        {ADJUSTMENT_OPTIONS.map(opt => (
+      <div role="group" aria-labelledby="pd-adjustments-heading" style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+        {ADJUSTMENT_OPTIONS.map((opt, idx) => (
           <label key={opt.key} style={{
             display: 'flex', alignItems: 'flex-start', gap: 10,
             fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.5, cursor: 'pointer',
           }}>
             <input
+              ref={idx === 0 ? firstCheckboxRef : null}
               type="checkbox"
               checked={!!selected[opt.key]}
               onChange={() => toggle(opt.key)}
@@ -1204,22 +1223,44 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
 
   const timeLeft = timeLefts[scenarioIndex]
   const isTimeLow = timeLeft < 60
+  // Visually-hidden live-region announcement for screen-reader candidates.
+  // Fires once when the timer crosses the 60-second threshold and once when
+  // it reaches zero. The visual timer is read continuously by sighted users
+  // but unannounced to screen readers; this surfaces the same warning.
+  const timerAnnouncement = (() => {
+    if (timeLeft === 0) return 'Time has ended for this scenario.'
+    if (timeLeft === 60) return 'One minute remaining for this scenario.'
+    return ''
+  })()
 
   return (
     <>
+      <span
+        role="status"
+        aria-live="assertive"
+        aria-atomic="true"
+        style={{ position: 'absolute', width: 1, height: 1, margin: -1, padding: 0, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap', border: 0 }}
+      >
+        {timerAnnouncement}
+      </span>
       <NavBar candidateName={candidate.name} />
       {savedFlash && (
-        <div style={{
-          position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
-          background: '#fff', border: `1px solid ${TEAL}55`, borderRadius: 10,
-          padding: '8px 14px', display: 'inline-flex', alignItems: 'center', gap: 8,
-          fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD,
-          boxShadow: '0 4px 14px rgba(0,191,165,0.18)',
-        }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          style={{
+            position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
+            background: '#fff', border: `1px solid ${TEAL}55`, borderRadius: 10,
+            padding: '8px 14px', display: 'inline-flex', alignItems: 'center', gap: 8,
+            fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD,
+            boxShadow: '0 4px 14px rgba(0,191,165,0.18)',
+          }}
+        >
+          <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
-          Saved
+          Your response has been saved
         </div>
       )}
       <div style={{ background: BG, minHeight: '100vh', fontFamily: F }}>
@@ -1430,9 +1471,9 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
                     </div>
                   )}
                   <span style={typeBadgeStyle(scenario.type)}>{scenario.type}</span>
-                  <h2 style={{ fontFamily: F, fontWeight: 700, fontSize: 22, color: TX, margin: '12px 0 0' }}>
+                  <h1 style={{ fontFamily: F, fontWeight: 700, fontSize: 22, color: TX, margin: '12px 0 0' }}>
                     {scenario.title}
-                  </h2>
+                  </h1>
                 </div>
                 <div style={{
                   background: BG, border: `1px solid ${BD}`, borderRadius: 10,
@@ -1596,6 +1637,9 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
                     }}
                     placeholder="Write your response here..."
                     rows={8}
+                    aria-label={`Your response to scenario ${scenarioIndex + 1} of ${scenarios.length}`}
+                    aria-required="true"
+                    aria-describedby={`pd-response-help-${scenarioIndex}`}
                     style={{
                       width: '100%', minHeight: 200, fontFamily: F, fontSize: 15, color: TX,
                       background: CARD, border: `1.5px solid ${BD}`, borderRadius: 10,
@@ -1611,8 +1655,8 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
                       persistProgressNow()
                     }}
                   />
-                  <div style={{ fontFamily: FM, fontSize: 13, color: TX3, marginTop: 6, textAlign: 'right' }}>
-                    {wordCount(responses[scenarioIndex])} words
+                  <div id={`pd-response-help-${scenarioIndex}`} style={{ fontFamily: FM, fontSize: 13, color: TX3, marginTop: 6, textAlign: 'right' }}>
+                    {wordCount(responses[scenarioIndex])} words{mode === 'rapid' ? ', keep your response under 100 words' : ''}
                   </div>
                   {mode === 'rapid' && (
                     <div style={{ fontFamily: F, fontSize: 12, color: AMB, marginTop: 4, textAlign: 'right' }}>
@@ -1753,9 +1797,9 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
             <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 800, color: AMB, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
               Mid-task interruption
             </div>
-            <h3 style={{ fontFamily: F, fontSize: 19, fontWeight: 800, color: NAVY, margin: '0 0 12px', lineHeight: 1.3 }}>
+            <h2 style={{ fontFamily: F, fontSize: 19, fontWeight: 800, color: NAVY, margin: '0 0 12px', lineHeight: 1.3 }}>
               While you were doing your first action, this just happened
-            </h3>
+            </h2>
             <p style={{ fontFamily: F, fontSize: 15, color: TX, lineHeight: 1.65, margin: '0 0 14px' }}>
               {scenarios[scenarioIndex].interruption.event}
             </p>
