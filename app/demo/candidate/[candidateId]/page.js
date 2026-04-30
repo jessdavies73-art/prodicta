@@ -2278,6 +2278,49 @@ function DemoCandidateInner({ params }) {
           </Card>
         )}
 
+        {/* ── REASONABLE ADJUSTMENT BANNER (demo, hardcoded for one candidate) ── */}
+        {candidate.id === 'demo-c1' && (
+          <div
+            role="region"
+            aria-label="Reasonable adjustment request"
+            style={{
+              marginBottom: 16,
+              background: '#e6f7f5',
+              border: '1px solid #80dfd2',
+              borderLeft: '4px solid #00BFA5',
+              borderRadius: 10,
+              padding: '14px 18px',
+            }}
+          >
+            <div style={{
+              fontFamily: F, fontSize: 11, fontWeight: 700, color: '#0f6e63',
+              textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6,
+            }}>
+              Adjustment request from this candidate
+            </div>
+            <div style={{ fontFamily: F, fontSize: 13.5, color: NAVY, lineHeight: 1.65 }}>
+              <div><strong>Submitted:</strong> Wed, 1 Apr 2026 09:14:00 GMT</div>
+              <div style={{ marginTop: 4 }}>
+                <strong>Requested:</strong>
+                <ul style={{ margin: '4px 0 0', paddingLeft: 22 }}>
+                  <li style={{ marginBottom: 2 }}>Screen reader compatibility needed</li>
+                  <li style={{ marginBottom: 2 }}>Frequent breaks needed</li>
+                </ul>
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <strong>Notes:</strong>
+                <p style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap', color: TX }}>I use NVDA. Aim to take the assessment in two sittings if possible, with a break around the half-way point.</p>
+              </div>
+            </div>
+            <p style={{
+              fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.65,
+              margin: '10px 0 0', paddingTop: 10, borderTop: '1px solid rgba(0,191,165,0.3)',
+            }}>
+              This was logged when the candidate started the assessment. PRODICTA accommodates these adjustments where possible. You may wish to follow up with {candidate.name} directly if their notes warrant additional support.
+            </p>
+          </div>
+        )}
+
         {/* ── CANDIDATE HEADER, three-column layout ── */}
         <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 16 : 20, flexDirection: isMobile ? 'column' : 'row' }}>

@@ -301,6 +301,73 @@ const ActionBox = ({ children }) => (
   </div>
 )
 
+// ─── Reasonable Adjustments banner (Layer 1, read-only) ─────────────────────
+// Surfaces a candidate-declared Equality Act 2010 adjustment request at the
+// top of the candidate report. Read-only by design at Layer 1: PRODICTA
+// accommodates these where possible, the agency or employer does not need
+// to grant or decline anything.
+const ADJ_LABELS = {
+  screen_reader:   'Screen reader compatibility needed',
+  simplified_ui:   'Simplified visual layout (reduced animations, simpler UI)',
+  audio_response:  'Audio or voice response instead of typing',
+  frequent_breaks: 'Frequent breaks needed',
+  other:           'Other (see notes)',
+}
+
+function AdjustmentRequestBanner({ request, candidateName }) {
+  if (!request) return null
+  const types = Array.isArray(request.adjustment_types) ? request.adjustment_types : []
+  const submitted = request.updated_at || request.requested_at
+  let when = ''
+  try { when = new Date(submitted).toUTCString() } catch { when = submitted || '' }
+  return (
+    <div
+      role="region"
+      aria-label="Reasonable adjustment request"
+      style={{
+        marginBottom: 16,
+        background: '#e6f7f5',
+        border: '1px solid #80dfd2',
+        borderLeft: '4px solid #00BFA5',
+        borderRadius: 10,
+        padding: '14px 18px',
+      }}
+    >
+      <div style={{
+        fontFamily: F, fontSize: 11, fontWeight: 700, color: '#0f6e63',
+        textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6,
+      }}>
+        Adjustment request from this candidate
+      </div>
+      <div style={{ fontFamily: F, fontSize: 13.5, color: NAVY, lineHeight: 1.65 }}>
+        <div><strong>Submitted:</strong> {when}</div>
+        {types.length > 0 && (
+          <div style={{ marginTop: 4 }}>
+            <strong>Requested:</strong>
+            <ul style={{ margin: '4px 0 0', paddingLeft: 22 }}>
+              {types.map(t => (
+                <li key={t} style={{ marginBottom: 2 }}>{ADJ_LABELS[t] || t}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {request.additional_notes && request.additional_notes.trim().length > 0 && (
+          <div style={{ marginTop: 8 }}>
+            <strong>Notes:</strong>
+            <p style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap', color: TX }}>{request.additional_notes}</p>
+          </div>
+        )}
+      </div>
+      <p style={{
+        fontFamily: F, fontSize: 12.5, color: TX2, lineHeight: 1.65,
+        margin: '10px 0 0', paddingTop: 10, borderTop: '1px solid rgba(0,191,165,0.3)',
+      }}>
+        This was logged when the candidate started the assessment. PRODICTA accommodates these adjustments where possible. You may wish to follow up with {candidateName || 'the candidate'} directly if their notes warrant additional support.
+      </p>
+    </div>
+  )
+}
+
 /* Animated SVG score ring with count-up */
 function ScoreRing({ score, size = 140, strokeWidth = 10, animate = true }) {
   const [display, setDisplay] = useState(0)
@@ -1062,6 +1129,7 @@ export default function CandidateReportPage({ params }) {
   const [loading, setLoading] = useState(true)
   const [candidate, setCandidate] = useState(null)
   const [results, setResults] = useState(null)
+  const [adjustmentRequest, setAdjustmentRequest] = useState(null)
   const [benchmarks, setBenchmarks] = useState([])
   const [responses, setResponses] = useState([])
   const [user, setUser] = useState(null)
@@ -1182,16 +1250,18 @@ export default function CandidateReportPage({ params }) {
         if (!u) { router.push('/login'); return }
         setUser(u)
 
-        const [{ data: cand, error: cErr }, { data: res }, { data: bm }, { data: resps }, { data: prof }] = await Promise.all([
+        const [{ data: cand, error: cErr }, { data: res }, { data: bm }, { data: resps }, { data: prof }, { data: adj }] = await Promise.all([
           supabase.from('candidates').select('*, assessments(role_title, job_description, skill_weights, scenarios, assessment_mode, detected_role_type, role_level, employment_type)').eq('id', params.candidateId).single(),
           supabase.from('results').select('*').eq('candidate_id', params.candidateId).maybeSingle(),
           supabase.from('benchmarks').select('*').eq('user_id', u.id),
           supabase.from('responses').select('scenario_index, time_taken_seconds, response_text').eq('candidate_id', params.candidateId).order('scenario_index'),
           supabase.from('users').select('company_name, account_type, report_sections, plan, plan_type, subscription_status').eq('id', u.id).maybeSingle(),
+          supabase.from('adjustment_requests').select('adjustment_types, additional_notes, requested_at, updated_at').eq('candidate_id', params.candidateId).maybeSingle(),
         ])
 
         if (cErr) throw cErr
         setCandidate(cand)
+        setAdjustmentRequest(adj || null)
 
         // Client-side coherence correction: fix incoherent predicted outcomes before rendering
         let correctedRes = res
@@ -1758,6 +1828,10 @@ export default function CandidateReportPage({ params }) {
             {/* ══════════════════════════════════════════════════
  CANDIDATE HEADER, three-column layout
             ══════════════════════════════════════════════════ */}
+            {adjustmentRequest && (
+              <AdjustmentRequestBanner request={adjustmentRequest} candidateName={candidate?.name} />
+            )}
+
             <Card style={{ marginBottom: 20, boxShadow: SHADOW_LG }}>
               <div className="report-header" style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 16 : 20, flexDirection: isMobile ? 'column' : 'row' }}>
 

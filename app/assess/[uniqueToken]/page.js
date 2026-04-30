@@ -313,12 +313,240 @@ function AlreadyCompletedPage({ candidateName, token }) {
   )
 }
 
+// ─── Reasonable Adjustments (Layer 1 disclosure) ─────────────────────────────
+// Inline form rendered between the privacy disclosure and the Start button on
+// the candidate landing screen. Captures Equality Act 2010 adjustment requests
+// for audit trail and informs the inviting agency / employer. The candidate is
+// NEVER blocked from starting the assessment; this is a disclosure layer, not
+// a workflow gate. The actual technical accommodations land in Layer 2.
+const ADJUSTMENT_OPTIONS = [
+  { key: 'screen_reader',   label: 'Screen reader compatibility needed' },
+  { key: 'simplified_ui',   label: 'Simplified visual layout (reduced animations, simpler UI)' },
+  { key: 'audio_response',  label: 'Audio or voice response instead of typing' },
+  { key: 'frequent_breaks', label: 'Frequent breaks needed' },
+  { key: 'other',           label: 'Other (please describe)' },
+]
+
+function AdjustmentsPanel({ uniqueToken, demoPreview = false }) {
+  const [open, setOpen] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [selected, setSelected] = useState({})
+  const [notes, setNotes] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [demoFlash, setDemoFlash] = useState(false)
+
+  // Pre-fill on first open if a request already exists for this candidate.
+  useEffect(() => {
+    if (!open || demoPreview) return
+    if (!uniqueToken) return
+    let cancelled = false
+    fetch(`/api/assess/${uniqueToken}/adjustment-request`).then(async r => {
+      if (!r.ok) return
+      const data = await r.json().catch(() => null)
+      if (cancelled) return
+      const row = data?.request
+      if (!row) return
+      const sel = {}
+      for (const t of (row.adjustment_types || [])) sel[t] = true
+      setSelected(sel)
+      setNotes(row.additional_notes || '')
+      setSubmitted(true)
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [open, uniqueToken, demoPreview])
+
+  const tickedCount = Object.values(selected).filter(Boolean).length
+  const canSubmit = tickedCount > 0 || notes.trim().length > 0
+
+  function toggle(key) {
+    setSelected(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  function reset() {
+    setSelected({})
+    setNotes('')
+    setError(null)
+  }
+
+  async function submit() {
+    if (!canSubmit || busy) return
+    if (demoPreview) {
+      setDemoFlash(true)
+      setTimeout(() => setDemoFlash(false), 4000)
+      return
+    }
+    setBusy(true)
+    setError(null)
+    const adjustment_types = ADJUSTMENT_OPTIONS.map(o => o.key).filter(k => selected[k])
+    try {
+      const res = await fetch(`/api/assess/${uniqueToken}/adjustment-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adjustment_types, additional_notes: notes }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data?.error || 'Could not save your request. Please try again.')
+        setBusy(false)
+        return
+      }
+      setSubmitted(true)
+      setOpen(false)
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const linkLabel = submitted
+    ? 'Adjustment request submitted, update if needed'
+    : 'Need adjustments? Tell us'
+
+  if (!open) {
+    return (
+      <div style={{ marginTop: 18, textAlign: 'center' }}>
+        {submitted && (
+          <p style={{
+            fontFamily: F, fontSize: 13.5, color: TX2, lineHeight: 1.6,
+            margin: '0 auto 10px', maxWidth: 480,
+          }}>
+            Thanks, we have logged your request and informed the agency or employer who invited you. Where possible, your adjustments will be applied automatically. You can start the assessment now.
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          style={{
+            background: 'none', border: 'none', padding: 0,
+            fontFamily: F, fontSize: 13.5, color: TX2,
+            textDecoration: 'underline', cursor: 'pointer',
+          }}
+        >
+          {linkLabel}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      role="region"
+      aria-labelledby="pd-adjustments-heading"
+      style={{
+        marginTop: 18, padding: '20px 22px',
+        background: '#f7f9fb', border: `1px solid ${BD}`, borderRadius: 12,
+        textAlign: 'left',
+      }}
+    >
+      <h2 id="pd-adjustments-heading" style={{
+        fontFamily: F, fontSize: 16, fontWeight: 800, color: NAVY,
+        margin: '0 0 6px', lineHeight: 1.4,
+      }}>
+        Tell us if you need any adjustments to take this assessment fairly
+      </h2>
+      <p style={{ fontFamily: F, fontSize: 13, color: TX2, margin: '0 0 16px', lineHeight: 1.6 }}>
+        Tick any that apply. Your request is logged and the agency or employer who invited you is informed. Where possible, the assessment will accommodate your needs automatically.
+      </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+        {ADJUSTMENT_OPTIONS.map(opt => (
+          <label key={opt.key} style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10,
+            fontFamily: F, fontSize: 13.5, color: TX, lineHeight: 1.5, cursor: 'pointer',
+          }}>
+            <input
+              type="checkbox"
+              checked={!!selected[opt.key]}
+              onChange={() => toggle(opt.key)}
+              style={{ marginTop: 3, accentColor: TEAL, cursor: 'pointer' }}
+            />
+            <span>{opt.label}</span>
+          </label>
+        ))}
+      </div>
+
+      <label htmlFor="pd-adjustments-notes" style={{
+        display: 'block', fontFamily: F, fontSize: 13, fontWeight: 700,
+        color: NAVY, marginBottom: 6,
+      }}>
+        Additional notes (optional)
+      </label>
+      <textarea
+        id="pd-adjustments-notes"
+        value={notes}
+        onChange={e => setNotes(e.target.value)}
+        rows={3}
+        maxLength={2000}
+        placeholder="Any additional information that would help us provide adjustments"
+        style={{
+          width: '100%', boxSizing: 'border-box',
+          padding: '10px 12px', borderRadius: 8,
+          border: `1px solid ${BD}`, background: '#fff',
+          fontFamily: F, fontSize: 13.5, color: TX,
+          resize: 'vertical', minHeight: 70,
+        }}
+      />
+
+      {error && (
+        <p role="alert" style={{
+          fontFamily: F, fontSize: 13, color: '#b91c1c',
+          margin: '10px 0 0', lineHeight: 1.5,
+        }}>{error}</p>
+      )}
+
+      {demoFlash && (
+        <p role="status" style={{
+          fontFamily: F, fontSize: 13, color: TX2,
+          margin: '10px 0 0', lineHeight: 1.5,
+        }}>
+          Demo preview, in real assessments this logs the request and informs the agency or employer.
+        </p>
+      )}
+
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 14,
+        marginTop: 16, flexWrap: 'wrap',
+      }}>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={!canSubmit || busy}
+          aria-disabled={!canSubmit || busy}
+          style={{
+            background: canSubmit && !busy ? TEAL : '#cbd5e1',
+            color: canSubmit && !busy ? '#fff' : '#64748b',
+            fontFamily: F, fontWeight: 700, fontSize: 14,
+            border: 'none', borderRadius: 8,
+            padding: '10px 22px',
+            cursor: canSubmit && !busy ? 'pointer' : 'not-allowed',
+          }}
+        >
+          {busy ? 'Sending…' : 'Send request'}
+        </button>
+        <button
+          type="button"
+          onClick={() => { setOpen(false); if (!submitted) reset() }}
+          style={{
+            background: 'none', border: 'none', padding: 0,
+            fontFamily: F, fontSize: 13.5, color: TX2,
+            textDecoration: 'underline', cursor: 'pointer',
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── State: Intro ─────────────────────────────────────────────────────────────
 // Minimal "Before you start" landing screen. Shows the role context, a brief
 // AI/UK GDPR disclosure, and the Start button. Pressing Start is the consent
 // action; a timestamp is recorded server-side via /api/assess/[token]/consent
 // before navigation to the first scenario.
-function IntroPage({ candidate, assessment, companyName, onBegin }) {
+function IntroPage({ candidate, assessment, companyName, uniqueToken, onBegin }) {
   return (
     <>
       <NavBar candidateName={candidate.name} />
@@ -369,6 +597,7 @@ function IntroPage({ candidate, assessment, companyName, onBegin }) {
           >
             Start assessment
           </button>
+          <AdjustmentsPanel uniqueToken={uniqueToken} />
         </Card>
       </CentredCard>
     </>
@@ -3026,6 +3255,7 @@ export default function AssessPage({ params }) {
       candidate={candidate}
       assessment={assessment}
       companyName={companyName}
+      uniqueToken={uniqueToken}
       onBegin={() => {
         // Record consent timestamp server-side. Fire-and-forget: a network
         // blip should not block a candidate from starting their assessment;
