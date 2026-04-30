@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { getStripeClient, CREDIT_PRICES } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase-server'
 import { redeemPromoCode } from '@/lib/promo-redeem'
+import { sendSignupNotification } from '@/lib/send-signup-notification'
 
 // Eligible credit types for signup-time PAYG purchase. Immersive is an add-on
 // only, not something you'd buy as your first line.
@@ -331,6 +332,24 @@ export async function POST(request) {
         userId, purchases: purchases.map(p => `${p.quantity} x ${p.credit_type}`),
         amountGBP: amount / 100,
       })
+      // Founder visibility on every paying signup. Best-effort: failure
+      // here must not block the success response. Webhook recovery path
+      // is silent so a recovery never produces a duplicate email.
+      try {
+        await sendSignupNotification({
+          email,
+          name: companyName,
+          account_type: accountType,
+          employment_type: undefined,
+          plan_type: 'PAYG',
+          purchases: purchases.map(p => ({ credit_type: p.credit_type, quantity: p.quantity })),
+          total_amount_gbp: amount / 100,
+          signup_timestamp: new Date().toISOString(),
+          stripe_customer_id: customer.id,
+        })
+      } catch (notifyErr) {
+        console.error('[payg-with-bundle] founder signup notification failed (non-fatal)', { error: notifyErr?.message })
+      }
       return NextResponse.json({
         success: true,
         promoMessage,

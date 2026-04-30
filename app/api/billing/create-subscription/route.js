@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { getStripeClient, PLANS, getOrCreatePriceId, LAUNCH_COUPON_ID } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase-server'
 import { redeemPromoCode } from '@/lib/promo-redeem'
+import { sendSignupNotification } from '@/lib/send-signup-notification'
 
 async function createSupabaseUser({ adminClient, email, password, companyName, accountType, plan, customerId, subscriptionId }) {
   // Use anon client signUp so Supabase automatically sends the confirmation email.
@@ -213,6 +214,26 @@ export async function POST(request) {
       } catch (promoErr) {
         console.error('[billing] promo redeem error (non-fatal):', promoErr)
       }
+    }
+
+    // Founder visibility on every paying signup. Best-effort: failure
+    // here must not block the success response.
+    try {
+      const planMeta = PLANS[plan]
+      await sendSignupNotification({
+        email,
+        name: companyName,
+        account_type: accountType,
+        employment_type: undefined,
+        plan_type: planMeta?.label || plan,
+        purchases: undefined,
+        total_amount_gbp: planMeta?.price != null ? planMeta.price / 100 : undefined,
+        monthly_amount_gbp: planMeta?.price != null ? planMeta.price / 100 : undefined,
+        signup_timestamp: new Date().toISOString(),
+        stripe_customer_id: customer.id,
+      })
+    } catch (notifyErr) {
+      console.error('[create-subscription] founder signup notification failed (non-fatal)', { error: notifyErr?.message })
     }
 
     return NextResponse.json({ success: true, promoMessage })

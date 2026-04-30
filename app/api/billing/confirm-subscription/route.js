@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { getStripeClient, PLANS } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase-server'
 import { redeemPromoCode } from '@/lib/promo-redeem'
+import { sendSignupNotification } from '@/lib/send-signup-notification'
 
 // Called after a successful 3D Secure authentication to complete account creation.
 // Verifies with Stripe that the subscription's payment intent actually succeeded
@@ -132,6 +133,26 @@ export async function POST(request) {
       } catch (promoErr) {
         console.error('[confirm-subscription] promo redeem error (non-fatal):', promoErr)
       }
+    }
+
+    // Founder visibility on every paying signup. Best-effort: failure
+    // here must not block the success response.
+    try {
+      const planMeta = PLANS[plan]
+      await sendSignupNotification({
+        email,
+        name: companyName,
+        account_type: accountType,
+        employment_type: undefined,
+        plan_type: planMeta?.label || plan,
+        purchases: undefined,
+        total_amount_gbp: planMeta?.price != null ? planMeta.price / 100 : undefined,
+        monthly_amount_gbp: planMeta?.price != null ? planMeta.price / 100 : undefined,
+        signup_timestamp: new Date().toISOString(),
+        stripe_customer_id: customerId,
+      })
+    } catch (notifyErr) {
+      console.error('[confirm-subscription] founder signup notification failed (non-fatal)', { error: notifyErr?.message })
     }
 
     return NextResponse.json({ success: true, promoMessage })

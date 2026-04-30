@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { getStripeClient, CREDIT_PRICES } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase-server'
 import { redeemPromoCode } from '@/lib/promo-redeem'
+import { sendSignupNotification } from '@/lib/send-signup-notification'
 
 const SELECTABLE_TYPES = ['rapid-screen', 'speed-fit', 'depth-fit', 'strategy-fit']
 const MIN_QTY = 1
@@ -211,6 +212,23 @@ export async function POST(request) {
       purchases: purchases.map(p => `${p.quantity} x ${p.credit_type}`),
       amountGBP: expectedAmount / 100,
     })
+    // Founder visibility on every paying signup. Best-effort: failure
+    // here must not block the success response.
+    try {
+      await sendSignupNotification({
+        email,
+        name: companyName,
+        account_type: accountType,
+        employment_type: undefined,
+        plan_type: 'PAYG',
+        purchases: purchasesPayload,
+        total_amount_gbp: expectedAmount / 100,
+        signup_timestamp: new Date().toISOString(),
+        stripe_customer_id: customerId,
+      })
+    } catch (notifyErr) {
+      console.error('[confirm-payg-bundle] founder signup notification failed (non-fatal)', { error: notifyErr?.message })
+    }
     return NextResponse.json({
       success: true,
       promoMessage,
