@@ -861,6 +861,12 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
   // an interruption modal. Persisted as `responses.interruption_response`.
   const [scenarioInterruption, setScenarioInterruption] = useState({})
   const [interruptionModalOpen, setInterruptionModalOpen] = useState(false)
+  // Refs for the mid-task interruption dialog: track the element that
+  // had focus before the dialog opened so we can restore it on close,
+  // and a ref to the dialog container itself so the focus trap and
+  // initial-focus useEffect can reach into it.
+  const interruptionPrevFocusRef = useRef(null)
+  const interruptionDialogRef = useRef(null)
   const [interruptionDraftSlots, setInterruptionDraftSlots] = useState([
     { action: '', justification: '' },
     { action: '', justification: '' },
@@ -1287,6 +1293,91 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
     return true
   }
 
+  // Save and continue: extracted from the inline button onClick so the
+  // dialog's Escape handler can call the same logic. Records the
+  // candidate's interruption response, closes the modal, and advances
+  // via handleNext (which re-checks maybeFireInterruption and finds
+  // scenarioInterruption.fired = true so it skips re-opening).
+  function saveInterruptionAndContinue() {
+    const original = rankedActions[scenarioIndex]?.slots || []
+    const revised = interruptionDraftSlots.map(s => ({
+      action: (s.action || '').trim(),
+      justification: (s.justification || '').trim(),
+    }))
+    const changedRanking = revised.some((s, idx) =>
+      s.action !== ((original[idx]?.action || '').trim()) ||
+      s.justification !== ((original[idx]?.justification || '').trim())
+    )
+    setScenarioInterruption(prev => ({
+      ...prev,
+      [scenarioIndex]: {
+        fired: true,
+        prompt: scenarios[scenarioIndex].interruption?.event || '',
+        revised_slots: revised.map((s, idx) => ({ rank: idx + 1, ...s })),
+        changed_ranking: changedRanking,
+        reasoning: interruptionDraftReasoning.trim(),
+        responded_at: new Date().toISOString(),
+      },
+    }))
+    setInterruptionModalOpen(false)
+    setTimeout(() => { handleNext() }, 0)
+  }
+
+  // Focus management for the mid-task interruption dialog. On open,
+  // capture the element that had focus and move focus to the first
+  // input inside the dialog. On close, restore focus to the captured
+  // element. WCAG 2.4.3 (Focus Order) and dialog authoring practice.
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    if (interruptionModalOpen) {
+      try { interruptionPrevFocusRef.current = document.activeElement } catch {}
+      // Defer to next tick so the dialog DOM has rendered.
+      const t = setTimeout(() => {
+        const dialog = interruptionDialogRef.current
+        if (!dialog) return
+        const focusable = dialog.querySelector(
+          'input:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+        if (focusable) {
+          try { focusable.focus() } catch {}
+        } else if (typeof dialog.focus === 'function') {
+          try { dialog.focus() } catch {}
+        }
+      }, 0)
+      return () => clearTimeout(t)
+    } else {
+      // Restore focus only if we previously captured one (avoids
+      // running on initial mount where the modal was never open).
+      const prev = interruptionPrevFocusRef.current
+      if (prev && typeof prev.focus === 'function') {
+        try { prev.focus() } catch {}
+      }
+      interruptionPrevFocusRef.current = null
+    }
+  }, [interruptionModalOpen])
+
+  // Escape on the in-scenario interruption toast (the slide-in card,
+  // distinct from the mid-task dialog above). Treats Escape as the
+  // "Stay focused" choice: dismisses the toast and records the
+  // candidate's choice so the toast does not re-appear.
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    if (!interruptionVisible) return
+    if (!currentInbox?.interruption) return
+    if (interruptionResponse[scenarioIndex]) return
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setInterruptionResponse(prev => ({ ...prev, [scenarioIndex]: 'focus' }))
+        setInterruptionVisible(false)
+        setInterruptionDismissed(prev => ({ ...prev, [scenarioIndex]: true }))
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interruptionVisible, scenarioIndex, currentInbox])
+
   async function handleNext() {
     if (maybeFireInterruption()) return
 
@@ -1596,17 +1687,31 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
         </div>
 
         <div style={{ maxWidth: 780, margin: '0 auto', padding: '32px 20px 80px' }}>
-          {/* Interruption Toast */}
+          {/* Interruption Toast.
+              Slide-in card during scenarios with an inbox interruption.
+              role=status + aria-live=polite so screen reader users hear
+              the toast when it appears (without it being announced as
+              a modal — the toast does not block the candidate). Three
+              triage buttons each carry a contextual aria-label naming
+              the sender. Escape on the toast triggers the "Stay focused"
+              dismiss path (handled by a useEffect in the parent that
+              listens while interruptionVisible is true). */}
           {interruptionVisible && currentInbox?.interruption && !interruptionResponse[scenarioIndex] && (
-            <div style={{
-              position: 'fixed', top: 80, right: 20, zIndex: 500, width: 340, maxWidth: 'calc(100vw - 40px)',
-              background: CARD, border: `1.5px solid ${BD}`, borderRadius: 12,
-              boxShadow: '0 8px 32px rgba(15,33,55,0.18)', padding: '16px 18px',
-              animation: 'slideIn 0.3s ease',
-            }}>
+            <div
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-label={`Interruption from ${currentInbox.interruption.sender || 'a colleague'}`}
+              style={{
+                position: 'fixed', top: 80, right: 20, zIndex: 500, width: 340, maxWidth: 'calc(100vw - 40px)',
+                background: CARD, border: `1.5px solid ${BD}`, borderRadius: 12,
+                boxShadow: '0 8px 32px rgba(15,33,55,0.18)', padding: '16px 18px',
+                animation: 'slideIn 0.3s ease',
+              }}
+            >
               <style>{`@keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
               <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: TEAL, flexShrink: 0 }}>
+                <div aria-hidden style={{ width: 32, height: 32, borderRadius: '50%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: TEAL, flexShrink: 0 }}>
                   {currentInbox.interruption.sender?.[0] || 'M'}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1614,23 +1719,29 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
                   <div style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.5 }}>{currentInbox.interruption.message}</div>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <div role="group" aria-label="Triage interruption" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {[
-                  { key: 'reply_now', label: 'Reply now' },
-                  { key: 'note_later', label: 'Note for later' },
-                  { key: 'focus', label: 'Stay focused' },
+                  { key: 'reply_now', label: 'Reply now', aria: `Reply now to interruption from ${currentInbox.interruption.sender || 'sender'}` },
+                  { key: 'note_later', label: 'Note for later', aria: 'Add note for later about interruption' },
+                  { key: 'focus', label: 'Stay focused', aria: 'Dismiss interruption and stay focused on current task' },
                 ].map(opt => (
-                  <button key={opt.key} onClick={() => {
-                    setInterruptionResponse(prev => ({ ...prev, [scenarioIndex]: opt.key }))
-                    setInterruptionVisible(false)
-                    setInterruptionDismissed(prev => ({ ...prev, [scenarioIndex]: true }))
-                  }} style={{
-                    padding: '5px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-                    fontFamily: F, cursor: 'pointer',
-                    background: opt.key === 'reply_now' ? TEALLT : opt.key === 'focus' ? BG : '#FEF3C7',
-                    border: `1px solid ${opt.key === 'reply_now' ? `${TEAL}55` : opt.key === 'focus' ? BD : '#FCD34D'}`,
-                    color: opt.key === 'reply_now' ? TEALD : opt.key === 'focus' ? TX2 : '#92400E',
-                  }}>
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => {
+                      setInterruptionResponse(prev => ({ ...prev, [scenarioIndex]: opt.key }))
+                      setInterruptionVisible(false)
+                      setInterruptionDismissed(prev => ({ ...prev, [scenarioIndex]: true }))
+                    }}
+                    aria-label={opt.aria}
+                    style={{
+                      minHeight: 36, padding: '8px 14px', borderRadius: 6, fontSize: 12.5, fontWeight: 600,
+                      fontFamily: F, cursor: 'pointer',
+                      background: opt.key === 'reply_now' ? TEALLT : opt.key === 'focus' ? BG : '#FEF3C7',
+                      border: `1px solid ${opt.key === 'reply_now' ? `${TEAL}55` : opt.key === 'focus' ? BD : '#FCD34D'}`,
+                      color: opt.key === 'reply_now' ? TEALD : opt.key === 'focus' ? TX2 : '#92400E',
+                    }}
+                  >
                     {opt.label}
                   </button>
                 ))}
@@ -1640,19 +1751,26 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
 
           {/* Reply field if they chose reply_now */}
           {interruptionResponse[scenarioIndex] === 'reply_now' && !interruptionReply[scenarioIndex] && currentInbox?.interruption && (
-            <div style={{ background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
-              <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TEALD, marginBottom: 6 }}>Quick reply to {currentInbox.interruption.sender}</div>
+            <div role="region" aria-label={`Quick reply to interruption from ${currentInbox.interruption.sender || 'sender'}`} style={{ background: TEALLT, border: `1px solid ${TEAL}55`, borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
+              <label htmlFor={`pd-interrupt-reply-${scenarioIndex}`} style={{ display: 'block', fontFamily: F, fontSize: 12, fontWeight: 700, color: TEALD, marginBottom: 6 }}>Quick reply to {currentInbox.interruption.sender}</label>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
+                  id={`pd-interrupt-reply-${scenarioIndex}`}
                   type="text"
                   placeholder="Type your quick reply..."
+                  aria-label={`Reply to interruption from ${currentInbox.interruption.sender || 'sender'}`}
                   onKeyDown={e => { if (e.key === 'Enter' && e.target.value.trim()) setInterruptionReply(prev => ({ ...prev, [scenarioIndex]: e.target.value.trim() })) }}
-                  style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, outline: 'none' }}
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13 }}
                 />
-                <button onClick={e => {
-                  const input = e.target.previousSibling
-                  if (input.value.trim()) setInterruptionReply(prev => ({ ...prev, [scenarioIndex]: input.value.trim() }))
-                }} style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Send</button>
+                <button
+                  type="button"
+                  onClick={e => {
+                    const input = e.target.previousSibling
+                    if (input.value.trim()) setInterruptionReply(prev => ({ ...prev, [scenarioIndex]: input.value.trim() }))
+                  }}
+                  aria-label="Send quick reply"
+                  style={{ minHeight: 36, padding: '8px 14px', borderRadius: 6, border: 'none', background: TEAL, color: NAVY, fontFamily: F, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                >Send</button>
               </div>
             </div>
           )}
@@ -2213,61 +2331,113 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
         </div>
       </div>
 
-      {/* In-scenario interruption modal: appears once per scenario, when the
+      {/* In-scenario interruption dialog: appears once per scenario, when the
           candidate has filled all three ranked slots and the deterministic
           gate (~30% per scenario) returns true. Captures whether the
-          candidate revises their ranking or holds it under new information. */}
+          candidate revises their ranking or holds it under new information.
+          Proper ARIA dialog: role=dialog, aria-modal, aria-labelledby
+          and aria-describedby set, focus moves into the dialog on open
+          and restores to the trigger on close, Tab cycles within the
+          dialog, Escape calls saveInterruptionAndContinue (the only
+          existing exit path; see comment on saveInterruptionAndContinue
+          for why Escape does not discard the candidate's input). */}
       {interruptionModalOpen && scenarios[scenarioIndex]?.interruption && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: 20, zIndex: 1000,
-        }}>
-          <div style={{
-            background: '#fff', maxWidth: 640, width: '100%',
-            maxHeight: '90vh', overflow: 'auto',
-            border: `1px solid ${BD}`, borderTop: `4px solid ${AMB}`, borderRadius: 14,
-            padding: '28px 32px',
-          }}>
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(15,33,55,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20, zIndex: 1000,
+          }}
+        >
+          <div
+            ref={interruptionDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pd-interruption-title"
+            aria-describedby="pd-interruption-desc"
+            tabIndex={-1}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.preventDefault()
+                saveInterruptionAndContinue()
+                return
+              }
+              if (e.key !== 'Tab') return
+              const dialog = interruptionDialogRef.current
+              if (!dialog) return
+              const focusables = dialog.querySelectorAll(
+                'input:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+              )
+              if (focusables.length === 0) return
+              const first = focusables[0]
+              const last = focusables[focusables.length - 1]
+              if (e.shiftKey) {
+                if (document.activeElement === first || document.activeElement === dialog) {
+                  e.preventDefault()
+                  last.focus()
+                }
+              } else {
+                if (document.activeElement === last) {
+                  e.preventDefault()
+                  first.focus()
+                }
+              }
+            }}
+            style={{
+              background: '#fff', maxWidth: 640, width: '100%',
+              maxHeight: '90vh', overflow: 'auto',
+              border: `1px solid ${BD}`, borderTop: `4px solid ${AMB}`, borderRadius: 14,
+              padding: '28px 32px', outline: 'none',
+            }}
+          >
             <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 800, color: AMB, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
               Mid-task interruption
             </div>
-            <h2 style={{ fontFamily: F, fontSize: 19, fontWeight: 800, color: NAVY, margin: '0 0 12px', lineHeight: 1.3 }}>
+            <h2 id="pd-interruption-title" style={{ fontFamily: F, fontSize: 19, fontWeight: 800, color: NAVY, margin: '0 0 12px', lineHeight: 1.3 }}>
               While you were doing your first action, this just happened
             </h2>
-            <p style={{ fontFamily: F, fontSize: 15, color: TX, lineHeight: 1.65, margin: '0 0 14px' }}>
+            <p id="pd-interruption-desc" style={{ fontFamily: F, fontSize: 15, color: TX, lineHeight: 1.65, margin: '0 0 14px' }}>
               {scenarios[scenarioIndex].interruption.event}
             </p>
             <p style={{ fontFamily: F, fontSize: 14, color: TX2, lineHeight: 1.65, margin: '0 0 18px' }}>
               {scenarios[scenarioIndex].interruption.question || 'Does this change your ranking? If so, restate your new top three in order and explain why.'}
             </p>
 
-            {interruptionDraftSlots.map((slot, i) => (
-              <div key={i} style={{
-                background: '#f7f9fb', border: `1px solid ${BD}`, borderRadius: 10,
-                padding: '12px 14px', marginBottom: 10,
-              }}>
-                <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: NAVY, letterSpacing: '0.04em', marginBottom: 6 }}>Action {i + 1}</div>
-                <input
-                  value={slot.action}
-                  onChange={e => setInterruptionDraftSlots(prev => prev.map((s, idx) => idx === i ? { ...s, action: e.target.value } : s))}
-                  placeholder="What you do"
-                  style={{ width: '100%', fontFamily: F, fontSize: 14, padding: '8px 10px', border: `1px solid ${BD}`, borderRadius: 7, marginBottom: 6, color: TX, background: '#fff' }}
-                />
-                <textarea
-                  value={slot.justification}
-                  onChange={e => setInterruptionDraftSlots(prev => prev.map((s, idx) => idx === i ? { ...s, justification: e.target.value } : s))}
-                  placeholder="Why this slot, 1 to 2 sentences"
-                  rows={2}
-                  style={{ width: '100%', fontFamily: F, fontSize: 13.5, padding: '8px 10px', border: `1px solid ${BD}`, borderRadius: 7, color: TX, background: '#fff', resize: 'vertical' }}
-                />
-              </div>
-            ))}
+            {interruptionDraftSlots.map((slot, i) => {
+              const actionId = `pd-interrupt-action-${i}`
+              const justId = `pd-interrupt-just-${i}`
+              return (
+                <div key={i} style={{
+                  background: '#f7f9fb', border: `1px solid ${BD}`, borderRadius: 10,
+                  padding: '12px 14px', marginBottom: 10,
+                }}>
+                  <label htmlFor={actionId} style={{ display: 'block', fontFamily: F, fontSize: 11.5, fontWeight: 700, color: NAVY, letterSpacing: '0.04em', marginBottom: 6 }}>Action {i + 1}</label>
+                  <input
+                    id={actionId}
+                    value={slot.action}
+                    onChange={e => setInterruptionDraftSlots(prev => prev.map((s, idx) => idx === i ? { ...s, action: e.target.value } : s))}
+                    placeholder="What you do"
+                    aria-label={`Revised action ${i + 1}`}
+                    style={{ width: '100%', fontFamily: F, fontSize: 14, padding: '8px 10px', border: `1px solid ${BD}`, borderRadius: 7, marginBottom: 6, color: TX, background: '#fff' }}
+                  />
+                  <textarea
+                    id={justId}
+                    value={slot.justification}
+                    onChange={e => setInterruptionDraftSlots(prev => prev.map((s, idx) => idx === i ? { ...s, justification: e.target.value } : s))}
+                    placeholder="Why this slot, 1 to 2 sentences"
+                    aria-label={`Reasoning for revised action ${i + 1}`}
+                    rows={2}
+                    style={{ width: '100%', fontFamily: F, fontSize: 13.5, padding: '8px 10px', border: `1px solid ${BD}`, borderRadius: 7, color: TX, background: '#fff', resize: 'vertical' }}
+                  />
+                </div>
+              )
+            })}
 
-            <label style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX2, display: 'block', marginTop: 8, marginBottom: 6 }}>
+            <label htmlFor="pd-interrupt-reasoning" style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX2, display: 'block', marginTop: 8, marginBottom: 6 }}>
               Why are you holding or changing the ranking?
             </label>
             <textarea
+              id="pd-interrupt-reasoning"
               value={interruptionDraftReasoning}
               onChange={e => setInterruptionDraftReasoning(e.target.value)}
               placeholder="Two or three sentences."
@@ -2277,33 +2447,9 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 18 }}>
               <button
-                onClick={() => {
-                  // Persist the response and continue.
-                  const original = rankedActions[scenarioIndex]?.slots || []
-                  const revised = interruptionDraftSlots.map(s => ({
-                    action: (s.action || '').trim(),
-                    justification: (s.justification || '').trim(),
-                  }))
-                  const changedRanking = revised.some((s, idx) =>
-                    s.action !== ((original[idx]?.action || '').trim()) ||
-                    s.justification !== ((original[idx]?.justification || '').trim())
-                  )
-                  setScenarioInterruption(prev => ({
-                    ...prev,
-                    [scenarioIndex]: {
-                      fired: true,
-                      prompt: scenarios[scenarioIndex].interruption?.event || '',
-                      revised_slots: revised.map((s, idx) => ({ rank: idx + 1, ...s })),
-                      changed_ranking: changedRanking,
-                      reasoning: interruptionDraftReasoning.trim(),
-                      responded_at: new Date().toISOString(),
-                    },
-                  }))
-                  setInterruptionModalOpen(false)
-                  // Auto-trigger handleNext after the interruption is closed.
-                  setTimeout(() => { handleNext() }, 0)
-                }}
-                style={{ background: TEAL, color: '#fff', fontFamily: F, fontWeight: 700, fontSize: 15, border: 'none', borderRadius: 10, padding: '12px 24px', cursor: 'pointer' }}
+                type="button"
+                onClick={saveInterruptionAndContinue}
+                style={{ minHeight: 44, background: TEAL, color: '#fff', fontFamily: F, fontWeight: 700, fontSize: 15, border: 'none', borderRadius: 10, padding: '12px 24px', cursor: 'pointer' }}
               >
                 Save and continue
               </button>
