@@ -97,8 +97,10 @@ export default function AccessibilityPage() {
         <H2>4. What is still in progress</H2>
         <UL items={[
           'Manual testing with screen readers (JAWS, NVDA, VoiceOver) is ongoing across all candidate-facing and agency-facing surfaces. The keyboard and ARIA work shipped above is verified by code review and follows WAI-ARIA authoring practices, but real-device screen reader passes are still pending and may surface wording or flow refinements',
+          'A seeded-test pass with axe DevTools and Lighthouse against a live candidate assessment URL is planned, to catch any per-scenario state issues that static code review cannot detect',
           'Form error association on agency and employer-facing surfaces (login, account creation, settings, billing) still relies on visual-only error display; the consistent aria-invalid and role=alert pattern shipped on candidate responses will be extended to these surfaces',
           'Brand jade #00BFA5 is used as an accent rather than for body text; we are auditing remaining surfaces where jade is used for small text against white to ensure 4.5:1 contrast',
+          'Periodic time-remaining announcements at 50%, 25% and 10% thresholds are planned to extend the existing one-minute-remaining live-region announcement on scenarios and the Workspace simulation',
           'Reasonable adjustments configurable by the inviting agency or employer (extended time configurable per candidate, additional screen reader presets) is planned for later in 2026',
           'Professional accessibility audit scheduled for completion by ' + FULL_AUDIT_BY,
         ]} />
