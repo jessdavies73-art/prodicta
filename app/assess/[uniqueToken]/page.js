@@ -313,6 +313,77 @@ function AlreadyCompletedPage({ candidateName, token }) {
   )
 }
 
+// ─── Simplified Mode (Reasonable Adjustments Layer 2) ────────────────────────
+// Candidate self-controlled visual simplification. Persisted in localStorage
+// keyed on the assessment token so a refresh mid-session preserves state.
+// Auto-prefilled when the candidate previously declared 'simplified_ui' in
+// their Layer 1 adjustment_request. Cleared on submit / quit by the parent.
+//
+// Visual-only: timer continues, scoring is unchanged, integrity signals are
+// unaffected. The class is applied to document.body via a useEffect inside
+// the parent so the cascade reaches every screen state (intro / resume /
+// active / submitted) without per-screen wrapping.
+function simplifiedModeKey(token) {
+  return `prodicta_simplified_mode_${token}`
+}
+
+function readSimplifiedMode(token) {
+  if (typeof window === 'undefined' || !token) return false
+  try { return window.localStorage.getItem(simplifiedModeKey(token)) === 'true' } catch { return false }
+}
+
+function writeSimplifiedMode(token, value) {
+  if (typeof window === 'undefined' || !token) return
+  try {
+    if (value) window.localStorage.setItem(simplifiedModeKey(token), 'true')
+    else window.localStorage.removeItem(simplifiedModeKey(token))
+  } catch {}
+}
+
+function clearSimplifiedMode(token) {
+  if (typeof window === 'undefined' || !token) return
+  try { window.localStorage.removeItem(simplifiedModeKey(token)) } catch {}
+}
+
+function SimplifiedModeToggle({ enabled, onChange, disabled = false }) {
+  return (
+    <div style={{ marginTop: 14, padding: '12px 16px', background: '#f7f9fb', border: `1px solid ${BD}`, borderRadius: 10, textAlign: 'left' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <label htmlFor="pd-simplified-mode-switch" style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: NAVY, cursor: disabled ? 'default' : 'pointer' }}>
+          Simplified mode
+        </label>
+        <button
+          id="pd-simplified-mode-switch"
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          disabled={disabled}
+          onClick={() => onChange(!enabled)}
+          data-no-lift
+          data-no-resize
+          style={{
+            width: 44, height: 26, borderRadius: 999,
+            background: enabled ? TEAL : '#cbd5e1',
+            border: 'none', position: 'relative',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            transition: 'background 0.15s', flexShrink: 0,
+            opacity: disabled ? 0.6 : 1,
+          }}
+        >
+          <span style={{
+            position: 'absolute', top: 3, left: enabled ? 21 : 3,
+            width: 20, height: 20, borderRadius: '50%', background: '#fff',
+            transition: 'left 0.15s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+          }} />
+        </button>
+      </div>
+      <p style={{ fontFamily: F, fontSize: 12.5, color: TX2, margin: '6px 0 0', lineHeight: 1.55 }}>
+        Reduces animations, simplifies the visual layout, and de-emphasises time pressure indicators. Your assessment time and scoring are not affected.
+      </p>
+    </div>
+  )
+}
+
 // ─── Reasonable Adjustments (Layer 1 disclosure) ─────────────────────────────
 // Inline form rendered between the privacy disclosure and the Start button on
 // the candidate landing screen. Captures Equality Act 2010 adjustment requests
@@ -546,7 +617,7 @@ function AdjustmentsPanel({ uniqueToken, demoPreview = false }) {
 // AI/UK GDPR disclosure, and the Start button. Pressing Start is the consent
 // action; a timestamp is recorded server-side via /api/assess/[token]/consent
 // before navigation to the first scenario.
-function IntroPage({ candidate, assessment, companyName, uniqueToken, onBegin }) {
+function IntroPage({ candidate, assessment, companyName, uniqueToken, simplifiedMode, onSimplifiedModeChange, onBegin }) {
   return (
     <>
       <NavBar candidateName={candidate.name} />
@@ -597,6 +668,10 @@ function IntroPage({ candidate, assessment, companyName, uniqueToken, onBegin })
           >
             Start assessment
           </button>
+          <SimplifiedModeToggle
+            enabled={simplifiedMode}
+            onChange={onSimplifiedModeChange}
+          />
           <AdjustmentsPanel uniqueToken={uniqueToken} />
         </Card>
       </CentredCard>
@@ -1183,7 +1258,7 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
               }} />
             </div>
           </div>
-          <div style={{
+          <div className={isTimeLow ? 'timer-warning' : undefined} style={{
             fontFamily: FM,
             fontSize: 16,
             fontWeight: 600,
@@ -2625,7 +2700,7 @@ function WorkspacePage({ assessment, candidate, onSubmit, onSkip }) {
  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>{assessment.role_title}, Day 1, 9:00am</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 700, color: timeLeft < 120 ? '#dc2626' : '#fff' }}>{mins}:{String(secs).padStart(2, '0')}</span>
+          <span className={timeLeft < 120 ? 'timer-warning' : undefined} style={{ fontFamily: FM, fontSize: 14, fontWeight: 700, color: timeLeft < 120 ? '#dc2626' : '#fff' }}>{mins}:{String(secs).padStart(2, '0')}</span>
           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Emails {emailsReplied}/{emails.length} | Tasks {tasksHandled}/{tasks.length} | Messages {msgsReplied}/{messages.length}</span>
         </div>
       </div>
@@ -2865,7 +2940,7 @@ function CalendarPage({ assessment, candidate, onSubmit, onSkip }) {
         </div>
 
         {/* Timer */}
-        <div style={{
+        <div className={isLow ? 'timer-warning' : undefined} style={{
           textAlign: 'center', marginBottom: 24,
           fontFamily: FM, fontSize: 20, fontWeight: 700,
           color: isLow ? '#dc2626' : TX,
@@ -3020,6 +3095,12 @@ export default function AssessPage({ params }) {
   const [assessment, setAssessment] = useState(null)
   const [companyName, setCompanyName] = useState('')
   const [pendingResponses, setPendingResponses] = useState(null) // stored between active→calendar→submit
+  // Simplified Mode (Reasonable Adjustments Layer 2). Owned at the page
+  // level so a single useEffect can apply / remove the body class for the
+  // whole assessment session and so localStorage stays in sync regardless
+  // of which screen is on screen.
+  const [simplifiedMode, setSimplifiedMode] = useState(() => readSimplifiedMode(uniqueToken))
+  const simplifiedModeBootstrapped = useRef(false)
   // Resume state. Populated on mount from localStorage and the DB JSONB
   // column when the candidate has meaningful in-progress work; null when
   // they're a fresh start or have no recoverable state. Passed to
@@ -3034,6 +3115,47 @@ export default function AssessPage({ params }) {
   // Captured from the screen's mount-to-submit timer and merged into
   // the submit payload as strategic_thinking_responses.time_in_component.
   const [strategicThinkingTime, setStrategicThinkingTime] = useState(0)
+
+  // Apply / remove the simplified-mode body class. Cleanup on unmount so
+  // a navigation away from /assess does not leave the global app body in
+  // a stuck state.
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const cls = 'pd-simplified-mode'
+    if (simplifiedMode) document.body.classList.add(cls)
+    else document.body.classList.remove(cls)
+    return () => { document.body.classList.remove(cls) }
+  }, [simplifiedMode])
+
+  // Wrapped setter: keep state and localStorage in lock-step.
+  const updateSimplifiedMode = (value) => {
+    setSimplifiedMode(!!value)
+    writeSimplifiedMode(uniqueToken, !!value)
+  }
+
+  // Auto-prefill from a Layer 1 adjustment_requests row that declared
+  // 'simplified_ui'. Runs once after mount and only when the candidate
+  // has not already toggled the switch on this device (we treat any
+  // existing localStorage value, true OR false, as the candidate's own
+  // explicit choice and do not override it).
+  useEffect(() => {
+    if (!uniqueToken) return
+    if (simplifiedModeBootstrapped.current) return
+    simplifiedModeBootstrapped.current = true
+    let stored = null
+    try { stored = window.localStorage.getItem(simplifiedModeKey(uniqueToken)) } catch {}
+    if (stored !== null) return
+    let cancelled = false
+    fetch(`/api/assess/${uniqueToken}/adjustment-request`).then(async r => {
+      if (!r.ok) return
+      const data = await r.json().catch(() => null)
+      if (cancelled) return
+      const types = Array.isArray(data?.request?.adjustment_types) ? data.request.adjustment_types : []
+      if (types.includes('simplified_ui')) updateSimplifiedMode(true)
+    }).catch(() => {})
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uniqueToken])
 
   useEffect(() => {
     if (!uniqueToken) {
@@ -3158,6 +3280,7 @@ export default function AssessPage({ params }) {
       // visit to a completed assessment, before the GET /progress
       // completed-status guard kicks in.
       clearLocalProgress(uniqueToken)
+      clearSimplifiedMode(uniqueToken)
       fetch(`/api/assess/${uniqueToken}/progress`, { method: 'DELETE' }).catch(() => {})
     } catch {
       setErrorMessage('Submission failed. Please check your connection and try again.')
@@ -3256,6 +3379,8 @@ export default function AssessPage({ params }) {
       assessment={assessment}
       companyName={companyName}
       uniqueToken={uniqueToken}
+      simplifiedMode={simplifiedMode}
+      onSimplifiedModeChange={updateSimplifiedMode}
       onBegin={() => {
         // Record consent timestamp server-side. Fire-and-forget: a network
         // blip should not block a candidate from starting their assessment;

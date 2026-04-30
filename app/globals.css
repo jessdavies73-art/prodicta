@@ -159,6 +159,51 @@ button:not([disabled]):not([data-no-lift]):active {
   }
 }
 
+/* ── Simplified Mode (Reasonable Adjustments Layer 2) ──────────────────────
+   The candidate self-toggles this on the /assess/[token] intro screen
+   (or it's pre-ticked from a Layer 1 adjustment_requests row that
+   declared 'simplified_ui'). The class is applied to document.body for
+   the duration of the assessment session and removed on submit / quit.
+   This is a VISUAL-only adjustment: timer, scoring, integrity signals,
+   and scenario content are unaffected. */
+.pd-simplified-mode *,
+.pd-simplified-mode *::before,
+.pd-simplified-mode *::after {
+  animation-duration: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  scroll-behavior: auto !important;
+}
+.pd-simplified-mode .card-hover:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+.pd-simplified-mode .pd-pulse,
+.pd-simplified-mode .pd-flash,
+.pd-simplified-mode .pd-spin {
+  animation: none !important;
+}
+/* Timer / time-pressure spans get tagged with .timer-warning where they
+   render so this rule de-emphasises the colour-shift without changing
+   the underlying timer behaviour. */
+.pd-simplified-mode .timer-warning,
+.pd-simplified-mode .pd-time-pressure {
+  color: #64748b !important;
+  background-color: transparent !important;
+  font-weight: normal !important;
+}
+/* Slightly more breathable line spacing inside scenario bodies so the
+   simpler layout reads more like a document than a UI. */
+.pd-simplified-mode p,
+.pd-simplified-mode li {
+  line-height: 1.7 !important;
+}
+/* WCAG 2.5.5 (Target Size). Larger touch targets in Simplified Mode. */
+.pd-simplified-mode button:not([data-no-resize]),
+.pd-simplified-mode [role="button"]:not([data-no-resize]) {
+  min-height: 44px;
+}
+
 /* ── Selection colour ──────────────────────────────────────────────────────── */
 ::selection {
   background: rgba(0,191,165,0.18);
