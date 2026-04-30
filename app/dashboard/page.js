@@ -15,6 +15,7 @@ import {
 import OnboardingWizard from '@/components/OnboardingWizard'
 import ProdictaLogo from '@/components/ProdictaLogo'
 import { isAgencyPerm } from '@/lib/account-helpers'
+import JourneyIndicator from '@/components/JourneyIndicator'
 
 /* Inline mobile detection, no external hook dependency */
 const _mSub = (cb) => { window.addEventListener('resize', cb); return () => window.removeEventListener('resize', cb) }
@@ -2407,6 +2408,29 @@ function DashboardPageInner() {
         display: 'flex',
         flexDirection: 'column',
       }}>
+
+        {/* ── PRODICTA killer-workflow journey indicator ──
+            Six-step narrative that frames the dashboard around the
+            buyer's actual flow. Counts are derived from data already
+            fetched above; no extra Supabase round-trip. The widget
+            below it (existing SectionHeader / cards) is unchanged in
+            this commit; the wholesale per-step widget reorganisation
+            is a separate follow-up so existing functionality stays
+            intact. */}
+        <JourneyIndicator
+          accountType={profile?.account_type}
+          employmentType={profile?.default_employment_type}
+          isEmpty={savedRoles.length === 0 && candidates.length === 0}
+          counts={{
+            create:   savedRoles.length,
+            screen:   pendingCandidates.length,
+            decide:   completed.length,
+            track:    (placementHealth?.total_active || 0) + (activeCoachingPlans?.length || 0),
+            fix:      todaysActions.length,
+            document: candidateOutcomes.length,
+          }}
+          onCreateClick={() => router.push('/assessment/new')}
+        />
 
         {/* ── Section dividers (rendered inline, slotted by CSS order) ── */}
         <SectionHeader

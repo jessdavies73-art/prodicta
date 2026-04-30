@@ -5,6 +5,7 @@ import Avatar from '@/components/Avatar'
 import { Ic } from '@/components/Icons'
 import InfoTooltip from '@/components/InfoTooltip'
 import { DemoLayout, SignUpModal } from '@/components/DemoShell'
+import JourneyIndicator from '@/components/JourneyIndicator'
 import { DEMO_CANDIDATES, DEMO_ASSESSMENTS } from '@/lib/demo-data'
 import {
   NAVY, TEAL, TEALD, TEALLT, BG, CARD, BD, TX, TX2, TX3,
@@ -834,6 +835,24 @@ function DemoDashboardInner() {
             </button>
           </div>
         </div>
+
+        {/* PRODICTA killer-workflow journey indicator (demo).
+            Counts are hardcoded representative numbers so the demo
+            tells the same six-step story as the live dashboard
+            (demo-parity rule). The indicator re-renders when the
+            account-type / employment-type toggles below change. */}
+        <JourneyIndicator
+          accountType={demoType}
+          employmentType={demoEmploymentType}
+          counts={{
+            create:   3,
+            screen:   8,
+            decide:   isAgency ? 4 : 2,
+            track:    demoHasTempWork ? 6 : 3,
+            fix:      2,
+            document: 5,
+          }}
+        />
 
         {/* Account type toggle */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 24, background: CARD, borderRadius: 10, border: `1.5px solid ${BD}`, padding: 3, width: 'fit-content' }}>
