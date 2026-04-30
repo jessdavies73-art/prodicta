@@ -890,9 +890,31 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
   // visible regardless of mode / role-level so candidates with motor or
   // dyslexia-related needs can use voice on Speed-Fit and Rapid Screen too.
   const showRecordToggle = voicePrefilled || (mode !== 'quick' && mode !== 'rapid' && !isOperational)
-  const [inputModes, setInputModes] = useState(scenarios.map(() => voicePrefilled ? 'record' : 'type')) // 'type' or 'record'
+  // Resume hydration: input_modes and audio_urls come from the saved
+  // in_progress_state JSONB written by persistProgressNow. Audio URLs
+  // are durable Supabase Storage URLs (never client blob URLs) so they
+  // survive refresh. A scenario with a stored URL but no client blob
+  // is hydrated for playback only; re-record replaces both.
+  const initialInputModes = Array.isArray(initialProgress?.input_modes) && initialProgress.input_modes.length === scenarios.length
+    ? initialProgress.input_modes
+    : scenarios.map(() => voicePrefilled ? 'record' : 'type')
+  const initialAudioStorageUrls = Array.isArray(initialProgress?.audio_urls) && initialProgress.audio_urls.length === scenarios.length
+    ? initialProgress.audio_urls
+    : scenarios.map(() => null)
+  const [inputModes, setInputModes] = useState(initialInputModes)
   const [audioBlobs, setAudioBlobs] = useState(scenarios.map(() => null))
-  const [audioUrls, setAudioUrls] = useState(scenarios.map(() => null))
+  // audioUrls is the URL the playback element renders. On a fresh
+  // recording it is the local blob URL; after a resume it is the
+  // durable storage URL. Both work as <audio src=> values.
+  const [audioUrls, setAudioUrls] = useState(initialAudioStorageUrls)
+  // Storage URLs returned by /api/assess/[token]/upload-audio after the
+  // background upload-on-capture completes. Persisted in the
+  // in_progress_state JSONB so a refresh hydrates playback from the
+  // durable URL instead of the lost-on-refresh blob URL above.
+  // audioUploadStatus: 'idle' | 'uploading' | 'uploaded' | 'failed' per
+  // scenario index, drives the subtle "Uploaded" indicator.
+  const [audioStorageUrls, setAudioStorageUrls] = useState(initialAudioStorageUrls)
+  const [audioUploadStatus, setAudioUploadStatus] = useState(scenarios.map((_, i) => initialAudioStorageUrls[i] ? 'uploaded' : 'idle'))
   const [recording, setRecording] = useState(false)
   const [recordTime, setRecordTime] = useState(0)
   const [audioPlaying, setAudioPlaying] = useState(false)
@@ -948,11 +970,22 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
         stream.getTracks().forEach(t => t.stop())
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
         const url = URL.createObjectURL(blob)
-        setAudioBlobs(prev => { const n = [...prev]; n[scenarioIndex] = blob; return n })
-        setAudioUrls(prev => { const n = [...prev]; n[scenarioIndex] = url; return n })
+        const idx = scenarioIndex
+        setAudioBlobs(prev => { const n = [...prev]; n[idx] = blob; return n })
+        setAudioUrls(prev => { const n = [...prev]; n[idx] = url; return n })
+        // Clear any previous storage URL for this scenario; the candidate
+        // just re-recorded so the old uploaded file is stale.
+        setAudioStorageUrls(prev => { const n = [...prev]; n[idx] = null; return n })
         setRecording(false)
         clearInterval(recordTimerRef.current)
         setRecordAnnouncement(`Recording stopped. Audio captured.`)
+        // Background upload-on-capture so the audio survives a refresh
+        // or connection drop. Fire-and-forget; the candidate is never
+        // blocked. The submit-time uploader (existing behaviour) acts as
+        // a fallback if this fails. Single retry after 2s; after that
+        // the recording remains client-side only and the warning banner
+        // below explains the consequence to the candidate.
+        uploadAudioInBackground(blob, idx, /*attempt*/ 1)
       }
       mediaRecorderRef.current = mr
       mr.start()
@@ -987,6 +1020,40 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
     audioChunksRef.current = []
     mediaRecorderRef.current.stop()
     setRecordAnnouncement('Recording cancelled. No audio saved.')
+  }
+
+  // Background upload-on-capture. Posts the blob to
+  // /api/assess/[token]/upload-audio. On success, stores the durable
+  // public URL in audioStorageUrls so it gets persisted to the
+  // in_progress_state JSONB by the next persistProgressNow tick. On
+  // failure, retries once after 2s, then surfaces 'failed' status; the
+  // candidate's local blob remains in audioBlobs as the fallback and
+  // the existing submit-time uploader still tries to persist it on
+  // assessment submit.
+  async function uploadAudioInBackground(blob, idx, attempt = 1) {
+    if (!uniqueToken || !blob) return
+    setAudioUploadStatus(prev => { const n = [...prev]; n[idx] = 'uploading'; return n })
+    try {
+      const fd = new FormData()
+      fd.append('audio', blob, `scenario_${idx}.webm`)
+      fd.append('scenario_index', String(idx))
+      const res = await fetch(`/api/assess/${uniqueToken}/upload-audio`, { method: 'POST', body: fd })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json().catch(() => null)
+      if (!data?.ok || !data?.audio_url) throw new Error('No URL returned')
+      setAudioStorageUrls(prev => { const n = [...prev]; n[idx] = data.audio_url; return n })
+      setAudioUploadStatus(prev => { const n = [...prev]; n[idx] = 'uploaded'; return n })
+      // Trigger a progress save so the new audio_url lands in the JSONB
+      // immediately rather than waiting for the next 30s heartbeat.
+      try { persistProgressNowRef.current && persistProgressNowRef.current() } catch {}
+    } catch (err) {
+      console.warn('[upload-audio] attempt', attempt, 'failed', err?.message)
+      if (attempt < 2) {
+        setTimeout(() => uploadAudioInBackground(blob, idx, attempt + 1), 2000)
+      } else {
+        setAudioUploadStatus(prev => { const n = [...prev]; n[idx] = 'failed'; return n })
+      }
+    }
   }
 
   // Auto-clear submit error once the candidate fixes the cause: typed text
@@ -1093,6 +1160,12 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
       timeTakens,
       rankedActions,
       forcedChoiceResponses,
+      // Durable audio URLs only. Client-only blob URLs would not survive
+      // a refresh so persisting them gives a false sense of resumability.
+      // Scenarios where the upload failed remain client-only and resume
+      // shows them as "no recording yet"; the candidate can re-record.
+      audio_urls: audioStorageUrls,
+      input_modes: inputModes,
       lastSavedAt: new Date().toISOString(),
     }
     try {
@@ -1356,14 +1429,24 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
 
     if (isLast) {
       clearInterval(intervalRef.current)
-      // Upload any audio recordings to Supabase Storage
+      // Submit-time upload, now a fallback for the upload-on-capture
+      // path. Skip scenarios where a durable storage URL already exists
+      // (uploaded via /api/assess/[token]/upload-audio at recording
+      // stop). For scenarios where the background upload failed and we
+      // still have only a client blob, attempt the upload here so audio
+      // is not lost on submit. Same path the upload-audio route uses,
+      // so upsert: true is a no-op when the file is already there.
       const uploadedAudioUrls = [...audioUrls]
       for (let idx = 0; idx < scenarios.length; idx++) {
+        if (audioStorageUrls[idx]) {
+          uploadedAudioUrls[idx] = audioStorageUrls[idx]
+          continue
+        }
         if (audioBlobs[idx]) {
           try {
             const { createClient } = await import('@/lib/supabase')
             const supabase = createClient()
-            const path = `recordings/${assessment.id}/${candidate.id}/scenario_${idx}.webm`
+            const path = `${assessment.id}/${candidate.id}/scenario_${idx}.webm`
             const { error: upErr } = await supabase.storage.from('recordings').upload(path, audioBlobs[idx], {
               contentType: 'audio/webm', upsert: true,
             })
@@ -2009,9 +2092,33 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
 
                   {audioUrls[scenarioIndex] && !recording && (
                     <div>
-                      <div style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD, marginBottom: 12 }}>
-                        Recording complete ({formatTime(recordTime)})
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+                        <span style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TEALD }}>
+                          Recording complete ({formatTime(recordTime)})
+                        </span>
+                        {audioUploadStatus[scenarioIndex] === 'uploading' && (
+                          <span role="status" style={{ fontFamily: F, fontSize: 12, color: TX2 }}>
+                            Uploading…
+                          </span>
+                        )}
+                        {audioUploadStatus[scenarioIndex] === 'uploaded' && (
+                          <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: F, fontSize: 12, fontWeight: 700, color: TEAL }}>
+                            <svg aria-hidden width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            Uploaded
+                          </span>
+                        )}
                       </div>
+                      {audioUploadStatus[scenarioIndex] === 'failed' && (
+                        <div role="alert" style={{
+                          marginBottom: 12, padding: '8px 12px',
+                          background: '#fff7ed', border: '1px solid #fdba74', borderLeft: `3px solid ${AMB}`,
+                          borderRadius: 8, fontFamily: F, fontSize: 12.5, color: NAVY, lineHeight: 1.5,
+                        }}>
+                          Recording saved on this device. If you refresh the page, this recording may be lost. It will be uploaded again when you submit the assessment.
+                        </div>
+                      )}
                       <audio
                         src={audioUrls[scenarioIndex]}
                         controls
