@@ -86,15 +86,20 @@ export default function AccessibilityPage() {
           'Standardised the info-tooltip component across the product so the tooltip anchors correctly to its trigger, supports keyboard activation (Enter and Space), respects Escape to dismiss, and exposes the relationship to assistive technologies via aria-describedby (WCAG 1.4.13, 2.1.1, 4.1.2)',
           'Confirmed presence of semantic page landmarks (nav, main) on the root layout',
           'Reviewed transactional email templates for adequate colour contrast and decorative-image alt text',
+          'Shipped a Reasonable Adjustments Layer 1 disclosure UI on the candidate landing screen so candidates can declare adjustments under the Equality Act 2010 before starting an assessment, with informational notice to the inviting agency or employer',
+          'Shipped Reasonable Adjustments Layer 2 candidate-controlled adjustments: a Simplified Mode toggle that pauses animations and de-emphasises time pressure indicators, voice-response improvements with keyboard activation and screen reader announcements, and auto-pre-tick of these modes when the candidate previously declared the corresponding need in Layer 1',
+          'Added keyboard activation, screen reader announcements via aria-live regions, and pick-up-and-drop pattern (Space, arrow keys, Escape) to the forced-choice ranking, select-exclude, and trade-off scenario types',
+          'Added empty-submission and incomplete-submission validation across all candidate response types (typed, voice, forced-choice) with role=alert error banners, aria-invalid, and focus management',
+          'Completed the Workspace simulation accessibility sprint for the Strategy-Fit candidate experience: task list semantics with 44px touch targets and aria-pressed (WCAG 2.5.5, 4.1.2), email inbox row buttons with aria-expanded, messages and inbox triage region landmarks with contextual aria-labels, calendar surfaces with labelled selects and inputs and aria-expanded note toggles, mid-task interruption converted to a proper dialog with role=dialog, aria-modal, focus trap, Escape handler, and focus restoration, and live-region announcements on the in-scenario and surprise notification toasts',
+          'Exported the PRODICTA logo as standalone SVG and PNG variants in /brand/ for accessible external use',
         ]} />
 
         <H2>4. What is still in progress</H2>
         <UL items={[
-          'Manual testing with screen readers (JAWS, NVDA, VoiceOver) is ongoing',
-          'The Workspace simulation (the live multi-task environment used inside Strategy-Fit and the Immersive add-on) is undergoing keyboard navigation review; some interactions are pointer-first and need keyboard equivalents',
+          'Manual testing with screen readers (JAWS, NVDA, VoiceOver) is ongoing across all candidate-facing and agency-facing surfaces. The keyboard and ARIA work shipped above is verified by code review and follows WAI-ARIA authoring practices, but real-device screen reader passes are still pending and may surface wording or flow refinements',
+          'Form error association on agency and employer-facing surfaces (login, account creation, settings, billing) still relies on visual-only error display; the consistent aria-invalid and role=alert pattern shipped on candidate responses will be extended to these surfaces',
           'Brand jade #00BFA5 is used as an accent rather than for body text; we are auditing remaining surfaces where jade is used for small text against white to ensure 4.5:1 contrast',
-          'Form error messages are currently shown visually; we are adding aria-invalid and aria-describedby associations so errors are announced consistently',
-          'Reasonable adjustments configurable by the inviting agency or employer (extended time, screen reader presets, simplified layouts) is planned for later in 2026',
+          'Reasonable adjustments configurable by the inviting agency or employer (extended time configurable per candidate, additional screen reader presets) is planned for later in 2026',
           'Professional accessibility audit scheduled for completion by ' + FULL_AUDIT_BY,
         ]} />
 
