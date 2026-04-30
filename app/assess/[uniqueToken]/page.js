@@ -3377,35 +3377,45 @@ function WorkspacePage({ assessment, candidate, onSubmit, onSkip }) {
           </div>
         </section>
 
-        {/* Calendar */}
-        <div style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
+        {/* Today's Schedule.
+            Read-only fixed events plus per-gap planner inputs. Each
+            gap input gets a contextual aria-label tying it to the
+            specific time slot so screen reader users know which gap
+            they are filling. Region landmark mirrors the other three
+            Workspace panels. */}
+        <section role="region" aria-label="Today's Schedule" style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BD}` }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: TX }}>Today's Schedule</span>
           </div>
           <div style={{ padding: '12px 18px' }}>
             {fixed.map((m, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, padding: '6px 0', borderBottom: `1px solid ${BD}` }}>
+              <div key={i} role="group" aria-label={`Fixed: ${m.time}, ${m.title}`} style={{ display: 'flex', gap: 10, padding: '6px 0', borderBottom: `1px solid ${BD}` }}>
                 <span style={{ fontFamily: FM, fontSize: 11, color: TX3, width: 44, flexShrink: 0 }}>{m.time}</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: TX }}>{m.title}</span>
               </div>
             ))}
-            {gaps.map((g, i) => (
-              <div key={`gap-${i}`} style={{ padding: '8px 0', borderBottom: `1px solid ${BD}` }}>
-                <div style={{ display: 'flex', gap: 10, marginBottom: 4 }}>
-                  <span style={{ fontFamily: FM, fontSize: 11, color: TEAL, width: 44, flexShrink: 0 }}>{g.time}</span>
-                  <span style={{ fontSize: 12, color: TEAL, fontWeight: 600 }}>{g.context}</span>
+            {gaps.map((g, i) => {
+              const inputId = `pd-gap-plan-${i}`
+              return (
+                <div key={`gap-${i}`} style={{ padding: '8px 0', borderBottom: `1px solid ${BD}` }}>
+                  <label htmlFor={inputId} style={{ display: 'flex', gap: 10, marginBottom: 4, cursor: 'text' }}>
+                    <span style={{ fontFamily: FM, fontSize: 11, color: TEAL, width: 44, flexShrink: 0 }}>{g.time}</span>
+                    <span style={{ fontSize: 12, color: TEAL, fontWeight: 600 }}>{g.context}</span>
+                  </label>
+                  <input
+                    id={inputId}
+                    type="text"
+                    value={gapPlans[i] || ''}
+                    onChange={e => setGapPlans(p => ({ ...p, [i]: e.target.value }))}
+                    placeholder="What will you do in this slot?"
+                    aria-label={`Plan for ${g.time}${g.context ? ', ' + g.context : ''}`}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 12, color: TX, marginLeft: 54 }}
+                  />
                 </div>
-                <input
-                  type="text"
-                  value={gapPlans[i] || ''}
-                  onChange={e => setGapPlans(p => ({ ...p, [i]: e.target.value }))}
-                  placeholder="What will you do in this slot?"
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 12, color: TX, outline: 'none', marginLeft: 54 }}
-                />
-              </div>
-            ))}
+              )
+            })}
           </div>
-        </div>
+        </section>
       </div>
 
       {/* Submit bar */}
@@ -3481,7 +3491,7 @@ function CalendarPage({ assessment, candidate, onSubmit, onSkip }) {
 
   return (
     <div style={{ minHeight: '100vh', background: BG, fontFamily: F, padding: '24px 20px 80px' }}>
-      <div style={{ maxWidth: 680, margin: '0 auto' }}>
+      <section role="region" aria-label="Plan Your First Monday" style={{ maxWidth: 680, margin: '0 auto' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: TEAL, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Day One Planning</div>
@@ -3500,27 +3510,41 @@ function CalendarPage({ assessment, candidate, onSubmit, onSkip }) {
           {mins}:{String(secs).padStart(2, '0')} remaining
         </div>
 
-        {/* Calendar timeline */}
-        <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden', marginBottom: 20 }}>
+        {/* Calendar timeline.
+            ARIA-only fix per audit: each timeline row carries a
+            contextual aria-label summarising the time slot and what
+            is scheduled (fixed events, candidate-scheduled tasks, or
+            empty). Avoids restructuring the visual layout while
+            giving screen reader users a meaningful summary per row.
+            Heavier <table role="table"> upgrade was scoped out: the
+            visual is a flat timeline, not a grid of comparable cells. */}
+        <section aria-label="Monday Schedule timeline" style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden', marginBottom: 20 }}>
           <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BD}`, background: NAVY }}>
             <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: TEAL }}>Monday Schedule</span>
             <span style={{ fontFamily: F, fontSize: 12, color: 'rgba(255,255,255,0.5)', marginLeft: 8 }}>8:00am - 6:00pm</span>
           </div>
 
-          <div style={{ padding: '12px 0' }}>
+          <ol role="list" style={{ listStyle: 'none', margin: 0, padding: '12px 0' }}>
             {TIME_SLOTS.map(slot => {
               const fixedHere = fixedEvents.filter(e => e.time === slot)
               const tasksHere = unscheduled.filter(t => taskSlots[t.id] === slot)
               const isEmpty = fixedHere.length === 0 && tasksHere.length === 0
-
+              const summaryParts = []
+              fixedHere.forEach(e => summaryParts.push(`${e.type === 'interruption' ? 'unexpected: ' : e.type === 'deadline' ? 'deadline: ' : ''}${e.title}`))
+              tasksHere.forEach(t => summaryParts.push(`scheduled task: ${t.title}${taskNotes[t.id] ? ` (${taskNotes[t.id]})` : ''}`))
+              const summary = summaryParts.length === 0 ? 'empty' : summaryParts.join('; ')
               return (
-                <div key={slot} style={{
-                  display: 'flex', gap: 12, padding: '4px 18px', minHeight: 36,
-                  alignItems: 'center',
-                  borderBottom: slot.endsWith(':00') ? `1px solid ${BD}` : 'none',
-                }}>
-                  <div style={{ width: 48, fontFamily: FM, fontSize: 11.5, color: TX3, flexShrink: 0 }}>{slot}</div>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <li
+                  key={slot}
+                  aria-label={`${slot}: ${summary}`}
+                  style={{
+                    display: 'flex', gap: 12, padding: '4px 18px', minHeight: 36,
+                    alignItems: 'center',
+                    borderBottom: slot.endsWith(':00') ? `1px solid ${BD}` : 'none',
+                  }}
+                >
+                  <div aria-hidden style={{ width: 48, fontFamily: FM, fontSize: 11.5, color: TX3, flexShrink: 0 }}>{slot}</div>
+                  <div aria-hidden style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {fixedHere.map((e, i) => (
                       <div key={i} style={{
                         padding: '6px 12px', borderRadius: 6, fontSize: 13, fontWeight: 600,
@@ -3544,70 +3568,107 @@ function CalendarPage({ assessment, candidate, onSubmit, onSkip }) {
                     ))}
                     {isEmpty && <div style={{ height: 1 }} />}
                   </div>
-                </div>
+                </li>
               )
             })}
-          </div>
-        </div>
+          </ol>
+        </section>
 
-        {/* Unscheduled tasks */}
-        <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '18px 20px', marginBottom: 20 }}>
+        {/* Unscheduled tasks.
+            Per-task: time-slot <select> + Add/Edit note disclosure
+            toggle. Each select is contextually labelled with the task
+            title; the note toggle carries aria-expanded and aria-controls
+            tying it to the inline-revealed note input. */}
+        <section aria-label="Schedule unscheduled tasks" style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '18px 20px', marginBottom: 20 }}>
           <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14 }}>
             Schedule these tasks into your day
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {unscheduled.map(task => (
-              <div key={task.id} style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '12px 14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX, flex: 1 }}>{task.title}</span>
-                  <select
-                    value={taskSlots[task.id] || ''}
-                    onChange={e => setTaskSlots(prev => ({ ...prev, [task.id]: e.target.value || null }))}
-                    style={{
-                      padding: '6px 10px', borderRadius: 6, border: `1px solid ${taskSlots[task.id] ? TEAL : BD}`,
-                      fontFamily: F, fontSize: 12.5, color: taskSlots[task.id] ? TEALD : TX3,
-                      background: taskSlots[task.id] ? TEALLT : '#fff', cursor: 'pointer',
-                    }}
-                  >
-                    <option value="">When?</option>
-                    {TIME_SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                  <button
-                    onClick={() => setEditingNote(editingNote === task.id ? null : task.id)}
-                    style={{
-                      padding: '4px 10px', borderRadius: 5, border: `1px solid ${BD}`,
-                      background: taskNotes[task.id] ? TEALLT : '#fff',
-                      color: taskNotes[task.id] ? TEALD : TX3,
-                      fontFamily: F, fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
-                    }}
-                  >
-                    {taskNotes[task.id] ? 'Edit note' : 'Add note'}
-                  </button>
+            {unscheduled.map(task => {
+              const noteIsOpen = editingNote === task.id
+              const hasNote = !!taskNotes[task.id]
+              const slotId = `pd-task-slot-${task.id}`
+              const noteId = `pd-task-note-${task.id}`
+              return (
+                <div key={task.id} style={{ background: BG, border: `1px solid ${BD}`, borderRadius: 8, padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <label htmlFor={slotId} style={{ fontFamily: F, fontSize: 13.5, fontWeight: 600, color: TX, flex: 1, cursor: 'pointer' }}>{task.title}</label>
+                    <select
+                      id={slotId}
+                      value={taskSlots[task.id] || ''}
+                      onChange={e => setTaskSlots(prev => ({ ...prev, [task.id]: e.target.value || null }))}
+                      aria-label={`Schedule time for ${task.title}`}
+                      aria-required="true"
+                      style={{
+                        minHeight: 36, padding: '6px 10px', borderRadius: 6,
+                        border: `1px solid ${taskSlots[task.id] ? TEAL : BD}`,
+                        fontFamily: F, fontSize: 12.5, color: taskSlots[task.id] ? TEALD : TX3,
+                        background: taskSlots[task.id] ? TEALLT : '#fff', cursor: 'pointer',
+                      }}
+                    >
+                      <option value="">When?</option>
+                      {TIME_SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setEditingNote(noteIsOpen ? null : task.id)}
+                      aria-expanded={noteIsOpen}
+                      aria-controls={noteId}
+                      aria-label={`${hasNote ? 'Edit' : 'Add'} reasoning note for ${task.title}`}
+                      style={{
+                        minHeight: 36, padding: '6px 12px', borderRadius: 5, border: `1px solid ${BD}`,
+                        background: hasNote ? TEALLT : '#fff',
+                        color: hasNote ? TEALD : TX3,
+                        fontFamily: F, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      }}
+                    >
+                      {hasNote ? 'Edit note' : 'Add note'}
+                    </button>
+                  </div>
+                  {noteIsOpen && (
+                    <input
+                      id={noteId}
+                      type="text"
+                      value={taskNotes[task.id] || ''}
+                      onChange={e => setTaskNotes(prev => ({ ...prev, [task.id]: e.target.value }))}
+                      placeholder="Why did you schedule it here?"
+                      aria-label={`Reasoning note for ${task.title}`}
+                      style={{
+                        width: '100%', boxSizing: 'border-box', marginTop: 8,
+                        padding: '8px 12px', borderRadius: 6, border: `1px solid ${BD}`,
+                        fontFamily: F, fontSize: 13, color: TX,
+                      }}
+                      onFocus={e => e.target.style.borderColor = TEAL}
+                      onBlur={e => e.target.style.borderColor = BD}
+                    />
+                  )}
                 </div>
-                {editingNote === task.id && (
-                  <input
-                    type="text"
-                    value={taskNotes[task.id] || ''}
-                    onChange={e => setTaskNotes(prev => ({ ...prev, [task.id]: e.target.value }))}
-                    placeholder="Why did you schedule it here?"
-                    style={{
-                      width: '100%', boxSizing: 'border-box', marginTop: 8,
-                      padding: '8px 12px', borderRadius: 6, border: `1px solid ${BD}`,
-                      fontFamily: F, fontSize: 13, color: TX, outline: 'none',
-                    }}
-                    onFocus={e => e.target.style.borderColor = TEAL}
-                    onBlur={e => e.target.style.borderColor = BD}
-                  />
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
-        </div>
+        </section>
 
-        {/* Actions */}
+        {/* Actions.
+            "This is my day" carries aria-describedby pointing to the
+            scheduling-required hint. The hint is hidden when all
+            tasks are scheduled and a status update for the assistive
+            tech otherwise. */}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          <p
+            id="pd-cal-submit-hint"
+            aria-live="polite"
+            style={{
+              ...(allScheduled
+                ? { position: 'absolute', width: 1, height: 1, margin: -1, padding: 0, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap', border: 0 }
+                : { fontFamily: F, fontSize: 12, color: TX2, margin: 0, alignSelf: 'center' }),
+            }}
+          >
+            {allScheduled ? 'All tasks scheduled.' : 'All tasks must be scheduled before submitting.'}
+          </p>
           <button
+            type="button"
             onClick={handleSubmit}
+            aria-describedby="pd-cal-submit-hint"
             style={{
               padding: '14px 32px', borderRadius: 10, border: 'none',
               background: allScheduled ? TEAL : BD,
@@ -3629,7 +3690,7 @@ function CalendarPage({ assessment, candidate, onSubmit, onSkip }) {
             Skip
           </button>
         </div>
-      </div>
+      </section>
     </div>
   )
 }
