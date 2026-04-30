@@ -914,6 +914,7 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
   const [submitError, setSubmitError] = useState(null)
   const responseTextareaRef = useRef(null)
   const recordButtonRef = useRef(null)
+  const forcedChoiceContainerRef = useRef(null)
 
   // Inbox Overload state
   const showInbox = mode !== 'quick' && mode !== 'rapid' && assessment.inbox_events?.scenarios
@@ -989,17 +990,43 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
   }
 
   // Auto-clear submit error once the candidate fixes the cause: typed text
-  // becomes non-empty, or a recording exists, or the input mode flips, or
-  // the candidate moves to a different scenario.
+  // becomes non-empty, or a recording exists, the forced-choice picker
+  // moves into a complete state, the input mode flips, or the candidate
+  // moves to a different scenario.
   useEffect(() => {
     if (!submitError) return
     if (submitError.type === 'type' && (responses[scenarioIndex] || '').trim().length > 0) {
       setSubmitError(null)
-    } else if (submitError.type === 'record' && audioBlobs[scenarioIndex]) {
+      return
+    }
+    if (submitError.type === 'record' && audioBlobs[scenarioIndex]) {
       setSubmitError(null)
+      return
+    }
+    if (submitError.type === 'forced_choice') {
+      const sc = scenarios[scenarioIndex]
+      const fc = sc?.forced_choice
+      const v = forcedChoiceResponses[scenarioIndex]
+      if (!fc) return
+      let stillIncomplete = true
+      if (fc.type === 'ranking') {
+        const ranked = v?.response?.ranked
+        stillIncomplete = !v || !Array.isArray(ranked) || ranked.length === 0
+      } else if (fc.type === 'select_exclude') {
+        const selectCount = fc.select_count || 3
+        const sel = v?.response?.selected || []
+        const exc = v?.response?.excluded
+        stillIncomplete = sel.length < selectCount || !exc
+      } else if (fc.type === 'trade_off') {
+        const choices = v?.response?.choices || []
+        const pairs = fc.pairs || []
+        const made = choices.filter(Boolean).length
+        stillIncomplete = pairs.length > 0 && made < pairs.length
+      }
+      if (!stillIncomplete) setSubmitError(null)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [responses, audioBlobs, scenarioIndex, submitError?.type])
+  }, [responses, audioBlobs, forcedChoiceResponses, scenarioIndex, submitError?.type])
 
   useEffect(() => {
     setSubmitError(null)
@@ -1190,13 +1217,19 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
   async function handleNext() {
     if (maybeFireInterruption()) return
 
-    // Empty-submission guard. Forced-choice scenarios have their own
-    // picker validation and the explain-your-thinking textarea is
-    // optional, so the empty-text check is skipped on those. Workspace
-    // and Calendar Day-One have their own submit paths and never reach
-    // handleNext. Validation is client-side only; the server still
-    // accepts whatever it gets so this is a UX guard rail, not a
-    // security boundary. Timer keeps running during the error display.
+    // Submission guard. Three paths:
+    //   - free-text scenarios: must have non-empty typed text or a
+    //     recorded audio blob (commit 3eea13d).
+    //   - forced-choice scenarios: picker must be complete per its type
+    //     (ranking interacted with at least once; select-exclude has
+    //     enough selections plus an excluded option; trade-off has every
+    //     pair decided). Respects scenario JSON config for selectCount
+    //     and the pairs/items arrays.
+    //   - workspace + calendar day-one: separate flows, never reach
+    //     handleNext.
+    // Validation is client-side only; the server still accepts whatever
+    // it gets so this is a UX guard rail, not a security boundary. Timer
+    // keeps running during the error display.
     const currentScenario = scenarios[scenarioIndex]
     if (currentScenario && !currentScenario.forced_choice) {
       const inputMode = inputModes[scenarioIndex]
@@ -1219,6 +1252,59 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
         }
       }
       // Validation passed: clear any stale error before continuing.
+      if (submitError) setSubmitError(null)
+    } else if (currentScenario && currentScenario.forced_choice) {
+      const fc = currentScenario.forced_choice
+      const fcVal = forcedChoiceResponses[scenarioIndex]
+      let fcError = null
+      if (fc.type === 'ranking') {
+        // value is set only once the candidate makes a move (RankingChoice
+        // does not auto-commit on mount). An undefined response means the
+        // candidate never engaged with the picker at all.
+        const rankedArr = fcVal?.response?.ranked
+        if (!fcVal || !Array.isArray(rankedArr) || rankedArr.length === 0) {
+          fcError = 'Please rank the items in your preferred order before continuing.'
+        }
+      } else if (fc.type === 'select_exclude') {
+        const selectCount = fc.select_count || 3
+        const sel = fcVal?.response?.selected || []
+        const exc = fcVal?.response?.excluded
+        if (sel.length < selectCount) {
+          const remaining = selectCount - sel.length
+          fcError = sel.length === 0
+            ? `Please select ${selectCount} option${selectCount === 1 ? '' : 's'} before continuing.`
+            : `Please select ${remaining} more option${remaining === 1 ? '' : 's'} before continuing.`
+        } else if (!exc) {
+          fcError = 'Please choose one option to exclude before continuing.'
+        }
+      } else if (fc.type === 'trade_off') {
+        const choices = fcVal?.response?.choices || []
+        const pairs = fc.pairs || []
+        const made = choices.filter(Boolean).length
+        if (pairs.length === 0) {
+          // Defensive: no pairs configured means there is nothing to validate.
+        } else if (made < pairs.length) {
+          const remaining = pairs.length - made
+          fcError = made === 0
+            ? `Please choose an option for ${pairs.length === 1 ? 'this trade-off' : `each of the ${pairs.length} trade-offs`} before continuing.`
+            : `Please make ${remaining} more decision${remaining === 1 ? '' : 's'} before continuing.`
+        }
+      }
+      if (fcError) {
+        setSubmitError({ type: 'forced_choice', message: fcError })
+        // Move focus to the first interactive control inside the picker
+        // so the candidate can immediately act. Falls back to the
+        // container itself if no focusable child is found.
+        const block = forcedChoiceContainerRef.current
+        if (block) {
+          try {
+            const focusable = block.querySelector('button:not([disabled]), [tabindex="0"]')
+            if (focusable) focusable.focus()
+            else if (typeof block.focus === 'function') block.focus()
+          } catch {}
+        }
+        return
+      }
       if (submitError) setSubmitError(null)
     }
 
@@ -1636,14 +1722,27 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
               </p>
             </div>
 
-            {/* Forced choice mechanic (Step 1) */}
+            {/* Forced choice mechanic (Step 1).
+                Wrapped in a focusable container so the submit-validation
+                guard can move focus into the picker on a completeness
+                failure. aria-invalid signals the error state to assistive
+                tech; aria-describedby points at the inline error banner
+                rendered just above the Submit button. */}
             {scenario.forced_choice && (
-              <ForcedChoiceBlock
-                scenarioIndex={scenarioIndex}
-                spec={scenario.forced_choice}
-                value={forcedChoiceResponses[scenarioIndex]}
-                onChange={(next) => setForcedChoiceResponses(prev => ({ ...prev, [scenarioIndex]: next }))}
-              />
+              <div
+                ref={forcedChoiceContainerRef}
+                tabIndex={-1}
+                aria-invalid={submitError?.type === 'forced_choice' ? 'true' : undefined}
+                aria-describedby={submitError?.type === 'forced_choice' ? `pd-response-error-${scenarioIndex}` : undefined}
+                style={{ outline: 'none' }}
+              >
+                <ForcedChoiceBlock
+                  scenarioIndex={scenarioIndex}
+                  spec={scenario.forced_choice}
+                  value={forcedChoiceResponses[scenarioIndex]}
+                  onChange={(next) => setForcedChoiceResponses(prev => ({ ...prev, [scenarioIndex]: next }))}
+                />
+              </div>
             )}
 
             {/* Ranked actions: three slots, action plus 1 to 2 sentence justification, reorderable */}
