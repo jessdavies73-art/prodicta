@@ -2119,7 +2119,7 @@ export default function NewAssessmentPage() {
                     </p>
                   ) : (
                     <p style={{ margin: '0 0 10px', fontSize: 13, color: '#5e6b7f', fontFamily: F, lineHeight: 1.6 }}>
-                      Give your candidate a Day 1 Workspace Simulation, a realistic inbox, calendar, and prioritisation challenge that reveals how they actually work under pressure. Plus a 60-second Highlight Reel you can share with your client in one click, showing exactly how the candidate performed.
+                      Scenarios test how your candidate handles one situation at a time. Immersive tests how they handle many things at once. A live workspace where multiple demands hit simultaneously, decisions stack up, and the candidate has to choose what to prioritise in real time. Reveals how they perform when the role is actually busy, not just complex.
                     </p>
                   )}
                 </div>
@@ -2195,6 +2195,9 @@ export default function NewAssessmentPage() {
           if (!isPaygUser) return null
           if (isStrategyFit) return null
           if (!isRapidSpeedOrDepth) return null
+          // Agency-only add-on: direct employers don't share candidate output
+          // with external clients, so the Reel has no audience for them.
+          if (accountType !== 'agency') return null
           const hrBalance = (userCredits || []).find(c => c.credit_type === 'highlight-reel')?.credits_remaining || 0
           return (
             <div style={{
