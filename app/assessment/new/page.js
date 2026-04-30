@@ -2559,7 +2559,7 @@ export default function NewAssessmentPage() {
                     fontSize: 13,
                     lineHeight: 1.5,
                   }}>
-                    Please review your job description carefully before sending. Once an assessment is sent you cannot edit the job description, change the assessment type, or retract the invitation. Each assessment sent counts towards your monthly usage.
+                    Please review your job description carefully before sending. Once an assessment is sent you cannot edit the job description, change the assessment type, or retract the invitation. Each assessment sent counts towards your monthly usage and credits purchased.
                   </div>
                   {/* Candidate details */}
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 12 }}>
