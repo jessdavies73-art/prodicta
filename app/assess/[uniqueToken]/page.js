@@ -908,6 +908,12 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
   const [micPermissionState, setMicPermissionState] = useState('unknown') // 'unknown' | 'denied' | 'unsupported' | 'ok'
   const [recordAnnouncement, setRecordAnnouncement] = useState('')
   const [voicePrefillNoticeDismissed, setVoicePrefillNoticeDismissed] = useState(false)
+  // Empty-submission validation (per audit follow-up). Held per-scenario
+  // so a stale error from scenario N doesn't bleed into scenario N+1.
+  // submitError shape: { type: 'type' | 'record', message: string } | null.
+  const [submitError, setSubmitError] = useState(null)
+  const responseTextareaRef = useRef(null)
+  const recordButtonRef = useRef(null)
 
   // Inbox Overload state
   const showInbox = mode !== 'quick' && mode !== 'rapid' && assessment.inbox_events?.scenarios
@@ -981,6 +987,24 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
     mediaRecorderRef.current.stop()
     setRecordAnnouncement('Recording cancelled. No audio saved.')
   }
+
+  // Auto-clear submit error once the candidate fixes the cause: typed text
+  // becomes non-empty, or a recording exists, or the input mode flips, or
+  // the candidate moves to a different scenario.
+  useEffect(() => {
+    if (!submitError) return
+    if (submitError.type === 'type' && (responses[scenarioIndex] || '').trim().length > 0) {
+      setSubmitError(null)
+    } else if (submitError.type === 'record' && audioBlobs[scenarioIndex]) {
+      setSubmitError(null)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [responses, audioBlobs, scenarioIndex, submitError?.type])
+
+  useEffect(() => {
+    setSubmitError(null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inputModes[scenarioIndex], scenarioIndex])
 
   // Keyboard shortcuts for voice mode. Space toggles record / stop, Escape
   // cancels in flight. Only active when the current scenario is in 'record'
@@ -1165,6 +1189,39 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
 
   async function handleNext() {
     if (maybeFireInterruption()) return
+
+    // Empty-submission guard. Forced-choice scenarios have their own
+    // picker validation and the explain-your-thinking textarea is
+    // optional, so the empty-text check is skipped on those. Workspace
+    // and Calendar Day-One have their own submit paths and never reach
+    // handleNext. Validation is client-side only; the server still
+    // accepts whatever it gets so this is a UX guard rail, not a
+    // security boundary. Timer keeps running during the error display.
+    const currentScenario = scenarios[scenarioIndex]
+    if (currentScenario && !currentScenario.forced_choice) {
+      const inputMode = inputModes[scenarioIndex]
+      if (inputMode === 'type') {
+        const trimmed = (responses[scenarioIndex] || '').trim()
+        if (trimmed.length === 0) {
+          setSubmitError({ type: 'type', message: 'Please write a response before continuing.' })
+          if (responseTextareaRef.current) {
+            try { responseTextareaRef.current.focus() } catch {}
+          }
+          return
+        }
+      } else if (inputMode === 'record') {
+        if (!audioBlobs[scenarioIndex]) {
+          setSubmitError({ type: 'record', message: 'Please record a response before continuing.' })
+          if (recordButtonRef.current) {
+            try { recordButtonRef.current.focus() } catch {}
+          }
+          return
+        }
+      }
+      // Validation passed: clear any stale error before continuing.
+      if (submitError) setSubmitError(null)
+    }
+
     // Snapshot current time taken before switching. Accumulates wall-clock
     // elapsed since scenario entry on top of any previously-saved baseline,
     // so resumed sessions don't lose their pre-resume time on advance.
@@ -1713,6 +1770,7 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
               {inputModes[scenarioIndex] === 'type' && (
                 <>
                   <textarea
+                    ref={responseTextareaRef}
                     value={responses[scenarioIndex]}
                     onKeyDown={() => {
                       // Record first keystroke time + increment total keystroke count.
@@ -1754,7 +1812,12 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
                     rows={8}
                     aria-label={`Your response to scenario ${scenarioIndex + 1} of ${scenarios.length}`}
                     aria-required="true"
-                    aria-describedby={`pd-response-help-${scenarioIndex}`}
+                    aria-invalid={submitError?.type === 'type' ? 'true' : undefined}
+                    aria-describedby={
+                      submitError?.type === 'type'
+                        ? `pd-response-error-${scenarioIndex} pd-response-help-${scenarioIndex}`
+                        : `pd-response-help-${scenarioIndex}`
+                    }
                     style={{
                       width: '100%', minHeight: 200, fontFamily: F, fontSize: 15, color: TX,
                       background: CARD, border: `1.5px solid ${BD}`, borderRadius: 10,
@@ -1790,9 +1853,12 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
                         Press record and speak your response clearly. Maximum 60 seconds. You can also press the Space key to start or stop recording.
                       </p>
                       <button
+                        ref={recordButtonRef}
                         type="button"
                         onClick={startRecording}
                         aria-label={`Start recording your voice response for scenario ${scenarioIndex + 1}`}
+                        aria-invalid={submitError?.type === 'record' ? 'true' : undefined}
+                        aria-describedby={submitError?.type === 'record' ? `pd-response-error-${scenarioIndex}` : undefined}
                         style={{
                           width: 64, height: 64, minHeight: 44, borderRadius: '50%', border: 'none',
                           background: '#dc2626', cursor: 'pointer', position: 'relative',
@@ -1873,6 +1939,20 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
             </div>
 
             {/* Next / Submit */}
+            {submitError && (
+              <div
+                id={`pd-response-error-${scenarioIndex}`}
+                role="alert"
+                style={{
+                  marginTop: 16, padding: '10px 14px',
+                  background: REDBG, border: '1px solid #fecaca', borderLeft: '4px solid #dc2626',
+                  borderRadius: 8, color: '#b91c1c', fontFamily: F, fontSize: 13.5, fontWeight: 600,
+                  lineHeight: 1.55,
+                }}
+              >
+                {submitError.message}
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
               <button
                 onClick={handleNext}
