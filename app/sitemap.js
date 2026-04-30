@@ -16,6 +16,7 @@ export default function sitemap() {
     { path: '/login',         changeFrequency: 'monthly', priority: 0.5 },
     { path: '/terms',         changeFrequency: 'yearly',  priority: 0.3 },
     { path: '/privacy',       changeFrequency: 'yearly',  priority: 0.3 },
+    { path: '/accessibility', changeFrequency: 'monthly', priority: 0.3 },
   ].map(r => ({
     url: `${SITE}${r.path}`,
     lastModified: now,

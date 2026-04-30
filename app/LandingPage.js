@@ -3089,7 +3089,7 @@ export default function LandingPage() {
               <div>
                 <div style={{ fontFamily: F, fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>Legal</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {[['Terms of Service', '/terms'], ['Privacy Policy', '/privacy']].map(([label, href]) => (
+                  {[['Terms of Service', '/terms'], ['Privacy Policy', '/privacy'], ['Accessibility', '/accessibility']].map(([label, href]) => (
                     <a key={href} href={href} style={{ fontFamily: F, fontSize: 13.5, color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}
                       onMouseEnter={e => e.target.style.color='rgba(255,255,255,0.85)'} onMouseLeave={e => e.target.style.color='rgba(255,255,255,0.5)'}>{label}</a>
                   ))}

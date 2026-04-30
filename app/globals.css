@@ -114,9 +114,49 @@ button:not([disabled]):not([data-no-lift]):active {
   100% { transform: scale(1);   opacity: 1 }
 }
 /* ── Smooth focus outlines ─────────────────────────────────────────────────── */
+/* WCAG 2.4.7 (Focus Visible). Many inputs/buttons across the app set
+   inline `outline: none` for the unfocused state; without !important the
+   browser-default focus ring is suppressed and inline styles override the
+   pseudo-class rule. The override below restores a visible focus ring on
+   keyboard navigation across the whole product without needing per-element
+   refactors. */
 :focus-visible {
-  outline: 2px solid #00BFA5;
-  outline-offset: 2px;
+  outline: 2px solid #00BFA5 !important;
+  outline-offset: 2px !important;
+  border-radius: 2px;
+}
+
+/* Skip-to-content link, hidden until focused. WCAG 2.4.1 (Bypass Blocks).
+   Lets keyboard users jump past the navigation on every page. */
+.pd-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 8px;
+  background: #0f2137;
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  z-index: 100000;
+  transition: top 0.15s ease;
+}
+.pd-skip-link:focus {
+  top: 8px;
+}
+
+/* WCAG 2.3.3 (Animation from Interactions). Respect users who prefer
+   reduced motion: shorten or remove transform / opacity animations that
+   could trigger vestibular discomfort. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ── Selection colour ──────────────────────────────────────────────────────── */

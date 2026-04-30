@@ -52,7 +52,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en-GB">
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -70,9 +70,10 @@ export default function RootLayout({ children }) {
           color: '#0f172a'
         }}
       >
+        <a href="#main-content" className="pd-skip-link">Skip to main content</a>
         <ToastProvider>
           <PageTransition>
-            {children}
+            <div id="main-content">{children}</div>
           </PageTransition>
         </ToastProvider>
       </body>
