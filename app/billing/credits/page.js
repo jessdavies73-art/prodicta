@@ -38,7 +38,7 @@ const PAYG_TYPES = [
 const ADDON_TYPES = [
   {
     type: 'immersive', label: 'Immersive add-on', unit: 25,
-    description: 'Day 1 Workspace Simulation (realistic inbox, calendar, and prioritisation challenge) plus a 60-second Highlight Reel to share with your client in one click. Add to any Rapid Screen, Speed-Fit, or Depth-Fit assessment.',
+    description: 'Scenarios test how your candidate handles one situation at a time. Immersive tests how they handle many things at once. A live workspace where multiple demands hit simultaneously, decisions stack up, and the candidate has to choose what to prioritise in real time. Reveals how they perform when the role is actually busy, not just complex.',
   },
   {
     type: 'highlight-reel', label: 'Highlight Reel only', unit: 10,

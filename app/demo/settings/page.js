@@ -67,7 +67,7 @@ function BillingTab({ onUpgrade }) {
     { type: 'strategy-fit', label: 'Strategy-Fit', unit: 65, remaining: 0, description: 'A 45 minute leadership assessment with 4 work scenarios, a Day 1 workspace simulation, full narrative report, strategic thinking evaluation, stakeholder management brief, and executive summary.' },
   ]
   const ADDON_TYPES = [
-    { type: 'immersive',      label: 'Immersive add-on',     unit: 25, description: 'Day 1 Workspace Simulation (realistic inbox, calendar, and prioritisation challenge) plus a 60-second Highlight Reel to share with your client in one click.' },
+    { type: 'immersive',      label: 'Immersive add-on',     unit: 25, description: 'Scenarios test how your candidate handles one situation at a time. Immersive tests how they handle many things at once. A live workspace where multiple demands hit simultaneously, decisions stack up, and the candidate has to choose what to prioritise in real time. Reveals how they perform when the role is actually busy, not just complex.' },
     { type: 'highlight-reel', label: 'Highlight Reel only',  unit: 10, description: 'A 60-second shareable summary of how the candidate performed. For Strategy-Fit accounts, workspace is already included.' },
   ]
   const PLANS = [
