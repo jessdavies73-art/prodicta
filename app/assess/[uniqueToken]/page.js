@@ -792,7 +792,7 @@ function ResumePage({ candidate, assessment, savedProgress, onContinue, onStartO
 }
 
 // ─── State: Active scenario ───────────────────────────────────────────────────
-function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgress }) {
+function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgress, voicePrefilled = false }) {
   const scenarios = assessment.scenarios || []
 
   // Resume hydration. When initialProgress is supplied (Resume page → Continue
@@ -884,8 +884,13 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
   const roleLevel = assessment.role_level || 'MID_LEVEL'
   const isOperational = roleLevel === 'OPERATIONAL'
   const isLeadership = roleLevel === 'LEADERSHIP'
-  const showRecordToggle = mode !== 'quick' && mode !== 'rapid' && !isOperational
-  const [inputModes, setInputModes] = useState(scenarios.map(() => 'type')) // 'type' or 'record'
+  // Default rule preserved for the standard candidate experience.
+  // Reasonable Adjustments Layer 2: when the candidate previously declared
+  // 'audio_response' in their Layer 1 adjustment_request, force the toggle
+  // visible regardless of mode / role-level so candidates with motor or
+  // dyslexia-related needs can use voice on Speed-Fit and Rapid Screen too.
+  const showRecordToggle = voicePrefilled || (mode !== 'quick' && mode !== 'rapid' && !isOperational)
+  const [inputModes, setInputModes] = useState(scenarios.map(() => voicePrefilled ? 'record' : 'type')) // 'type' or 'record'
   const [audioBlobs, setAudioBlobs] = useState(scenarios.map(() => null))
   const [audioUrls, setAudioUrls] = useState(scenarios.map(() => null))
   const [recording, setRecording] = useState(false)
@@ -894,6 +899,15 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
   const mediaRecorderRef = useRef(null)
   const recordTimerRef = useRef(null)
   const audioChunksRef = useRef([])
+  // Permission and announcement state for the voice-recording flow.
+  // micPermissionState replaces the previous inline alert() calls so a
+  // permission denial degrades gracefully back to typing instead of
+  // popping a blocking alert. recordAnnouncement drives the visually
+  // hidden aria-live span that surfaces start / stop events to screen
+  // reader candidates.
+  const [micPermissionState, setMicPermissionState] = useState('unknown') // 'unknown' | 'denied' | 'unsupported' | 'ok'
+  const [recordAnnouncement, setRecordAnnouncement] = useState('')
+  const [voicePrefillNoticeDismissed, setVoicePrefillNoticeDismissed] = useState(false)
 
   // Inbox Overload state
   const showInbox = mode !== 'quick' && mode !== 'rapid' && assessment.inbox_events?.scenarios
@@ -912,10 +926,14 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
  // is undefined or null, reading `.getUserMedia` off that crashes with a
     // TypeError otherwise.
     if (!navigator?.mediaDevices?.getUserMedia) {
-      alert('Voice recording is not supported on this browser. Please use the latest Chrome, Safari or Firefox on a secure (https) connection.')
+      setMicPermissionState('unsupported')
+      setRecordAnnouncement('Voice recording is not supported on this browser. Use typing instead.')
+      // Fall back to typing so the candidate is not stuck.
+      setInputModes(prev => { const n = [...prev]; n[scenarioIndex] = 'type'; return n })
       return
     }
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      setMicPermissionState('ok')
       audioChunksRef.current = []
       const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' })
       mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
@@ -927,11 +945,13 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
         setAudioUrls(prev => { const n = [...prev]; n[scenarioIndex] = url; return n })
         setRecording(false)
         clearInterval(recordTimerRef.current)
+        setRecordAnnouncement(`Recording stopped. Audio captured.`)
       }
       mediaRecorderRef.current = mr
       mr.start()
       setRecording(true)
       setRecordTime(0)
+      setRecordAnnouncement('Recording started. Press Space or the Stop button to finish. Press Escape to cancel.')
       recordTimerRef.current = setInterval(() => {
         setRecordTime(prev => {
           if (prev >= 59) { mr.stop(); return 60 }
@@ -939,7 +959,10 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
         })
       }, 1000)
     }).catch(() => {
-      alert('Microphone access is required for voice recording. Please allow access and try again.')
+      setMicPermissionState('denied')
+      setRecordAnnouncement('Microphone access was denied. Switched to typing.')
+      // Fall back to typing automatically so the candidate is never blocked.
+      setInputModes(prev => { const n = [...prev]; n[scenarioIndex] = 'type'; return n })
     })
   }
 
@@ -948,6 +971,41 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
       mediaRecorderRef.current.stop()
     }
   }
+
+  function cancelRecording() {
+    // Escape key during recording. Stops the MediaRecorder and discards
+    // anything captured so far. Differs from stopRecording in that no audio
+    // blob is committed to the responses array.
+    if (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') return
+    audioChunksRef.current = []
+    mediaRecorderRef.current.stop()
+    setRecordAnnouncement('Recording cancelled. No audio saved.')
+  }
+
+  // Keyboard shortcuts for voice mode. Space toggles record / stop, Escape
+  // cancels in flight. Only active when the current scenario is in 'record'
+  // mode AND focus is not inside a text input (so Space in a textarea or
+  // notes field still types a literal space). Bound at document-level so
+  // candidates can hit Space without first focusing the record button.
+  useEffect(() => {
+    if (inputModes[scenarioIndex] !== 'record') return
+    function onKey(e) {
+      const tag = (e.target && e.target.tagName) || ''
+      const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)
+      if (isEditable) return
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault()
+        if (recording) stopRecording()
+        else if (!audioUrls[scenarioIndex]) startRecording()
+      } else if (e.key === 'Escape' && recording) {
+        e.preventDefault()
+        cancelRecording()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inputModes, scenarioIndex, recording, audioUrls])
 
   function clearRecording() {
     if (audioUrls[scenarioIndex]) URL.revokeObjectURL(audioUrls[scenarioIndex])
@@ -1571,27 +1629,84 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
                 </div>
               )}
 
+              {/* Visually-hidden live region for record state announcements. */}
+              <span
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                style={{ position: 'absolute', width: 1, height: 1, margin: -1, padding: 0, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap', border: 0 }}
+              >
+                {recordAnnouncement}
+              </span>
+
               {/* Voice recording toggle */}
               {showRecordToggle && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  {['type', 'record'].map(m => (
-                    <button
-                      key={m}
-                      onClick={() => setInputModes(prev => { const n = [...prev]; n[scenarioIndex] = m; return n })}
-                      style={{
-                        padding: '6px 14px', borderRadius: 7, fontFamily: F, fontSize: 13, fontWeight: 600,
-                        cursor: 'pointer', border: `1.5px solid ${inputModes[scenarioIndex] === m ? TEAL : BD}`,
-                        background: inputModes[scenarioIndex] === m ? TEALLT : '#fff',
-                        color: inputModes[scenarioIndex] === m ? TEALD : TX2,
-                      }}
-                    >
-                      {m === 'type' ? 'Type your response' : 'Record a voice note'}
-                    </button>
-                  ))}
-                  {mode === 'advanced' && (
-                    <span style={{ fontSize: 11, color: TEALD, fontFamily: F, fontWeight: 600 }}>Recommended for senior roles</span>
+                <>
+                  {voicePrefilled && !voicePrefillNoticeDismissed && (
+                    <div role="note" style={{
+                      marginBottom: 12, padding: '10px 14px',
+                      background: '#e6f7f5', border: '1px solid #80dfd2', borderLeft: `4px solid ${TEAL}`,
+                      borderRadius: 8, fontFamily: F, fontSize: 13, color: NAVY, lineHeight: 1.55,
+                      display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10,
+                    }}>
+                      <span>Voice mode is selected based on your adjustment request. You can switch to typing if you prefer.</span>
+                      <button
+                        type="button"
+                        onClick={() => setVoicePrefillNoticeDismissed(true)}
+                        aria-label="Dismiss notice"
+                        style={{ background: 'none', border: 'none', padding: 0, fontFamily: F, fontSize: 13, color: TX2, cursor: 'pointer', textDecoration: 'underline', flexShrink: 0 }}
+                      >
+                        Dismiss
+                      </button>
+                    </div>
                   )}
-                </div>
+                  {micPermissionState === 'denied' && (
+                    <div role="alert" style={{
+                      marginBottom: 12, padding: '10px 14px',
+                      background: '#fff7ed', border: '1px solid #fdba74', borderLeft: `4px solid ${AMB}`,
+                      borderRadius: 8, fontFamily: F, fontSize: 13, color: NAVY, lineHeight: 1.55,
+                    }}>
+                      Microphone access is needed for voice responses. Switched to typing for now. To use voice, allow microphone access in your browser and reselect the voice option.
+                    </div>
+                  )}
+                  {micPermissionState === 'unsupported' && (
+                    <div role="alert" style={{
+                      marginBottom: 12, padding: '10px 14px',
+                      background: '#fff7ed', border: '1px solid #fdba74', borderLeft: `4px solid ${AMB}`,
+                      borderRadius: 8, fontFamily: F, fontSize: 13, color: NAVY, lineHeight: 1.55,
+                    }}>
+                      Voice recording is not supported on this browser. Use the latest Chrome, Edge, Safari or Firefox on a secure (https) connection. Switched to typing.
+                    </div>
+                  )}
+                  <div role="group" aria-label={`Choose how to answer scenario ${scenarioIndex + 1}`} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                    {['type', 'record'].map(m => {
+                      const active = inputModes[scenarioIndex] === m
+                      return (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setInputModes(prev => { const n = [...prev]; n[scenarioIndex] = m; return n })}
+                          aria-pressed={active}
+                          aria-label={m === 'type'
+                            ? `Switch to typed response for scenario ${scenarioIndex + 1}`
+                            : `Switch to voice response for scenario ${scenarioIndex + 1}`}
+                          style={{
+                            minHeight: 44, padding: '10px 18px',
+                            borderRadius: 8, fontFamily: F, fontSize: 14, fontWeight: 700,
+                            cursor: 'pointer', border: `1.5px solid ${active ? TEAL : BD}`,
+                            background: active ? TEALLT : '#fff',
+                            color: active ? TEALD : TX2,
+                          }}
+                        >
+                          {m === 'type' ? 'Type response' : 'Voice response'}
+                        </button>
+                      )
+                    })}
+                    {mode === 'advanced' && (
+                      <span style={{ fontSize: 12, color: TEALD, fontFamily: F, fontWeight: 600 }}>Voice recommended for senior roles</span>
+                    )}
+                  </div>
+                </>
               )}
 
               {/* Text input (default) */}
@@ -1672,34 +1787,36 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
                   {!audioUrls[scenarioIndex] && !recording && (
                     <div>
                       <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: '0 0 16px' }}>
-                        Click record and speak your response clearly. Maximum 60 seconds.
+                        Press record and speak your response clearly. Maximum 60 seconds. You can also press the Space key to start or stop recording.
                       </p>
                       <button
+                        type="button"
                         onClick={startRecording}
+                        aria-label={`Start recording your voice response for scenario ${scenarioIndex + 1}`}
                         style={{
-                          width: 64, height: 64, borderRadius: '50%', border: 'none',
+                          width: 64, height: 64, minHeight: 44, borderRadius: '50%', border: 'none',
                           background: '#dc2626', cursor: 'pointer', position: 'relative',
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         }}
                       >
-                        <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff' }} />
+                        <span aria-hidden style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff' }} />
                       </button>
-                      <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 8 }}>Tap to record</div>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 8 }}>Press to record (or Space)</div>
                     </div>
                   )}
 
                   {recording && (
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 16 }}>
-                        <div style={{
+                        <div aria-hidden style={{
                           width: 12, height: 12, borderRadius: '50%', background: '#dc2626',
                           animation: 'pulse 1s ease infinite',
                         }} />
                         <span style={{ fontFamily: FM, fontSize: 24, fontWeight: 700, color: TX }}>{formatTime(recordTime)}</span>
                         <span style={{ fontFamily: F, fontSize: 12, color: TX3 }}>/ 1:00</span>
                       </div>
-                      {/* Simple bars animation */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, height: 40, marginBottom: 16 }}>
+                      {/* Simple bars animation, decorative only. */}
+                      <div aria-hidden style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, height: 40, marginBottom: 16 }}>
                         {Array.from({ length: 20 }).map((_, i) => (
                           <div key={i} style={{
                             width: 3, borderRadius: 2, background: TEAL,
@@ -1710,16 +1827,18 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
                         ))}
                       </div>
                       <button
+                        type="button"
                         onClick={stopRecording}
+                        aria-label={`Stop recording your voice response for scenario ${scenarioIndex + 1}`}
                         style={{
-                          width: 56, height: 56, borderRadius: '50%', border: 'none',
+                          width: 56, height: 56, minHeight: 44, borderRadius: '50%', border: 'none',
                           background: '#dc2626', cursor: 'pointer',
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         }}
                       >
-                        <div style={{ width: 18, height: 18, borderRadius: 3, background: '#fff' }} />
+                        <span aria-hidden style={{ width: 18, height: 18, borderRadius: 3, background: '#fff' }} />
                       </button>
-                      <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 8 }}>Tap to stop</div>
+                      <div style={{ fontFamily: F, fontSize: 12, color: TX3, marginTop: 8 }}>Press to stop (or Space)</div>
                     </div>
                   )}
 
@@ -1731,13 +1850,16 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
                       <audio
                         src={audioUrls[scenarioIndex]}
                         controls
+                        aria-label={`Playback of your voice response for scenario ${scenarioIndex + 1}`}
                         style={{ width: '100%', maxWidth: 400, marginBottom: 12 }}
                       />
                       <div>
                         <button
+                          type="button"
                           onClick={clearRecording}
+                          aria-label={`Discard recording and re-record voice response for scenario ${scenarioIndex + 1}`}
                           style={{
-                            padding: '8px 18px', borderRadius: 8, border: `1.5px solid ${BD}`,
+                            minHeight: 44, padding: '10px 18px', borderRadius: 8, border: `1.5px solid ${BD}`,
                             background: '#fff', color: TX2, fontFamily: F, fontSize: 13, fontWeight: 600, cursor: 'pointer',
                           }}
                         >
@@ -3177,25 +3299,27 @@ export default function AssessPage({ params }) {
     writeSimplifiedMode(uniqueToken, !!value)
   }
 
-  // Auto-prefill from a Layer 1 adjustment_requests row that declared
-  // 'simplified_ui'. Runs once after mount and only when the candidate
-  // has not already toggled the switch on this device (we treat any
-  // existing localStorage value, true OR false, as the candidate's own
-  // explicit choice and do not override it).
+  // Layer 1 → Layer 2 auto-prefills. One round-trip pulls the candidate's
+  // adjustment_requests row and applies any flags we have a Layer 2 surface
+  // for: 'simplified_ui' and 'audio_response'. We treat any existing
+  // simplified-mode localStorage value as the candidate's explicit choice
+  // and do not override it. voicePrefilled is page-level so ActivePage can
+  // initialise per-scenario inputModes to 'record' when first rendered.
+  const [voicePrefilled, setVoicePrefilled] = useState(false)
   useEffect(() => {
     if (!uniqueToken) return
     if (simplifiedModeBootstrapped.current) return
     simplifiedModeBootstrapped.current = true
-    let stored = null
-    try { stored = window.localStorage.getItem(simplifiedModeKey(uniqueToken)) } catch {}
-    if (stored !== null) return
+    let storedSimplified = null
+    try { storedSimplified = window.localStorage.getItem(simplifiedModeKey(uniqueToken)) } catch {}
     let cancelled = false
     fetch(`/api/assess/${uniqueToken}/adjustment-request`).then(async r => {
       if (!r.ok) return
       const data = await r.json().catch(() => null)
       if (cancelled) return
       const types = Array.isArray(data?.request?.adjustment_types) ? data.request.adjustment_types : []
-      if (types.includes('simplified_ui')) updateSimplifiedMode(true)
+      if (storedSimplified === null && types.includes('simplified_ui')) updateSimplifiedMode(true)
+      if (types.includes('audio_response')) setVoicePrefilled(true)
     }).catch(() => {})
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3442,6 +3566,7 @@ export default function AssessPage({ params }) {
       onSubmit={handleScenariosComplete}
       uniqueToken={uniqueToken}
       initialProgress={savedProgress}
+      voicePrefilled={voicePrefilled}
     />
   )
   // Helper: after the calendar/scenarios stage, decide whether the
