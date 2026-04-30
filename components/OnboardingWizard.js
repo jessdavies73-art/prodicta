@@ -3,10 +3,32 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import ProdictaLogo from './ProdictaLogo'
-import { NAVY, TEAL, TEALD, TEALLT, BD, TX, TX2, TX3, F } from '../lib/constants'
+import { NAVY, TEAL, TEALD, TEALLT, BD, TX, TX2, TX3, F, FM } from '../lib/constants'
+import { getJourneySteps } from '../lib/journey-steps'
 
 // ── Onboarding Wizard ─────────────────────────────────────────────────────────
-// Shows once after first sign-up. 3 steps: Welcome → Account type → First assessment
+// Shows once after first sign-up. 3 steps: Welcome → Account type → Journey
+// explainer (also acts as the "ready to go" CTA, replacing the previous
+// generic ready screen so the new user sees the six-step PRODICTA workflow
+// before they encounter the same indicator on their dashboard).
+
+// Prospect-friendly descriptions, paired by step id. Lives next to the
+// wizard rather than in lib/journey-steps so the dashboard indicator
+// stays compact while the wizard can use longer narrative copy.
+const EXPLAINER_COPY = {
+  'create-role':                    'Where you create roles, write job descriptions, and prepare assessments to send to candidates.',
+  'screen-candidates':              'Where candidates take their assessment and PRODICTA’s AI analyses their responses against the role.',
+  'send-to-client':                 'Where you send shortlisted candidates to your client, with proof, evidence, and a Highlight Reel.',
+  'make-hiring-decision':           'Where you make hiring decisions based on the assessment evidence and your own judgment.',
+  'make-placement-decision':        'Where you make placement decisions based on the assessment evidence and your own judgment.',
+  'track-placement':                'Where you protect your placement, track rebate periods, monitor placement health, and catch risk before it becomes a problem.',
+  'track-assignment':               'Where you keep assignments running smoothly, track performance, address issues, and maintain client confidence.',
+  'track-placement-assignment':     'Where you protect placements and assignments, track rebate periods, monitor health, and catch risk early.',
+  'track-probation':                'Where you guide new hires through probation, track ERA 2025 compliance, monitor health, and catch risk before it becomes a problem.',
+  'track-probation-assignment':     'Where you guide new hires and keep temps performing, track probation, ERA 2025 compliance, and operational health.',
+  'fix-risk':                       'Where PRODICTA flags risks and recommends interventions to keep placements on track.',
+  'document-outcome':               'Where every assessment, decision, and outcome is documented for compliance and audit.',
+}
 
 export default function OnboardingWizard({ userId, initialAccountType, onComplete }) {
   const router = useRouter()
@@ -36,9 +58,11 @@ export default function OnboardingWizard({ userId, initialAccountType, onComplet
       padding: 24, backdropFilter: 'blur(4px)',
     }}>
       <div style={{
-        background: '#fff', borderRadius: 20, width: '100%', maxWidth: 500,
+        background: '#fff', borderRadius: 20, width: '100%',
+        maxWidth: step === 3 ? 640 : 500,
+        maxHeight: 'calc(100vh - 48px)', overflowY: 'auto',
         boxShadow: '0 32px 80px rgba(0,0,0,0.3)',
-        overflow: 'hidden', position: 'relative',
+        position: 'relative',
         animation: 'fadeInUp 0.3s ease-out',
       }}>
         <style>{`@keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}`}</style>
@@ -184,54 +208,84 @@ export default function OnboardingWizard({ userId, initialAccountType, onComplet
             </div>
           )}
 
-          {/* Step 3: Create first assessment */}
-          {step === 3 && (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{
-                width: 64, height: 64, borderRadius: 16, background: TEALLT,
-                border: `1px solid ${TEAL}44`, display: 'flex', alignItems: 'center',
-                justifyContent: 'center', margin: '0 auto 20px',
-              }}>
-                <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={TEALD} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
+          {/* Step 3: Journey explainer.
+              Shows the six-step PRODICTA workflow tailored to the
+              account type captured in step 2. Replaces the previous
+              generic "ready to go" screen so the new user sees the
+              same six steps they will encounter on their dashboard
+              (commit 26735bb). employment_type is not captured in
+              this wizard yet, so getJourneySteps falls through to
+              the 'permanent' default; the dashboard indicator picks
+              up any later change from settings automatically. */}
+          {step === 3 && (() => {
+            const steps = getJourneySteps(accountType, undefined)
+            return (
+              <div>
+                <div style={{ textAlign: 'center', marginBottom: 22 }}>
+                  <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: NAVY, margin: '0 0 8px', letterSpacing: '-0.3px' }}>
+                    Here is how PRODICTA works
+                  </h2>
+                  <p style={{ fontFamily: F, fontSize: 14, color: TX2, margin: 0, lineHeight: 1.6 }}>
+                    Six steps that turn good candidates into protected placements.
+                  </p>
+                </div>
+
+                <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+                  {steps.map((s, i) => (
+                    <li key={s.id} style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 14,
+                      padding: '12px 14px', borderRadius: 10,
+                      background: '#f8fafc', border: `1px solid ${BD}`, borderLeft: `3px solid ${TEAL}`,
+                    }}>
+                      <span aria-hidden style={{
+                        width: 26, height: 26, borderRadius: '50%',
+                        background: TEAL, color: '#fff',
+                        fontFamily: FM, fontSize: 13, fontWeight: 800,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>{i + 1}</span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontFamily: F, fontSize: 14, fontWeight: 800, color: NAVY, marginBottom: 2 }}>
+                          {s.label}
+                        </div>
+                        <div style={{ fontFamily: F, fontSize: 13, color: TX2, lineHeight: 1.55 }}>
+                          {EXPLAINER_COPY[s.id] || ''}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <button
+                    onClick={() => finishAndClose(true)}
+                    disabled={saving}
+                    style={{
+                      width: '100%', padding: '13px 0', borderRadius: 10, border: 'none',
+                      background: saving ? '#a8d5d4' : `linear-gradient(135deg, ${TEAL}, ${TEALD})`,
+                      color: NAVY, fontFamily: F, fontSize: 15, fontWeight: 800,
+                      cursor: saving ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {saving ? 'Setting up…' : 'Create your first role →'}
+                  </button>
+                  <button
+                    onClick={() => finishAndClose(false)}
+                    disabled={saving}
+                    style={{
+                      background: 'none', border: 'none', padding: '4px 0',
+                      color: TX2, fontFamily: F, fontSize: 13, fontWeight: 600,
+                      cursor: saving ? 'not-allowed' : 'pointer',
+                      textDecoration: 'underline', textAlign: 'center',
+                    }}
+                  >
+                    Or take me to my dashboard
+                  </button>
+                </div>
+                <div style={{ marginTop: 12, fontFamily: F, fontSize: 11.5, color: TX3, textAlign: 'center' }}>Step 3 of 3</div>
               </div>
-              <h2 style={{ fontFamily: F, fontSize: 22, fontWeight: 800, color: NAVY, margin: '0 0 10px', letterSpacing: '-0.3px' }}>
-                You're ready to go!
-              </h2>
-              <p style={{ fontFamily: F, fontSize: 14.5, color: TX2, margin: '0 0 32px', lineHeight: 1.7 }}>
-                Create your first assessment and start inviting candidates. It only takes a couple of minutes.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <button
-                  onClick={() => finishAndClose(true)}
-                  disabled={saving}
-                  style={{
-                    width: '100%', padding: '13px 0', borderRadius: 10, border: 'none',
-                    background: saving ? '#a8d5d4' : `linear-gradient(135deg, ${TEAL}, ${TEALD})`,
-                    color: NAVY, fontFamily: F, fontSize: 15, fontWeight: 800,
-                    cursor: saving ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {saving ? 'Setting up…' : 'Create first assessment →'}
-                </button>
-                <button
-                  onClick={() => finishAndClose(false)}
-                  disabled={saving}
-                  style={{
-                    width: '100%', padding: '12px 0', borderRadius: 10,
-                    border: `1.5px solid ${NAVY}`, background: 'transparent',
-                    color: NAVY, fontFamily: F, fontSize: 14, fontWeight: 700,
-                    cursor: saving ? 'not-allowed' : 'pointer',
-                    textAlign: 'center',
-                  }}
-                >
-                  Skip setup and go to dashboard
-                </button>
-              </div>
-              <div style={{ marginTop: 12, fontFamily: F, fontSize: 11.5, color: TX3 }}>Step 3 of 3</div>
-            </div>
-          )}
+            )
+          })()}
         </div>
       </div>
     </div>
