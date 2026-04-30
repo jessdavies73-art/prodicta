@@ -3215,40 +3215,63 @@ function WorkspacePage({ assessment, candidate, onSubmit, onSkip }) {
           </div>
         </div>
 
-        {/* Task List */}
-        <div style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
+        {/* Task List.
+            Triage UI (NOT a reorderable list): each task has three
+            action buttons (Do now / Delegate / Defer) and the candidate
+            picks one per task. Already keyboard-accessible via real
+            <button> elements; this commit adds the missing ARIA so
+            screen readers can convey the per-task group semantics, the
+            pressed state, and contextual button labels. Touch targets
+            bumped to WCAG 2.5.5 minimum (44px). */}
+        <section
+          role="region"
+          aria-label="Task list"
+          style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}
+        >
           <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: TX }}>Tasks</span>
-            <span style={{ fontSize: 11, color: TX3 }}>{tasksHandled}/{tasks.length} actioned</span>
+            <span style={{ fontSize: 11, color: TX3 }} aria-live="polite">{tasksHandled} of {tasks.length} actioned</span>
           </div>
-          <div style={{ padding: '8px 0', maxHeight: 360, overflowY: 'auto' }}>
+          <ul role="list" style={{ listStyle: 'none', margin: 0, padding: '8px 0', maxHeight: 360, overflowY: 'auto' }}>
             {tasks.map(task => {
               const action = taskActions[task.id]
               const pColor = task.priority === 'high' ? '#dc2626' : task.priority === 'medium' ? '#E8B84B' : TX3
               return (
-                <div key={task.id} style={{ padding: '10px 18px', borderBottom: `1px solid ${BD}` }}>
+                <li key={task.id} style={{ padding: '10px 18px', borderBottom: `1px solid ${BD}` }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <span style={{ fontSize: 9, fontWeight: 800, color: pColor, textTransform: 'uppercase' }}>{task.priority}</span>
                     <span style={{ fontSize: 13, fontWeight: 600, color: TX }}>{task.title}</span>
                   </div>
-                  <div style={{ fontSize: 12, color: TX3, marginBottom: 6 }}>{task.context}</div>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {['do_now', 'delegate', 'defer'].map(a => (
-                      <button key={a} onClick={() => setTaskActions(p => ({ ...p, [task.id]: a }))} style={{
-                        padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: F,
-                        background: action === a ? (a === 'do_now' ? TEALLT : a === 'delegate' ? '#EDE9FE' : '#FEF3C7') : '#fff',
-                        border: `1px solid ${action === a ? (a === 'do_now' ? TEAL : a === 'delegate' ? '#C4B5FD' : '#FCD34D') : BD}`,
-                        color: action === a ? (a === 'do_now' ? TEALD : a === 'delegate' ? '#5B21B6' : '#92400E') : TX3,
-                      }}>
-                        {a === 'do_now' ? 'Do now' : a === 'delegate' ? 'Delegate' : 'Defer'}
-                      </button>
-                    ))}
+                  <div style={{ fontSize: 12, color: TX3, marginBottom: 8 }}>{task.context}</div>
+                  <div role="group" aria-label={`Choose action for ${task.title}`} style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {['do_now', 'delegate', 'defer'].map(a => {
+                      const label = a === 'do_now' ? 'Do now' : a === 'delegate' ? 'Delegate' : 'Defer'
+                      const pressed = action === a
+                      return (
+                        <button
+                          key={a}
+                          type="button"
+                          onClick={() => setTaskActions(p => ({ ...p, [task.id]: a }))}
+                          aria-pressed={pressed}
+                          aria-label={pressed ? `${label}: selected for ${task.title}` : `${label}: ${task.title}`}
+                          style={{
+                            minHeight: 44, padding: '8px 14px', borderRadius: 6,
+                            fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: F,
+                            background: pressed ? (a === 'do_now' ? TEALLT : a === 'delegate' ? '#EDE9FE' : '#FEF3C7') : '#fff',
+                            border: `1px solid ${pressed ? (a === 'do_now' ? TEAL : a === 'delegate' ? '#C4B5FD' : '#FCD34D') : BD}`,
+                            color: pressed ? (a === 'do_now' ? TEALD : a === 'delegate' ? '#5B21B6' : '#92400E') : TX2,
+                          }}
+                        >
+                          {label}
+                        </button>
+                      )
+                    })}
                   </div>
-                </div>
+                </li>
               )
             })}
-          </div>
-        </div>
+          </ul>
+        </section>
 
         {/* Messages */}
         <div style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
