@@ -1657,14 +1657,19 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
             </div>
           )}
 
-          {/* Inbox Panel */}
+          {/* Inbox triage panel.
+              Per inbox item: pick Handle now or Defer. Per-item action
+              buttons wrapped in a role=group with contextual aria-label
+              (mirrors the Workspace task list pattern from commit
+              6b0c2fa). Action buttons sized to WCAG 2.5.5 minimum
+              (44px). aria-pressed conveys current selection. */}
           {showInbox && currentInbox && (
-            <div style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
+            <section role="region" aria-label="Inbox triage" style={{ background: CARD, border: `1px solid ${BD}`, borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: NAVY, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Your inbox</div>
                 <div style={{ fontFamily: F, fontSize: 11, color: TX3 }}>These arrived at the same time as this scenario</div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <ul role="list" style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {(currentInbox.inbox_items || []).map((item, idx) => {
                   const key = `${scenarioIndex}-${idx}`
                   const action = inboxActions[key]
@@ -1674,42 +1679,64 @@ function ActivePage({ candidate, assessment, onSubmit, uniqueToken, initialProgr
                     today: { bg: BG, bd: BD, color: NAVY, label: 'TODAY' },
                   }
                   const ps = priorityStyles[item.priority] || priorityStyles.today
+                  const handlePressed = action === 'action'
+                  const deferPressed = action === 'defer'
                   return (
-                    <div key={idx} style={{ background: ps.bg, border: `1px solid ${ps.bd}`, borderRadius: 8, padding: '10px 14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                    <li key={idx} style={{ background: ps.bg, border: `1px solid ${ps.bd}`, borderRadius: 8, padding: '10px 14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
                           <span style={{ fontSize: 9, fontWeight: 800, color: ps.color, background: `${ps.color}18`, padding: '1px 6px', borderRadius: 3, textTransform: 'uppercase', flexShrink: 0 }}>{ps.label}</span>
                           <span style={{ fontFamily: F, fontSize: 12.5, fontWeight: 700, color: TX }}>{item.sender}</span>
                         </div>
-                        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                          <button onClick={() => setInboxActions(prev => ({ ...prev, [key]: 'action' }))} style={{
-                            padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: F,
-                            background: action === 'action' ? TEALLT : '#fff', border: `1px solid ${action === 'action' ? TEAL : BD}`,
-                            color: action === 'action' ? TEALD : TX3,
-                          }}>Handle now</button>
-                          <button onClick={() => setInboxActions(prev => ({ ...prev, [key]: 'defer' }))} style={{
-                            padding: '3px 10px', borderRadius: 5, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: F,
-                            background: action === 'defer' ? '#FEF3C7' : '#fff', border: `1px solid ${action === 'defer' ? '#FCD34D' : BD}`,
-                            color: action === 'defer' ? '#92400E' : TX3,
-                          }}>Defer</button>
+                        <div role="group" aria-label={`Choose action for ${item.subject}`} style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            onClick={() => setInboxActions(prev => ({ ...prev, [key]: 'action' }))}
+                            aria-pressed={handlePressed}
+                            aria-label={handlePressed ? `Handle now: selected for ${item.subject}` : `Handle now: ${item.subject}`}
+                            style={{
+                              minHeight: 44, padding: '8px 14px', borderRadius: 6,
+                              fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: F,
+                              background: handlePressed ? TEALLT : '#fff',
+                              border: `1px solid ${handlePressed ? TEAL : BD}`,
+                              color: handlePressed ? TEALD : TX2,
+                            }}
+                          >Handle now</button>
+                          <button
+                            type="button"
+                            onClick={() => setInboxActions(prev => ({ ...prev, [key]: 'defer' }))}
+                            aria-pressed={deferPressed}
+                            aria-label={deferPressed ? `Defer: selected for ${item.subject}` : `Defer: ${item.subject}`}
+                            style={{
+                              minHeight: 44, padding: '8px 14px', borderRadius: 6,
+                              fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: F,
+                              background: deferPressed ? '#FEF3C7' : '#fff',
+                              border: `1px solid ${deferPressed ? '#FCD34D' : BD}`,
+                              color: deferPressed ? '#92400E' : TX2,
+                            }}
+                          >Defer</button>
                         </div>
                       </div>
                       <div style={{ fontFamily: F, fontSize: 13, fontWeight: 600, color: TX, marginBottom: 2 }}>{item.subject}</div>
                       <div style={{ fontFamily: F, fontSize: 12, color: TX3 }}>{item.preview}</div>
-                    </div>
+                    </li>
                   )
                 })}
-              </div>
+              </ul>
               <div style={{ marginTop: 10 }}>
+                <label htmlFor={`pd-inbox-notes-${scenarioIndex}`} style={{ display: 'block', fontFamily: F, fontSize: 11, fontWeight: 700, color: TX2, marginBottom: 4 }}>
+                  Notes on your inbox triage (optional)
+                </label>
                 <input
+                  id={`pd-inbox-notes-${scenarioIndex}`}
                   type="text"
                   value={inboxNotes[scenarioIndex] || ''}
                   onChange={e => setInboxNotes(prev => ({ ...prev, [scenarioIndex]: e.target.value }))}
-                  placeholder="Optional: why did you defer or prioritise certain items?"
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '8px 12px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 12.5, color: TX, outline: 'none' }}
+                  placeholder="Why did you defer or prioritise certain items?"
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '8px 12px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 12.5, color: TX }}
                 />
               </div>
-            </div>
+            </section>
           )}
 
           <Card style={isOperational ? { background: '#f8f9fb', border: 'none', boxShadow: 'none', padding: '16px' } : {}}>
@@ -3157,20 +3184,42 @@ function WorkspacePage({ assessment, candidate, onSubmit, onSkip }) {
         </div>
       </div>
 
-      {/* Surprise notification */}
+      {/* Surprise notification.
+          Time-sensitive interruption that fires after 3 minutes. Wrapped
+          in role=status with aria-live=polite so a screen reader hears
+          it on appearance without interrupting the candidate's current
+          focus. Quick-reply input is labelled; Dismiss button has an
+          explicit aria-label so it isn't ambiguous out of context. */}
       {surpriseShown && surprise && !surpriseReply && (
-        <div style={{ position: 'fixed', top: 60, right: 20, zIndex: 500, width: 320, background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, boxShadow: '0 8px 32px rgba(15,33,55,0.18)', padding: '14px 16px', animation: 'slideIn 0.3s ease' }}>
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          aria-label="Incoming notification from your team"
+          style={{ position: 'fixed', top: 60, right: 20, zIndex: 500, width: 320, background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, boxShadow: '0 8px 32px rgba(15,33,55,0.18)', padding: '14px 16px', animation: 'slideIn 0.3s ease' }}
+        >
           <style>{`@keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }`}</style>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: TEAL, flexShrink: 0 }}>{surprise.from?.[0]}</div>
+            <div aria-hidden style={{ width: 28, height: 28, borderRadius: '50%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: TEAL, flexShrink: 0 }}>{surprise.from?.[0]}</div>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: TX }}>{surprise.from} <span style={{ fontWeight: 500, color: TX3 }}>({surprise.role})</span></div>
               <div style={{ fontSize: 13, color: TX2 }}>{surprise.text}</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
-            <input type="text" placeholder="Quick reply..." onKeyDown={e => { if (e.key === 'Enter' && e.target.value.trim()) setSurpriseReply(e.target.value.trim()) }} style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 12, outline: 'none' }} />
-            <button onClick={() => setSurpriseReply('noted')} style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${BD}`, background: '#fff', color: TX2, fontFamily: F, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Dismiss</button>
+            <input
+              type="text"
+              placeholder="Quick reply..."
+              aria-label={`Quick reply to ${surprise.from || 'team member'}`}
+              onKeyDown={e => { if (e.key === 'Enter' && e.target.value.trim()) setSurpriseReply(e.target.value.trim()) }}
+              style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 12 }}
+            />
+            <button
+              type="button"
+              onClick={() => setSurpriseReply('noted')}
+              aria-label="Acknowledge and dismiss notification"
+              style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${BD}`, background: '#fff', color: TX2, fontFamily: F, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+            >Dismiss</button>
           </div>
         </div>
       )}
@@ -3178,42 +3227,66 @@ function WorkspacePage({ assessment, candidate, onSubmit, onSkip }) {
       {/* Main workspace grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, padding: 16, maxWidth: 1200, margin: '0 auto' }}>
 
-        {/* Email Inbox */}
-        <div style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
+        {/* Email Inbox.
+            Email rows are real <button>s with aria-expanded so keyboard
+            users can Tab in and Enter/Space to expand the inline reply
+            panel. The expanded panel id is referenced by aria-controls
+            on the trigger so assistive tech can convey the disclosure
+            relationship. Inline outline:none on the textarea was
+            removed; the global :focus-visible !important rule from
+            commit 0ba1785 provides the focus ring. */}
+        <section role="region" aria-label="Email Inbox" style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BD}`, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: TX }}>Email Inbox</span>
-            <span style={{ fontSize: 11, color: TX3 }}>{emailsReplied}/{emails.length} replied</span>
+            <span style={{ fontSize: 11, color: TX3 }} aria-live="polite">{emailsReplied} of {emails.length} replied</span>
           </div>
           <div style={{ maxHeight: 360, overflowY: 'auto' }}>
-            {emails.map(email => (
-              <div key={email.id}>
-                <div
-                  onClick={() => { setEmailOpen(emailOpen === email.id ? null : email.id); setEmailRead(p => ({ ...p, [email.id]: true })) }}
-                  style={{ padding: '12px 18px', borderBottom: `1px solid ${BD}`, cursor: 'pointer', background: emailRead[email.id] ? '#fff' : '#f0fdfb' }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: emailRead[email.id] ? 500 : 700, color: TX }}>{email.from}</span>
-                    {emailReplies[email.id] && <span style={{ fontSize: 10, color: TEAL, fontWeight: 700 }}>REPLIED</span>}
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: TX, marginBottom: 2 }}>{email.subject}</div>
-                  <div style={{ fontSize: 12, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email.preview}</div>
+            {emails.map(email => {
+              const isOpen = emailOpen === email.id
+              const isRead = !!emailRead[email.id]
+              const hasReply = !!emailReplies[email.id]
+              const panelId = `pd-email-panel-${email.id}`
+              return (
+                <div key={email.id}>
+                  <button
+                    type="button"
+                    onClick={() => { setEmailOpen(isOpen ? null : email.id); setEmailRead(p => ({ ...p, [email.id]: true })) }}
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    aria-label={`Email from ${email.from} about ${email.subject}, ${isRead ? 'read' : 'unread'}${hasReply ? ', replied' : ''}, ${isOpen ? 'expanded' : 'collapsed'}, activate to ${isOpen ? 'collapse' : 'open and reply'}`}
+                    style={{
+                      width: '100%', display: 'block', textAlign: 'left',
+                      padding: '12px 18px', borderTop: 'none', borderLeft: 'none', borderRight: 'none',
+                      borderBottom: `1px solid ${BD}`,
+                      cursor: 'pointer', background: isRead ? '#fff' : '#f0fdfb',
+                      fontFamily: F,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                      <span style={{ fontSize: 12.5, fontWeight: isRead ? 500 : 700, color: TX }}>{email.from}</span>
+                      {hasReply && <span aria-hidden style={{ fontSize: 10, color: TEAL, fontWeight: 700 }}>REPLIED</span>}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: TX, marginBottom: 2 }}>{email.subject}</div>
+                    <div style={{ fontSize: 12, color: TX3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email.preview}</div>
+                  </button>
+                  {isOpen && (
+                    <div id={panelId} style={{ padding: '14px 18px', background: BG, borderBottom: `1px solid ${BD}` }}>
+                      <p style={{ fontSize: 13, color: TX, lineHeight: 1.65, margin: '0 0 10px', whiteSpace: 'pre-wrap' }}>{email.body}</p>
+                      <textarea
+                        rows={3}
+                        value={emailReplies[email.id] || ''}
+                        onChange={e => setEmailReplies(p => ({ ...p, [email.id]: e.target.value }))}
+                        placeholder="Type your reply..."
+                        aria-label={`Reply to email from ${email.from}`}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '8px 12px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, resize: 'vertical' }}
+                      />
+                    </div>
+                  )}
                 </div>
-                {emailOpen === email.id && (
-                  <div style={{ padding: '14px 18px', background: BG, borderBottom: `1px solid ${BD}` }}>
-                    <p style={{ fontSize: 13, color: TX, lineHeight: 1.65, margin: '0 0 10px', whiteSpace: 'pre-wrap' }}>{email.body}</p>
-                    <textarea
-                      rows={3}
-                      value={emailReplies[email.id] || ''}
-                      onChange={e => setEmailReplies(p => ({ ...p, [email.id]: e.target.value }))}
-                      placeholder="Type your reply..."
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 12px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 13, color: TX, outline: 'none', resize: 'vertical' }}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
-        </div>
+        </section>
 
         {/* Task List.
             Triage UI (NOT a reorderable list): each task has three
@@ -3273,8 +3346,11 @@ function WorkspacePage({ assessment, candidate, onSubmit, onSkip }) {
           </ul>
         </section>
 
-        {/* Messages */}
-        <div style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
+        {/* Messages.
+            Per-message quick reply pattern. Each input is labelled by
+            sender so a screen reader user knows which conversation each
+            input belongs to. Outer container is a section landmark. */}
+        <section role="region" aria-label="Messages" style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BD}` }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: TX }}>Messages</span>
           </div>
@@ -3282,7 +3358,7 @@ function WorkspacePage({ assessment, candidate, onSubmit, onSkip }) {
             {messages.map(msg => (
               <div key={msg.id}>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: TEAL, flexShrink: 0 }}>{msg.from?.[0]}</div>
+                  <div aria-hidden style={{ width: 28, height: 28, borderRadius: '50%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: TEAL, flexShrink: 0 }}>{msg.from?.[0]}</div>
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: TX }}>{msg.from} <span style={{ fontWeight: 500, color: TX3 }}>{msg.time}</span></div>
                     <div style={{ fontSize: 13, color: TX2 }}>{msg.text}</div>
@@ -3293,12 +3369,13 @@ function WorkspacePage({ assessment, candidate, onSubmit, onSkip }) {
                   value={msgReplies[msg.id] || ''}
                   onChange={e => setMsgReplies(p => ({ ...p, [msg.id]: e.target.value }))}
                   placeholder="Reply..."
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 12, color: TX, outline: 'none' }}
+                  aria-label={`Reply to message from ${msg.from || 'sender'}`}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px', borderRadius: 6, border: `1px solid ${BD}`, fontFamily: F, fontSize: 12, color: TX }}
                 />
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
         {/* Calendar */}
         <div style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden' }}>
