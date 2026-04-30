@@ -3955,6 +3955,14 @@ function ForcedChoiceBlock({ scenarioIndex, spec, value, onChange }) {
   return null
 }
 
+// Visually-hidden style used for the aria-live region inside each
+// forced-choice block. Same shape as the timer announcement helper used
+// elsewhere in this file.
+const FC_VISUALLY_HIDDEN = {
+  position: 'absolute', width: 1, height: 1, margin: -1, padding: 0,
+  overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap', border: 0,
+}
+
 function RankingChoice({ items, value, onChange }) {
   // Initial order: preserve existing response if present, otherwise the prompt order.
   const initial = Array.isArray(value?.response?.ranked) && value.response.ranked.length === items.length
@@ -3962,17 +3970,33 @@ function RankingChoice({ items, value, onChange }) {
     : items
   const [order, setOrder] = useState(initial)
   const [dragIndex, setDragIndex] = useState(null)
+  // Keyboard pick-up-and-drop state. pickedUpIndex is the index of the
+  // row the candidate has marked as "grabbed" via Space; null when no
+  // row is grabbed. Each Arrow press still commits-as-you-go (same
+  // semantic as the existing Up/Down buttons), so a screen-reader user
+  // can correct an accidental move with another Arrow in the opposite
+  // direction. announce drives the visually-hidden aria-live region
+  // below; we re-set the same string by appending a zero-width character
+  // when needed so the screen reader re-announces a consecutive identical
+  // event.
+  const [pickedUpIndex, setPickedUpIndex] = useState(null)
+  const [announce, setAnnounce] = useState('')
+  const itemRefs = useRef([])
 
   function commit(next) {
     setOrder(next)
     onChange(next)
   }
-  function move(i, dir) {
+  function move(i, dir, opts = {}) {
     const j = i + dir
-    if (j < 0 || j >= order.length) return
+    if (j < 0 || j >= order.length) return i
     const next = [...order]
     ;[next[i], next[j]] = [next[j], next[i]]
     commit(next)
+    if (opts.announce) {
+      setAnnounce(`Moved ${order[i]} to position ${j + 1} of ${order.length}.`)
+    }
+    return j
   }
   function handleDrop(targetIndex) {
     if (dragIndex == null || dragIndex === targetIndex) return
@@ -3982,72 +4006,144 @@ function RankingChoice({ items, value, onChange }) {
     setDragIndex(null)
     commit(next)
   }
+  function onRowKeyDown(e, i) {
+    const item = order[i]
+    if (e.key === ' ' || e.code === 'Space') {
+      e.preventDefault()
+      if (pickedUpIndex === i) {
+        setPickedUpIndex(null)
+        setAnnounce(`Dropped ${item} at position ${i + 1} of ${order.length}.`)
+      } else if (pickedUpIndex == null) {
+        setPickedUpIndex(i)
+        setAnnounce(`Picked up ${item}. Use arrow keys to move. Press Space to drop. Press Escape to cancel.`)
+      } else {
+        // Pick up a different row: drop the previous, then pick this one.
+        setPickedUpIndex(i)
+        setAnnounce(`Picked up ${item}. Use arrow keys to move. Press Space to drop. Press Escape to cancel.`)
+      }
+      return
+    }
+    if (e.key === 'Escape' && pickedUpIndex != null) {
+      e.preventDefault()
+      setPickedUpIndex(null)
+      setAnnounce('Move cancelled.')
+      return
+    }
+    if (pickedUpIndex !== i) return
+    // From here on: only handle arrow keys when this row is the picked-up row.
+    if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      const newIdx = move(i, -1, { announce: true })
+      // Move the picked-up marker with the row, and re-focus the moved row.
+      if (newIdx !== i) {
+        setPickedUpIndex(newIdx)
+        // Re-focus on next paint when the DOM has settled.
+        setTimeout(() => { itemRefs.current[newIdx]?.focus() }, 0)
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      const newIdx = move(i, 1, { announce: true })
+      if (newIdx !== i) {
+        setPickedUpIndex(newIdx)
+        setTimeout(() => { itemRefs.current[newIdx]?.focus() }, 0)
+      }
+    }
+  }
 
   return (
     <div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {order.map((item, i) => (
-          <div
-            key={item}
-            draggable
-            onDragStart={() => setDragIndex(i)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => handleDrop(i)}
-            onDragEnd={() => setDragIndex(null)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              background: '#fff', border: `1px solid ${NAVY}22`, borderRadius: 10,
-              padding: '12px 14px',
-              cursor: 'grab',
-              opacity: dragIndex === i ? 0.6 : 1,
-              transition: 'opacity 0.15s, border-color 0.15s',
-            }}
-          >
-            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={FC_SLATE} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
-              <circle cx="9" cy="6" r="1.2" /><circle cx="9" cy="12" r="1.2" /><circle cx="9" cy="18" r="1.2" />
-              <circle cx="15" cy="6" r="1.2" /><circle cx="15" cy="12" r="1.2" /><circle cx="15" cy="18" r="1.2" />
-            </svg>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: 26, height: 26, borderRadius: 999, flexShrink: 0,
-              background: TEAL, color: NAVY, fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, fontWeight: 800,
-            }}>
-              {i + 1}
-            </span>
-            <span style={{ fontFamily: F, fontSize: 13.5, color: '#0f2137', flex: 1, lineHeight: 1.5 }}>{item}</span>
-            <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-              <button
-                type="button"
-                onClick={() => move(i, -1)}
-                disabled={i === 0}
-                aria-label="Move up"
-                style={{
-                  width: 30, height: 30, borderRadius: 7, border: `1px solid #e4e9f0`, background: '#fff',
-                  cursor: i === 0 ? 'not-allowed' : 'pointer', opacity: i === 0 ? 0.35 : 1,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#0f2137" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
-              </button>
-              <button
-                type="button"
-                onClick={() => move(i, 1)}
-                disabled={i === order.length - 1}
-                aria-label="Move down"
-                style={{
-                  width: 30, height: 30, borderRadius: 7, border: `1px solid #e4e9f0`, background: '#fff',
-                  cursor: i === order.length - 1 ? 'not-allowed' : 'pointer', opacity: i === order.length - 1 ? 0.35 : 1,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#0f2137" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+      <span role="status" aria-live="polite" aria-atomic="true" style={FC_VISUALLY_HIDDEN}>
+        {announce}
+      </span>
+      <ul
+        role="list"
+        aria-label={`Ranking, ${order.length} items. Use arrow keys, Space to pick up, Space again to drop.`}
+        style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}
+      >
+        {order.map((item, i) => {
+          const isPickedUp = pickedUpIndex === i
+          return (
+            <li
+              key={item}
+              ref={el => { itemRefs.current[i] = el }}
+              tabIndex={0}
+              role="button"
+              aria-roledescription="sortable item"
+              aria-grabbed={isPickedUp}
+              aria-label={`Item ${i + 1} of ${order.length}: ${item}. Press Space to pick up, arrow keys to move, Space again to drop.`}
+              onKeyDown={(e) => onRowKeyDown(e, i)}
+              draggable
+              onDragStart={() => setDragIndex(i)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => handleDrop(i)}
+              onDragEnd={() => setDragIndex(null)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                background: isPickedUp ? '#e6f7f5' : '#fff',
+                border: isPickedUp ? `2px solid ${TEAL}` : `1px solid ${NAVY}22`,
+                borderRadius: 10,
+                padding: isPickedUp ? '11px 13px' : '12px 14px',
+                cursor: 'grab',
+                opacity: dragIndex === i ? 0.6 : 1,
+                transform: isPickedUp ? 'translateY(-1px)' : 'none',
+                boxShadow: isPickedUp ? '0 4px 14px rgba(0,191,165,0.18)' : 'none',
+                transition: 'opacity 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s',
+              }}
+            >
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={FC_SLATE} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
+                <circle cx="9" cy="6" r="1.2" /><circle cx="9" cy="12" r="1.2" /><circle cx="9" cy="18" r="1.2" />
+                <circle cx="15" cy="6" r="1.2" /><circle cx="15" cy="12" r="1.2" /><circle cx="15" cy="18" r="1.2" />
+              </svg>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 26, height: 26, borderRadius: 999, flexShrink: 0,
+                background: TEAL, color: NAVY, fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, fontWeight: 800,
+              }}>
+                {i + 1}
+              </span>
+              <span style={{ fontFamily: F, fontSize: 13.5, color: '#0f2137', flex: 1, lineHeight: 1.5 }}>{item}</span>
+              {isPickedUp && (
+                <span aria-hidden style={{
+                  fontFamily: F, fontSize: 11, fontWeight: 800, color: TEAL,
+                  textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0,
+                }}>
+                  Picked up
+                </span>
+              )}
+              <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => { move(i, -1, { announce: true }); itemRefs.current[i - 1]?.focus() }}
+                  disabled={i === 0}
+                  aria-label={`Move "${item}" up to position ${i} of ${order.length}`}
+                  style={{
+                    width: 30, height: 30, borderRadius: 7, border: `1px solid #e4e9f0`, background: '#fff',
+                    cursor: i === 0 ? 'not-allowed' : 'pointer', opacity: i === 0 ? 0.35 : 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#0f2137" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="18 15 12 9 6 15" /></svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { move(i, 1, { announce: true }); itemRefs.current[i + 1]?.focus() }}
+                  disabled={i === order.length - 1}
+                  aria-label={`Move "${item}" down to position ${i + 2} of ${order.length}`}
+                  style={{
+                    width: 30, height: 30, borderRadius: 7, border: `1px solid #e4e9f0`, background: '#fff',
+                    cursor: i === order.length - 1 ? 'not-allowed' : 'pointer', opacity: i === order.length - 1 ? 0.35 : 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#0f2137" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="6 9 12 15 18 9" /></svg>
+                </button>
+              </div>
+            </li>
+          )
+        })}
+      </ul>
       <div style={{ fontFamily: F, fontSize: 12, color: '#64748b', marginTop: 10 }}>
-        Your ranking is saved automatically as you reorder.
+        Your ranking is saved automatically as you reorder. Mouse: drag rows to reorder. Keyboard: focus a row, press Space to pick up, arrow keys to move, Space to drop, or use the up and down buttons on the right.
       </div>
     </div>
   )
@@ -4084,11 +4180,17 @@ function SelectExcludeChoice({ items, selectCount, value, onChange }) {
 
   return (
     <div>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: 10,
-      }}>
+      <div
+        role="group"
+        aria-label={phase === 'select'
+          ? `Select ${selectCount} options. ${state.selected.length} of ${selectCount} chosen.`
+          : 'Now choose one option to exclude.'}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 10,
+        }}
+      >
         {items.map((item) => {
           const isSelected = selectedSet.has(item)
           const isExcluded = state.excluded === item
@@ -4097,20 +4199,27 @@ function SelectExcludeChoice({ items, selectCount, value, onChange }) {
           const border = isSelected ? TEAL : isExcluded ? FC_RED : `${NAVY}22`
           const bg = isSelected ? TEALLT : isExcluded ? '#fef2f2' : '#fff'
           const greyed = phase === 'exclude' && !isSelected && !isExcluded
+          const pressed = isSelected || isExcluded
+          const ariaLabel = phase === 'select'
+            ? (isSelected ? `Selected: ${item}. Press to deselect.` : `Select: ${item}`)
+            : (isExcluded ? `Excluded: ${item}. Press to undo.` : isSelected ? `Selected: ${item}` : `Exclude: ${item}`)
           return (
             <button
               key={item}
               type="button"
               onClick={onClick}
+              aria-pressed={pressed}
+              aria-label={ariaLabel}
               style={{
                 textAlign: 'left', padding: '12px 14px',
                 background: bg, border: `1.5px solid ${border}`, borderRadius: 10,
                 cursor: 'pointer', opacity: greyed ? 0.7 : 1,
                 fontFamily: F, fontSize: 13.5, color: '#0f2137', lineHeight: 1.5,
                 display: 'flex', alignItems: 'flex-start', gap: 10,
+                minHeight: 44,
               }}
             >
-              <span style={{
+              <span aria-hidden style={{
                 width: 22, height: 22, borderRadius: 999, flexShrink: 0,
                 background: isSelected ? TEAL : isExcluded ? FC_RED : '#fff',
                 border: `1.5px solid ${isSelected ? TEAL : isExcluded ? FC_RED : '#e4e9f0'}`,
@@ -4158,12 +4267,17 @@ function TradeOffChoice({ pairs, value, onChange }) {
         {pairs.map((pair, i) => {
           const chosen = choices[i]
           return (
-            <div key={i} style={{
-              display: 'grid',
-              gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
-              gap: 10,
-              alignItems: 'stretch',
-            }}>
+            <div
+              key={i}
+              role="group"
+              aria-label={`Trade-off ${i + 1} of ${pairs.length}. Choose preferred option.`}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+                gap: 10,
+                alignItems: 'stretch',
+              }}
+            >
               {['a', 'b'].map((side) => {
                 const isChosen = chosen === pair[side]
                 const other = side === 'a' ? 'b' : 'a'
@@ -4173,6 +4287,10 @@ function TradeOffChoice({ pairs, value, onChange }) {
                     key={side}
                     type="button"
                     onClick={() => pick(i, side)}
+                    aria-pressed={isChosen}
+                    aria-label={isChosen
+                      ? `Chosen: ${pair[side]}. Trade-off ${i + 1} of ${pairs.length}.`
+                      : `Choose: ${pair[side]}. Trade-off ${i + 1} of ${pairs.length}.`}
                     style={{
                       textAlign: 'left', padding: '14px 16px',
                       background: isChosen ? TEALLT : '#fff',
@@ -4180,6 +4298,7 @@ function TradeOffChoice({ pairs, value, onChange }) {
                       borderRadius: 10, cursor: 'pointer',
                       opacity: isRejected ? 0.45 : 1,
                       fontFamily: F, fontSize: 13.5, color: '#0f2137', lineHeight: 1.55,
+                      minHeight: 44,
                       transition: 'background 0.15s, border-color 0.15s, opacity 0.15s',
                     }}
                   >
@@ -4187,7 +4306,7 @@ function TradeOffChoice({ pairs, value, onChange }) {
                   </button>
                 )
               })}
-              <div style={{
+              <div aria-hidden style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: F, fontSize: 11, fontWeight: 800, color: FC_SLATE,
                 textTransform: 'uppercase', letterSpacing: '0.08em',
